@@ -3,37 +3,41 @@ import { computed, ref } from "vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
-import { graphNodes } from "./graph/mock-graph-data.js";
-import { getGraphScope, scopeForDomain, scopeForNode } from "./graph/graph-scope.js";
+import { loadStaticVault } from "./data/static-vault-loader.js";
+import { findGraphNode, getGraphNodes, setActiveVault } from "./graph/graph-data-store.js";
+import { getGraphScope, scopeForDomain } from "./graph/graph-scope.js";
+
+const normalizedVault = loadStaticVault();
+setActiveVault(normalizedVault);
 
 const currentView = ref("graph");
-const currentDomain = ref("graphics");
-const currentNoteId = ref("rendering-pipeline");
-const selectedNodeId = ref("graphics");
+const currentDomain = ref(normalizedVault.vault.defaultDomain || normalizedVault.domains[0]?.id || "root");
+const firstConcept = normalizedVault.nodes.find((node) => node.type !== "domain");
+const currentNoteId = ref(firstConcept?.id || currentDomain.value);
+const selectedNodeId = ref(currentDomain.value);
 const graphScopeId = ref("root");
 const noteMode = ref("read");
 const activeDialog = ref("");
 
 const selectedNode = computed(
-  () => graphNodes.find((node) => node.id === selectedNodeId.value) || graphNodes[0],
+  () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
 );
 
 function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) {
   graphScopeId.value = scopeId || "root";
   const scope = getGraphScope(graphScopeId.value);
   if (scope.type === "domain") currentDomain.value = scope.id;
-  if (scope.type === "focus") currentDomain.value = "graphics";
-  selectedNodeId.value = graphScopeId.value === "root" ? "graphics" : nodeId;
+  if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
+  selectedNodeId.value = graphScopeId.value === "root" ? scope.selectedNodeId : nodeId;
   currentView.value = "graph";
 }
 
 function openNote(nodeId) {
-  const node = graphNodes.find((item) => item.id === nodeId);
+  const node = findGraphNode(nodeId);
   if (node) {
     currentDomain.value = node.domain;
     currentNoteId.value = node.id;
     selectedNodeId.value = node.id;
-    graphScopeId.value = scopeForNode(node.id);
   }
   noteMode.value = "read";
   currentView.value = "note";
@@ -51,7 +55,7 @@ function openScope(scopeId, selectedId = scopeId) {
   selectedNodeId.value = selectedId;
   const scope = getGraphScope(scopeId);
   if (scope.type === "domain") currentDomain.value = scope.id;
-  if (scope.type === "focus") currentDomain.value = "graphics";
+  if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
   currentView.value = "graph";
 }
 

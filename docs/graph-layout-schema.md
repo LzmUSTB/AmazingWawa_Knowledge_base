@@ -105,6 +105,10 @@ boards:
           - [840, 500]
 ```
 
+In the desktop static-loader prototype, `graph-layout.yaml` is the primary layout source.
+
+The JavaScript layout tables are fallback only. The loader normalizes `w/h` to `width/height` for UI rendering.
+
 ## 5. Top-Level Fields
 
 | Field | Required | Description |
@@ -380,6 +384,24 @@ Rules:
 Generated layout is a fallback.
 Generated layout should not overwrite graph-layout.yaml automatically.
 User must explicitly save layout.
+```
+
+Fallback generation is deterministic per scope. It may be used for generated focus scopes whose node ID does not yet have a board in `graph-layout.yaml`.
+
+Route lookup order:
+
+```txt
+layouts.boards[scopeId].routes[edge.id].points
+-> legacy/static fallback route if available
+-> no rendered route
+```
+
+Node lookup order:
+
+```txt
+layouts.boards[scopeId].nodes[node.id]
+-> legacy/static fallback node layout if available
+-> deterministic generated layout
 ```
 
 ## 17. Graph Camera Relationship

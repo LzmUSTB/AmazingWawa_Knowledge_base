@@ -55,7 +55,7 @@ const emit = defineEmits([
 const graphViewRef = ref(null);
 
 function openLocalGraph(nodeId) {
-  emit("select-node", nodeId);
+  emit("open-scope", nodeId, nodeId);
 }
 
 function fitGraphView() {
@@ -107,7 +107,7 @@ function fitGraphView() {
           :mode="noteMode"
           :note-id="currentNoteId"
           @set-mode="$emit('set-note-mode', $event)"
-          @show-graph="$emit('show-graph', graphScopeId, currentNoteId)"
+          @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
         />
       </main>
     </div>

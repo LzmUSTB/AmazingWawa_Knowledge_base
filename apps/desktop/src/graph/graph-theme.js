@@ -1,3 +1,5 @@
+import { getDomains } from "./graph-data-store.js";
+
 export const domainColors = {
   graphics: "#00B7FF",
   "linear-algebra": "#EDEDED",
@@ -38,7 +40,8 @@ export const relationTheme = {
 };
 
 export function getDomainColor(domain) {
-  return domainColors[domain] || "#EDEDED";
+  const activeDomain = getDomains().find((item) => item.id === domain);
+  return activeDomain?.color || domainColors[domain] || "#EDEDED";
 }
 
 export function nodeClass(type) {

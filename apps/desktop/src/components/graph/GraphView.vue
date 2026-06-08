@@ -11,8 +11,8 @@ import {
 import { getConnectedNodeIds, isConnectedEdge } from "../../graph/graph-interactions.js";
 import {
   getNodeLayout,
+  getGraphBoardSize,
   getTracePoints,
-  graphBoardSize,
   pointsToPath,
 } from "../../graph/graph-layout.js";
 import { getGraphScope, isDomainNode } from "../../graph/graph-scope.js";
@@ -36,8 +36,8 @@ const hoveredNodeId = ref("");
 const isPanning = ref(false);
 const panStart = ref({ pointerId: 0, x: 0, y: 0, cameraX: 0, cameraY: 0 });
 const camera = ref({ x: 0, y: 0, zoom: 1 });
-const board = graphBoardSize.desktop;
 const currentScope = computed(() => getGraphScope(props.scopeId));
+const board = computed(() => getGraphBoardSize(currentScope.value.id));
 const focusNodeId = computed(() => hoveredNodeId.value || props.selectedNodeId);
 const connectedIds = computed(() => getConnectedNodeIds(focusNodeId.value, currentScope.value.edges));
 const selectedNode = computed(
@@ -57,10 +57,6 @@ function nodeState(node) {
 }
 
 function handleNodeClick(node) {
-  if (currentScope.value.type === "root" && isDomainNode(node.id)) {
-    emit("open-scope", node.id);
-    return;
-  }
   emit("select-node", node.id);
 }
 
@@ -77,11 +73,7 @@ function handleShowLocal(nodeId) {
     emit("open-scope", nodeId);
     return;
   }
-  if (nodeId === "rendering-pipeline") {
-    emit("open-scope", nodeId);
-    return;
-  }
-  emit("show-local", nodeId);
+  emit("open-scope", nodeId);
 }
 
 function isInteractiveTarget(event) {

@@ -1,5 +1,6 @@
 <script setup>
-import { graphNodes } from "../../graph/mock-graph-data.js";
+import { computed } from "vue";
+import { getGraphNodes } from "../../graph/graph-data-store.js";
 import { relationTheme } from "../../graph/graph-theme.js";
 
 defineProps({
@@ -12,6 +13,7 @@ defineProps({
 defineEmits(["close"]);
 
 const relationTypes = ["contains", "depends-on", "used-in", "compares-with"];
+const graphNodes = computed(() => getGraphNodes());
 </script>
 
 <template>

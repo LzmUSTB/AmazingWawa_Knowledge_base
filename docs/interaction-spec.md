@@ -41,6 +41,17 @@ Note View = what the knowledge means
 
 ## 3. App Startup Flow
 
+Current static-loader prototype:
+
+```txt
+Vite imports vault/*.yaml and vault/content/*/* files as raw text
+-> knowledge-core normalizes them into one vault object
+-> desktop UI reads scopes, nodes, notes, file tree, and layouts from that object
+-> if loading fails, the UI falls back to mock demo data and logs a warning
+```
+
+The Tauri Open Vault folder picker is not implemented in this phase.
+
 When the desktop app launches:
 
 ```txt
@@ -502,13 +513,21 @@ Root scope must not show child concepts such as Shader, PBR, Rendering Pipeline,
 
 Domain scope must not show grandchildren or unrelated domains.
 
-Focus scope can be mocked in the first version, but it must stay local and same-level.
+Focus scope is generated from `graph.yaml` edges.
+
+Focus scope uses the focused node ID as the scope ID and shows:
+
+- the focused node
+- every directly connected one-hop neighbor
+- only edges directly connected to the focused node
+
+Neighbor-to-neighbor edges are not included. Cross-domain one-hop neighbors are allowed and keep their own domain color.
 
 Clicking `Global Graph` in the breadcrumb returns to root scope.
 
 Clicking a domain folder in the file tree opens that domain scope.
 
-Clicking or double-clicking a domain node in root scope opens that domain scope.
+Double-clicking a domain node opens that domain scope.
 
 Clicking a concept folder in the file tree opens Note View.
 
@@ -535,14 +554,13 @@ Else:
 
 | Action | Behavior |
 |---|---|
-| Single-click domain node in root scope | Enter that domain scope |
-| Single-click concept node | Select node |
+| Single-click any node | Select node only |
 | Double-click domain node | Enter that domain scope |
 | Double-click concept node | Open Note View |
 | Hover node | Highlight one-hop neighbors |
 | Right-click node | Open node context menu |
-| Drag node | Move node |
-| Click empty area | Clear selection |
+| Drag empty canvas | Pan viewport |
+| Click empty area | No navigation |
 | Right-click empty area | Open canvas context menu |
 
 ### 8.4 Node Selection
@@ -633,13 +651,15 @@ First-version priority:
 
 ### 8.9 Drag Node
 
-Dragging a node changes its temporary visual position.
+Node dragging and layout editing are not implemented in the static-loader prototype.
 
 First version:
 
 ```txt
-Allow dragging during current session.
-Do not persist layout positions yet.
+Do not drag nodes.
+Do not write graph-layout.yaml.
+Use graph-layout.yaml as the primary visual source.
+Use generated JavaScript fallback only when a scope layout is missing.
 ```
 
 Later:
@@ -729,13 +749,15 @@ Relation styles:
 
 Semantic relations belong in `vault/graph.yaml`.
 
-Visual node positions, port choices, and trace routes may later live in `vault/graph-layout.yaml`.
+Visual node positions, port choices, board sizes, and trace routes live in `vault/graph-layout.yaml` when present.
 
 ## 9. Link Creation Interaction
 
 First version should use a form-based link creation flow.
 
 Do not implement drag-to-connect in the first version.
+
+The current static-loader prototype displays the New Link form only. It does not write `graph.yaml`.
 
 ### 9.1 Add Link From Node
 
@@ -839,6 +861,8 @@ Plain Markdown editor
 No WYSIWYG
 No split preview required
 ```
+
+The current static-loader prototype displays `note.md` content but does not save edits.
 
 Actions:
 
@@ -1137,12 +1161,12 @@ No editing in the first version.
 
 Implement:
 
-- Open Vault
+- Static vault loading from repository `vault/`
 - File Tree
 - Breadcrumb
 - Global Graph
 - Domain Graph
-- Focused Node Graph
+- Focused Node Graph generated from edges
 - Single-click node
 - Double-click node
 - Right-click node menu
@@ -1150,15 +1174,17 @@ Implement:
 - New Link form
 - Note Read mode
 - Note Edit mode
-- Save / Cancel
 - Show in Graph
-- Basic Search
-- Session restoration
 
 Do not implement yet:
 
+- Tauri Open Vault picker
+- note save
+- graph write
+- graph-layout write
 - fixed right inspector
 - drag-to-connect link creation
+- node dragging / layout editing
 - rich WYSIWYG editor
 - meta.yaml visual editor
 - full Git UI

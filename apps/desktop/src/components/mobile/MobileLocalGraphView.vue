@@ -2,12 +2,13 @@
 import { computed } from "vue";
 import { getConnectedNodeIds } from "../../graph/graph-interactions.js";
 import {
+  getGraphBoardSize,
   getNodeLayout,
   getTracePoints,
-  graphBoardSize,
   pointsToPath,
 } from "../../graph/graph-layout.js";
-import { graphEdges, graphNodes } from "../../graph/mock-graph-data.js";
+import { findGraphNode, getGraphNodes } from "../../graph/graph-data-store.js";
+import { getGraphScope } from "../../graph/graph-scope.js";
 import { getDomainColor, relationTheme } from "../../graph/graph-theme.js";
 
 const props = defineProps({
@@ -19,16 +20,15 @@ const props = defineProps({
 
 defineEmits(["open-note"]);
 
-const mobileIds = ["graphics", "rendering-pipeline", "shader", "pbr", "rasterization"];
-const nodes = computed(() => graphNodes.filter((node) => mobileIds.includes(node.id)));
-const edges = computed(() =>
-  graphEdges.filter((edge) => getTracePoints(edge.id, "rendering-pipeline", "mobile")),
-);
+const activeNode = computed(() => findGraphNode(props.selectedNodeId) || getGraphNodes()[0]);
+const currentScope = computed(() => getGraphScope(activeNode.value?.id || "root"));
+const nodes = computed(() => currentScope.value.nodes);
+const edges = computed(() => currentScope.value.edges);
 const selectedNode = computed(
-  () => graphNodes.find((node) => node.id === props.selectedNodeId) || graphNodes[0],
+  () => activeNode.value || currentScope.value.nodes[0],
 );
-const connectedIds = computed(() => getConnectedNodeIds(selectedNode.value.id));
-const board = graphBoardSize.mobile;
+const connectedIds = computed(() => getConnectedNodeIds(selectedNode.value.id, edges.value));
+const board = computed(() => getGraphBoardSize(currentScope.value.id, "mobile"));
 </script>
 
 <template>
@@ -60,7 +60,7 @@ const board = graphBoardSize.mobile;
             v-for="edge in edges"
             :key="edge.id"
             class="mobile-trace"
-            :d="pointsToPath(getTracePoints(edge.id, 'rendering-pipeline', 'mobile'))"
+            :d="pointsToPath(getTracePoints(edge.id, currentScope.id, 'mobile'))"
             :stroke="relationTheme[edge.relation].color"
             :stroke-dasharray="relationTheme[edge.relation].dash"
           />
@@ -77,10 +77,10 @@ const board = graphBoardSize.mobile;
             }"
             :style="{
               '--node-color': getDomainColor(node.domain),
-              left: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').x}px`,
-              top: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').y}px`,
-              width: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').width}px`,
-              height: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').height}px`,
+              left: `${getNodeLayout(node.id, currentScope.id, 'mobile').x}px`,
+              top: `${getNodeLayout(node.id, currentScope.id, 'mobile').y}px`,
+              width: `${getNodeLayout(node.id, currentScope.id, 'mobile').width}px`,
+              height: `${getNodeLayout(node.id, currentScope.id, 'mobile').height}px`,
             }"
             @click="$emit('open-note', node.id)"
           >

@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import NoteEditor from "./NoteEditor.vue";
 import NoteToolbar from "./NoteToolbar.vue";
-import { graphNodes, noteSections } from "../../graph/mock-graph-data.js";
+import { findGraphNode, getActiveVault, getGraphNodes } from "../../graph/graph-data-store.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 
 const props = defineProps({
@@ -18,8 +18,33 @@ const props = defineProps({
 
 defineEmits(["set-mode", "show-graph"]);
 
-const node = computed(() => graphNodes.find((item) => item.id === props.noteId) || graphNodes[0]);
+const node = computed(() => findGraphNode(props.noteId) || getGraphNodes()[0]);
 const accent = computed(() => getDomainColor(node.value.domain));
+const noteMarkdown = computed(() => getActiveVault().notes[props.noteId]?.markdown || "");
+const noteBlocks = computed(() => {
+  if (!noteMarkdown.value) {
+    return [
+      {
+        label: "Summary",
+        body: node.value.summary || "No note.md was found for this node.",
+      },
+    ];
+  }
+
+  return noteMarkdown.value
+    .split(/\n(?=##\s+)/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block, index) => {
+      const lines = block.split("\n");
+      const heading = lines[0].replace(/^#+\s*/, "");
+      return {
+        label: index === 0 && lines[0].startsWith("# ") ? "Note" : heading,
+        body: index === 0 && lines[0].startsWith("# ") ? lines.slice(1).join("\n").trim() : lines.slice(1).join("\n").trim(),
+      };
+    })
+    .filter((block) => block.body || block.label);
+});
 </script>
 
 <template>
@@ -47,13 +72,13 @@ const accent = computed(() => getDomainColor(node.value.domain));
         <NoteEditor v-if="mode === 'edit'" />
 
         <div v-else class="read-surface">
-          <section v-for="section in noteSections" :key="section.label" class="note-block">
+          <section v-for="section in noteBlocks" :key="section.label" class="note-block">
             <div class="panel-label" :style="{ '--label-color': accent }">{{ section.label }}</div>
-            <p>{{ section.body }}</p>
+            <pre class="markdown-preview">{{ section.body }}</pre>
           </section>
           <section class="note-block code-block">
             <div class="panel-label" :style="{ '--label-color': accent }">Vault structure</div>
-            <pre>vault/content/graphics/rendering-pipeline/
+            <pre>vault/content/{{ node.domain }}/{{ node.id }}/
   meta.yaml
   note.md
   assets/</pre>

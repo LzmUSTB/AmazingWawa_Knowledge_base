@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from "vue";
+import { getDomains } from "../../graph/graph-data-store.js";
+
 defineProps({
   currentDomain: {
     type: String,
@@ -7,6 +10,8 @@ defineProps({
 });
 
 defineEmits(["close"]);
+
+const domains = computed(() => getDomains());
 </script>
 
 <template>
@@ -23,10 +28,7 @@ defineEmits(["close"]);
     <label>
       <span>Domain</span>
       <select :value="currentDomain">
-        <option>graphics</option>
-        <option>machine-learning</option>
-        <option>web-dev</option>
-        <option>simulation</option>
+        <option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.id }}</option>
       </select>
     </label>
     <label>

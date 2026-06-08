@@ -1,3 +1,5 @@
+import { getActiveVault } from "./graph-data-store.js";
+
 export const graphBoardSize = {
   desktop: { width: 2400, height: 1600 },
   mobile: { width: 900, height: 1200 },
@@ -179,13 +181,52 @@ const traceRoutes = {
 };
 
 export function getNodeLayout(id, scopeId = "graphics", size = "desktop") {
-  if (size === "mobile") return offsetLayout(mobileNodeLayout, mobileOffset)[id];
-  return scopeLayouts[scopeId]?.[id] || rootNodeLayout[id] || graphicsNodeLayout[id];
+  const board = getActiveVault().layouts?.boards?.[scopeId];
+  if (size !== "mobile" && board?.nodes?.[id]) return board.nodes[id];
+  if (size === "mobile") {
+    return (
+      offsetLayout(mobileNodeLayout, mobileOffset)[id] ||
+      getGeneratedLayout(id, scopeId, graphBoardSize.mobile)
+    );
+  }
+  return (
+    scopeLayouts[scopeId]?.[id] ||
+    rootNodeLayout[id] ||
+    graphicsNodeLayout[id] ||
+    getGeneratedLayout(id, scopeId, graphBoardSize.desktop)
+  );
 }
 
 export function getTracePoints(edgeId, scopeId = "graphics", size = "desktop") {
+  const route = size !== "mobile" ? getActiveVault().layouts?.boards?.[scopeId]?.routes?.[edgeId] : null;
+  if (route?.points?.length) return route.points;
   const routeScope = size === "mobile" ? "mobile" : scopeId;
   return traceRoutes[routeScope]?.[edgeId];
+}
+
+export function getGraphBoardSize(scopeId = "root", size = "desktop") {
+  if (size === "mobile") return graphBoardSize.mobile;
+  const board = getActiveVault().layouts?.boards?.[scopeId];
+  return board
+    ? { width: board.width || graphBoardSize.desktop.width, height: board.height || graphBoardSize.desktop.height }
+    : graphBoardSize.desktop;
+}
+
+function getGeneratedLayout(id, scopeId, board) {
+  const scope = getActiveVault().scopes?.[scopeId];
+  const index = Math.max(0, scope?.nodes?.findIndex((node) => node.id === id) ?? 0);
+  const count = Math.max(1, scope?.nodes?.length || 1);
+  const centerX = board.width / 2;
+  const centerY = board.height / 2;
+  if (index === 0) return { x: centerX - 90, y: centerY - 44, width: 180, height: 88 };
+  const angle = ((index - 1) / Math.max(1, count - 1)) * Math.PI * 2 - Math.PI / 2;
+  const radius = Math.min(board.width, board.height) * 0.32;
+  return {
+    x: Math.round(centerX + Math.cos(angle) * radius - 80),
+    y: Math.round(centerY + Math.sin(angle) * radius - 36),
+    width: 160,
+    height: 72,
+  };
 }
 
 export function pointsToPath(points) {

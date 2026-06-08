@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from "vue";
-import { graphNodes } from "../../graph/mock-graph-data.js";
+import { findGraphNode } from "../../graph/graph-data-store.js";
 import { getGraphScope } from "../../graph/graph-scope.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 
@@ -25,7 +25,7 @@ const props = defineProps({
 
 defineEmits(["open-domain", "show-graph"]);
 
-const currentNode = computed(() => graphNodes.find((node) => node.id === props.currentNoteId));
+const currentNode = computed(() => findGraphNode(props.currentNoteId));
 const accent = computed(() => getDomainColor(props.currentDomain));
 const scope = computed(() => getGraphScope(props.graphScopeId));
 const graphCrumbs = computed(() => scope.value.breadcrumb);
@@ -63,7 +63,7 @@ const graphCrumbs = computed(() => scope.value.breadcrumb);
     <button
       v-if="currentView === 'note'"
       class="show-graph"
-      @click="$emit('show-graph', currentDomain, currentNoteId)"
+      @click="$emit('show-graph', currentNoteId, currentNoteId)"
     >
       Show in Graph
     </button>

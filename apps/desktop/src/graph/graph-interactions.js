@@ -1,6 +1,6 @@
-import { graphEdges } from "./mock-graph-data.js";
+import { getGraphEdges } from "./graph-data-store.js";
 
-export function getConnectedNodeIds(nodeId, edges = graphEdges) {
+export function getConnectedNodeIds(nodeId, edges = getGraphEdges()) {
   const connected = new Set([nodeId]);
   edges.forEach((edge) => {
     if (edge.source === nodeId) connected.add(edge.target);

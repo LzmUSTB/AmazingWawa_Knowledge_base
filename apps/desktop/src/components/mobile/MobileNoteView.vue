@@ -1,15 +1,33 @@
 <script setup>
-import { noteSections } from "../../graph/mock-graph-data.js";
+import { computed } from "vue";
+import { getActiveVault } from "../../graph/graph-data-store.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 
-defineProps({
+defineEmits(["show-graph"]);
+
+const props = defineProps({
   node: {
     type: Object,
     required: true,
   },
 });
 
-defineEmits(["show-graph"]);
+const noteBlocks = computed(() => {
+  const markdown = getActiveVault().notes[props.node.id]?.markdown || "";
+  if (!markdown) return [{ label: "Summary", body: props.node.summary }];
+  return markdown
+    .split(/\n(?=##\s+)/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((block, index) => {
+      const lines = block.split("\n");
+      return {
+        label: index === 0 && lines[0].startsWith("# ") ? "Note" : lines[0].replace(/^#+\s*/, ""),
+        body: lines.slice(1).join("\n").trim(),
+      };
+    });
+});
 </script>
 
 <template>
@@ -29,7 +47,7 @@ defineEmits(["show-graph"]);
         <span>{{ node.type }}</span>
         <span>{{ node.status }}</span>
       </div>
-      <section v-for="section in noteSections.slice(0, 4)" :key="section.label">
+      <section v-for="section in noteBlocks" :key="section.label">
         <div class="panel-label" :style="{ '--label-color': getDomainColor(node.domain) }">
           {{ section.label }}
         </div>

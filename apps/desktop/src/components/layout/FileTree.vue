@@ -1,5 +1,6 @@
 <script setup>
-import { conceptNodes, domains } from "../../graph/mock-graph-data.js";
+import { computed } from "vue";
+import { getActiveVault } from "../../graph/graph-data-store.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 
 defineProps({
@@ -15,9 +16,7 @@ defineProps({
 
 defineEmits(["open-domain", "open-note"]);
 
-function nodesForDomain(domainId) {
-  return conceptNodes.filter((node) => node.domain === domainId).slice(0, 4);
-}
+const fileTree = computed(() => getActiveVault().fileTree);
 </script>
 
 <template>
@@ -26,7 +25,7 @@ function nodesForDomain(domainId) {
     <button class="tree-root" @click="$emit('open-domain', activeDomain)">vault/</button>
 
     <div class="tree-list">
-      <section v-for="domain in domains.slice(0, 6)" :key="domain.id" class="tree-domain">
+      <section v-for="domain in fileTree" :key="domain.id" class="tree-domain">
         <button
           class="domain-row"
           :class="{ 'is-active': domain.id === activeDomain }"
@@ -34,19 +33,19 @@ function nodesForDomain(domainId) {
           @click="$emit('open-domain', domain.id)"
         >
           <span class="domain-marker"></span>
-          <span>{{ domain.label }}</span>
+          <span>{{ domain.id }}</span>
         </button>
 
         <div
-          v-if="domain.id === activeDomain || domain.id === 'machine-learning'"
+          v-if="domain.id === activeDomain || domain.children.length"
           class="concept-list"
         >
           <button
-            v-for="node in nodesForDomain(domain.id)"
+            v-for="node in domain.children"
             :key="node.id"
             class="concept-row"
             :class="{ 'is-active': node.id === activeNoteId }"
-            :style="{ '--domain-color': getDomainColor(node.domain) }"
+            :style="{ '--domain-color': getDomainColor(domain.id) }"
             @click="$emit('open-note', node.id)"
           >
             {{ node.id }}

@@ -762,6 +762,43 @@ If a note contains private or sensitive information, do not put it in this vault
 
 ## 18. First-Version App Requirements
 
+### 18.0 Static Loader Prototype
+
+Before the Tauri folder picker is implemented, the desktop app loads the repository vault through Vite raw imports:
+
+```txt
+vault/vault.yaml
+vault/domains.yaml
+vault/graph.yaml
+vault/graph-layout.yaml
+vault/content/*/*/meta.yaml
+vault/content/*/*/note.md
+```
+
+`packages/knowledge-core` normalizes those files into one object:
+
+```js
+{
+  vault: { schemaVersion, title, description, language },
+  domains: [{ id, title, description, color, order }],
+  nodes: [{ id, title, domain, type, status, summary }],
+  edges: [{ id, from, to, source, target, relation }],
+  layouts: { boards: {} },
+  notes: { [id]: { id, markdown } },
+  fileTree: [],
+  scopes: {}
+}
+```
+
+Rules:
+
+- domain nodes are generated from `domains.yaml`
+- concept nodes are generated from `content/*/*/meta.yaml`
+- note markdown comes from sibling `note.md`
+- `graph-layout.yaml` is the primary visual layout source
+- generated scope layouts are fallback only and must not overwrite vault files automatically
+- if real vault loading fails, the prototype may fall back to mock demo data with a console warning
+
 The first desktop version should support:
 
 - read `vault.yaml`

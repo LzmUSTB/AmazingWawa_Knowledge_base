@@ -314,7 +314,32 @@ edges:
 
 `graph.yaml` is not the same as what appears on screen.
 
-The app generates graph scopes from graph data.
+The app generates graph scopes from normalized vault data.
+
+During the static-loader phase, `packages/knowledge-core` reads:
+
+```txt
+vault/vault.yaml
+vault/domains.yaml
+vault/graph.yaml
+vault/graph-layout.yaml
+vault/content/*/*/meta.yaml
+vault/content/*/*/note.md
+```
+
+and produces edges with both field pairs:
+
+```js
+{
+  from,
+  to,
+  source: from,
+  target: to,
+  relation
+}
+```
+
+`from/to` remain the vault schema. `source/target` exist for UI compatibility.
 
 ### 12.1 Root Scope
 
@@ -382,8 +407,8 @@ Focus scope shows:
 
 ```txt
 current node
-+ parent node
-+ directly related nodes
++ all one-hop directly connected nodes
++ only edges directly connected to current node
 ```
 
 Example:
@@ -397,6 +422,10 @@ Rendering Pipeline
 ```
 
 Focus scope is useful for local review and mobile local graph view.
+
+Focus scope ID is the focused node ID.
+
+Neighbor-to-neighbor edges are not included. Cross-domain one-hop neighbors are allowed and keep their own domain color.
 
 ## 13. Cross-Domain Edges
 
