@@ -10,15 +10,29 @@ import {
 } from "../../graph/graph-camera.js";
 import { getConnectedNodeIds, isConnectedEdge } from "../../graph/graph-interactions.js";
 import {
+  getManualTracePoints,
   getNodeLayout,
   getGraphBoardSize,
   getTracePoints,
   pointsToPath,
 } from "../../graph/graph-layout.js";
+import { generateOrthogonalRoute } from "../../graph/graph-route-generator.js";
 import { getGraphScope, hasContainsChildren, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor, nodeClass, relationTheme } from "../../graph/graph-theme.js";
 
 const props = defineProps({
+  draftBoard: {
+    type: Object,
+    default: null,
+  },
+  draftMovedNodeIds: {
+    type: Array,
+    default: () => [],
+  },
+  isLayoutEditing: {
+    type: Boolean,
+    default: false,
+  },
   selectedNodeId: {
     type: String,
     required: true,
@@ -29,17 +43,29 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["open-dialog", "open-note", "open-scope", "select-node", "show-local"]);
+const emit = defineEmits([
+  "ensure-layout-draft",
+  "layout-node-dragged",
+  "open-dialog",
+  "open-note",
+  "open-scope",
+  "select-node",
+  "show-local",
+]);
 
 const viewportRef = ref(null);
 const hoveredNodeId = ref("");
 const isPanning = ref(false);
 const panStart = ref({ pointerId: 0, x: 0, y: 0, cameraX: 0, cameraY: 0 });
+const nodeDrag = ref(null);
+const suppressNodeOpen = ref(false);
 const camera = ref({ x: 0, y: 0, zoom: 1 });
 let resizeObserver;
 let resizeFitTimer = 0;
 const currentScope = computed(() => getGraphScope(props.scopeId));
-const board = computed(() => getGraphBoardSize(currentScope.value.id));
+const board = computed(() => props.draftBoard || getGraphBoardSize(currentScope.value.id));
+const boardGrid = computed(() => props.draftBoard?.grid || 32);
+const movedNodeIds = computed(() => new Set(props.draftMovedNodeIds));
 const scopeLabel = computed(() => {
   if (currentScope.value.type === "root") return "ROOT / DOMAIN LEVEL ONLY";
   if (currentScope.value.type === "domain") return "DOMAIN / DIRECT CHILDREN ONLY";
@@ -63,11 +89,39 @@ function nodeState(node) {
   };
 }
 
+function snapToGrid(value) {
+  const grid = boardGrid.value || 32;
+  return Math.round(value / grid) * grid;
+}
+
+function getResolvedNodeLayout(id) {
+  return props.draftBoard?.nodes?.[id] || getNodeLayout(id, currentScope.value.id);
+}
+
+function getResolvedTracePoints(edge) {
+  if (!props.draftBoard) return getTracePoints(edge.id, currentScope.value.id);
+
+  const endpointMoved = movedNodeIds.value.has(edge.source) || movedNodeIds.value.has(edge.target);
+  const manualRoute = endpointMoved ? null : getManualTracePoints(edge.id, currentScope.value.id);
+  if (manualRoute) return manualRoute;
+
+  const sourceBox = getResolvedNodeLayout(edge.source);
+  const targetBox = getResolvedNodeLayout(edge.target);
+  if (!sourceBox || !targetBox) return undefined;
+  const routeIndex = Math.max(0, currentScope.value.edges.findIndex((item) => item.id === edge.id));
+  return generateOrthogonalRoute(sourceBox, targetBox, { routeIndex });
+}
+
 function handleNodeClick(node) {
+  if (suppressNodeOpen.value) {
+    suppressNodeOpen.value = false;
+    return;
+  }
   emit("select-node", node.id);
 }
 
 function handleNodeOpen(node) {
+  if (suppressNodeOpen.value) return;
   if (isDomainNode(node.id)) {
     emit("open-scope", node.id);
     return;
@@ -81,6 +135,51 @@ function handleNodeOpen(node) {
     return;
   }
   emit("open-note", node.id);
+}
+
+function handleNodePointerDown(event, node) {
+  if (!(props.isLayoutEditing || (event.ctrlKey && event.button === 0))) return;
+  event.preventDefault();
+  event.stopPropagation();
+  emit("ensure-layout-draft", currentScope.value.id);
+  const startBox = getResolvedNodeLayout(node.id);
+  nodeDrag.value = {
+    pointerId: event.pointerId,
+    nodeId: node.id,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    startX: startBox.x,
+    startY: startBox.y,
+    width: startBox.width,
+    height: startBox.height,
+  };
+  suppressNodeOpen.value = true;
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function handleNodePointerMove(event) {
+  const drag = nodeDrag.value;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const deltaBoardX = (event.clientX - drag.clientX) / camera.value.zoom;
+  const deltaBoardY = (event.clientY - drag.clientY) / camera.value.zoom;
+  emit("layout-node-dragged", {
+    nodeId: drag.nodeId,
+    layout: {
+      x: snapToGrid(drag.startX + deltaBoardX),
+      y: snapToGrid(drag.startY + deltaBoardY),
+      width: drag.width,
+      height: drag.height,
+    },
+  });
+}
+
+function stopNodeDrag(event) {
+  if (!nodeDrag.value || event.pointerId !== nodeDrag.value.pointerId) return;
+  event.preventDefault();
+  event.stopPropagation();
+  nodeDrag.value = null;
 }
 
 function handleShowLocal(nodeId) {
@@ -97,7 +196,7 @@ function isInteractiveTarget(event) {
 
 function fitCurrentScope() {
   if (!viewportRef.value) return;
-  const bounds = getScopeBounds(currentScope.value.nodes, (id) => getNodeLayout(id, currentScope.value.id));
+  const bounds = getScopeBounds(currentScope.value.nodes, getResolvedNodeLayout);
   camera.value = fitCameraToBounds(viewportRef.value, bounds, {
     margin: 160,
     minZoom: GRAPH_CAMERA_LIMITS.minZoom,
@@ -140,6 +239,7 @@ function stopPanning(event) {
 }
 
 function handleWheel(event) {
+  if (event.ctrlKey) return;
   event.preventDefault();
   if (!viewportRef.value) return;
   const factor = event.deltaY > 0 ? 1 / 1.12 : 1.12;
@@ -223,7 +323,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
           <g v-for="edge in currentScope.edges" :key="edge.id">
             <path
-              v-if="getTracePoints(edge.id, currentScope.id)"
+              v-if="getResolvedTracePoints(edge)"
               class="trace"
               :class="[
                 `trace--${edge.relation}`,
@@ -232,16 +332,16 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
                   'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
                 },
               ]"
-              :d="pointsToPath(getTracePoints(edge.id, currentScope.id))"
+              :d="pointsToPath(getResolvedTracePoints(edge))"
               :marker-end="edge.relation === 'depends-on' ? 'url(#trace-arrow)' : ''"
               :stroke="relationTheme[edge.relation].color"
               :stroke-dasharray="relationTheme[edge.relation].dash"
             />
             <path
-              v-if="edge.relation === 'compares-with' && getTracePoints(edge.id, currentScope.id)"
+              v-if="edge.relation === 'compares-with' && getResolvedTracePoints(edge)"
               class="trace trace--paired"
               :class="{ 'is-active': isConnectedEdge(edge, focusNodeId) }"
-              :d="pointsToPath(getTracePoints(edge.id, currentScope.id).map(([x, y]) => [x + 7, y + 7]))"
+              :d="pointsToPath(getResolvedTracePoints(edge).map(([x, y]) => [x + 7, y + 7]))"
               :stroke="relationTheme[edge.relation].color"
               stroke-dasharray="3 5"
             />
@@ -255,15 +355,19 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
             :class="[nodeClass(node.type), nodeState(node)]"
       :style="{
         '--node-color': getDomainColor(node.domain),
-        left: `${getNodeLayout(node.id, currentScope.id).x}px`,
-        top: `${getNodeLayout(node.id, currentScope.id).y}px`,
-        width: `${getNodeLayout(node.id, currentScope.id).width}px`,
-        height: `${getNodeLayout(node.id, currentScope.id).height}px`,
+        left: `${getResolvedNodeLayout(node.id).x}px`,
+        top: `${getResolvedNodeLayout(node.id).y}px`,
+        width: `${getResolvedNodeLayout(node.id).width}px`,
+        height: `${getResolvedNodeLayout(node.id).height}px`,
       }"
       @click="handleNodeClick(node)"
       @dblclick="handleNodeOpen(node)"
       @mouseenter="hoveredNodeId = node.id"
       @mouseleave="hoveredNodeId = ''"
+      @pointercancel="stopNodeDrag"
+      @pointerdown="handleNodePointerDown($event, node)"
+      @pointermove="handleNodePointerMove"
+      @pointerup="stopNodeDrag"
           >
             <span class="node-port node-port--top"></span>
             <span class="node-port node-port--right"></span>
@@ -278,7 +382,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
     </div>
 
     <div class="routing-label routing-label--a">
-      {{ scopeLabel }}
+      {{ isLayoutEditing ? "LAYOUT EDIT / GRID SNAP" : scopeLabel }}
     </div>
 
     <NodeContextMenu

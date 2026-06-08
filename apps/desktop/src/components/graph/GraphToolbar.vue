@@ -4,9 +4,25 @@ defineProps({
     type: Number,
     required: true,
   },
+  canSaveLayout: {
+    type: Boolean,
+    default: false,
+  },
   layoutMode: {
     type: String,
     required: true,
+  },
+  layoutDirty: {
+    type: Boolean,
+    default: false,
+  },
+  layoutEditing: {
+    type: Boolean,
+    default: false,
+  },
+  layoutSaveInProgress: {
+    type: Boolean,
+    default: false,
   },
   localDisabled: {
     type: Boolean,
@@ -18,7 +34,15 @@ defineProps({
   },
 });
 
-defineEmits(["fit-view", "open-dialog", "show-graph", "show-local"]);
+defineEmits([
+  "cancel-layout",
+  "edit-layout",
+  "fit-view",
+  "open-dialog",
+  "save-layout",
+  "show-graph",
+  "show-local",
+]);
 </script>
 
 <template>
@@ -35,6 +59,29 @@ defineEmits(["fit-view", "open-dialog", "show-graph", "show-local"]);
       Local
     </button>
     <button class="hud-button" @click="$emit('fit-view')">Fit</button>
+    <button
+      v-if="!layoutEditing && !layoutDirty"
+      class="hud-button"
+      style="--button-color: var(--language)"
+      @click="$emit('edit-layout')"
+    >
+      Edit Layout
+    </button>
+    <template v-else>
+      <button
+        class="hud-button"
+        :disabled="!canSaveLayout || !layoutDirty || layoutSaveInProgress"
+        style="--button-color: var(--language)"
+        :title="canSaveLayout ? '' : 'Open a desktop vault folder before saving layout.'"
+        @click="$emit('save-layout')"
+      >
+        Save Layout
+      </button>
+      <button class="hud-button" :disabled="layoutSaveInProgress" @click="$emit('cancel-layout')">
+        Cancel Layout
+      </button>
+      <span class="layout-status">{{ layoutDirty ? "UNSAVED LAYOUT" : "LAYOUT EDITING" }}</span>
+    </template>
     <div class="graph-stats">nodes: {{ nodeCount }} / edges: {{ edgeCount }} / layout: {{ layoutMode }}</div>
   </div>
 </template>
@@ -58,6 +105,14 @@ defineEmits(["fit-view", "open-dialog", "show-graph", "show-local"]);
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: 10px;
+  text-transform: uppercase;
+}
+
+.layout-status {
+  color: var(--language);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
   text-transform: uppercase;
 }
 

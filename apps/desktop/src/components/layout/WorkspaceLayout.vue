@@ -36,9 +36,33 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  canSaveLayout: {
+    type: Boolean,
+    default: false,
+  },
   graphScopeId: {
     type: String,
     required: true,
+  },
+  draftLayoutBoard: {
+    type: Object,
+    default: null,
+  },
+  draftMovedNodeIds: {
+    type: Array,
+    default: () => [],
+  },
+  isLayoutEditing: {
+    type: Boolean,
+    default: false,
+  },
+  layoutDirty: {
+    type: Boolean,
+    default: false,
+  },
+  layoutSaveInProgress: {
+    type: Boolean,
+    default: false,
   },
   noteMode: {
     type: String,
@@ -66,7 +90,12 @@ const emit = defineEmits([
   "open-vault",
   "open-scope",
   "create-note",
+  "cancel-layout",
+  "edit-layout",
+  "ensure-layout-draft",
+  "layout-node-dragged",
   "save-note",
+  "save-layout",
   "select-node",
   "set-note-dirty",
   "set-note-mode",
@@ -135,18 +164,30 @@ function fitGraphView() {
         <template v-if="currentView === 'graph'">
           <GraphToolbar
             :edge-count="currentScope.edges.length"
+            :can-save-layout="canSaveLayout"
+            :layout-dirty="layoutDirty"
+            :layout-editing="isLayoutEditing"
             :layout-mode="layoutMode"
+            :layout-save-in-progress="layoutSaveInProgress"
             :local-disabled="localDisabled"
             :node-count="currentScope.nodes.length"
+            @cancel-layout="$emit('cancel-layout')"
+            @edit-layout="$emit('edit-layout')"
             @fit-view="fitGraphView"
             @open-dialog="$emit('open-dialog', $event)"
+            @save-layout="$emit('save-layout')"
             @show-local="openSelectedLocalGraph"
             @show-graph="$emit('show-graph', $event)"
           />
           <GraphView
             ref="graphViewRef"
+            :draft-board="draftLayoutBoard"
+            :draft-moved-node-ids="draftMovedNodeIds"
+            :is-layout-editing="isLayoutEditing"
             :selected-node-id="selectedNodeId"
             :scope-id="graphScopeId"
+            @ensure-layout-draft="$emit('ensure-layout-draft', $event)"
+            @layout-node-dragged="$emit('layout-node-dragged', $event)"
             @open-dialog="$emit('open-dialog', $event)"
             @open-note="$emit('open-note', $event)"
             @open-scope="$emit('open-scope', $event)"

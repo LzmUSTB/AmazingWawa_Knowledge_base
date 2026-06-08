@@ -1,11 +1,11 @@
-export function getPortPoint(box, port) {
+export function getPortPoint(box, port, offset = 0) {
   const centerX = box.x + box.width / 2;
   const centerY = box.y + box.height / 2;
 
-  if (port === "top") return [centerX, box.y];
-  if (port === "right") return [box.x + box.width, centerY];
-  if (port === "bottom") return [centerX, box.y + box.height];
-  return [box.x, centerY];
+  if (port === "top") return [centerX + offset, box.y];
+  if (port === "right") return [box.x + box.width, centerY + offset];
+  if (port === "bottom") return [centerX + offset, box.y + box.height];
+  return [box.x, centerY + offset];
 }
 
 export function choosePorts(sourceBox, targetBox) {
@@ -27,13 +27,16 @@ export function choosePorts(sourceBox, targetBox) {
     : { sourcePort: "top", targetPort: "bottom" };
 }
 
-export function generateOrthogonalRoute(sourceBox, targetBox) {
+export function generateOrthogonalRoute(sourceBox, targetBox, options = {}) {
   const { sourcePort, targetPort } = choosePorts(sourceBox, targetBox);
-  const [sourceX, sourceY] = getPortPoint(sourceBox, sourcePort);
-  const [targetX, targetY] = getPortPoint(targetBox, targetPort);
+  const routeIndex = options.routeIndex ?? 0;
+  const portOffset = ((routeIndex % 5) - 2) * 12;
+  const laneOffset = ((routeIndex % 7) - 3) * 10;
+  const [sourceX, sourceY] = getPortPoint(sourceBox, sourcePort, portOffset);
+  const [targetX, targetY] = getPortPoint(targetBox, targetPort, -portOffset);
 
   if (sourcePort === "left" || sourcePort === "right") {
-    const midX = Math.round((sourceX + targetX) / 2);
+    const midX = Math.round((sourceX + targetX) / 2 + laneOffset);
     return [
       [sourceX, sourceY],
       [midX, sourceY],
@@ -42,7 +45,7 @@ export function generateOrthogonalRoute(sourceBox, targetBox) {
     ];
   }
 
-  const midY = Math.round((sourceY + targetY) / 2);
+  const midY = Math.round((sourceY + targetY) / 2 + laneOffset);
   return [
     [sourceX, sourceY],
     [sourceX, midY],

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
@@ -8,14 +8,18 @@ import {
   createKnowledgeItem,
   loadInitialVault,
   loadVaultFromPath,
+  saveGraphLayoutBoard,
   writeNoteMarkdown,
 } from "./data/desktop-vault-adapter.js";
 import { loadStaticVault } from "./data/static-vault-loader.js";
 import { findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
+import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
 import { getGraphScope, scopeForDomain } from "./graph/graph-scope.js";
 
 const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
+const UI_FONT_SCALE_KEY = "amazingwawa.uiFontScale";
 const savedSidebarPreference = localStorage.getItem(SIDEBAR_KEY);
+const savedUiFontScale = Number(localStorage.getItem(UI_FONT_SCALE_KEY));
 const initialVault = { ...loadStaticVault(), vaultRootPath: "", source: "static" };
 setActiveVault(initialVault);
 
@@ -30,6 +34,14 @@ const activeDialog = ref("");
 const activeVaultRootPath = ref("");
 const noteDirty = ref(false);
 const noteSaving = ref(false);
+const isLayoutEditing = ref(false);
+const layoutDirty = ref(false);
+const layoutDraftBoards = ref({});
+const layoutMovedNodeIds = ref({});
+const activeLayoutScopeId = ref("");
+const layoutSaveInProgress = ref(false);
+const layoutError = ref("");
+const uiFontScale = ref(Number.isFinite(savedUiFontScale) ? clampUiFontScale(savedUiFontScale) : 1);
 const sidebarCollapsed = ref(
   savedSidebarPreference === null ? window.innerWidth < 1000 : savedSidebarPreference === "true",
 );
@@ -38,9 +50,14 @@ const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
 );
 const canSaveNote = computed(() => Boolean(activeVaultRootPath.value));
+const canSaveLayout = computed(() => Boolean(activeVaultRootPath.value));
 const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || "Knowledge Base");
+const currentDraftLayoutBoard = computed(() => layoutDraftBoards.value[graphScopeId.value] || null);
+const currentDraftMovedNodeIds = computed(() => layoutMovedNodeIds.value[graphScopeId.value] || []);
 
 onMounted(async () => {
+  window.addEventListener("wheel", handleGlobalWheel, { passive: false });
+  window.addEventListener("keydown", handleGlobalKeydown);
   try {
     const vault = await loadInitialVault();
     applyVault(vault, { reset: true });
@@ -49,11 +66,17 @@ onMounted(async () => {
   }
 });
 
+onBeforeUnmount(() => {
+  window.removeEventListener("wheel", handleGlobalWheel);
+  window.removeEventListener("keydown", handleGlobalKeydown);
+});
+
 function applyVault(vault, { reset = false } = {}) {
   setActiveVault(vault);
   activeVaultRootPath.value = vault.vaultRootPath || "";
 
   if (reset) {
+    clearLayoutDrafts();
     resetNavigationForVault(vault);
     return;
   }
@@ -82,7 +105,38 @@ function resetNavigationForVault(vault) {
   noteDirty.value = false;
 }
 
-function confirmDiscardDirty() {
+function clampUiFontScale(value) {
+  return Math.min(1.25, Math.max(0.85, value));
+}
+
+function setUiFontScale(value) {
+  uiFontScale.value = clampUiFontScale(value);
+  localStorage.setItem(UI_FONT_SCALE_KEY, uiFontScale.value.toFixed(2));
+}
+
+function handleGlobalWheel(event) {
+  if (!event.ctrlKey) return;
+  event.preventDefault();
+  setUiFontScale(uiFontScale.value + (event.deltaY < 0 ? 0.05 : -0.05));
+}
+
+function handleGlobalKeydown(event) {
+  if (event.key !== "Escape" || activeDialog.value || (!isLayoutEditing.value && !layoutDirty.value)) return;
+  event.preventDefault();
+  discardLayoutDraft();
+}
+
+function clearLayoutDrafts() {
+  isLayoutEditing.value = false;
+  layoutDirty.value = false;
+  layoutDraftBoards.value = {};
+  layoutMovedNodeIds.value = {};
+  activeLayoutScopeId.value = "";
+  layoutSaveInProgress.value = false;
+  layoutError.value = "";
+}
+
+function confirmDiscardNoteDirty() {
   if (!noteDirty.value) return true;
   const confirmed = window.confirm("Discard unsaved note changes?");
   if (confirmed) {
@@ -90,6 +144,143 @@ function confirmDiscardDirty() {
     noteMode.value = "read";
   }
   return confirmed;
+}
+
+function discardLayoutDraft({ confirm = true } = {}) {
+  if (confirm && layoutDirty.value && !window.confirm("You have unsaved layout changes. Discard them?")) {
+    return false;
+  }
+  const scopeId = activeLayoutScopeId.value || graphScopeId.value;
+  const nextBoards = { ...layoutDraftBoards.value };
+  const nextMoved = { ...layoutMovedNodeIds.value };
+  delete nextBoards[scopeId];
+  delete nextMoved[scopeId];
+  layoutDraftBoards.value = nextBoards;
+  layoutMovedNodeIds.value = nextMoved;
+  isLayoutEditing.value = false;
+  layoutDirty.value = false;
+  activeLayoutScopeId.value = "";
+  layoutError.value = "";
+  return true;
+}
+
+function confirmDiscardLayoutDirty() {
+  if (!layoutDirty.value) return true;
+  return discardLayoutDraft();
+}
+
+function confirmDiscardDirty() {
+  return confirmDiscardNoteDirty() && confirmDiscardLayoutDirty();
+}
+
+function buildDraftBoard(scopeId) {
+  const scope = getGraphScope(scopeId);
+  const size = getGraphBoardSize(scopeId);
+  const existingBoard = useActiveVault().value.layouts?.boards?.[scopeId];
+  const nodes = Object.fromEntries(
+    scope.nodes.map((node) => {
+      const box = existingBoard?.nodes?.[node.id] || getNodeLayout(node.id, scopeId);
+      return [
+        node.id,
+        {
+          x: box.x,
+          y: box.y,
+          width: box.width,
+          height: box.height,
+        },
+      ];
+    }),
+  );
+
+  return {
+    width: existingBoard?.width || size.width || 2400,
+    height: existingBoard?.height || size.height || 1600,
+    grid: existingBoard?.grid || 32,
+    nodes,
+  };
+}
+
+function ensureLayoutDraft(scopeId = graphScopeId.value) {
+  const resolvedScopeId = scopeId || "root";
+  activeLayoutScopeId.value = resolvedScopeId;
+  const existingDraft = layoutDraftBoards.value[resolvedScopeId];
+  if (existingDraft) return existingDraft;
+  const draftBoard = buildDraftBoard(resolvedScopeId);
+  layoutDraftBoards.value = {
+    ...layoutDraftBoards.value,
+    [resolvedScopeId]: draftBoard,
+  };
+  layoutMovedNodeIds.value = {
+    ...layoutMovedNodeIds.value,
+    [resolvedScopeId]: layoutMovedNodeIds.value[resolvedScopeId] || [],
+  };
+  return draftBoard;
+}
+
+function startLayoutEditing() {
+  layoutError.value = "";
+  ensureLayoutDraft(graphScopeId.value);
+  isLayoutEditing.value = true;
+}
+
+function updateDraftNodeLayout({ nodeId, layout }) {
+  if (!nodeId || !layout) return;
+  const scopeId = graphScopeId.value;
+  const board = ensureLayoutDraft(scopeId);
+  layoutDraftBoards.value = {
+    ...layoutDraftBoards.value,
+    [scopeId]: {
+      ...board,
+      nodes: {
+        ...board.nodes,
+        [nodeId]: {
+          ...board.nodes[nodeId],
+          x: layout.x,
+          y: layout.y,
+          width: layout.width,
+          height: layout.height,
+        },
+      },
+    },
+  };
+  layoutMovedNodeIds.value = {
+    ...layoutMovedNodeIds.value,
+    [scopeId]: Array.from(new Set([...(layoutMovedNodeIds.value[scopeId] || []), nodeId])),
+  };
+  activeLayoutScopeId.value = scopeId;
+  isLayoutEditing.value = true;
+  layoutDirty.value = true;
+  layoutError.value = "";
+}
+
+async function saveLayout() {
+  if (layoutSaveInProgress.value) return;
+  if (!canSaveLayout.value) {
+    window.alert("Open a desktop vault folder before saving layout.");
+    return;
+  }
+  const scopeId = activeLayoutScopeId.value || graphScopeId.value;
+  const board = layoutDraftBoards.value[scopeId] || ensureLayoutDraft(scopeId);
+  layoutSaveInProgress.value = true;
+  layoutError.value = "";
+  const previousScopeId = graphScopeId.value;
+  const previousSelectedNodeId = selectedNodeId.value;
+
+  try {
+    const updatedVault = await saveGraphLayoutBoard(activeVaultRootPath.value, scopeId, board);
+    applyVault(updatedVault, { reset: false });
+    graphScopeId.value = useActiveVault().value.scopes?.[previousScopeId] ? previousScopeId : "root";
+    selectedNodeId.value = findGraphNode(previousSelectedNodeId)
+      ? previousSelectedNodeId
+      : getGraphScope(graphScopeId.value).selectedNodeId;
+    discardLayoutDraft({ confirm: false });
+  } catch (error) {
+    console.error("[vault] Failed to save graph-layout.yaml.", error);
+    layoutError.value = String(error);
+    window.alert(`Failed to save graph-layout.yaml: ${error}`);
+  } finally {
+    layoutSaveInProgress.value = false;
+  }
 }
 
 function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) {
@@ -133,11 +324,12 @@ function openScope(scopeId, selectedId = scopeId) {
 }
 
 function openDialog(dialogName) {
+  if (dialogName === "new-note" && !confirmDiscardDirty()) return;
   activeDialog.value = dialogName;
 }
 
 function setNoteMode(mode) {
-  if (noteMode.value === "edit" && mode !== "edit" && !confirmDiscardDirty()) return;
+  if (noteMode.value === "edit" && mode !== "edit" && !confirmDiscardNoteDirty()) return;
   noteMode.value = mode;
 }
 
@@ -224,14 +416,45 @@ function toggleSidebar() {
 </script>
 
 <template>
-  <div class="prototype-shell">
-    <WorkspaceLayout :active-dialog="activeDialog" :app-title="activeVaultTitle" :can-save-note="canSaveNote" :current-domain="currentDomain"
-      :current-note-id="currentNoteId" :current-view="currentView" :graph-scope-id="graphScopeId" :note-mode="noteMode"
-      :note-saving="noteSaving" :selected-node-id="selectedNodeId" :sidebar-collapsed="sidebarCollapsed"
-      @close-dialog="activeDialog = ''" @create-note="createNote" @open-dialog="openDialog" @open-domain="openDomain" @open-note="openNote"
-      @open-scope="openScope" @open-vault="openVault" @save-note="saveNote" @select-node="selectedNodeId = $event"
-      @set-note-dirty="noteDirty = $event" @set-note-mode="setNoteMode" @show-graph="showGraph" @show-view="showView"
-      @toggle-sidebar="toggleSidebar" />
+  <div class="prototype-shell" :style="{ '--ui-font-scale': uiFontScale }">
+    <WorkspaceLayout
+      :active-dialog="activeDialog"
+      :app-title="activeVaultTitle"
+      :can-save-layout="canSaveLayout"
+      :can-save-note="canSaveNote"
+      :current-domain="currentDomain"
+      :current-note-id="currentNoteId"
+      :current-view="currentView"
+      :draft-layout-board="currentDraftLayoutBoard"
+      :draft-moved-node-ids="currentDraftMovedNodeIds"
+      :graph-scope-id="graphScopeId"
+      :is-layout-editing="isLayoutEditing"
+      :layout-dirty="layoutDirty"
+      :layout-save-in-progress="layoutSaveInProgress"
+      :note-mode="noteMode"
+      :note-saving="noteSaving"
+      :selected-node-id="selectedNodeId"
+      :sidebar-collapsed="sidebarCollapsed"
+      @cancel-layout="discardLayoutDraft"
+      @close-dialog="activeDialog = ''"
+      @create-note="createNote"
+      @edit-layout="startLayoutEditing"
+      @ensure-layout-draft="ensureLayoutDraft"
+      @layout-node-dragged="updateDraftNodeLayout"
+      @open-dialog="openDialog"
+      @open-domain="openDomain"
+      @open-note="openNote"
+      @open-scope="openScope"
+      @open-vault="openVault"
+      @save-layout="saveLayout"
+      @save-note="saveNote"
+      @select-node="selectedNodeId = $event"
+      @set-note-dirty="noteDirty = $event"
+      @set-note-mode="setNoteMode"
+      @show-graph="showGraph"
+      @show-view="showView"
+      @toggle-sidebar="toggleSidebar"
+    />
 
     <div class="mobile-prototype">
       <MobileNoteView v-if="currentView !== 'graph'" :node="selectedNode" @show-graph="currentView = 'graph'" />
@@ -263,6 +486,10 @@ function toggleSidebar() {
   --relation-depends-on: #ffd500;
   --relation-used-in: #7c5cff;
   --relation-compares-with: #ff8a00;
+  --ui-font-scale: 1;
+  --font-size-ui: calc(12px * var(--ui-font-scale));
+  --font-size-small: calc(10px * var(--ui-font-scale));
+  --font-size-title: calc(20px * var(--ui-font-scale));
   color: var(--text-primary);
   background: var(--background-main);
   font-family:
@@ -300,6 +527,7 @@ button {
 .prototype-shell {
   min-height: 100vh;
   background: var(--background-main);
+  font-size: var(--font-size-ui);
 }
 
 .mobile-prototype {
@@ -318,7 +546,7 @@ button {
   background: var(--background-main);
   color: var(--text-primary);
   cursor: pointer;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale));
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
@@ -337,7 +565,7 @@ button {
   align-items: center;
   gap: 8px;
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: var(--font-size-small);
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1;

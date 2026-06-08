@@ -246,3 +246,62 @@ export async function createKnowledgeItem(vaultRootPath, payload) {
     newNodeId: payload.id,
   };
 }
+
+function serializeBoardForYaml(board, existingBoard = {}) {
+  const nodes = Object.fromEntries(
+    Object.entries(board.nodes || {}).map(([nodeId, box]) => [
+      nodeId,
+      {
+        x: box.x,
+        y: box.y,
+        w: box.width ?? box.w,
+        h: box.height ?? box.h,
+      },
+    ]),
+  );
+
+  return {
+    width: board.width || 2400,
+    height: board.height || 1600,
+    grid: board.grid || 32,
+    nodes,
+    ...(existingBoard.routes ? { routes: existingBoard.routes } : {}),
+  };
+}
+
+export async function saveGraphLayoutBoard(vaultRootPath, scopeId, board) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving layout.");
+  if (!scopeId) throw new Error("Cannot save layout without a scope ID.");
+  if (!board?.nodes) throw new Error("Cannot save layout without node positions.");
+
+  let graphLayoutYaml = "";
+  try {
+    graphLayoutYaml = await invoke("read_text_file", {
+      vaultRootPath,
+      relativePath: "graph-layout.yaml",
+    });
+  } catch {
+    graphLayoutYaml = "schemaVersion: 1\nboards: {}\n";
+  }
+
+  const graphLayout = YAML.parse(graphLayoutYaml) || {};
+  const boards = graphLayout.boards || {};
+  const existingBoard = boards[scopeId] || {};
+
+  const updatedLayout = {
+    ...graphLayout,
+    schemaVersion: graphLayout.schemaVersion || 1,
+    boards: {
+      ...boards,
+      [scopeId]: serializeBoardForYaml(board, existingBoard),
+    },
+  };
+
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: "graph-layout.yaml",
+    contents: YAML.stringify(updatedLayout),
+  });
+
+  return loadVaultFromPath(vaultRootPath);
+}

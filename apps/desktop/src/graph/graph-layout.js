@@ -198,10 +198,15 @@ export function getNodeLayout(id, scopeId = "graphics", size = "desktop") {
   );
 }
 
+export function getManualTracePoints(edgeId, scopeId = "graphics") {
+  const route = getActiveVault().layouts?.boards?.[scopeId]?.routes?.[edgeId];
+  return route?.points?.length ? route.points : undefined;
+}
+
 export function getTracePoints(edgeId, scopeId = "graphics", size = "desktop") {
   const activeVault = getActiveVault();
-  const route = size !== "mobile" ? activeVault.layouts?.boards?.[scopeId]?.routes?.[edgeId] : null;
-  if (route?.points?.length) return route.points;
+  const manualRoute = size !== "mobile" ? getManualTracePoints(edgeId, scopeId) : null;
+  if (manualRoute) return manualRoute;
   const routeScope = size === "mobile" ? "mobile" : scopeId;
   if (traceRoutes[routeScope]?.[edgeId]) return traceRoutes[routeScope][edgeId];
 
@@ -213,7 +218,8 @@ export function getTracePoints(edgeId, scopeId = "graphics", size = "desktop") {
   const targetBox = getNodeLayout(edge.target, scopeId, size);
   if (!sourceBox || !targetBox) return undefined;
 
-  return generateOrthogonalRoute(sourceBox, targetBox);
+  const routeIndex = Math.max(0, scope.edges.findIndex((item) => item.id === edgeId));
+  return generateOrthogonalRoute(sourceBox, targetBox, { routeIndex });
 }
 
 export function getGraphBoardSize(scopeId = "root", size = "desktop") {
