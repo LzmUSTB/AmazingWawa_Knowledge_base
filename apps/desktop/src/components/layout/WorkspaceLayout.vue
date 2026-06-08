@@ -28,6 +28,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  canSaveNote: {
+    type: Boolean,
+    default: false,
+  },
   graphScopeId: {
     type: String,
     required: true,
@@ -88,28 +92,29 @@ function fitGraphView() {
 <template>
   <div class="desktop-prototype app-frame" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
     <TopMenu
-      :sidebar-collapsed="sidebarCollapsed"
       @open-dialog="$emit('open-dialog', $event)"
       @open-vault="$emit('open-vault')"
       @show-view="$emit('show-view', $event)"
-      @toggle-sidebar="$emit('toggle-sidebar')"
     />
-    <div class="app-body">
-      <FileTree
-        v-show="!sidebarCollapsed"
-        :active-domain="currentDomain"
-        :active-note-id="currentNoteId"
-        @open-domain="$emit('open-domain', $event)"
-        @open-note="$emit('open-note', $event)"
-      />
-      <button
-        v-if="sidebarCollapsed"
-        class="sidebar-restore hud-button"
-        style="--button-color: var(--graphics)"
-        @click="$emit('toggle-sidebar')"
-      >
-        Vault
-      </button>
+    <div class="app-body" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
+      <aside class="sidebar-region">
+        <FileTree
+          v-if="!sidebarCollapsed"
+          :active-domain="currentDomain"
+          :active-note-id="currentNoteId"
+          @open-domain="$emit('open-domain', $event)"
+          @open-note="$emit('open-note', $event)"
+          @toggle-sidebar="$emit('toggle-sidebar')"
+        />
+        <button
+          v-else
+          class="sidebar-rail-button hud-button"
+          style="--button-color: var(--graphics)"
+          @click="$emit('toggle-sidebar')"
+        >
+          Vault
+        </button>
+      </aside>
 
       <main class="workspace">
         <BreadcrumbBar
@@ -146,6 +151,7 @@ function fitGraphView() {
 
         <NoteView
           v-else
+          :can-save-note="canSaveNote"
           :mode="noteMode"
           :note-id="currentNoteId"
           :saving="noteSaving"
@@ -174,6 +180,7 @@ function fitGraphView() {
 
 <style scoped>
 .app-frame {
+  --sidebar-width: 260px;
   display: grid;
   grid-template-rows: 44px 1fr;
   width: 100vw;
@@ -183,8 +190,11 @@ function fitGraphView() {
   background: var(--background-main);
 }
 
+.app-frame.is-sidebar-collapsed {
+  --sidebar-width: 44px;
+}
+
 .app-body {
-  position: relative;
   display: grid;
   grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr);
   min-width: 0;
@@ -192,11 +202,21 @@ function fitGraphView() {
   overflow: hidden;
 }
 
-.app-frame.is-sidebar-collapsed {
-  --sidebar-width: 0px;
+.app-body.is-sidebar-collapsed {
+  --sidebar-width: 44px;
+}
+
+.sidebar-region {
+  grid-column: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--border-primary);
+  background: var(--background-main);
 }
 
 .workspace {
+  grid-column: 2;
   display: flex;
   min-width: 0;
   min-height: 0;
@@ -204,11 +224,14 @@ function fitGraphView() {
   flex-direction: column;
 }
 
-.sidebar-restore {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  z-index: 4;
+.sidebar-rail-button {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 0;
   writing-mode: vertical-rl;
 }
 

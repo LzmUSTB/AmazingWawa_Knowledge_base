@@ -14,14 +14,19 @@ defineProps({
   },
 });
 
-defineEmits(["open-domain", "open-note"]);
+defineEmits(["open-domain", "open-note", "toggle-sidebar"]);
 
 const fileTree = computed(() => getActiveVault().fileTree);
 </script>
 
 <template>
   <aside class="file-tree">
-    <div class="panel-label">Vault Source</div>
+    <header class="tree-header">
+      <div class="panel-label">Vault Source</div>
+      <button class="sidebar-toggle hud-button" title="Hide vault sidebar" @click="$emit('toggle-sidebar')">
+        &lt;
+      </button>
+    </header>
     <button class="tree-root" @click="$emit('open-domain', activeDomain)">vault/</button>
 
     <div class="tree-list">
@@ -70,12 +75,25 @@ const fileTree = computed(() => getActiveVault().fileTree);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-right: 1px solid var(--border-primary);
   background: var(--background-main);
 }
 
 .panel-label {
-  margin: 18px 16px 0;
+  margin: 0;
+}
+
+.tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 18px 10px 0 16px;
+}
+
+.sidebar-toggle {
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
 }
 
 .tree-root,

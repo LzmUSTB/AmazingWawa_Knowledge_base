@@ -36,35 +36,25 @@ const graphCrumbs = computed(() => scope.value.breadcrumb);
     <span class="crumb-dot"></span>
     <template v-if="currentView === 'graph'">
       <template v-for="(crumb, index) in graphCrumbs" :key="crumb">
-        <button
-          v-if="index === 0"
-          @click="$emit('show-graph', 'root')"
-        >
+        <button v-if="index === 0" @click="$emit('show-graph', 'root')">
           {{ crumb }}
         </button>
-        <button
-          v-else
-          @click="$emit('open-domain', currentDomain)"
-        >
+        <button v-else @click="$emit('open-domain', currentDomain)">
           {{ crumb }}
         </button>
         <span v-if="index < graphCrumbs.length - 1">/</span>
       </template>
     </template>
     <template v-else>
-      <button @click="$emit('show-graph', 'root')">Global Graph</button>
+      <button class="bread-button" @click="$emit('show-graph', 'root')">Global Graph</button>
       <span>/</span>
-      <button @click="$emit('open-domain', currentDomain)">{{ currentDomain }}</button>
+      <button class="bread-button" @click="$emit('open-domain', currentDomain)">{{ currentDomain }}</button>
       <template v-if="currentNode">
         <span>/</span>
-        <button>{{ currentNode.title }}</button>
+        <button class="bread-button">{{ currentNode.title }}</button>
       </template>
     </template>
-    <button
-      v-if="currentView === 'note'"
-      class="show-graph"
-      @click="$emit('show-graph', currentNoteId, currentNoteId)"
-    >
+    <button v-if="currentView === 'note'" class="show-graph" @click="$emit('show-graph', currentNoteId, currentNoteId)">
       Show in Graph
     </button>
   </div>
@@ -101,7 +91,7 @@ button {
   text-transform: inherit;
 }
 
-button:hover {
+.bread-button:hover {
   color: var(--text-primary);
   text-decoration: underline;
   text-decoration-color: var(--crumb-color);

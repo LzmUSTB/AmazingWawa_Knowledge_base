@@ -53,7 +53,20 @@ export async function loadInitialVault() {
     }
   }
 
-  return loadStaticFallback(lastVaultPath ? "last vault path failed" : "no last vault path");
+  if (isTauri()) {
+    try {
+      const defaultVaultPath = await invoke("resolve_default_vault_root");
+      if (defaultVaultPath) return await loadVaultFromPath(defaultVaultPath);
+    } catch (error) {
+      console.warn("[vault] Failed to load default development vault.", error);
+    }
+  }
+
+  return loadStaticFallback(
+    lastVaultPath
+      ? "last vault path and default development vault failed"
+      : "no last vault path and default development vault unavailable",
+  );
 }
 
 export function getNoteRelativePath(node) {

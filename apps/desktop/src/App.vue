@@ -36,6 +36,7 @@ const sidebarCollapsed = ref(
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
 );
+const canSaveNote = computed(() => Boolean(activeVaultRootPath.value));
 
 onMounted(async () => {
   try {
@@ -154,14 +155,24 @@ async function openVault() {
     if (!vaultRoot) return;
     const vault = await loadVaultFromPath(vaultRoot);
     applyVault(vault, { reset: true });
+    console.log("[vault] Opened desktop vault:", vaultRoot);
   } catch (error) {
     console.error("[vault] Failed to open vault.", error);
-    window.alert(`Failed to open vault: ${error}`);
+    const message = String(error);
+    window.alert(
+      message.includes("missing vault.yaml")
+        ? "Please select the vault folder that contains vault.yaml."
+        : `Failed to open vault: ${message}`,
+    );
   }
 }
 
 async function saveNote({ node, markdown }) {
   if (!node || noteSaving.value) return;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before saving.");
+    return;
+  }
   noteSaving.value = true;
 
   try {
@@ -189,42 +200,17 @@ function toggleSidebar() {
 
 <template>
   <div class="prototype-shell">
-    <WorkspaceLayout
-      :active-dialog="activeDialog"
-      :current-domain="currentDomain"
-      :current-note-id="currentNoteId"
-      :current-view="currentView"
-      :graph-scope-id="graphScopeId"
-      :note-mode="noteMode"
-      :note-saving="noteSaving"
-      :selected-node-id="selectedNodeId"
-      :sidebar-collapsed="sidebarCollapsed"
-      @close-dialog="activeDialog = ''"
-      @open-dialog="openDialog"
-      @open-domain="openDomain"
-      @open-note="openNote"
-      @open-scope="openScope"
-      @open-vault="openVault"
-      @save-note="saveNote"
-      @select-node="selectedNodeId = $event"
-      @set-note-dirty="noteDirty = $event"
-      @set-note-mode="setNoteMode"
-      @show-graph="showGraph"
-      @show-view="showView"
-      @toggle-sidebar="toggleSidebar"
-    />
+    <WorkspaceLayout :active-dialog="activeDialog" :can-save-note="canSaveNote" :current-domain="currentDomain"
+      :current-note-id="currentNoteId" :current-view="currentView" :graph-scope-id="graphScopeId" :note-mode="noteMode"
+      :note-saving="noteSaving" :selected-node-id="selectedNodeId" :sidebar-collapsed="sidebarCollapsed"
+      @close-dialog="activeDialog = ''" @open-dialog="openDialog" @open-domain="openDomain" @open-note="openNote"
+      @open-scope="openScope" @open-vault="openVault" @save-note="saveNote" @select-node="selectedNodeId = $event"
+      @set-note-dirty="noteDirty = $event" @set-note-mode="setNoteMode" @show-graph="showGraph" @show-view="showView"
+      @toggle-sidebar="toggleSidebar" />
 
     <div class="mobile-prototype">
-      <MobileNoteView
-        v-if="currentView !== 'graph'"
-        :node="selectedNode"
-        @show-graph="currentView = 'graph'"
-      />
-      <MobileLocalGraphView
-        v-else
-        :selected-node-id="selectedNodeId"
-        @open-note="openNote"
-      />
+      <MobileNoteView v-if="currentView !== 'graph'" :node="selectedNode" @show-graph="currentView = 'graph'" />
+      <MobileLocalGraphView v-else :selected-node-id="selectedNodeId" @open-note="openNote" />
     </div>
   </div>
 </template>
@@ -444,5 +430,88 @@ button {
     display: block;
     min-height: 100vh;
   }
+}
+
+/* =========================================================
+   Global Scrollbar
+   Hard-edged technical UI style
+   ========================================================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-muted) var(--background-main);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-main);
+  border-left: 1px solid rgba(237, 237, 237, 0.16);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--background-elevated);
+  border: 1px solid var(--border-muted);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-muted);
+  border-color: var(--border-primary);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--text-secondary);
+  border-color: var(--border-primary);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--background-main);
+}
+
+/* Horizontal scrollbar for toolbars or code-like areas */
+.top-actions::-webkit-scrollbar,
+.note-toolbar::-webkit-scrollbar,
+.graph-toolbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.top-actions::-webkit-scrollbar-track,
+.note-toolbar::-webkit-scrollbar-track,
+.graph-toolbar::-webkit-scrollbar-track {
+  background: var(--background-panel);
+  border-top: 1px solid rgba(237, 237, 237, 0.16);
+}
+
+.top-actions::-webkit-scrollbar-thumb,
+.note-toolbar::-webkit-scrollbar-thumb,
+.graph-toolbar::-webkit-scrollbar-thumb {
+  background: var(--background-elevated);
+  border: 1px solid var(--border-muted);
+}
+
+/* Dense scroll areas */
+.tree-list::-webkit-scrollbar,
+.note-content::-webkit-scrollbar,
+.graph-viewport::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.tree-list::-webkit-scrollbar-thumb,
+.note-content::-webkit-scrollbar-thumb,
+.graph-viewport::-webkit-scrollbar-thumb {
+  background: #181818;
+  border: 1px solid #555555;
+}
+
+.tree-list::-webkit-scrollbar-thumb:hover,
+.note-content::-webkit-scrollbar-thumb:hover,
+.graph-viewport::-webkit-scrollbar-thumb:hover {
+  background: #2a2a2a;
+  border-color: var(--border-primary);
 }
 </style>

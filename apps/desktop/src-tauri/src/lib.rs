@@ -38,6 +38,20 @@ fn read_required(root: &Path, relative_path: &str) -> Result<String, String> {
         .map_err(|error| format!("Failed to read {relative_path}: {error}"))
 }
 
+fn looks_like_vault(path: &Path) -> bool {
+    path.join("vault.yaml").is_file()
+        && path.join("domains.yaml").is_file()
+        && path.join("graph.yaml").is_file()
+        && path.join("content").is_dir()
+}
+
+fn push_vault_candidates(base: &Path, candidates: &mut Vec<PathBuf>) {
+    candidates.push(base.join("vault"));
+    candidates.push(base.join("..").join("vault"));
+    candidates.push(base.join("..").join("..").join("vault"));
+    candidates.push(base.join("..").join("..").join("..").join("vault"));
+}
+
 fn read_content_files(
     root: &Path,
     current: &Path,
@@ -131,6 +145,33 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
 }
 
 #[tauri::command]
+fn resolve_default_vault_root() -> Result<Option<String>, String> {
+    let mut candidates = Vec::new();
+
+    if let Ok(env_path) = std::env::var("AMAZINGWAWA_DEFAULT_VAULT") {
+        candidates.push(PathBuf::from(env_path));
+    }
+
+    if let Ok(current_dir) = std::env::current_dir() {
+        push_vault_candidates(&current_dir, &mut candidates);
+    }
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    push_vault_candidates(&manifest_dir, &mut candidates);
+
+    for candidate in candidates {
+        let normalized_candidate = candidate
+            .canonicalize()
+            .unwrap_or(candidate.clone());
+        if looks_like_vault(&normalized_candidate) {
+            return Ok(Some(normalized_candidate.to_string_lossy().to_string()));
+        }
+    }
+
+    Ok(None)
+}
+
+#[tauri::command]
 fn write_text_file(
     vault_root_path: String,
     relative_path: String,
@@ -148,6 +189,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             choose_vault_root,
             read_vault_files,
+            resolve_default_vault_root,
             write_text_file
         ])
         .run(tauri::generate_context!())

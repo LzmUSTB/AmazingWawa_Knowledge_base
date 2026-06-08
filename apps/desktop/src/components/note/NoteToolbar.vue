@@ -1,5 +1,9 @@
 <script setup>
 defineProps({
+  canSaveNote: {
+    type: Boolean,
+    default: false,
+  },
   dirty: {
     type: Boolean,
     default: false,
@@ -30,12 +34,13 @@ defineEmits(["cancel-edit", "edit", "save", "set-mode", "show-graph"]);
     >
       Edit
     </button>
-    <button class="hud-button" :disabled="!dirty || saving" @click="$emit('save')">Save</button>
-    <button class="hud-button" :disabled="mode !== 'edit'" @click="$emit('cancel-edit')">Cancel</button>
-    <button class="hud-button" style="--button-color: var(--simulation)" @click="$emit('show-graph')">
-      Show in Graph
+    <button class="hud-button" :disabled="!canSaveNote || !dirty || saving" @click="$emit('save')">
+      Save
     </button>
-    <div class="note-meta">note.md rendered / meta.yaml summarized</div>
+    <button class="hud-button" :disabled="mode !== 'edit'" @click="$emit('cancel-edit')">Cancel</button>
+    <div class="note-meta">
+      {{ canSaveNote ? "desktop vault / writable" : "static sample / read only" }}
+    </div>
   </div>
 </template>
 

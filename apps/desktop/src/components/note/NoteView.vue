@@ -10,6 +10,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  canSaveNote: {
+    type: Boolean,
+    default: false,
+  },
   mode: {
     type: String,
     required: true,
@@ -80,6 +84,10 @@ function cancelEdit() {
 
 function saveNote() {
   if (!dirty.value || props.saving) return;
+  if (!props.canSaveNote) {
+    window.alert("Open a desktop vault folder before saving.");
+    return;
+  }
   emit("save-note", {
     node: node.value,
     markdown: draftMarkdown.value,
@@ -90,6 +98,7 @@ function saveNote() {
 <template>
   <section class="note-view">
     <NoteToolbar
+      :can-save-note="canSaveNote"
       :dirty="dirty"
       :mode="mode"
       :saving="saving"

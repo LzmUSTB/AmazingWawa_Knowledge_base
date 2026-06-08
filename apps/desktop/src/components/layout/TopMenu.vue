@@ -1,21 +1,11 @@
 <script setup>
-defineProps({
-  sidebarCollapsed: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-defineEmits(["open-dialog", "open-vault", "show-view", "toggle-sidebar"]);
+defineEmits(["open-dialog", "open-vault", "show-view"]);
 </script>
 
 <template>
   <header class="top-menu">
     <div class="app-mark">AMAZINGWAWA KNOWLEDGE BASE</div>
     <nav class="top-actions" aria-label="Application actions">
-      <button class="hud-button" style="--button-color: var(--simulation)" @click="$emit('toggle-sidebar')">
-        {{ sidebarCollapsed ? "Show Vault" : "Hide Vault" }}
-      </button>
       <button class="hud-button" @click="$emit('open-vault')">Open Vault</button>
       <button
         class="hud-button"
@@ -35,14 +25,13 @@ defineEmits(["open-dialog", "open-vault", "show-view", "toggle-sidebar"]);
       <button class="hud-button">Git</button>
       <button class="hud-button">Settings</button>
     </nav>
-    <div class="vault-route">vault/content / graph.yaml / domains.yaml</div>
   </header>
 </template>
 
 <style scoped>
 .top-menu {
   display: grid;
-  grid-template-columns: minmax(160px, 292px) minmax(0, 1fr) minmax(120px, 360px);
+  grid-template-columns: minmax(160px, 292px) minmax(0, 1fr);
   align-items: center;
   height: 44px;
   min-width: 0;
@@ -70,18 +59,6 @@ defineEmits(["open-dialog", "open-vault", "show-view", "toggle-sidebar"]);
   min-width: 0;
   overflow-x: auto;
   padding-block: 4px;
-}
-
-.vault-route {
-  overflow: hidden;
-  padding-right: 18px;
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
-  text-align: right;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 @media (max-width: 920px) {
