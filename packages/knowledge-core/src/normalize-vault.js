@@ -70,7 +70,7 @@ function normalizeLayoutBox(box = {}) {
   };
 }
 
-function normalizeBoard(board = {}) {
+function normalizeBoard(board = {}, source = "manual") {
   const nodes = Object.fromEntries(
     Object.entries(board.nodes || {}).map(([id, box]) => [id, normalizeLayoutBox(box)]),
   );
@@ -89,6 +89,7 @@ function normalizeBoard(board = {}) {
     width: board.width || DEFAULT_BOARD_SIZE.width,
     height: board.height || DEFAULT_BOARD_SIZE.height,
     grid: board.grid || DEFAULT_BOARD_SIZE.grid,
+    source: board.source || source,
     nodes,
     routes,
   };
@@ -113,14 +114,19 @@ function ensureScopeBoards(layouts, scopes) {
   const boards = { ...layouts.boards };
 
   Object.values(scopes).forEach((scope) => {
+    const hasManualBoard = Boolean(boards[scope.id]);
     const board = boards[scope.id] || { ...DEFAULT_BOARD_SIZE, nodes: {}, routes: {} };
-    const nextBoard = normalizeBoard(board);
+    const nextBoard = normalizeBoard(board, hasManualBoard ? "manual" : "generated");
 
     scope.nodes.forEach((node, index) => {
       if (!nextBoard.nodes[node.id]) {
         nextBoard.nodes[node.id] = buildFallbackBox(index, scope.nodes.length, nextBoard);
       }
     });
+
+    nextBoard.missingRouteEdgeIds = scope.edges
+      .filter((edge) => !nextBoard.routes[edge.id])
+      .map((edge) => edge.id);
 
     boards[scope.id] = nextBoard;
   });
@@ -133,7 +139,7 @@ function normalizeLayouts(layoutYaml = {}) {
 
   return {
     boards: Object.fromEntries(
-      Object.entries(boards).map(([scopeId, board]) => [scopeId, normalizeBoard(board)]),
+      Object.entries(boards).map(([scopeId, board]) => [scopeId, normalizeBoard(board, "manual")]),
     ),
   };
 }

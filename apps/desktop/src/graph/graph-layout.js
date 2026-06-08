@@ -1,4 +1,5 @@
 import { getActiveVault } from "./graph-data-store.js";
+import { generateOrthogonalRoute } from "./graph-route-generator.js";
 
 export const graphBoardSize = {
   desktop: { width: 2400, height: 1600 },
@@ -198,10 +199,21 @@ export function getNodeLayout(id, scopeId = "graphics", size = "desktop") {
 }
 
 export function getTracePoints(edgeId, scopeId = "graphics", size = "desktop") {
-  const route = size !== "mobile" ? getActiveVault().layouts?.boards?.[scopeId]?.routes?.[edgeId] : null;
+  const activeVault = getActiveVault();
+  const route = size !== "mobile" ? activeVault.layouts?.boards?.[scopeId]?.routes?.[edgeId] : null;
   if (route?.points?.length) return route.points;
   const routeScope = size === "mobile" ? "mobile" : scopeId;
-  return traceRoutes[routeScope]?.[edgeId];
+  if (traceRoutes[routeScope]?.[edgeId]) return traceRoutes[routeScope][edgeId];
+
+  const scope = activeVault.scopes?.[scopeId];
+  const edge = scope?.edges?.find((item) => item.id === edgeId);
+  if (!edge) return undefined;
+
+  const sourceBox = getNodeLayout(edge.source, scopeId, size);
+  const targetBox = getNodeLayout(edge.target, scopeId, size);
+  if (!sourceBox || !targetBox) return undefined;
+
+  return generateOrthogonalRoute(sourceBox, targetBox);
 }
 
 export function getGraphBoardSize(scopeId = "root", size = "desktop") {
@@ -210,6 +222,12 @@ export function getGraphBoardSize(scopeId = "root", size = "desktop") {
   return board
     ? { width: board.width || graphBoardSize.desktop.width, height: board.height || graphBoardSize.desktop.height }
     : graphBoardSize.desktop;
+}
+
+export function getScopeLayoutMode(scopeId = "root") {
+  const board = getActiveVault().layouts?.boards?.[scopeId];
+  if (!board || board.source === "generated") return "generated-board";
+  return board.missingRouteEdgeIds?.length ? "mixed-board" : "manual-board";
 }
 
 function getGeneratedLayout(id, scopeId, board) {

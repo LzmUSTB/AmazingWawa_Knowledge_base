@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import NoteEditor from "./NoteEditor.vue";
 import NoteToolbar from "./NoteToolbar.vue";
 import { findGraphNode, getActiveVault, getGraphNodes } from "../../graph/graph-data-store.js";
@@ -14,13 +14,19 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  saving: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-defineEmits(["set-mode", "show-graph"]);
+const emit = defineEmits(["dirty-change", "save-note", "set-mode", "show-graph"]);
 
 const node = computed(() => findGraphNode(props.noteId) || getGraphNodes()[0]);
 const accent = computed(() => getDomainColor(node.value.domain));
 const noteMarkdown = computed(() => getActiveVault().notes[props.noteId]?.markdown || "");
+const draftMarkdown = ref(noteMarkdown.value);
+const dirty = computed(() => draftMarkdown.value !== noteMarkdown.value);
 const noteBlocks = computed(() => {
   if (!noteMarkdown.value) {
     return [
@@ -45,12 +51,51 @@ const noteBlocks = computed(() => {
     })
     .filter((block) => block.body || block.label);
 });
+
+watch(noteMarkdown, (nextMarkdown) => {
+  if (props.mode !== "edit") draftMarkdown.value = nextMarkdown;
+});
+
+watch(
+  () => props.noteId,
+  () => {
+    draftMarkdown.value = noteMarkdown.value;
+    emit("dirty-change", false);
+  },
+);
+
+watch(dirty, (nextDirty) => emit("dirty-change", nextDirty), { immediate: true });
+
+function startEdit() {
+  draftMarkdown.value = noteMarkdown.value;
+  emit("set-mode", "edit");
+}
+
+function cancelEdit() {
+  if (dirty.value && !window.confirm("Discard unsaved note changes?")) return;
+  draftMarkdown.value = noteMarkdown.value;
+  emit("dirty-change", false);
+  emit("set-mode", "read");
+}
+
+function saveNote() {
+  if (!dirty.value || props.saving) return;
+  emit("save-note", {
+    node: node.value,
+    markdown: draftMarkdown.value,
+  });
+}
 </script>
 
 <template>
   <section class="note-view">
     <NoteToolbar
+      :dirty="dirty"
       :mode="mode"
+      :saving="saving"
+      @cancel-edit="cancelEdit"
+      @edit="startEdit"
+      @save="saveNote"
       @set-mode="$emit('set-mode', $event)"
       @show-graph="$emit('show-graph')"
     />
@@ -69,7 +114,7 @@ const noteBlocks = computed(() => {
           </div>
         </header>
 
-        <NoteEditor v-if="mode === 'edit'" />
+        <NoteEditor v-if="mode === 'edit'" v-model="draftMarkdown" />
 
         <div v-else class="read-surface">
           <section v-for="section in noteBlocks" :key="section.label" class="note-block">
@@ -93,21 +138,28 @@ const noteBlocks = computed(() => {
 .note-view {
   display: flex;
   flex: 1;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   flex-direction: column;
 }
 
 .note-content {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
 }
 
 .note-shell {
-  max-width: 920px;
-  min-height: calc(100% - 64px);
-  margin: 32px auto;
-  border: 1px solid var(--border-primary);
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  margin: 0;
+  border-left: 1px solid var(--border-primary);
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
   background: var(--background-main);
 }
 
@@ -154,10 +206,15 @@ h1 {
 .read-surface {
   display: grid;
   gap: 24px;
-  padding: 32px;
+  width: 100%;
+  min-width: 0;
+  padding: clamp(16px, 3vw, 32px);
 }
 
 .note-block {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   border: 1px solid var(--border-muted);
   background: var(--background-panel);
   padding: 20px;
@@ -172,10 +229,14 @@ h1 {
 
 pre {
   overflow: auto;
+  max-width: 100%;
   margin: 14px 0 0;
   color: var(--text-secondary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

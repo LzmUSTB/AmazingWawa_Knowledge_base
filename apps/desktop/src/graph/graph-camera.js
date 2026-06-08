@@ -1,5 +1,5 @@
 export const GRAPH_CAMERA_LIMITS = {
-  minZoom: 0.35,
+  minZoom: 0.2,
   maxZoom: 2.2,
 };
 

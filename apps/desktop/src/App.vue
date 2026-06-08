@@ -1,29 +1,96 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
+import {
+  chooseVaultRoot,
+  loadInitialVault,
+  loadVaultFromPath,
+  writeNoteMarkdown,
+} from "./data/desktop-vault-adapter.js";
 import { loadStaticVault } from "./data/static-vault-loader.js";
 import { findGraphNode, getGraphNodes, setActiveVault } from "./graph/graph-data-store.js";
 import { getGraphScope, scopeForDomain } from "./graph/graph-scope.js";
 
-const normalizedVault = loadStaticVault();
-setActiveVault(normalizedVault);
+const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
+const savedSidebarPreference = localStorage.getItem(SIDEBAR_KEY);
+const initialVault = { ...loadStaticVault(), vaultRootPath: "", source: "static" };
+setActiveVault(initialVault);
 
 const currentView = ref("graph");
-const currentDomain = ref(normalizedVault.vault.defaultDomain || normalizedVault.domains[0]?.id || "root");
-const firstConcept = normalizedVault.nodes.find((node) => node.type !== "domain");
+const currentDomain = ref(initialVault.vault.defaultDomain || initialVault.domains[0]?.id || "root");
+const firstConcept = initialVault.nodes.find((node) => node.type !== "domain");
 const currentNoteId = ref(firstConcept?.id || currentDomain.value);
 const selectedNodeId = ref(currentDomain.value);
 const graphScopeId = ref("root");
 const noteMode = ref("read");
 const activeDialog = ref("");
+const activeVaultRootPath = ref("");
+const noteDirty = ref(false);
+const noteSaving = ref(false);
+const sidebarCollapsed = ref(
+  savedSidebarPreference === null ? window.innerWidth < 1000 : savedSidebarPreference === "true",
+);
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
 );
 
+onMounted(async () => {
+  try {
+    const vault = await loadInitialVault();
+    applyVault(vault, { reset: true });
+  } catch (error) {
+    console.warn("[vault] Initial vault load failed; keeping static fallback.", error);
+  }
+});
+
+function applyVault(vault, { reset = false } = {}) {
+  setActiveVault(vault);
+  activeVaultRootPath.value = vault.vaultRootPath || "";
+
+  if (reset) {
+    resetNavigationForVault(vault);
+    return;
+  }
+
+  if (!findGraphNode(selectedNodeId.value)) {
+    graphScopeId.value = "root";
+    selectedNodeId.value = getGraphScope("root").selectedNodeId;
+  }
+  if (!findGraphNode(currentNoteId.value)) {
+    currentNoteId.value = getGraphNodes().find((node) => node.type !== "domain")?.id || selectedNodeId.value;
+  }
+  if (!getGraphScope(graphScopeId.value)?.id) {
+    graphScopeId.value = "root";
+  }
+}
+
+function resetNavigationForVault(vault) {
+  const defaultDomain = vault.vault.defaultDomain || vault.domains[0]?.id || "root";
+  const rootScope = getGraphScope("root");
+  currentDomain.value = defaultDomain;
+  currentNoteId.value = vault.nodes.find((node) => node.type !== "domain")?.id || defaultDomain;
+  selectedNodeId.value = rootScope.selectedNodeId || defaultDomain;
+  graphScopeId.value = "root";
+  currentView.value = "graph";
+  noteMode.value = "read";
+  noteDirty.value = false;
+}
+
+function confirmDiscardDirty() {
+  if (!noteDirty.value) return true;
+  const confirmed = window.confirm("Discard unsaved note changes?");
+  if (confirmed) {
+    noteDirty.value = false;
+    noteMode.value = "read";
+  }
+  return confirmed;
+}
+
 function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) {
+  if (!confirmDiscardDirty()) return;
   graphScopeId.value = scopeId || "root";
   const scope = getGraphScope(graphScopeId.value);
   if (scope.type === "domain") currentDomain.value = scope.id;
@@ -33,6 +100,7 @@ function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) 
 }
 
 function openNote(nodeId) {
+  if (!confirmDiscardDirty()) return;
   const node = findGraphNode(nodeId);
   if (node) {
     currentDomain.value = node.domain;
@@ -44,6 +112,7 @@ function openNote(nodeId) {
 }
 
 function openDomain(domain) {
+  if (!confirmDiscardDirty()) return;
   currentDomain.value = domain;
   selectedNodeId.value = domain;
   graphScopeId.value = scopeForDomain(domain);
@@ -51,6 +120,7 @@ function openDomain(domain) {
 }
 
 function openScope(scopeId, selectedId = scopeId) {
+  if (!confirmDiscardDirty()) return;
   graphScopeId.value = scopeId;
   selectedNodeId.value = selectedId;
   const scope = getGraphScope(scopeId);
@@ -61,6 +131,59 @@ function openScope(scopeId, selectedId = scopeId) {
 
 function openDialog(dialogName) {
   activeDialog.value = dialogName;
+}
+
+function setNoteMode(mode) {
+  if (noteMode.value === "edit" && mode !== "edit" && !confirmDiscardDirty()) return;
+  noteMode.value = mode;
+}
+
+function showView(viewName) {
+  if (viewName === "graph") {
+    showGraph(graphScopeId.value, selectedNodeId.value);
+    return;
+  }
+  if (!confirmDiscardDirty()) return;
+  currentView.value = viewName;
+}
+
+async function openVault() {
+  if (!confirmDiscardDirty()) return;
+  try {
+    const vaultRoot = await chooseVaultRoot();
+    if (!vaultRoot) return;
+    const vault = await loadVaultFromPath(vaultRoot);
+    applyVault(vault, { reset: true });
+  } catch (error) {
+    console.error("[vault] Failed to open vault.", error);
+    window.alert(`Failed to open vault: ${error}`);
+  }
+}
+
+async function saveNote({ node, markdown }) {
+  if (!node || noteSaving.value) return;
+  noteSaving.value = true;
+
+  try {
+    await writeNoteMarkdown(activeVaultRootPath.value, node, markdown);
+    const updatedVault = await loadVaultFromPath(activeVaultRootPath.value);
+    applyVault(updatedVault, { reset: false });
+    currentNoteId.value = node.id;
+    selectedNodeId.value = node.id;
+    currentDomain.value = node.domain;
+    noteDirty.value = false;
+    noteMode.value = "read";
+  } catch (error) {
+    console.error("[vault] Failed to save note.md.", error);
+    window.alert(`Failed to save note.md: ${error}`);
+  } finally {
+    noteSaving.value = false;
+  }
+}
+
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+  localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed.value));
 }
 </script>
 
@@ -73,16 +196,22 @@ function openDialog(dialogName) {
       :current-view="currentView"
       :graph-scope-id="graphScopeId"
       :note-mode="noteMode"
+      :note-saving="noteSaving"
       :selected-node-id="selectedNodeId"
+      :sidebar-collapsed="sidebarCollapsed"
       @close-dialog="activeDialog = ''"
       @open-dialog="openDialog"
       @open-domain="openDomain"
       @open-note="openNote"
       @open-scope="openScope"
+      @open-vault="openVault"
+      @save-note="saveNote"
       @select-node="selectedNodeId = $event"
-      @set-note-mode="noteMode = $event"
+      @set-note-dirty="noteDirty = $event"
+      @set-note-mode="setNoteMode"
       @show-graph="showGraph"
-      @show-view="currentView = $event"
+      @show-view="showView"
+      @toggle-sidebar="toggleSidebar"
     />
 
     <div class="mobile-prototype">

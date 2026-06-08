@@ -16,6 +16,19 @@ Git = version history
 ChatGPT / Codex = assisted maintenance
 ```
 
+## 1.1 Desktop Maintenance MVP Update
+
+```txt
+desktop-vault-adapter.js = desktop file access boundary
+static-vault-loader.js = repository sample fallback
+note.md save = real disk write
+New Note / New Link = still non-writing placeholders
+```
+
+The desktop app may write `vault/content/<domain>/<id>/note.md` during Edit mode Save.
+
+The desktop app must not write `graph.yaml` or `graph-layout.yaml` in this stage.
+
 ## 2. Core Principles
 
 The vault must satisfy these requirements:

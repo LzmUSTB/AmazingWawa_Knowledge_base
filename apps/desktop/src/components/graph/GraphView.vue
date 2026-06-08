@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import NodeContextMenu from "./NodeContextMenu.vue";
 import {
   clamp,
@@ -36,8 +36,15 @@ const hoveredNodeId = ref("");
 const isPanning = ref(false);
 const panStart = ref({ pointerId: 0, x: 0, y: 0, cameraX: 0, cameraY: 0 });
 const camera = ref({ x: 0, y: 0, zoom: 1 });
+let resizeObserver;
+let resizeFitTimer = 0;
 const currentScope = computed(() => getGraphScope(props.scopeId));
 const board = computed(() => getGraphBoardSize(currentScope.value.id));
+const scopeLabel = computed(() => {
+  if (currentScope.value.type === "root") return "ROOT / DOMAIN LEVEL ONLY";
+  if (currentScope.value.type === "domain") return "DOMAIN / DIRECT CHILDREN ONLY";
+  return "FOCUS / ONE-HOP RELATIONS";
+});
 const focusNodeId = computed(() => hoveredNodeId.value || props.selectedNodeId);
 const connectedIds = computed(() => getConnectedNodeIds(focusNodeId.value, currentScope.value.edges));
 const selectedNode = computed(
@@ -90,6 +97,13 @@ function fitCurrentScope() {
   });
 }
 
+function scheduleFitCurrentScope(delay = 150) {
+  window.clearTimeout(resizeFitTimer);
+  resizeFitTimer = window.setTimeout(() => {
+    if (!isPanning.value) fitCurrentScope();
+  }, delay);
+}
+
 function handlePointerDown(event) {
   if (isInteractiveTarget(event)) return;
   isPanning.value = true;
@@ -137,6 +151,17 @@ function handleWheel(event) {
 
 onMounted(() => {
   nextTick(fitCurrentScope);
+  requestAnimationFrame(() => requestAnimationFrame(fitCurrentScope));
+  window.setTimeout(fitCurrentScope, 250);
+  if (viewportRef.value) {
+    resizeObserver = new ResizeObserver(() => scheduleFitCurrentScope());
+    resizeObserver.observe(viewportRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  window.clearTimeout(resizeFitTimer);
+  resizeObserver?.disconnect();
 });
 
 watch(
@@ -144,7 +169,7 @@ watch(
   () => nextTick(fitCurrentScope),
 );
 
-defineExpose({ fitCurrentScope });
+defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 </script>
 
 <template>
@@ -245,7 +270,7 @@ defineExpose({ fitCurrentScope });
     </div>
 
     <div class="routing-label routing-label--a">
-      SCOPE: {{ currentScope.type }} / SAME-LEVEL ONLY
+      {{ scopeLabel }}
     </div>
     <div class="routing-label routing-label--b">PORT ROUTED / STATIC BOARD</div>
 

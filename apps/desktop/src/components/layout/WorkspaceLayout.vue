@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import NewLinkDialog from "../dialogs/NewLinkDialog.vue";
 import NewNoteDialog from "../dialogs/NewNoteDialog.vue";
 import GraphToolbar from "../graph/GraphToolbar.vue";
@@ -8,8 +8,10 @@ import BreadcrumbBar from "../navigation/BreadcrumbBar.vue";
 import NoteView from "../note/NoteView.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
+import { getScopeLayoutMode } from "../../graph/graph-layout.js";
+import { getGraphScope } from "../../graph/graph-scope.js";
 
-defineProps({
+const props = defineProps({
   activeDialog: {
     type: String,
     required: true,
@@ -34,9 +36,17 @@ defineProps({
     type: String,
     required: true,
   },
+  noteSaving: {
+    type: Boolean,
+    default: false,
+  },
   selectedNodeId: {
     type: String,
     required: true,
+  },
+  sidebarCollapsed: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -45,17 +55,29 @@ const emit = defineEmits([
   "open-dialog",
   "open-domain",
   "open-note",
+  "open-vault",
   "open-scope",
+  "save-note",
   "select-node",
+  "set-note-dirty",
   "set-note-mode",
   "show-graph",
   "show-view",
+  "toggle-sidebar",
 ]);
 
 const graphViewRef = ref(null);
+const currentScope = computed(() => getGraphScope(props.graphScopeId));
+const localDisabled = computed(() => !props.selectedNodeId);
+const layoutMode = computed(() => getScopeLayoutMode(currentScope.value.id));
 
 function openLocalGraph(nodeId) {
   emit("open-scope", nodeId, nodeId);
+}
+
+function openSelectedLocalGraph() {
+  if (!props.selectedNodeId) return;
+  emit("open-scope", props.selectedNodeId, props.selectedNodeId);
 }
 
 function fitGraphView() {
@@ -64,15 +86,30 @@ function fitGraphView() {
 </script>
 
 <template>
-  <div class="desktop-prototype app-frame">
-    <TopMenu @open-dialog="$emit('open-dialog', $event)" @show-view="$emit('show-view', $event)" />
+  <div class="desktop-prototype app-frame" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
+    <TopMenu
+      :sidebar-collapsed="sidebarCollapsed"
+      @open-dialog="$emit('open-dialog', $event)"
+      @open-vault="$emit('open-vault')"
+      @show-view="$emit('show-view', $event)"
+      @toggle-sidebar="$emit('toggle-sidebar')"
+    />
     <div class="app-body">
       <FileTree
+        v-show="!sidebarCollapsed"
         :active-domain="currentDomain"
         :active-note-id="currentNoteId"
         @open-domain="$emit('open-domain', $event)"
         @open-note="$emit('open-note', $event)"
       />
+      <button
+        v-if="sidebarCollapsed"
+        class="sidebar-restore hud-button"
+        style="--button-color: var(--graphics)"
+        @click="$emit('toggle-sidebar')"
+      >
+        Vault
+      </button>
 
       <main class="workspace">
         <BreadcrumbBar
@@ -86,8 +123,13 @@ function fitGraphView() {
 
         <template v-if="currentView === 'graph'">
           <GraphToolbar
+            :edge-count="currentScope.edges.length"
+            :layout-mode="layoutMode"
+            :local-disabled="localDisabled"
+            :node-count="currentScope.nodes.length"
             @fit-view="fitGraphView"
             @open-dialog="$emit('open-dialog', $event)"
+            @show-local="openSelectedLocalGraph"
             @show-graph="$emit('show-graph', $event)"
           />
           <GraphView
@@ -106,6 +148,9 @@ function fitGraphView() {
           v-else
           :mode="noteMode"
           :note-id="currentNoteId"
+          :saving="noteSaving"
+          @dirty-change="$emit('set-note-dirty', $event)"
+          @save-note="$emit('save-note', $event)"
           @set-mode="$emit('set-note-mode', $event)"
           @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
         />
@@ -133,27 +178,44 @@ function fitGraphView() {
   grid-template-rows: 44px 1fr;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
   border: 1px solid var(--border-primary);
   background: var(--background-main);
 }
 
 .app-body {
+  position: relative;
   display: grid;
-  grid-template-columns: 260px minmax(720px, 1fr);
+  grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr);
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
+}
+
+.app-frame.is-sidebar-collapsed {
+  --sidebar-width: 0px;
 }
 
 .workspace {
   display: flex;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   flex-direction: column;
+}
+
+.sidebar-restore {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 4;
+  writing-mode: vertical-rl;
 }
 
 .dialog-overlay {
   position: fixed;
   z-index: 20;
-  inset: 44px 0 0 260px;
+  inset: 44px 0 0 var(--sidebar-width, 260px);
   display: grid;
   place-items: center;
   background: rgba(0, 0, 0, 0.62);

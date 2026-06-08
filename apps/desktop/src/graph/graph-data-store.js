@@ -1,3 +1,4 @@
+import { shallowRef } from "vue";
 import { buildGraphScopes } from "../../../../packages/knowledge-core/src/index.js";
 import {
   domains as mockDomains,
@@ -61,14 +62,18 @@ export function createMockVault() {
   };
 }
 
-let activeVault = createMockVault();
+const activeVaultRef = shallowRef(createMockVault());
 
 export function setActiveVault(vault) {
-  activeVault = vault || createMockVault();
+  activeVaultRef.value = vault || createMockVault();
 }
 
 export function getActiveVault() {
-  return activeVault;
+  return activeVaultRef.value;
+}
+
+export function useActiveVault() {
+  return activeVaultRef;
 }
 
 export function getGraphNodes() {

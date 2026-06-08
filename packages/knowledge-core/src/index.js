@@ -5,3 +5,4 @@ export * from "./normalize-vault.js";
 export * from "./parse-yaml.js";
 export * from "./schema.js";
 export * from "./validate-vault.js";
+export * from "./validate-layout.js";

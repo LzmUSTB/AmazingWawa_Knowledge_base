@@ -3,6 +3,7 @@ import {
   isAllowedKnowledgeType,
   isAllowedRelationType,
 } from "./schema.js";
+import { validateLayout } from "./validate-layout.js";
 
 function pushIssue(target, message, filePath = "") {
   target.push(filePath ? `${filePath}: ${message}` : message);
@@ -68,6 +69,8 @@ export function validateVault(normalizedVault) {
         pushIssue(warnings, `node "${node.id}" has no note.md`, node.filePath);
       }
     });
+
+  warnings.push(...validateLayout(normalizedVault));
 
   return { errors, warnings };
 }

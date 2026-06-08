@@ -66,7 +66,10 @@ const fileTree = computed(() => getActiveVault().fileTree);
 .file-tree {
   display: flex;
   flex-direction: column;
+  width: 260px;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   border-right: 1px solid var(--border-primary);
   background: var(--background-main);
 }

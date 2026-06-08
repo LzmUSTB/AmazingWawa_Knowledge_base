@@ -17,6 +17,48 @@ Top Menu
   + Note View
 ```
 
+## 1.1 Desktop Maintenance MVP Update
+
+The desktop app now uses a desktop vault adapter at:
+
+```txt
+apps/desktop/src/data/desktop-vault-adapter.js
+```
+
+Vue components do not call Tauri filesystem APIs directly.
+
+Startup behavior:
+
+```txt
+try last opened vault path from localStorage
+-> if it loads, use that local vault
+-> if it fails, load the static sample vault
+```
+
+Open Vault validates `vault.yaml`, `domains.yaml`, `graph.yaml`, and `content/`, then normalizes the vault and resets to the root graph.
+
+Note editing is real in the Desktop Maintenance MVP. Edit mode shows raw `note.md`, Save writes it to disk, and the app reloads the vault from disk after saving.
+
+Dirty-state navigation guard applies before opening another note, switching to graph, changing graph scope, clicking another file tree item, or opening another vault.
+
+Responsive layout rules:
+
+- no horizontal app overflow
+- Vault sidebar can collapse and restore
+- graph and note workspaces can shrink to half-screen width
+- toolbars may wrap or scroll horizontally
+- Note View fills available workspace width
+
+The sidebar preference uses:
+
+```txt
+amazingwawa.sidebarCollapsed
+```
+
+Graph viewport resize uses debounced camera fitting. This does not mutate node positions, route points, or `graph-layout.yaml`.
+
+`Reset View` was removed because it duplicated `Fit`. `Fit` means fitting the current scope into the visible graph viewport.
+
 The desktop app is the main maintenance environment.
 
 The mobile/web viewer is read-first and should not provide the full editing workflow in the first version.
