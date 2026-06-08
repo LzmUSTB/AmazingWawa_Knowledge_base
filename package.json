@@ -1,0 +1,27 @@
+{
+  "name": "knowledge-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first knowledge graph system with desktop maintenance app and mobile viewer.",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run tauri dev -w apps/desktop",
+    "dev:viewer": "npm run dev -w apps/viewer",
+    "build:viewer": "npm run build -w apps/viewer",
+    "lint": "echo \"lint is not configured yet\"",
+    "check": "echo \"check is not configured yet\""
+  },
+  "keywords": [
+    "knowledge-base",
+    "knowledge-graph",
+    "tauri",
+    "vue",
+    "markdown",
+    "yaml"
+  ],
+  "license": "MIT"
+}

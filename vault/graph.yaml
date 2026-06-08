@@ -1,0 +1,20 @@
+edges:
+  - from: root
+    to: graphics
+    relation: contains
+
+  - from: root
+    to: machine-learning
+    relation: contains
+
+  - from: root
+    to: web-dev
+    relation: contains
+
+  - from: root
+    to: game-dev
+    relation: contains
+
+  - from: root
+    to: career
+    relation: contains

@@ -1,0 +1,47 @@
+{
+  "color": {
+    "backgroundMain": "#090909",
+    "backgroundPanel": "#111111",
+    "backgroundElevated": "#181818",
+    "borderPrimary": "#EDEDED",
+    "borderMuted": "#555555",
+    "textPrimary": "#F5F5F5",
+    "textSecondary": "#B8B8B8",
+    "textMuted": "#777777",
+    "domain": {
+      "graphics": "#00B7FF",
+      "machineLearning": "#C8FF00",
+      "webDev": "#FF2BD6",
+      "gameDev": "#FF3B30",
+      "career": "#FFD500",
+      "simulation": "#7C5CFF",
+      "language": "#00E5A8",
+      "dccTools": "#FF8A00"
+    },
+    "relation": {
+      "contains": "#DCDCDC",
+      "dependsOn": "#FFD500",
+      "usedIn": "#7C5CFF",
+      "comparesWith": "#FF8A00"
+    }
+  },
+  "layout": {
+    "topMenuHeight": "44px",
+    "fileTreeWidth": "260px",
+    "workspaceMinWidth": "720px",
+    "gridSize": "32px",
+    "panelRadius": "0px"
+  },
+  "graph": {
+    "node": {
+      "rootSize": 88,
+      "domainSize": 64,
+      "topicSize": 48,
+      "conceptSize": 34
+    },
+    "edge": {
+      "defaultWidth": 1.5,
+      "highlightWidth": 3
+    }
+  }
+}

@@ -1,0 +1,315 @@
+<script setup>
+import { computed, ref } from "vue";
+import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
+import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
+import MobileNoteView from "./components/mobile/MobileNoteView.vue";
+import { graphNodes } from "./graph/mock-graph-data.js";
+import { getGraphScope, scopeForDomain, scopeForNode } from "./graph/graph-scope.js";
+
+const currentView = ref("graph");
+const currentDomain = ref("graphics");
+const currentNoteId = ref("rendering-pipeline");
+const selectedNodeId = ref("graphics");
+const graphScopeId = ref("root");
+const noteMode = ref("read");
+const activeDialog = ref("");
+
+const selectedNode = computed(
+  () => graphNodes.find((node) => node.id === selectedNodeId.value) || graphNodes[0],
+);
+
+function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) {
+  graphScopeId.value = scopeId || "root";
+  const scope = getGraphScope(graphScopeId.value);
+  if (scope.type === "domain") currentDomain.value = scope.id;
+  if (scope.type === "focus") currentDomain.value = "graphics";
+  selectedNodeId.value = graphScopeId.value === "root" ? "graphics" : nodeId;
+  currentView.value = "graph";
+}
+
+function openNote(nodeId) {
+  const node = graphNodes.find((item) => item.id === nodeId);
+  if (node) {
+    currentDomain.value = node.domain;
+    currentNoteId.value = node.id;
+    selectedNodeId.value = node.id;
+    graphScopeId.value = scopeForNode(node.id);
+  }
+  noteMode.value = "read";
+  currentView.value = "note";
+}
+
+function openDomain(domain) {
+  currentDomain.value = domain;
+  selectedNodeId.value = domain;
+  graphScopeId.value = scopeForDomain(domain);
+  currentView.value = "graph";
+}
+
+function openScope(scopeId, selectedId = scopeId) {
+  graphScopeId.value = scopeId;
+  selectedNodeId.value = selectedId;
+  const scope = getGraphScope(scopeId);
+  if (scope.type === "domain") currentDomain.value = scope.id;
+  if (scope.type === "focus") currentDomain.value = "graphics";
+  currentView.value = "graph";
+}
+
+function openDialog(dialogName) {
+  activeDialog.value = dialogName;
+}
+</script>
+
+<template>
+  <div class="prototype-shell">
+    <WorkspaceLayout
+      :active-dialog="activeDialog"
+      :current-domain="currentDomain"
+      :current-note-id="currentNoteId"
+      :current-view="currentView"
+      :graph-scope-id="graphScopeId"
+      :note-mode="noteMode"
+      :selected-node-id="selectedNodeId"
+      @close-dialog="activeDialog = ''"
+      @open-dialog="openDialog"
+      @open-domain="openDomain"
+      @open-note="openNote"
+      @open-scope="openScope"
+      @select-node="selectedNodeId = $event"
+      @set-note-mode="noteMode = $event"
+      @show-graph="showGraph"
+      @show-view="currentView = $event"
+    />
+
+    <div class="mobile-prototype">
+      <MobileNoteView
+        v-if="currentView !== 'graph'"
+        :node="selectedNode"
+        @show-graph="currentView = 'graph'"
+      />
+      <MobileLocalGraphView
+        v-else
+        :selected-node-id="selectedNodeId"
+        @open-note="openNote"
+      />
+    </div>
+  </div>
+</template>
+
+<style>
+:root {
+  --background-main: #090909;
+  --background-panel: #111111;
+  --background-elevated: #181818;
+  --border-primary: #ededed;
+  --border-muted: #555555;
+  --text-primary: #f5f5f5;
+  --text-secondary: #b8b8b8;
+  --text-muted: #777777;
+  --graphics: #00b7ff;
+  --linear-algebra: #ededed;
+  --machine-learning: #c8ff00;
+  --web-dev: #ff2bd6;
+  --game-dev: #ff3b30;
+  --career: #ffd500;
+  --simulation: #7c5cff;
+  --language: #00e5a8;
+  --dcc-tools: #ff8a00;
+  --relation-contains: #dcdcdc;
+  --relation-depends-on: #ffd500;
+  --relation-used-in: #7c5cff;
+  --relation-compares-with: #ff8a00;
+  color: var(--text-primary);
+  background: var(--background-main);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background: var(--background-main);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.prototype-shell {
+  min-height: 100vh;
+  background: var(--background-main);
+}
+
+.mobile-prototype {
+  display: none;
+}
+
+.hud-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--button-color, var(--border-muted));
+  border-left-width: 4px;
+  border-radius: 0;
+  background: var(--background-main);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.hud-button:hover,
+.hud-button.is-active {
+  border-color: var(--border-primary);
+  border-left-color: var(--button-color, var(--border-primary));
+  background: var(--background-elevated);
+}
+
+.panel-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.panel-label::before {
+  width: 3px;
+  height: 15px;
+  background: var(--label-color, var(--border-primary));
+  content: "";
+}
+
+.technical-grid {
+  background-color: var(--background-main);
+  background-image: url("data:image/svg+xml,%3Csvg width='128' height='128' viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23EDEDED' stroke-width='1'%3E%3Cpath opacity='0.08' d='M0 0H128M0 32H128M0 64H128M0 96H128M0 128H128M0 0V128M32 0V128M64 0V128M96 0V128M128 0V128'/%3E%3Cpath opacity='0.18' d='M0 0H128M0 0V128'/%3E%3Cpath opacity='0.16' d='M59 64H69M64 59V69'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+.dialog-card {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--border-primary);
+  background: var(--background-elevated);
+}
+
+.dialog-card .dialog-accent {
+  height: 4px;
+  background: var(--career);
+}
+
+.dialog-card header,
+.dialog-card label,
+.dialog-card .dialog-grid,
+.dialog-card .relation-options,
+.dialog-card .graph-yaml-note,
+.dialog-card footer {
+  margin-inline: 28px;
+}
+
+.dialog-card header {
+  display: grid;
+  gap: 8px;
+}
+
+.dialog-card h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.dialog-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dialog-card label {
+  display: grid;
+  gap: 8px;
+}
+
+.dialog-card label span {
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.dialog-card input,
+.dialog-card select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border-muted);
+  border-radius: 0;
+  outline: 0;
+  background: var(--background-main);
+  color: var(--text-primary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  padding: 0 12px;
+}
+
+.dialog-card input:focus,
+.dialog-card select:focus {
+  border-color: var(--border-primary);
+}
+
+.dialog-card .dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.dialog-card footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding-top: 4px;
+}
+
+@media (max-width: 760px) {
+  body {
+    overflow: auto;
+  }
+
+  .desktop-prototype {
+    display: none;
+  }
+
+  .mobile-prototype {
+    display: block;
+    min-height: 100vh;
+  }
+}
+</style>

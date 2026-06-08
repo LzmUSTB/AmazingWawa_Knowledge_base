@@ -1,0 +1,11 @@
+id: rendering-pipeline
+title: 渲染管线
+domain: graphics
+type: concept
+status: growing
+summary: 把三维场景转换成屏幕像素的一系列处理阶段。
+prerequisites:
+  - coordinate-transform
+related:
+  - shader
+  - pbr

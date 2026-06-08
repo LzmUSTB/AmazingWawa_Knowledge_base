@@ -1,0 +1,20 @@
+domains:
+  - id: graphics
+    title: 图形学
+    description: 渲染、Shader、PBR、材质、后处理、流体渲染等知识。
+
+  - id: machine-learning
+    title: 机器学习
+    description: 机器学习、强化学习、优化方法和实验记录。
+
+  - id: web-dev
+    title: Web 开发
+    description: Nuxt、Vue、Astro、部署、SEO、前端工程。
+
+  - id: game-dev
+    title: 游戏开发
+    description: 游戏 AI、动画系统、工具链、引擎技术。
+
+  - id: career
+    title: 求职与研究计划
+    description: 面试准备、作品集、研究计划、申请材料的公开版总结。
