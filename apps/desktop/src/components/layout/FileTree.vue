@@ -31,38 +31,20 @@ const fileTree = computed(() => getActiveVault().fileTree);
 
     <div class="tree-list">
       <section v-for="domain in fileTree" :key="domain.id" class="tree-domain">
-        <button
-          class="domain-row"
-          :class="{ 'is-active': domain.id === activeDomain }"
-          :style="{ '--domain-color': getDomainColor(domain.id) }"
-          @click="$emit('open-domain', domain.id)"
-        >
+        <button class="domain-row" :class="{ 'is-active': domain.id === activeDomain }"
+          :style="{ '--domain-color': getDomainColor(domain.id) }" @click="$emit('open-domain', domain.id)">
           <span class="domain-marker"></span>
           <span>{{ domain.id }}</span>
         </button>
 
-        <div
-          v-if="domain.id === activeDomain || domain.children.length"
-          class="concept-list"
-        >
-          <button
-            v-for="node in domain.children"
-            :key="node.id"
-            class="concept-row"
-            :class="{ 'is-active': node.id === activeNoteId }"
-            :style="{ '--domain-color': getDomainColor(domain.id) }"
-            @click="$emit('open-note', node.id)"
-          >
+        <div v-if="domain.id === activeDomain || domain.children.length" class="concept-list">
+          <button v-for="node in domain.children" :key="node.id" class="concept-row"
+            :class="{ 'is-active': node.id === activeNoteId }" :style="{ '--domain-color': getDomainColor(domain.id) }"
+            @click="$emit('open-note', node.id)">
             {{ node.id }}
           </button>
         </div>
       </section>
-    </div>
-
-    <div class="tree-files">
-      <button>graph.yaml</button>
-      <button>domains.yaml</button>
-      <button>assets/</button>
     </div>
   </aside>
 </template>
@@ -98,8 +80,7 @@ const fileTree = computed(() => getActiveVault().fileTree);
 
 .tree-root,
 .domain-row,
-.concept-row,
-.tree-files button {
+.concept-row {
   width: 100%;
   border: 0;
   border-radius: 0;
@@ -175,19 +156,5 @@ const fileTree = computed(() => getActiveVault().fileTree);
   outline: 1px solid var(--domain-color);
   background: var(--background-panel);
   color: var(--text-primary);
-}
-
-.tree-files {
-  display: grid;
-  gap: 6px;
-  margin: 0 16px 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border-muted);
-}
-
-.tree-files button {
-  color: var(--text-secondary);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 11px;
 }
 </style>

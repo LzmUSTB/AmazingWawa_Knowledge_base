@@ -101,7 +101,7 @@ const board = computed(() => getGraphBoardSize(currentScope.value.id, "mobile"))
         <button class="hud-button" style="--button-color: var(--mobile-color)" @click="$emit('open-note', selectedNode.id)">
           Open Note
         </button>
-        <button class="hud-button" style="--button-color: var(--career)">Review</button>
+        <!-- <button class="hud-button" style="--button-color: var(--career)">Review</button> -->
       </div>
     </aside>
   </main>

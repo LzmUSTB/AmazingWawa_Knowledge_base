@@ -272,7 +272,6 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
     <div class="routing-label routing-label--a">
       {{ scopeLabel }}
     </div>
-    <div class="routing-label routing-label--b">PORT ROUTED / STATIC BOARD</div>
 
     <NodeContextMenu
       :node="selectedNode"
@@ -501,11 +500,6 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 .routing-label--a {
   left: 24px;
-  bottom: 24px;
-}
-
-.routing-label--b {
-  right: 24px;
   bottom: 24px;
 }
 </style>

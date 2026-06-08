@@ -130,13 +130,6 @@ function saveNote() {
             <div class="panel-label" :style="{ '--label-color': accent }">{{ section.label }}</div>
             <pre class="markdown-preview">{{ section.body }}</pre>
           </section>
-          <section class="note-block code-block">
-            <div class="panel-label" :style="{ '--label-color': accent }">Vault structure</div>
-            <pre>vault/content/{{ node.domain }}/{{ node.id }}/
-  meta.yaml
-  note.md
-  assets/</pre>
-          </section>
         </div>
       </div>
     </article>
