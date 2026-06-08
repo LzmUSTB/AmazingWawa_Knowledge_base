@@ -2,16 +2,14 @@
 
 ## 1. Purpose
 
-This document defines the first-version schema for `vault/graph-layout.yaml`.
-
-`graph-layout.yaml` stores visual layout data for the PCB-style knowledge graph.
-
-It is separate from `graph.yaml`.
+This document defines the current schema for `vault/graph-layout.yaml`.
 
 ```txt
 graph.yaml = semantic relations
-graph-layout.yaml = visual board layout and PCB trace routes
+graph-layout.yaml = visual board layout
 ```
+
+`graph-layout.yaml` stores visual layout data for the PCB-style knowledge graph. It is separate from `graph.yaml`.
 
 ## 2. Core Principle
 
@@ -20,9 +18,7 @@ graph-layout.yaml = visual board layout and PCB trace routes
 ```txt
 Where is this node placed?
 How large is this node?
-Which port does a trace start from?
-Which port does a trace end at?
-How does this PCB trace route through the board?
+Which manual PCB routes override generated routes?
 ```
 
 It should not answer:
@@ -32,6 +28,7 @@ What does this relation mean?
 What is the note content?
 What is the current zoom or pan?
 Which node is currently selected?
+What is the current UI font size?
 ```
 
 ## 3. File Location
@@ -74,40 +71,9 @@ boards:
           - [640, 364]
           - [640, 364]
           - [840, 364]
-
-  graphics:
-    width: 2400
-    height: 1600
-    grid: 32
-
-    nodes:
-      graphics:
-        x: 1100
-        y: 720
-        w: 220
-        h: 100
-
-      rendering-pipeline:
-        x: 620
-        y: 460
-        w: 220
-        h: 80
-
-    routes:
-      graphics-contains-rendering-pipeline:
-        edge: graphics-contains-rendering-pipeline
-        fromPort: left
-        toPort: right
-        points:
-          - [1100, 770]
-          - [960, 770]
-          - [960, 500]
-          - [840, 500]
 ```
 
-In the desktop static-loader prototype, `graph-layout.yaml` is the primary layout source.
-
-The JavaScript layout tables are fallback only. The loader normalizes `w/h` to `width/height` for UI rendering.
+`graph-layout.yaml` is the primary manual layout source. JavaScript layout tables and generated layout are fallback only. The loader normalizes `w/h` to `width/height` for UI rendering.
 
 ## 5. Top-Level Fields
 
@@ -120,12 +86,12 @@ The JavaScript layout tables are fallback only. The loader normalizes `w/h` to `
 
 Each board represents one graph scope.
 
-Examples:
+Recommended first-version board IDs:
 
 ```txt
 root
-graphics
-rendering-pipeline
+<domain-id>
+<focus-node-id>
 ```
 
 A board has:
@@ -136,43 +102,22 @@ A board has:
 | `height` | yes | Board world height |
 | `grid` | yes | Grid size |
 | `nodes` | yes | Node layout map |
-| `routes` | recommended | PCB route map |
+| `routes` | optional | Manual route override map |
 
 ## 7. Board Coordinate System
-
-The board is a fixed world coordinate space.
-
-Example:
-
-```yaml
-width: 2400
-height: 1600
-grid: 32
-```
 
 Rules:
 
 ```txt
 Board size does not change when the app window changes.
 Node coordinates are board coordinates.
-Route points are board coordinates.
+Manual route points are board coordinates.
 Window resize only changes the viewport.
 ```
 
-Do not use:
-
-```txt
-percentages
-viewport-relative coordinates
-responsive node positions
-CSS layout positions
-```
-
-Use absolute board coordinates.
+Use absolute board coordinates, not percentages or CSS layout positions.
 
 ## 8. Node Layout
-
-Example:
 
 ```yaml
 nodes:
@@ -183,26 +128,11 @@ nodes:
     h: 80
 ```
 
-Fields:
-
-| Field | Required | Description |
-|---|---:|---|
-| `x` | yes | Node left x |
-| `y` | yes | Node top y |
-| `w` | yes | Node width |
-| `h` | yes | Node height |
-
-Rules:
-
-```txt
-x/y represent the top-left corner.
-w/h represent node module size.
-All values are board-space numbers.
-```
+`x/y` represent the top-left corner. `w/h` represent node module size.
 
 ## 9. Route Layout
 
-Example:
+Manual routes are optional overrides. Generated orthogonal routes are the normal fallback.
 
 ```yaml
 routes:
@@ -217,14 +147,7 @@ routes:
       - [840, 500]
 ```
 
-Fields:
-
-| Field | Required | Description |
-|---|---:|---|
-| `edge` | yes | Edge ID from `graph.yaml` |
-| `fromPort` | yes | Source node port |
-| `toPort` | yes | Target node port |
-| `points` | yes | Orthogonal route points |
+First Layout Edit Mode does not create or edit manual routes. It only saves node positions. Routes are generated at runtime.
 
 ## 10. Ports
 
@@ -237,29 +160,7 @@ bottom
 left
 ```
 
-Meaning:
-
-| Port | Position |
-|---|---|
-| `top` | center of top edge |
-| `right` | center of right edge |
-| `bottom` | center of bottom edge |
-| `left` | center of left edge |
-
-Future ports may include:
-
-```txt
-top-1
-top-2
-right-1
-right-2
-bottom-1
-bottom-2
-left-1
-left-2
-```
-
-Do not add these in the first version unless needed.
+Generated route logic may internally use port offsets to avoid overlapping multiple traces. These offsets do not need to be stored in `graph-layout.yaml`.
 
 ## 11. Route Points
 
@@ -275,52 +176,9 @@ No random point-to-point lines.
 No force-directed spaghetti lines.
 ```
 
-Valid:
-
-```yaml
-points:
-  - [1100, 770]
-  - [960, 770]
-  - [960, 500]
-  - [840, 500]
-```
-
-Invalid:
-
-```yaml
-points:
-  - [1100, 770]
-  - [840, 500]
-```
-
-Reason:
-
-```txt
-This creates a diagonal line.
-```
-
-## 12. Route Endpoint Rule
-
-The first point should match the source port position.
-
-The last point should match the target port position.
-
-Example:
-
-```txt
-source node left port -> first point
-target node right port -> last point
-```
-
-During validation, the app may warn if route endpoints do not touch the declared ports.
-
-## 13. Relation Style Is Not Stored Here
-
-Do not store relation colors or line styles in `graph-layout.yaml`.
+## 12. Relation Style Is Not Stored Here
 
 Line style should be derived from relation type in `graph.yaml`.
-
-Example:
 
 ```txt
 contains -> solid line
@@ -329,52 +187,11 @@ used-in -> dashed line
 compares-with -> paired / double line
 ```
 
-## 14. Camera State Is Not Stored Here
+## 13. Camera State Is Not Stored Here
 
-Do not store:
+Do not store zoom, pan, viewport size, selection, hover, UI font size, or sidebar state.
 
-```txt
-zoom
-pan
-viewport width
-viewport height
-current selected node
-current hover node
-```
-
-These are session state.
-
-If needed later, store them in app-specific local settings, not in the vault layout schema.
-
-## 15. Board Types
-
-Recommended first-version board IDs:
-
-```txt
-root
-<domain-id>
-<focus-node-id>
-```
-
-Examples:
-
-```txt
-root
-graphics
-machine-learning
-rendering-pipeline
-shader
-```
-
-Board meaning:
-
-| Board ID | Meaning |
-|---|---|
-| `root` | top-level domain board |
-| `graphics` | graphics domain board |
-| `rendering-pipeline` | focused node board |
-
-## 16. Generated Layout Fallback
+## 14. Generated Layout Fallback
 
 If `graph-layout.yaml` is missing or incomplete, the app may generate a temporary default layout.
 
@@ -384,37 +201,72 @@ Rules:
 Generated layout is a fallback.
 Generated layout should not overwrite graph-layout.yaml automatically.
 User must explicitly save layout.
-```
-
-Fallback generation is deterministic per scope. It may be used for generated focus scopes whose node ID does not yet have a board in `graph-layout.yaml`.
-
-Route lookup order:
-
-```txt
-layouts.boards[scopeId].routes[edge.id].points
--> legacy/static fallback route if available
--> no rendered route
+Generated layout must be deterministic.
+Do not use random layout.
+Do not use force-directed layout.
 ```
 
 Node lookup order:
 
 ```txt
-layouts.boards[scopeId].nodes[node.id]
--> legacy/static fallback node layout if available
--> deterministic generated layout
+1. layouts.boards[scopeId].nodes[node.id]
+2. legacy/static fallback node layout if available
+3. deterministic generated layout
 ```
 
-## 17. Graph Camera Relationship
-
-The app should render layout using:
+Route lookup order:
 
 ```txt
-viewport
-board
-camera
+1. manual route in graph-layout.yaml if valid
+2. legacy/static route if available
+3. generated orthogonal route from source/target node boxes
 ```
 
-Structure:
+Generated orthogonal route should use port selection, port offset, lane offset, and relation-aware visual style.
+
+Generated routes are not saved in the first Layout Edit Mode.
+
+## 15. Layout Edit Mode
+
+Normal Mode:
+
+```txt
+click node = select
+double click node = navigate
+drag empty canvas = pan
+mouse wheel = graph zoom
+node dragging disabled
+```
+
+Layout Edit Mode:
+
+```txt
+drag node = move node
+drag empty canvas = pan
+mouse wheel = graph zoom
+Save Layout = write board.nodes to graph-layout.yaml
+Cancel Layout = discard draft node positions
+```
+
+Also supported:
+
+```txt
+Ctrl + left mouse drag on node = temporary direct node drag
+```
+
+This shortcut should update the draft layout and require Save Layout to persist.
+
+Save rules:
+
+```txt
+Save board.width, board.height, board.grid, board.nodes.
+Do not save generated route points.
+Do not write routes unless preserving valid existing manual route overrides.
+```
+
+## 16. Graph Camera Relationship
+
+The app should render layout using viewport, board, and camera.
 
 ```txt
 Graph Viewport
@@ -423,30 +275,15 @@ Graph Viewport
    └─ HTML Node Layer
 ```
 
-The board has fixed width and height.
-
 The camera transforms the board:
 
 ```txt
 translate(camera.x, camera.y) scale(camera.zoom)
 ```
 
-Window resize changes viewport only.
+The app may adjust camera pan/zoom when the user clicks Fit, during initial fit, or during debounced viewport fit.
 
-It does not change:
-
-```txt
-board width
-board height
-node x/y/w/h
-route points
-camera zoom
-camera pan
-```
-
-Unless the user clicks `Fit` or `Reset View`.
-
-## 18. Validation Rules
+## 17. Validation Rules
 
 Validate:
 
@@ -456,34 +293,7 @@ boards exists
 each board has width/height/grid
 each node layout has x/y/w/h
 each route references an edge from graph.yaml
-each fromPort/toPort is allowed
-each route has at least two points
 each route segment is horizontal or vertical
-route endpoints touch declared ports or are close enough
 ```
 
-## 19. Summary
-
-`graph-layout.yaml` is the visual graph board layer.
-
-It stores:
-
-```txt
-board size
-grid size
-node position
-node size
-edge route points
-source/target ports
-```
-
-It does not store:
-
-```txt
-semantic relation meaning
-note content
-current interaction state
-zoom/pan
-visual colors
-temporary selection
-```
+Layout editing validation should also warn when board nodes or routes reference non-existent graph entities.

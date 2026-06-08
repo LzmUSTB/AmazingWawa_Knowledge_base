@@ -1,14 +1,10 @@
 # New Note Creation
 
-## Purpose
+## 1. Purpose
 
-New Note is the first writing workflow beyond editing `note.md`.
+New Note creates a new knowledge item folder, writes starter files, and adds one semantic `contains` edge to `graph.yaml`.
 
-It creates a new knowledge item folder, writes starter files, and adds one semantic `contains` edge to `graph.yaml`.
-
-## Form Fields
-
-The dialog collects:
+## 2. Form Fields
 
 - `title`: display title, required
 - `id`: stable node ID, required
@@ -18,29 +14,13 @@ The dialog collects:
 - `summary`: one-sentence summary
 - `parentId`: existing node ID, required
 
-## ID Rules
+## 3. ID Rules
 
-IDs must be lowercase kebab-case:
+IDs must be lowercase kebab-case. Allowed characters: `a-z`, `0-9`, `-`.
 
-```txt
-deferred-rendering
-material-system
-shader-debugging
-```
+The form may auto-generate an ID from English titles. For Chinese or Japanese titles, the user should manually enter a stable English ID.
 
-Allowed characters:
-
-```txt
-a-z
-0-9
--
-```
-
-The form may auto-generate an ID from English titles.
-
-For Chinese or Japanese titles, the user should manually enter a stable English ID.
-
-## Parent Rules
+## 4. Parent Rules
 
 Default parent selection:
 
@@ -49,16 +29,11 @@ Default parent selection:
 - selected domain node: selected domain
 - otherwise: current domain
 
-The parent must already exist.
-
-The parent must belong to the selected domain:
-
-- domain parent: `parentId` must equal selected `domain`
-- normal node parent: `parent.domain` must equal selected `domain`
+The parent must already exist and must belong to the selected domain.
 
 Do not use Parent for cross-domain relationships. Cross-domain `depends-on`, `used-in`, or `compares-with` links belong in New Link later.
 
-## File Creation
+## 5. File Creation
 
 Creating a note writes:
 
@@ -69,7 +44,7 @@ vault/content/<domain>/<id>/
   assets/
 ```
 
-## meta.yaml
+## 6. `meta.yaml`
 
 Generated `meta.yaml` contains:
 
@@ -90,7 +65,7 @@ related: []
 
 Dates use the current local date.
 
-## note.md
+## 7. `note.md`
 
 Template fallback order:
 
@@ -102,7 +77,7 @@ built-in default note text
 
 The first Markdown H1 is replaced with the new title.
 
-## graph.yaml Edge
+## 8. `graph.yaml` Edge
 
 Creation appends exactly one edge:
 
@@ -121,20 +96,22 @@ Before writing:
 - edge ID must not exist
 - duplicate `from/to/relation` edge must not exist
 
-## Layout
+## 9. Layout
 
 This phase does not write `graph-layout.yaml`.
 
-New nodes appear through generated layout and route fallback until manual layout editing is implemented later.
+New nodes appear through generated layout and route fallback until manual layout editing is implemented.
 
 If a new note is created under a non-domain parent, it appears in that parent's Focus / Local Graph. It does not appear in the domain graph unless it is directly contained by the domain.
 
-## Not Included
+Double-click navigation rule:
 
-This phase does not implement:
+```txt
+node with contains children -> open Local Graph
+leaf node -> open Note
+center node in its own Local Graph -> open Note
+```
 
-- real New Link writing
-- graph-layout saving
-- node dragging
-- route editing
-- drag-to-connect
+## 10. Not Included
+
+This phase does not implement real New Link writing, graph-layout saving, node dragging, route editing, or drag-to-connect.

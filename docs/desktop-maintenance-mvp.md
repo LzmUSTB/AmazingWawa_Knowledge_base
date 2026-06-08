@@ -33,37 +33,15 @@ Required files are `vault.yaml`, `domains.yaml`, `graph.yaml`, and `content/`.
 
 ## Note Editing Flow
 
-Read mode displays `note.md` from the normalized vault.
-
-Edit mode shows raw markdown in a textarea.
-
-Save writes:
-
-```txt
-vault/content/<domain>/<id>/note.md
-```
+Read mode displays `note.md` from the normalized vault. Edit mode shows raw markdown in a textarea. Save writes `vault/content/<domain>/<id>/note.md`.
 
 After save, the app reloads the vault from disk and calls `setActiveVault(updatedVault)`.
 
-## Dirty-State Guard
-
-Dirty means:
-
-```txt
-draftMarkdown !== original note.md markdown
-```
-
-The app asks for confirmation before opening another note, switching graph scope, switching to graph, clicking another file tree item, or opening another vault.
-
 ## Static Fallback
 
-Startup attempts to load the last opened vault path from `localStorage`.
-
-If that fails, the app loads the repository sample vault through `static-vault-loader.js` and logs a console warning.
+Startup attempts to load the last opened vault path from `localStorage`. If that fails, the app may load the repository sample vault through `static-vault-loader.js` as read-only fallback.
 
 ## Responsive Desktop Layout
-
-The desktop shell must work at half-screen width.
 
 Rules:
 
@@ -75,31 +53,17 @@ Rules:
 
 ## Collapsible Sidebar
 
-The Vault sidebar can be hidden and restored.
-
 Preference key:
 
 ```txt
 amazingwawa.sidebarCollapsed
 ```
 
-If there is no saved preference and initial width is below `1000px`, the sidebar starts collapsed.
-
 ## Graph Fit Behavior
 
-`Fit` fits the current scope into the visible graph viewport.
-
-The old `Reset View` button was removed because it duplicated `Fit`.
-
-Viewport resize uses debounced camera fitting. This changes only camera pan/zoom and never mutates node positions, route points, or `graph-layout.yaml`.
-
-## Not Included Yet
-
-Do not implement in this stage: real New Link writing, graph editing beyond the single New Note `contains` edge, layout saving, node dragging, route editing, drag-to-connect, Git panel, AI panel, or mobile editing.
+`Fit` fits the current scope into the visible graph viewport. `Reset View` was removed.
 
 ## Step 5 Update
-
-UI cleanup decisions:
 
 - FileTree no longer shows static `graph.yaml`, `domains.yaml`, or `assets/` buttons.
 - Note View no longer shows the debug Vault structure block.
@@ -107,14 +71,8 @@ UI cleanup decisions:
 - Search and Settings are hidden until implemented.
 - Git remains visible but disabled.
 - New Link remains prototype-only and does not write `graph.yaml`.
-
-TopMenu title now comes from `vault.yaml`:
-
-```txt
-activeVault.vault.title
-```
-
-FileTree now displays human titles with IDs as secondary labels.
+- TopMenu title comes from `vault.yaml`.
+- FileTree displays human titles with IDs as secondary labels.
 
 New Note creation is real:
 
@@ -129,4 +87,20 @@ New Note form
 -> open new note in Edit mode
 ```
 
-`graph-layout.yaml` is not written in this phase. Generated layout fallback handles the new node until layout editing exists.
+`graph-layout.yaml` is not written in this phase.
+
+## Next Stage: Layout Edit Mode
+
+The next stage adds manual node placement:
+
+```txt
+Edit Layout mode
+node dragging
+Ctrl + left drag shortcut
+Save Layout to graph-layout.yaml board.nodes
+Cancel Layout
+generated orthogonal routes from node positions
+Ctrl + wheel UI font scale
+```
+
+It should not implement manual route editing, route point dragging, drag-to-connect, New Link writing, Git panel, or AI panel.

@@ -2,43 +2,16 @@
 
 ## 1. Purpose
 
-This document defines the first-version schema for `vault/graph.yaml`.
+This document defines the current schema for `vault/graph.yaml`.
 
-`graph.yaml` stores semantic relationships between knowledge nodes.
-
-It does not store visual layout, node positions, PCB trace routes, zoom, pan, or UI state.
+`graph.yaml` stores semantic relationships between knowledge nodes. It does not store visual layout, node positions, PCB trace routes, zoom, pan, or UI state.
 
 ```txt
 graph.yaml = semantic knowledge relations
 graph-layout.yaml = visual node placement and PCB routing
 ```
 
-## 2. Core Principle
-
-`graph.yaml` should answer:
-
-```txt
-Which knowledge nodes are related?
-What kind of relation do they have?
-```
-
-It should not answer:
-
-```txt
-Where should nodes appear?
-How should lines be routed?
-What color should the line be?
-What is the current selected node?
-What is the current graph zoom or pan?
-```
-
-## 3. File Location
-
-```txt
-vault/graph.yaml
-```
-
-## 4. Recommended Structure
+## 2. Recommended Structure
 
 ```yaml
 schemaVersion: 1
@@ -53,26 +26,9 @@ edges:
     from: rendering-pipeline
     to: coordinate-transform
     relation: depends-on
-
-  - id: shader-used-in-fluid-rendering
-    from: shader
-    to: fluid-rendering
-    relation: used-in
-
-  - id: ppo-compares-with-sac
-    from: ppo
-    to: sac
-    relation: compares-with
 ```
 
-## 5. Top-Level Fields
-
-| Field | Required | Description |
-|---|---:|---|
-| `schemaVersion` | yes | Graph schema version |
-| `edges` | yes | List of semantic relationships |
-
-## 6. Edge Fields
+## 3. Edge Fields
 
 | Field | Required | Description |
 |---|---:|---|
@@ -81,19 +37,7 @@ edges:
 | `to` | yes | Target node ID |
 | `relation` | yes | Relation type |
 
-Although `id` could be generated automatically, this project should store it explicitly.
-
-Reason:
-
-```txt
-graph-layout.yaml can reference edge IDs directly.
-Git diffs are clearer.
-Codex/ChatGPT can update relations more safely.
-```
-
-## 7. Allowed Relation Types
-
-First-version relation types:
+## 4. Allowed Relation Types
 
 ```txt
 contains
@@ -102,62 +46,27 @@ used-in
 compares-with
 ```
 
-Do not add new relation types without updating this schema.
+## 5. Relation Semantics
 
-## 8. Relation Semantics
-
-### 8.1 `contains`
+### `contains`
 
 Represents hierarchy.
-
-Example:
-
-```yaml
-- id: graphics-contains-rendering-pipeline
-  from: graphics
-  to: rendering-pipeline
-  relation: contains
-```
-
-Meaning:
-
-```txt
-graphics contains rendering-pipeline
-```
-
-Use for:
-
-- domain to topic
-- topic to concept
-- project to submodule
-- parent knowledge area to child knowledge area
-
-Direction:
 
 ```txt
 parent -> child
 ```
 
-### 8.2 `depends-on`
+New Note uses `contains` to attach a new node to a parent.
 
-Represents prerequisite or dependency.
-
-Example:
-
-```yaml
-- id: rendering-pipeline-depends-on-coordinate-transform
-  from: rendering-pipeline
-  to: coordinate-transform
-  relation: depends-on
-```
-
-Meaning:
+New Note parent rule:
 
 ```txt
-rendering-pipeline depends on coordinate-transform
+Parent must belong to the selected domain.
 ```
 
-Direction:
+Do not use `contains` for cross-domain conceptual references. Use `depends-on`, `used-in`, or `compares-with`.
+
+### `depends-on`
 
 ```txt
 A depends-on B
@@ -165,84 +74,23 @@ A depends-on B
 = B is useful to understand before A
 ```
 
-Do not reverse this direction.
-
-### 8.3 `used-in`
-
-Represents application or usage.
-
-Example:
-
-```yaml
-- id: shader-used-in-fluid-rendering
-  from: shader
-  to: fluid-rendering
-  relation: used-in
-```
-
-Meaning:
-
-```txt
-shader is used in fluid-rendering
-```
-
-Direction:
+### `used-in`
 
 ```txt
 A used-in B
 = A is applied in B
 ```
 
-### 8.4 `compares-with`
+### `compares-with`
 
-Represents comparison.
+Conceptually undirected. Store only one edge.
 
-Example:
-
-```yaml
-- id: ppo-compares-with-sac
-  from: ppo
-  to: sac
-  relation: compares-with
-```
-
-Meaning:
-
-```txt
-ppo and sac should be compared
-```
-
-`compares-with` is conceptually undirected.
-
-Store only one edge.
-
-Do not write both:
-
-```yaml
-- from: ppo
-  to: sac
-  relation: compares-with
-
-- from: sac
-  to: ppo
-  relation: compares-with
-```
-
-## 9. Edge ID Rules
+## 6. Edge ID Rules
 
 Recommended ID format:
 
 ```txt
 <from>-<relation>-<to>
-```
-
-Examples:
-
-```txt
-graphics-contains-rendering-pipeline
-rendering-pipeline-depends-on-coordinate-transform
-shader-used-in-fluid-rendering
-ppo-compares-with-sac
 ```
 
 Rules:
@@ -254,131 +102,23 @@ Rules:
 - should not contain spaces
 - should not contain Chinese/Japanese characters
 
-## 10. Node ID Requirements
+## 7. Node ID Requirements
 
-Every `from` and `to` must reference an existing node ID.
+Every `from` and `to` must reference an existing node ID from `domains.yaml` or `content/*/*/meta.yaml`.
 
-Valid node IDs can come from:
+## 8. Duplicate Rules
 
-1. domain IDs in `domains.yaml`
-2. knowledge item IDs in `content/*/*/meta.yaml`
+Duplicate edge is not allowed. Duplicate means same `from`, same `to`, and same `relation`.
 
-Validation requirement:
+For `compares-with`, reverse direction is also considered duplicate.
 
-```txt
-all edge.from IDs exist
-all edge.to IDs exist
-```
+## 9. Graph Scope Generation
 
-## 11. Duplicate Rules
-
-Duplicate edge is not allowed.
-
-Duplicate means:
-
-```txt
-same from
-same to
-same relation
-```
-
-Invalid example:
-
-```yaml
-edges:
-  - id: ppo-compares-with-sac
-    from: ppo
-    to: sac
-    relation: compares-with
-
-  - id: ppo-compares-with-sac-2
-    from: ppo
-    to: sac
-    relation: compares-with
-```
-
-For `compares-with`, this is also considered duplicate:
-
-```yaml
-edges:
-  - from: ppo
-    to: sac
-    relation: compares-with
-
-  - from: sac
-    to: ppo
-    relation: compares-with
-```
-
-## 12. Graph Scope Generation
-
-`graph.yaml` is not the same as what appears on screen.
-
-The app generates graph scopes from normalized vault data.
-
-During the static-loader phase, `packages/knowledge-core` reads:
-
-```txt
-vault/vault.yaml
-vault/domains.yaml
-vault/graph.yaml
-vault/graph-layout.yaml
-vault/content/*/*/meta.yaml
-vault/content/*/*/note.md
-```
-
-and produces edges with both field pairs:
-
-```js
-{
-  from,
-  to,
-  source: from,
-  target: to,
-  relation
-}
-```
-
-`from/to` remain the vault schema. `source/target` exist for UI compatibility.
-
-### 12.1 Root Scope
+### Root Scope
 
 Root scope shows only top-level domain nodes.
 
-Source:
-
-```txt
-domains.yaml
-```
-
-Root scope should show:
-
-```txt
-Graphics
-Linear Algebra
-Machine Learning
-Web Dev
-Game Dev
-Career
-Language
-Simulation
-```
-
-Root scope must not show all child concepts.
-
-Invalid root behavior:
-
-```txt
-Graphics
-Rendering Pipeline
-Shader
-PBR
-Machine Learning
-Gradient Descent
-SAC
-```
-
-### 12.2 Domain Scope
+### Domain Scope
 
 Domain scope shows:
 
@@ -387,23 +127,11 @@ current domain
 + nodes directly contained by current domain
 ```
 
-Example:
-
-```txt
-Graphics
-├─ Rendering Pipeline
-├─ Shader
-├─ PBR
-├─ Rasterization
-├─ Post Process
-└─ Material System
-```
-
 Do not show grandchildren in the same domain scope.
 
-This rule is intentional. If `graphics contains rendering-pipeline` and `rendering-pipeline contains test-note`, the Graphics Domain Graph shows `graphics` and `rendering-pipeline`, not `test-note`.
+If `graphics contains rendering-pipeline` and `rendering-pipeline contains test-note`, the Graphics Domain Graph shows `graphics` and `rendering-pipeline`, not `test-note`.
 
-### 12.3 Focus Scope
+### Focus Scope
 
 Focus scope shows:
 
@@ -413,52 +141,15 @@ current node
 + only edges directly connected to current node
 ```
 
-Example:
+Focus scope ID is the focused node ID. Cross-domain one-hop neighbors are allowed and keep their own domain color.
 
-```txt
-Rendering Pipeline
-├─ Graphics
-├─ Shader
-├─ PBR
-└─ Rasterization
-```
+## 10. Cross-Domain Edges
 
-Focus scope is useful for local review and mobile local graph view.
+Cross-domain edges are allowed for `depends-on`, `used-in`, and `compares-with`.
 
-Focus scope ID is the focused node ID.
+Cross-domain `contains` should be rejected by New Note creation.
 
-Neighbor-to-neighbor edges are not included. Cross-domain one-hop neighbors are allowed and keep their own domain color.
-
-Focus scope is where non-domain children are explored. A child created under `rendering-pipeline` appears in the `rendering-pipeline` Focus / Local Graph.
-
-## 13. Cross-Domain Edges
-
-Cross-domain edges are allowed.
-
-Example:
-
-```yaml
-- id: reinforcement-learning-used-in-game-ai
-  from: reinforcement-learning
-  to: game-ai
-  relation: used-in
-```
-
-Display rule:
-
-```txt
-Cross-domain edges may be hidden or simplified depending on graph scope.
-```
-
-Root scope should not become cluttered by every cross-domain edge.
-
-The app may show cross-domain relations only when:
-
-- selected node is involved
-- focus scope is active
-- user enables relation filters
-
-## 14. Recommended Validation
+## 11. Recommended Validation
 
 When loading `graph.yaml`, validate:
 
@@ -474,43 +165,15 @@ no duplicate from/to/relation
 compares-with does not appear in both directions
 ```
 
-## 15. What Not to Store in `graph.yaml`
-
-Do not store:
-
-- node x/y positions
-- node width/height
-- PCB route points
-- node colors
-- current scope
-- selected node
-- hover state
-- zoom
-- pan
-- UI panel state
-- window size
-- note content
-
-These belong elsewhere.
-
-## 16. Summary
-
-`graph.yaml` is the semantic graph layer.
-
-It stores:
+When creating a New Note, also validate:
 
 ```txt
-edge id
-source node
-target node
-relation type
+parent exists
+parent belongs to selected domain
+new node ID does not exist
+new contains edge ID does not exist
 ```
 
-It does not store:
+## 12. What Not to Store in `graph.yaml`
 
-```txt
-layout
-style
-interaction state
-content
-```
+Do not store layout, style, interaction state, note content, UI font size, camera state, or selection.

@@ -2,87 +2,82 @@
 
 ## 1. Purpose
 
-This document defines the first-version interaction rules for the local-first knowledge graph system.
-
-The goal is to make the product behavior clear before implementing UI components, graph rendering, file editing, or AI-assisted workflows.
-
-This specification is based on the current product direction:
+This document defines current interaction rules for the local-first knowledge graph desktop app.
 
 ```txt
 Top Menu
-+ Left File Tree
++ Left Vault Sidebar / File Tree
 + Main Workspace
   + Breadcrumb
   + Graph View
   + Note View
 ```
 
-## 1.1 Desktop Maintenance MVP Update
+The desktop app is the primary maintenance environment. The mobile/web viewer is read-first.
 
-The desktop app now uses a desktop vault adapter at:
+## 1.1 Current Desktop Stage
+
+Current behavior:
 
 ```txt
-apps/desktop/src/data/desktop-vault-adapter.js
+desktop-vault-adapter.js = desktop file access boundary
+static-vault-loader.js = repository sample fallback
+Open Vault = real Tauri folder open
+note.md Save = real disk write
+New Note = creates meta.yaml, note.md, assets/, and one contains edge
+New Link = prototype-only, no graph.yaml write yet
 ```
-
-Vue components do not call Tauri filesystem APIs directly.
 
 Startup behavior:
 
 ```txt
 try last opened vault path from localStorage
 -> if it loads, use that local vault
--> if it fails, load the static sample vault
+-> if no last path, try development ./vault
+-> if it fails, load static sample vault as read-only fallback
 ```
 
-Open Vault validates `vault.yaml`, `domains.yaml`, `graph.yaml`, and `content/`, then normalizes the vault and resets to the root graph.
+`Reset View` was removed because it duplicated `Fit`.
 
-Note editing is real in the Desktop Maintenance MVP. Edit mode shows raw `note.md`, Save writes it to disk, and the app reloads the vault from disk after saving.
+## 1.2 Scope-Based Graph Model
 
-Dirty-state navigation guard applies before opening another note, switching to graph, changing graph scope, clicking another file tree item, or opening another vault.
+| Scope | What It Shows | Breadcrumb |
+|---|---|---|
+| Root scope | Top-level domains only | `Global Graph` |
+| Domain scope | One center domain plus direct children | `Global Graph / <Domain>` |
+| Focus scope | Current node and one-hop relations | `Global Graph / <Domain> / <Concept>` |
 
-Responsive layout rules:
-
-- no horizontal app overflow
-- Vault sidebar can collapse and restore
-- graph and note workspaces can shrink to half-screen width
-- toolbars may wrap or scroll horizontally
-- Note View fills available workspace width
-
-The sidebar preference uses:
+Rules:
 
 ```txt
-amazingwawa.sidebarCollapsed
+Root scope: top-level domain nodes only
+Domain scope: current domain + direct contains children only
+Focus scope: focused node + directly connected one-hop neighbors
 ```
 
-Graph viewport resize uses debounced camera fitting. This does not mutate node positions, route points, or `graph-layout.yaml`.
+If `graphics contains rendering-pipeline` and `rendering-pipeline contains test-note`, the Graphics Domain Graph shows `graphics` and `rendering-pipeline`, not `test-note`.
 
-`Reset View` was removed because it duplicated `Fit`. `Fit` means fitting the current scope into the visible graph viewport.
-
-## 1.2 Node Drilldown Update
-
-Domain Graph remains direct-children-only. It does not recursively show grandchildren.
+## 1.3 Node Drilldown Rules
 
 Double-click behavior:
 
-- domain node: open domain graph
-- non-domain node with `contains` children: open local / focus graph
-- non-domain leaf node: open note
-- center node in its own local graph: open note
+```txt
+domain node -> open domain graph
+non-domain node with contains children -> open local / focus graph
+non-domain leaf node -> open note
+center node in its own local graph -> open note
+```
 
-New Note Parent rules:
+## 1.4 New Note Parent Rules
 
-- Parent creates a `contains` hierarchy edge.
-- Parent must belong to the selected domain.
-- Cross-domain relationships should use New Link later, not Parent.
+New Note creates hierarchy through one `contains` edge.
 
-The desktop app is the main maintenance environment.
-
-The mobile/web viewer is read-first and should not provide the full editing workflow in the first version.
+```txt
+Parent must belong to the selected domain.
+Cross-domain relationships should use New Link later, not Parent.
+```
 
 ## 2. Core Interaction Model
-
-The app has three primary conceptual surfaces:
 
 | Surface | Role |
 |---|---|
@@ -90,712 +85,85 @@ The app has three primary conceptual surfaces:
 | Graph View | Conceptual relationship structure |
 | Note View | Knowledge explanation and editing surface |
 
-The file tree and the graph should not be treated as the same thing.
+## 3. Top Menu Interactions
 
-```txt
-File Tree = where the knowledge is stored
-Graph View = how the knowledge is connected
-Note View = what the knowledge means
-```
-
-## 3. App Startup Flow
-
-Current static-loader prototype:
-
-```txt
-Vite imports vault/*.yaml and vault/content/*/* files as raw text
--> knowledge-core normalizes them into one vault object
--> desktop UI reads scopes, nodes, notes, file tree, and layouts from that object
--> if loading fails, the UI falls back to mock demo data and logs a warning
-```
-
-The Tauri Open Vault folder picker is not implemented in this phase.
-
-When the desktop app launches:
-
-```txt
-Open app
-↓
-Check recent vault path
-↓
-If no recent vault exists:
-  show Open Vault screen
-If recent vault exists:
-  load vault
-↓
-Check last session state
-↓
-If last session was Graph View:
-  restore graph context
-If last session was Note View:
-  restore opened note
-If no session state exists:
-  show Global Graph
-```
-
-### 3.1 Open Vault Screen
-
-Shown when no vault is selected.
-
-Required actions:
-
-- Open Vault
-- Create New Vault later
-- Open Recent Vault later
-
-First version only requires:
-
-```txt
-Open Vault
-```
-
-### 3.2 Session Restoration
-
-The app should remember:
-
-- last opened vault path
-- last active view type
-- last graph context
-- last opened note ID
-- graph pan and zoom later
-- selected node later
-
-First version minimum:
-
-```txt
-last opened vault
-last active view
-last opened note or graph context
-```
-
-## 4. Top Menu Interactions
-
-The top menu provides app-level commands.
-
-Recommended first-version items:
+Current visible first-version items:
 
 ```txt
 Open Vault
 New Note
 New Link
+Git disabled
+```
+
+Hidden until implemented:
+
+```txt
 Search
-Git
 Settings
 ```
 
-### 4.1 Open Vault
+## 4. Left File Tree Interactions
 
-Action:
+The left file tree displays vault domain folders and knowledge item folders. It does not show raw static file buttons such as `graph.yaml`, `domains.yaml`, or `assets/`.
 
-```txt
-Click Open Vault
-↓
-Open system folder picker
-↓
-User selects vault folder
-↓
-Validate vault structure
-↓
-Load domains.yaml, graph.yaml, and content metadata
-↓
-Show Global Graph
-```
-
-Validation minimum:
-
-- selected folder exists
-- `graph.yaml` exists
-- `domains.yaml` exists
-- `content/` exists
-
-If invalid:
+Display rule:
 
 ```txt
-Show error message
-Do not load vault
+show title as main text
+show id as secondary text or tooltip
 ```
 
-### 4.2 New Note
-
-Action:
-
-```txt
-Click New Note
-↓
-Open New Note dialog
-↓
-User enters title
-↓
-User selects domain
-↓
-System generates concept ID
-↓
-User confirms
-↓
-Create:
-  vault/content/<domain>/<concept-id>/meta.yaml
-  vault/content/<domain>/<concept-id>/note.md
-  vault/content/<domain>/<concept-id>/assets/
-↓
-Open new Note View in Edit mode
-```
-
-Required fields:
-
-- title
-- domain
-- type
-- status
-
-Default values:
-
-```yaml
-type: concept
-status: seed
-summary: ""
-prerequisites: []
-related: []
-```
-
-### 4.3 New Link
-
-Action:
-
-```txt
-Click New Link
-↓
-Open New Link dialog
-↓
-Select source node
-↓
-Select target node
-↓
-Select relation type
-↓
-Confirm
-↓
-Append edge to graph.yaml
-↓
-Refresh Graph View
-```
-
-Allowed relation types:
-
-- contains
-- depends-on
-- used-in
-- compares-with
-
-Duplicate links should be blocked.
-
-A duplicate means:
-
-```txt
-same source
-same target
-same relation
-```
-
-### 4.4 Search
-
-Action:
-
-```txt
-Click Search
-↓
-Open global search overlay or search page
-↓
-Type query
-↓
-Show matching notes and domains
-↓
-Click result
-↓
-Open Note View or Graph View
-```
-
-First-version search target:
-
-- title
-- summary
-- domain
-- note ID
-
-Later:
-
-- full note.md body
-- tags
-- related nodes
-- graph relations
-
-### 4.5 Git
-
-First version may show a placeholder.
-
-Later behavior:
-
-```txt
-Click Git
-↓
-Open Git panel
-↓
-Show changed files
-↓
-Input commit message
-↓
-Commit
-↓
-Push
-```
-
-### 4.6 Settings
-
-First version may show a placeholder.
-
-Later settings:
-
-- theme
-- graph behavior
-- editor behavior
-- vault path
-- autosave policy
-
-## 5. Left File Tree Interactions
-
-The left file tree displays the vault's physical structure.
-
-Example:
-
-```txt
-vault
-├─ graphics
-│  ├─ rendering-pipeline
-│  ├─ shader
-│  └─ pbr
-├─ machine-learning
-│  ├─ gradient-descent
-│  ├─ reinforcement-learning
-│  └─ sac
-└─ web-dev
-   └─ nuxt
-```
-
-### 5.1 Click Behavior
+Click behavior:
 
 | Target | Behavior |
 |---|---|
 | Domain folder | Show domain graph |
-| Concept folder | Open note |
-| `graph.yaml` | Later: open graph relation editor |
-| `domains.yaml` | Later: open domain settings |
-| `assets/` | Later: open asset manager |
+| Concept/topic folder | Open note |
 | Empty area | No action |
 
-### 5.2 Domain Folder Click
+## 5. Graph View Interactions
 
-```txt
-Click domain folder
-↓
-Main Workspace switches to Graph View
-↓
-Graph shows:
-  domain node
-  child nodes
-  important related nodes
-↓
-Breadcrumb updates:
-  Global Graph / <Domain>
-```
-
-### 5.3 Concept Folder Click
-
-```txt
-Click concept folder
-↓
-Main Workspace switches to Note View
-↓
-Load note.md
-↓
-Load meta.yaml
-↓
-Display note in Read mode
-↓
-Breadcrumb updates:
-  Global Graph / <Domain> / <Concept>
-```
-
-### 5.4 File Tree Selection State
-
-The file tree should show:
-
-- selected item
-- active domain
-- active concept
-- unsaved state later
-
-Recommended visual states:
-
-| State | Visual |
-|---|---|
-| Hover | subtle gray background |
-| Selected | white outline or left accent bar |
-| Active domain | domain accent marker |
-| Unsaved later | small dot marker |
-
-## 6. Breadcrumb Interactions
-
-The breadcrumb is fixed at the top of the main workspace.
-
-It represents the conceptual navigation path.
-
-Examples:
-
-```txt
-Global Graph
-Global Graph / Graphics
-Global Graph / Graphics / Rendering Pipeline
-```
-
-### 6.1 Breadcrumb Click Behavior
-
-| Breadcrumb Item | Behavior |
-|---|---|
-| Global Graph | Show full graph |
-| Domain | Show domain graph |
-| Concept | Open concept note |
-| Back to Graph button | Show graph and focus current node |
-
-### 6.2 Breadcrumb in Graph View
-
-In Graph View:
-
-```txt
-Global Graph / <Domain> / <Focused Node>
-```
-
-Clicking a parent level changes the graph context.
-
-### 6.3 Breadcrumb in Note View
-
-In Note View:
-
-```txt
-Global Graph / <Domain> / <Concept>
-```
-
-Clicking the domain level returns to the domain graph.
-
-A `Show in Graph` action should also be available.
-
-### 6.4 Unsaved Edit Guard
-
-If the user is editing a note and clicks breadcrumb navigation:
-
-```txt
-If there are unsaved changes:
-  show confirmation dialog
-  options:
-    Save and leave
-    Discard and leave
-    Cancel
-If no unsaved changes:
-  navigate immediately
-```
-
-## 7. Main Workspace States
-
-The main workspace can be in one of these states:
-
-```txt
-empty
-open-vault
-graph
-note
-recent
-search
-git-placeholder
-settings-placeholder
-```
-
-### 7.1 Empty State
-
-Shown only if the app has no loaded vault and no action is active.
-
-Recommended message:
-
-```txt
-No vault loaded.
-Open a vault to start.
-```
-
-### 7.2 Graph State
-
-Shows Cytoscape graph canvas.
-
-### 7.3 Note State
-
-Shows note reader/editor.
-
-### 7.4 Recent State
-
-Shows recently opened notes and graphs.
-
-First version can keep this simple.
-
-## 8. Graph View Interactions
-
-Graph View is the main conceptual workspace.
-
-It shows nodes and edges.
-
-The graph must show only the current scope level.
-
-Root scope shows only domains.
-
-Domain scope shows one center domain and its direct child nodes.
-
-Concept grandchildren are not shown in the same domain scope unless the user enters focus scope.
-
-Graph navigation is a drill-down interaction, not a single all-level network.
-
-### 8.0 Scope-Based Graph Model
-
-The graph has three first-version scopes:
-
-| Scope | What It Shows | Breadcrumb |
-|---|---|---|
-| Root scope | Top-level domains only | `Global Graph` |
-| Domain scope | One center domain plus direct children | `Global Graph / <Domain>` |
-| Focus scope | Current node, parent, and direct related nodes | `Global Graph / <Domain> / <Concept>` |
-
-Root scope must not show child concepts such as Shader, PBR, Rendering Pipeline, Gradient Descent, or SAC.
-
-Domain scope must not show grandchildren or unrelated domains.
-
-Focus scope is generated from `graph.yaml` edges.
-
-Focus scope uses the focused node ID as the scope ID and shows:
-
-- the focused node
-- every directly connected one-hop neighbor
-- only edges directly connected to the focused node
-
-Neighbor-to-neighbor edges are not included. Cross-domain one-hop neighbors are allowed and keep their own domain color.
-
-Clicking `Global Graph` in the breadcrumb returns to root scope.
-
-Clicking a domain folder in the file tree opens that domain scope.
-
-Double-clicking a domain node opens that domain scope.
-
-Clicking a concept folder in the file tree opens Note View.
-
-### 8.1 Graph Context Types
-
-| Context | Description |
-|---|---|
-| Global Graph | Shows top-level domains only |
-| Domain Graph | Shows one center domain and direct child nodes |
-| Focused Node Graph | Shows current node, parent, children, and direct related nodes |
-
-### 8.2 Default Graph Behavior
-
-When the user opens Graph View:
-
-```txt
-If a graph context exists:
-  restore it
-Else:
-  show Global Graph
-```
-
-### 8.3 Node Mouse Interactions
+### 5.1 Node Mouse Interactions
 
 | Action | Behavior |
 |---|---|
 | Single-click any node | Select node only |
 | Double-click domain node | Enter that domain scope |
-| Double-click concept node | Open Note View |
+| Double-click non-domain node with children | Open local / focus graph |
+| Double-click non-domain leaf node | Open Note View |
+| Double-click center node in own focus graph | Open Note View |
 | Hover node | Highlight one-hop neighbors |
 | Right-click node | Open node context menu |
 | Drag empty canvas | Pan viewport |
+| Mouse wheel | Graph zoom |
 | Click empty area | No navigation |
-| Right-click empty area | Open canvas context menu |
 
-### 8.4 Node Selection
+### 5.2 Graph Toolbar
 
-When a node is selected:
-
-- selected node is highlighted
-- connected one-hop nodes remain visible
-- unrelated nodes may be faded
-- selected node title may appear in a compact floating label
-- no fixed right panel in first version
-- selected style uses thicker white border, double border, or solid accent marker
-- no glow, blurred shadows, or neon bloom
-
-First-version selected state should not open a permanent inspector.
-
-### 8.5 Node Hover
-
-When hovering a node:
+Current first-version toolbar:
 
 ```txt
-Highlight:
-  hovered node
-  direct edges
-  one-hop neighbor nodes
-
-Fade:
-  unrelated nodes and edges
-```
-
-Hover should not change current selection.
-
-Hover must not use glow effects. Use border weight, opacity, and solid color changes.
-
-### 8.6 Double-click Node
-
-```txt
-Double-click node
-↓
-Open Note View
-↓
-Load note.md and meta.yaml
-↓
-Display Read mode
-```
-
-If node has no note yet:
-
-```txt
-Show Create Note prompt
-```
-
-### 8.7 Right-click Node Menu
-
-Menu items:
-
-```txt
-Open Note
-Edit Note
-Show Local Graph
-Add Link From This Node
-Add Link To This Node
-Rename Node later
-Delete Node later
-```
-
-First-version priority:
-
-- Open Note
-- Show Local Graph
-- Add Link
-
-### 8.8 Right-click Empty Canvas Menu
-
-Menu items:
-
-```txt
-New Note
-New Domain later
-Paste Node later
-Reset View
-```
-
-First-version priority:
-
-- New Note
-- Reset View
-
-### 8.9 Drag Node
-
-Node dragging and layout editing are not implemented in the static-loader prototype.
-
-First version:
-
-```txt
-Do not drag nodes.
-Do not write graph-layout.yaml.
-Use graph-layout.yaml as the primary visual source.
-Use generated JavaScript fallback only when a scope layout is missing.
-```
-
-Later:
-
-```txt
-Save positions to graph-layout.json.
-```
-
-### 8.10 Pan and Zoom
-
-| Input | Behavior |
-|---|---|
-| Mouse wheel | Zoom |
-| Drag empty canvas | Pan |
-| Reset View | Fit graph to viewport |
-| Focus Node | Animate viewport to node |
-
-### 8.11 Graph Toolbar
-
-Graph View should have a compact toolbar.
-
-Recommended actions:
-
-```txt
-Search
 New Node
 New Link
 Global
 Local
-Reset View
 Fit
 ```
 
-### 8.12 Local Graph Mode
+`Search` and `Reset View` are not shown.
 
-When showing local graph of a node:
-
-```txt
-Show:
-  current node
-  parent nodes
-  child nodes
-  direct relation nodes
-
-Hide:
-  unrelated nodes
-```
-
-Breadcrumb example:
-
-```txt
-Global Graph / Graphics / Rendering Pipeline
-```
-
-Local graph is the focus scope. It should not show the full global graph.
-
-### 8.13 PCB-Style Graph Rendering
-
-Graph nodes must be square or rectangular technical modules.
-
-Node titles and type/domain metadata must be inside the module.
-
-Each module should expose connection ports:
-
-- left
-- right
-- top
-- bottom
+### 5.3 PCB-Style Graph Rendering
 
 Edges should render as PCB-style traces:
 
-- 90-degree turns
-- grid-aligned route points
-- horizontal and vertical segments
-- direct source port to target port contact
-
-The SVG trace layer and node layer should share the same coordinate system in the static prototype.
+```txt
+90-degree turns
+grid-aligned route points
+horizontal and vertical segments
+direct source port to target port contact
+no diagonal center-to-center lines
+```
 
 Relation styles:
 
@@ -806,515 +174,168 @@ Relation styles:
 | used-in | dashed purple or blue line |
 | compares-with | paired or double orange line |
 
-Semantic relations belong in `vault/graph.yaml`.
+## 6. Layout Editing Interactions
 
-Visual node positions, port choices, board sizes, and trace routes live in `vault/graph-layout.yaml` when present.
+Layout editing is the next implementation stage.
 
-## 9. Link Creation Interaction
-
-First version should use a form-based link creation flow.
-
-Do not implement drag-to-connect in the first version.
-
-The current static-loader prototype displays the New Link form only. It does not write `graph.yaml`.
-
-### 9.1 Add Link From Node
+### 6.1 Normal Mode
 
 ```txt
-Right-click node
-↓
-Add Link From This Node
-↓
-Open New Link dialog
-↓
-Source is pre-filled
-↓
-User selects target
-↓
-User selects relation type
-↓
-Save
-↓
-Append to graph.yaml
-↓
-Refresh graph
+click node = select
+double click node = navigate
+drag empty canvas = pan
+mouse wheel = graph zoom
+node drag disabled
 ```
 
-### 9.2 Add Link To Node
+### 6.2 Layout Edit Mode
+
+Entered by clicking `Edit Layout`.
 
 ```txt
-Right-click node
-↓
-Add Link To This Node
-↓
-Open New Link dialog
-↓
-Target is pre-filled
-↓
-User selects source
-↓
-User selects relation type
-↓
-Save
-↓
-Append to graph.yaml
-↓
-Refresh graph
+drag node = move node
+drag empty canvas = pan
+mouse wheel = graph zoom
+Save Layout = write current scope board.nodes to graph-layout.yaml
+Cancel Layout = discard draft positions
 ```
 
-### 9.3 Link Validation
+### 6.3 Ctrl + Left Drag Shortcut
 
-Before saving:
-
-- source exists
-- target exists
-- source is not equal to target unless explicitly allowed later
-- relation type is allowed
-- duplicate edge does not exist
-
-If invalid:
+Even outside Layout Edit Mode:
 
 ```txt
-Show validation error
-Do not write graph.yaml
+Ctrl + left mouse drag on node = temporarily move node
 ```
 
-## 10. Note View Interactions
+This creates unsaved layout changes. The user must click Save Layout to persist them.
 
-Note View displays and edits one knowledge item.
+### 6.4 Save Layout
 
-### 10.1 Note View Structure
+Save writes:
 
 ```txt
-┌────────────────────────────────────────┐
-│ Breadcrumb                             │
-├────────────────────────────────────────┤
-│ Note Toolbar                           │
-│ [Read] [Edit] [Save] [Cancel] [Graph]  │
-├────────────────────────────────────────┤
-│ Note Content                           │
-└────────────────────────────────────────┘
+graph-layout.yaml boards[scopeId].nodes
 ```
 
-### 10.2 Read Mode
+First version must not save generated route points.
 
-Default mode.
+### 6.5 Route Behavior During Layout Editing
 
-Shows rendered note content.
-
-Actions:
-
-- Edit
-- Show in Graph
-- Open file later
-- Copy path later
-
-### 10.3 Edit Mode
-
-Edit mode directly modifies `note.md`.
-
-First version:
+When nodes move:
 
 ```txt
-Plain Markdown editor
-No WYSIWYG
-No split preview required
+connected generated routes update immediately
+manual routes may be bypassed for affected edges if stale
+generated routes are not written to graph-layout.yaml
 ```
 
-The current static-loader prototype displays `note.md` content but does not save edits.
+Generated orthogonal routes should use port selection, port offset, lane offset, and relation-aware style.
 
-Actions:
+## 7. UI Font Size Interaction
 
-| Action | Behavior |
-|---|---|
-| Save | Write note.md |
-| Cancel | Discard unsaved edits |
-| Show in Graph | Guard if unsaved changes exist |
+Shortcut:
 
-### 10.4 Save Behavior
+```txt
+Ctrl + mouse wheel = change UI font size
+```
+
+Rules:
+
+```txt
+Ctrl + wheel up = increase UI font scale
+Ctrl + wheel down = decrease UI font scale
+```
+
+Store in localStorage:
+
+```txt
+amazingwawa.uiFontScale
+```
+
+Recommended range:
+
+```txt
+0.85 to 1.25
+```
+
+Font scaling must not mutate vault files, change board coordinates, change node x/y/w/h, or change camera zoom.
+
+## 8. New Link
+
+Current stage:
+
+```txt
+New Link form exists for design validation only.
+Create Link is disabled.
+No graph.yaml write occurs.
+```
+
+## 9. Note View
+
+Read mode shows note content. Edit mode modifies `note.md`.
+
+Save behavior:
 
 ```txt
 Click Save
-↓
-Write content to note.md
-↓
-Update dirty state to false
-↓
-Return to Read mode or stay in Edit mode depending setting later
+-> write content to note.md
+-> reload vault
+-> update dirty state
+-> return to Read mode
 ```
 
-First-version decision:
+## 10. Unsaved Changes Policy
+
+Dirty note state:
 
 ```txt
-After Save, return to Read mode.
+draftMarkdown !== original note.md markdown
 ```
 
-### 10.5 Cancel Behavior
+Dirty layout state:
 
 ```txt
-Click Cancel
-↓
-If content changed:
-  show confirmation
-If confirmed:
-  discard changes
-  return to Read mode
-If canceled:
-  stay in Edit mode
+draft node positions differ from current saved board.nodes
 ```
 
-### 10.6 Show in Graph
+Before navigation, show a confirmation dialog if dirty.
 
-```txt
-Click Show in Graph
-↓
-If unsaved changes:
-  show unsaved edit guard
-Else:
-  switch to Graph View
-  show Focused Node Graph
-  focus current node
-```
-
-### 10.7 Meta Editing
-
-First version does not need full meta.yaml editing.
-
-First version may display:
-
-- title
-- domain
-- status
-- summary
-
-But editing meta.yaml can be added later.
-
-## 11. New Note Interaction
-
-New Note can be triggered from:
-
-- top menu
-- graph canvas context menu
-- file tree context menu later
-
-### 11.1 New Note Dialog
-
-Fields:
-
-| Field | Required | Default |
-|---|---|---|
-| Title | yes | empty |
-| Domain | yes | current domain if available |
-| ID | yes | auto-generated from title |
-| Type | yes | concept |
-| Status | yes | seed |
-| Summary | no | empty |
-
-### 11.2 New Note Creation
-
-On confirm:
-
-```txt
-Create directory:
-vault/content/<domain>/<id>/
-
-Create:
-meta.yaml
-note.md
-assets/
-```
-
-Default `note.md`:
-
-```md
-# <Title>
-
-## 一句话定义
-
-## 它解决什么问题？
-
-## 核心直觉
-
-## 正式解释
-
-## 最小例子
-
-## 常见误区
-
-## 相关知识
-
-## 复习问题
-```
-
-After creation:
-
-```txt
-Open Note View
-Switch to Edit mode
-```
-
-## 12. Search Interaction
-
-First version search can be simple.
-
-### 12.1 Search Entry Points
-
-- top menu Search
-- graph toolbar search
-- keyboard shortcut later
-
-### 12.2 Search Scope
-
-First version:
-
-- note title
-- note summary
-- note ID
-- domain
-
-Later:
-
-- note.md body
-- custom blocks
-- graph relations
-- assets
-
-### 12.3 Search Result Behavior
-
-| Result Type | Click Behavior |
-|---|---|
-| Domain | Open domain graph |
-| Concept | Open note |
-| Graph node | Focus node in graph |
-
-Search result item should show:
-
-- title
-- domain
-- summary
-- status
-
-## 13. Keyboard Interaction
-
-First version suggested shortcuts:
+## 11. Keyboard / Mouse Shortcuts
 
 | Shortcut | Action |
 |---|---|
 | Ctrl + O | Open Vault |
 | Ctrl + N | New Note |
-| Ctrl + F | Search |
-| Ctrl + S | Save note in Edit mode |
-| Esc | Close menu / cancel selection |
-| Enter | Open selected search result |
+| Ctrl + S | Save note in Edit mode or Save Layout in Layout Edit Mode |
+| Esc | Close dialog / cancel layout edit |
+| Ctrl + left drag node | Move node as unsaved layout edit |
+| Ctrl + mouse wheel | Change UI font size |
 
-Shortcuts can be implemented after the basic UI is stable.
+## 12. Current Implementation Scope
 
-## 14. Unsaved Changes Policy
+Implemented/current:
 
-Dirty state should be tracked only for the currently edited note in the first version.
-
-Dirty state is true when:
-
-```txt
-Edit mode content differs from original note.md
-```
-
-Before navigating away:
-
-```txt
-If dirty:
-  show confirmation dialog
-Else:
-  navigate immediately
-```
-
-Confirmation options:
-
-```txt
-Save and leave
-Discard and leave
-Cancel
-```
-
-## 15. Error Handling
-
-### 15.1 Vault Loading Error
-
-If required files are missing:
-
-```txt
-Show:
-  Invalid vault structure
-  Missing file or directory name
-```
-
-### 15.2 File Save Error
-
-If note.md cannot be saved:
-
-```txt
-Show error message
-Keep editor content
-Do not exit Edit mode
-```
-
-### 15.3 Graph Save Error
-
-If graph.yaml cannot be updated:
-
-```txt
-Show error message
-Do not update visual graph as saved
-```
-
-### 15.4 Parse Error
-
-If YAML cannot be parsed:
-
-```txt
-Show parse error
-Show file path
-Disable graph editing until fixed
-```
-
-## 16. Mobile/Web Viewer Interactions
-
-The mobile/web viewer is read-first.
-
-### 16.1 Mobile Home
-
-Shows:
-
-- search
-- domain cards
-- recent notes
-- review questions
-- graph entry
-
-### 16.2 Mobile Graph
-
-Mobile should show only local graph.
-
-Default scope:
-
-```txt
-current node
-parent nodes
-child nodes
-strong related nodes
-```
-
-### 16.3 Mobile Note Page
-
-Actions:
-
-- read content
-- open related notes
-- open local graph
-- search
-- review questions
-
-No editing in the first version.
-
-## 17. First-Version Interaction Scope
-
-Implement:
-
-- Static vault loading from repository `vault/`
+- Tauri Open Vault
+- static fallback
 - File Tree
 - Breadcrumb
-- Global Graph
+- Root Graph
 - Domain Graph
-- Focused Node Graph generated from edges
-- Single-click node
-- Double-click node
-- Right-click node menu
-- New Note
-- New Link form
+- Focus Graph generated from edges
+- New Note creation
+- New Link prototype-only dialog
 - Note Read mode
 - Note Edit mode
+- note.md Save
 - Show in Graph
+- sidebar collapse
+- Fit
 
-Do not implement yet:
+Next:
 
-- Tauri Open Vault picker
-- note save
-- graph write
-- graph-layout write
-- fixed right inspector
-- drag-to-connect link creation
-- node dragging / layout editing
-- rich WYSIWYG editor
-- meta.yaml visual editor
-- full Git UI
-- AI suggestion panel
-- mobile editing
-- advanced graph layout persistence
-- multi-vault management
-
-## 18. Implementation Notes
-
-Recommended UI component structure:
-
-```txt
-src/
-├─ components/
-│  ├─ layout/
-│  │  ├─ TopMenu.vue
-│  │  ├─ FileTree.vue
-│  │  └─ WorkspaceLayout.vue
-│  ├─ navigation/
-│  │  └─ BreadcrumbBar.vue
-│  ├─ graph/
-│  │  ├─ GraphView.vue
-│  │  ├─ GraphToolbar.vue
-│  │  └─ NodeContextMenu.vue
-│  ├─ note/
-│  │  ├─ NoteView.vue
-│  │  ├─ NoteToolbar.vue
-│  │  └─ NoteEditor.vue
-│  └─ dialogs/
-│     ├─ NewNoteDialog.vue
-│     └─ NewLinkDialog.vue
-```
-
-Recommended graph logic files:
-
-```txt
-src/graph/
-├─ graph-data.js
-├─ graph-theme.js
-├─ graph-layout.js
-├─ graph-interactions.js
-└─ graph-filter.js
-```
-
-Recommended app state:
-
-```txt
-currentVaultPath
-currentView
-currentGraphContext
-currentNoteId
-selectedNodeId
-dirtyNoteState
-recentItems
-```
-
-## 19. Summary
-
-The first version interaction design is:
-
-```txt
-Open or restore vault
-↓
-Use file tree to browse physical structure
-↓
-Use graph view to understand and edit relationships
-↓
-Use note view to read and edit knowledge content
-↓
-Use breadcrumb to move between graph levels
-↓
-Use Git and AI workflows later for maintenance support
-```
+- Layout Edit Mode
+- Save graph-layout.yaml board.nodes
+- UI font scale by Ctrl + wheel
+- New Link writing
+- content block renderer
