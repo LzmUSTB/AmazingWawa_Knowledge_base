@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from "vue";
-import { isDomainNode } from "../../graph/graph-scope.js";
+import { hasContainsChildren, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 
 defineEmits(["open-dialog", "open-note", "show-local"]);
@@ -13,6 +13,7 @@ const props = defineProps({
 });
 
 const domainSelected = computed(() => isDomainNode(props.node.id));
+const hasChildren = computed(() => hasContainsChildren(props.node.id));
 </script>
 
 <template>
@@ -33,15 +34,31 @@ const domainSelected = computed(() => isDomainNode(props.node.id));
           Open Domain Graph
         </button>
         <button
-          v-else
+          v-else-if="hasChildren"
           class="hud-button"
           style="--button-color: var(--node-color)"
+          @click="$emit('show-local', node.id)"
+        >
+          Open Local Graph
+        </button>
+        <button
+          v-else
+          class="hud-button"
+          style="--button-color: var(--simulation)"
           @click="$emit('open-note', node.id)"
         >
           Open Note
         </button>
         <button
-          v-if="!domainSelected"
+          v-if="!domainSelected && hasChildren"
+          class="hud-button"
+          style="--button-color: var(--simulation)"
+          @click="$emit('open-note', node.id)"
+        >
+          Open Note
+        </button>
+        <button
+          v-else-if="!domainSelected"
           class="hud-button"
           style="--button-color: var(--simulation)"
           @click="$emit('show-local', node.id)"

@@ -5,12 +5,13 @@ import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
 import {
   chooseVaultRoot,
+  createKnowledgeItem,
   loadInitialVault,
   loadVaultFromPath,
   writeNoteMarkdown,
 } from "./data/desktop-vault-adapter.js";
 import { loadStaticVault } from "./data/static-vault-loader.js";
-import { findGraphNode, getGraphNodes, setActiveVault } from "./graph/graph-data-store.js";
+import { findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphScope, scopeForDomain } from "./graph/graph-scope.js";
 
 const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
@@ -37,6 +38,7 @@ const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
 );
 const canSaveNote = computed(() => Boolean(activeVaultRootPath.value));
+const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || "Knowledge Base");
 
 onMounted(async () => {
   try {
@@ -192,6 +194,29 @@ async function saveNote({ node, markdown }) {
   }
 }
 
+async function createNote(payload) {
+  if (!confirmDiscardDirty()) return;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before creating notes.");
+    return;
+  }
+
+  try {
+    const result = await createKnowledgeItem(activeVaultRootPath.value, payload);
+    applyVault(result.vault, { reset: false });
+    currentNoteId.value = result.newNodeId;
+    selectedNodeId.value = result.newNodeId;
+    currentDomain.value = payload.domain;
+    currentView.value = "note";
+    noteMode.value = "edit";
+    noteDirty.value = false;
+    activeDialog.value = "";
+  } catch (error) {
+    console.error("[vault] Failed to create note.", error);
+    window.alert(`Failed to create note: ${error}`);
+  }
+}
+
 function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value;
   localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed.value));
@@ -200,10 +225,10 @@ function toggleSidebar() {
 
 <template>
   <div class="prototype-shell">
-    <WorkspaceLayout :active-dialog="activeDialog" :can-save-note="canSaveNote" :current-domain="currentDomain"
+    <WorkspaceLayout :active-dialog="activeDialog" :app-title="activeVaultTitle" :can-save-note="canSaveNote" :current-domain="currentDomain"
       :current-note-id="currentNoteId" :current-view="currentView" :graph-scope-id="graphScopeId" :note-mode="noteMode"
       :note-saving="noteSaving" :selected-node-id="selectedNodeId" :sidebar-collapsed="sidebarCollapsed"
-      @close-dialog="activeDialog = ''" @open-dialog="openDialog" @open-domain="openDomain" @open-note="openNote"
+      @close-dialog="activeDialog = ''" @create-note="createNote" @open-dialog="openDialog" @open-domain="openDomain" @open-note="openNote"
       @open-scope="openScope" @open-vault="openVault" @save-note="saveNote" @select-node="selectedNodeId = $event"
       @set-note-dirty="noteDirty = $event" @set-note-mode="setNoteMode" @show-graph="showGraph" @show-view="showView"
       @toggle-sidebar="toggleSidebar" />

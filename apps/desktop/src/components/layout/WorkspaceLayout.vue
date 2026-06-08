@@ -16,6 +16,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  appTitle: {
+    type: String,
+    default: "Knowledge Base",
+  },
   currentDomain: {
     type: String,
     required: true,
@@ -61,6 +65,7 @@ const emit = defineEmits([
   "open-note",
   "open-vault",
   "open-scope",
+  "create-note",
   "save-note",
   "select-node",
   "set-note-dirty",
@@ -92,6 +97,7 @@ function fitGraphView() {
 <template>
   <div class="desktop-prototype app-frame" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
     <TopMenu
+      :app-title="appTitle"
       @open-dialog="$emit('open-dialog', $event)"
       @open-vault="$emit('open-vault')"
       @show-view="$emit('show-view', $event)"
@@ -172,7 +178,11 @@ function fitGraphView() {
       <NewNoteDialog
         v-else-if="activeDialog === 'new-note'"
         :current-domain="currentDomain"
+        :current-view="currentView"
+        :graph-scope-id="graphScopeId"
+        :selected-node-id="selectedNodeId"
         @close="$emit('close-dialog')"
+        @create-note="$emit('create-note', $event)"
       />
     </div>
   </div>

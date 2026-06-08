@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { getGraphNodes } from "../../graph/graph-data-store.js";
 import { relationTheme } from "../../graph/graph-theme.js";
 
-defineProps({
+const props = defineProps({
   selectedNodeId: {
     type: String,
     required: true,
@@ -14,6 +14,9 @@ defineEmits(["close"]);
 
 const relationTypes = ["contains", "depends-on", "used-in", "compares-with"];
 const graphNodes = computed(() => getGraphNodes());
+const fallbackTargetId = computed(
+  () => graphNodes.value.find((node) => node.id !== props.selectedNodeId)?.id || "",
+);
 </script>
 
 <template>
@@ -21,7 +24,7 @@ const graphNodes = computed(() => getGraphNodes());
     <div class="dialog-accent"></div>
     <header>
       <h2>New Graph Link</h2>
-      <p>The confirmed relation appends one index-level edge to graph.yaml.</p>
+      <p>Prototype only. Real graph.yaml writing will be implemented in the next phase.</p>
     </header>
 
     <label>
@@ -35,7 +38,7 @@ const graphNodes = computed(() => getGraphNodes());
 
     <label>
       <span>Target Node</span>
-      <select value="gradient-descent">
+      <select :value="fallbackTargetId">
         <option v-for="node in graphNodes" :key="node.id" :value="node.id">
           {{ node.domain }} / {{ node.id }}
         </option>
@@ -64,13 +67,13 @@ const graphNodes = computed(() => getGraphNodes());
     </div>
 
     <div class="graph-yaml-note">
-      <span>graph.yaml</span>
-      <code>source + target + relation must be unique</code>
+      <span>Next phase</span>
+      <code>Link creation will be enabled in the next phase.</code>
     </div>
 
     <footer>
       <button class="hud-button" @click="$emit('close')">Cancel</button>
-      <button class="hud-button" style="--button-color: var(--career)" @click="$emit('close')">
+      <button class="hud-button" disabled style="--button-color: var(--career)">
         Create Link
       </button>
     </footer>
@@ -125,6 +128,11 @@ const graphNodes = computed(() => getGraphNodes());
   font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.hud-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .graph-yaml-note {

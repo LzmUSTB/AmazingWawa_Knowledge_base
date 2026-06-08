@@ -401,6 +401,8 @@ Graphics
 
 Do not show grandchildren in the same domain scope.
 
+This rule is intentional. If `graphics contains rendering-pipeline` and `rendering-pipeline contains test-note`, the Graphics Domain Graph shows `graphics` and `rendering-pipeline`, not `test-note`.
+
 ### 12.3 Focus Scope
 
 Focus scope shows:
@@ -426,6 +428,8 @@ Focus scope is useful for local review and mobile local graph view.
 Focus scope ID is the focused node ID.
 
 Neighbor-to-neighbor edges are not included. Cross-domain one-hop neighbors are allowed and keep their own domain color.
+
+Focus scope is where non-domain children are explored. A child created under `rendering-pipeline` appears in the `rendering-pipeline` Focus / Local Graph.
 
 ## 13. Cross-Domain Edges
 

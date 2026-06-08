@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
 #[derive(Serialize)]
@@ -31,6 +31,23 @@ fn safe_join(root: &str, relative_path: &str) -> Result<PathBuf, String> {
     }
 
     Ok(full_path)
+}
+
+fn safe_vault_path(root: &str, relative_path: &str) -> Result<PathBuf, String> {
+    let relative = Path::new(relative_path);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| matches!(component, Component::ParentDir | Component::Prefix(_) | Component::RootDir))
+    {
+        return Err("Refusing to access a path outside the vault root".into());
+    }
+
+    let root_path = PathBuf::from(root);
+    let canonical_root = root_path
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    Ok(canonical_root.join(relative))
 }
 
 fn read_required(root: &Path, relative_path: &str) -> Result<String, String> {
@@ -182,12 +199,28 @@ fn write_text_file(
         .map_err(|error| format!("Failed to write {}: {error}", target_path.to_string_lossy()))
 }
 
+#[tauri::command]
+fn read_text_file(vault_root_path: String, relative_path: String) -> Result<String, String> {
+    let target_path = safe_join(&vault_root_path, &relative_path)?;
+    fs::read_to_string(&target_path)
+        .map_err(|error| format!("Failed to read {}: {error}", target_path.to_string_lossy()))
+}
+
+#[tauri::command]
+fn create_dir_all(vault_root_path: String, relative_path: String) -> Result<(), String> {
+    let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
+    fs::create_dir_all(&target_path)
+        .map_err(|error| format!("Failed to create {}: {error}", target_path.to_string_lossy()))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             choose_vault_root,
+            create_dir_all,
+            read_text_file,
             read_vault_files,
             resolve_default_vault_root,
             write_text_file

@@ -95,4 +95,38 @@ Viewport resize uses debounced camera fitting. This changes only camera pan/zoom
 
 ## Not Included Yet
 
-Do not implement in this stage: real New Note creation, real New Link writing, graph editing, layout saving, node dragging, route editing, drag-to-connect, Git panel, AI panel, or mobile editing.
+Do not implement in this stage: real New Link writing, graph editing beyond the single New Note `contains` edge, layout saving, node dragging, route editing, drag-to-connect, Git panel, AI panel, or mobile editing.
+
+## Step 5 Update
+
+UI cleanup decisions:
+
+- FileTree no longer shows static `graph.yaml`, `domains.yaml`, or `assets/` buttons.
+- Note View no longer shows the debug Vault structure block.
+- Graph View no longer shows the static `PORT ROUTED / STATIC BOARD` label.
+- Search and Settings are hidden until implemented.
+- Git remains visible but disabled.
+- New Link remains prototype-only and does not write `graph.yaml`.
+
+TopMenu title now comes from `vault.yaml`:
+
+```txt
+activeVault.vault.title
+```
+
+FileTree now displays human titles with IDs as secondary labels.
+
+New Note creation is real:
+
+```txt
+New Note form
+-> create content/<domain>/<id>/
+-> write meta.yaml
+-> write note.md
+-> create assets/
+-> append one contains edge to graph.yaml
+-> reload vault
+-> open new note in Edit mode
+```
+
+`graph-layout.yaml` is not written in this phase. Generated layout fallback handles the new node until layout editing exists.

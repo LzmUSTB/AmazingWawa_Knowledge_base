@@ -23,7 +23,6 @@ defineEmits(["fit-view", "open-dialog", "show-graph", "show-local"]);
 
 <template>
   <div class="graph-toolbar">
-    <!-- <button class="hud-button">Search</button> -->
     <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
       New Node
     </button>

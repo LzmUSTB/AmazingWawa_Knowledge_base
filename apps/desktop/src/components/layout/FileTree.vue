@@ -34,14 +34,18 @@ const fileTree = computed(() => getActiveVault().fileTree);
         <button class="domain-row" :class="{ 'is-active': domain.id === activeDomain }"
           :style="{ '--domain-color': getDomainColor(domain.id) }" @click="$emit('open-domain', domain.id)">
           <span class="domain-marker"></span>
-          <span>{{ domain.id }}</span>
+          <span class="tree-text" :title="domain.id">
+            <span class="tree-title">{{ domain.title }}</span>
+            <span class="tree-id">{{ domain.id }}</span>
+          </span>
         </button>
 
         <div v-if="domain.id === activeDomain || domain.children.length" class="concept-list">
           <button v-for="node in domain.children" :key="node.id" class="concept-row"
             :class="{ 'is-active': node.id === activeNoteId }" :style="{ '--domain-color': getDomainColor(domain.id) }"
-            @click="$emit('open-note', node.id)">
-            {{ node.id }}
+            :title="node.id" @click="$emit('open-note', node.id)">
+            <span class="tree-title">{{ node.title }}</span>
+            <span class="tree-id">{{ node.id }}</span>
           </button>
         </div>
       </section>
@@ -119,6 +123,30 @@ const fileTree = computed(() => getActiveVault().fileTree);
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 800;
+}
+
+.tree-text,
+.concept-row {
+  min-width: 0;
+}
+
+.tree-title,
+.tree-id {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-title {
+  text-transform: none;
+}
+
+.tree-id {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
   text-transform: uppercase;
 }
 

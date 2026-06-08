@@ -26,3 +26,13 @@ export function scopeForNode(nodeId) {
 export function isDomainNode(nodeId) {
   return findGraphNode(nodeId)?.type === "domain";
 }
+
+export function getContainsChildren(nodeId) {
+  return getActiveVault()
+    .edges.filter((edge) => edge.relation === "contains" && edge.source === nodeId)
+    .map((edge) => edge.target);
+}
+
+export function hasContainsChildren(nodeId) {
+  return getContainsChildren(nodeId).length > 0;
+}

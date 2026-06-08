@@ -34,7 +34,6 @@ const noteBlocks = computed(() => {
   <main class="mobile-screen" :style="{ '--mobile-color': getDomainColor(node.domain) }">
     <header class="mobile-top">
       <strong>Knowledge Viewer</strong>
-      <button class="hud-button">Search</button>
     </header>
     <nav class="mobile-crumb">
       <span></span>

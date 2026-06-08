@@ -59,6 +59,23 @@ Graph viewport resize uses debounced camera fitting. This does not mutate node p
 
 `Reset View` was removed because it duplicated `Fit`. `Fit` means fitting the current scope into the visible graph viewport.
 
+## 1.2 Node Drilldown Update
+
+Domain Graph remains direct-children-only. It does not recursively show grandchildren.
+
+Double-click behavior:
+
+- domain node: open domain graph
+- non-domain node with `contains` children: open local / focus graph
+- non-domain leaf node: open note
+- center node in its own local graph: open note
+
+New Note Parent rules:
+
+- Parent creates a `contains` hierarchy edge.
+- Parent must belong to the selected domain.
+- Cross-domain relationships should use New Link later, not Parent.
+
 The desktop app is the main maintenance environment.
 
 The mobile/web viewer is read-first and should not provide the full editing workflow in the first version.

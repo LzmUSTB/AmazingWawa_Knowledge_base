@@ -15,7 +15,7 @@ import {
   getTracePoints,
   pointsToPath,
 } from "../../graph/graph-layout.js";
-import { getGraphScope, isDomainNode } from "../../graph/graph-scope.js";
+import { getGraphScope, hasContainsChildren, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor, nodeClass, relationTheme } from "../../graph/graph-theme.js";
 
 const props = defineProps({
@@ -69,6 +69,14 @@ function handleNodeClick(node) {
 
 function handleNodeOpen(node) {
   if (isDomainNode(node.id)) {
+    emit("open-scope", node.id);
+    return;
+  }
+  if (currentScope.value.type === "focus" && currentScope.value.centerNodeId === node.id) {
+    emit("open-note", node.id);
+    return;
+  }
+  if (hasContainsChildren(node.id)) {
     emit("open-scope", node.id);
     return;
   }
