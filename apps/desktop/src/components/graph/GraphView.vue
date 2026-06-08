@@ -1,8 +1,20 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import NodeContextMenu from "./NodeContextMenu.vue";
+import {
+  clamp,
+  fitCameraToBounds,
+  getScopeBounds,
+  GRAPH_CAMERA_LIMITS,
+  zoomCameraAt,
+} from "../../graph/graph-camera.js";
 import { getConnectedNodeIds, isConnectedEdge } from "../../graph/graph-interactions.js";
-import { getNodeLayout, getTracePoints, pointsToPath } from "../../graph/graph-layout.js";
+import {
+  getNodeLayout,
+  getTracePoints,
+  graphBoardSize,
+  pointsToPath,
+} from "../../graph/graph-layout.js";
 import { getGraphScope, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor, nodeClass, relationTheme } from "../../graph/graph-theme.js";
 
@@ -19,7 +31,12 @@ const props = defineProps({
 
 const emit = defineEmits(["open-dialog", "open-note", "open-scope", "select-node", "show-local"]);
 
+const viewportRef = ref(null);
 const hoveredNodeId = ref("");
+const isPanning = ref(false);
+const panStart = ref({ pointerId: 0, x: 0, y: 0, cameraX: 0, cameraY: 0 });
+const camera = ref({ x: 0, y: 0, zoom: 1 });
+const board = graphBoardSize.desktop;
 const currentScope = computed(() => getGraphScope(props.scopeId));
 const focusNodeId = computed(() => hoveredNodeId.value || props.selectedNodeId);
 const connectedIds = computed(() => getConnectedNodeIds(focusNodeId.value, currentScope.value.edges));
@@ -66,56 +83,151 @@ function handleShowLocal(nodeId) {
   }
   emit("show-local", nodeId);
 }
+
+function isInteractiveTarget(event) {
+  return Boolean(event.target.closest("button, a, input, textarea, select, .node-context-menu"));
+}
+
+function fitCurrentScope() {
+  if (!viewportRef.value) return;
+  const bounds = getScopeBounds(currentScope.value.nodes, (id) => getNodeLayout(id, currentScope.value.id));
+  camera.value = fitCameraToBounds(viewportRef.value, bounds, {
+    margin: 160,
+    minZoom: GRAPH_CAMERA_LIMITS.minZoom,
+    maxZoom: 1.4,
+  });
+}
+
+function handlePointerDown(event) {
+  if (isInteractiveTarget(event)) return;
+  isPanning.value = true;
+  panStart.value = {
+    pointerId: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    cameraX: camera.value.x,
+    cameraY: camera.value.y,
+  };
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function handlePointerMove(event) {
+  if (!isPanning.value || event.pointerId !== panStart.value.pointerId) return;
+  camera.value = {
+    ...camera.value,
+    x: panStart.value.cameraX + event.clientX - panStart.value.x,
+    y: panStart.value.cameraY + event.clientY - panStart.value.y,
+  };
+}
+
+function stopPanning(event) {
+  if (event?.pointerId && event.pointerId !== panStart.value.pointerId) return;
+  isPanning.value = false;
+}
+
+function handleWheel(event) {
+  event.preventDefault();
+  if (!viewportRef.value) return;
+  const factor = event.deltaY > 0 ? 1 / 1.12 : 1.12;
+  const nextZoom = clamp(
+    camera.value.zoom * factor,
+    GRAPH_CAMERA_LIMITS.minZoom,
+    GRAPH_CAMERA_LIMITS.maxZoom,
+  );
+  camera.value = zoomCameraAt(
+    camera.value,
+    event.clientX,
+    event.clientY,
+    viewportRef.value,
+    nextZoom,
+  );
+}
+
+onMounted(() => {
+  nextTick(fitCurrentScope);
+});
+
+watch(
+  () => props.scopeId,
+  () => nextTick(fitCurrentScope),
+);
+
+defineExpose({ fitCurrentScope });
 </script>
 
 <template>
   <section class="graph-view technical-grid">
-    <svg class="trace-layer" viewBox="0 0 1180 780" aria-hidden="true">
-      <defs>
-        <marker
-          id="trace-arrow"
-          markerHeight="8"
-          markerWidth="8"
-          orient="auto"
-          refX="7"
-          refY="4"
-          viewBox="0 0 8 8"
+    <div
+      ref="viewportRef"
+      class="graph-viewport"
+      :class="{ 'is-panning': isPanning }"
+      @pointercancel="stopPanning"
+      @pointerdown="handlePointerDown"
+      @pointermove="handlePointerMove"
+      @pointerup="stopPanning"
+      @wheel="handleWheel"
+    >
+      <div
+        class="graph-board"
+        :style="{
+          width: `${board.width}px`,
+          height: `${board.height}px`,
+          transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
+        }"
+      >
+        <svg
+          class="trace-layer"
+          :height="board.height"
+          :viewBox="`0 0 ${board.width} ${board.height}`"
+          :width="board.width"
+          aria-hidden="true"
         >
-          <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor" />
-        </marker>
-      </defs>
+          <defs>
+            <marker
+              id="trace-arrow"
+              markerHeight="8"
+              markerWidth="8"
+              orient="auto"
+              refX="7"
+              refY="4"
+              viewBox="0 0 8 8"
+            >
+              <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor" />
+            </marker>
+          </defs>
 
-      <g v-for="edge in currentScope.edges" :key="edge.id">
-        <path
-          v-if="getTracePoints(edge.id, currentScope.id)"
-          class="trace"
-          :class="[
-            `trace--${edge.relation}`,
-            {
-              'is-active': isConnectedEdge(edge, focusNodeId),
-              'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
-            },
-          ]"
-          :d="pointsToPath(getTracePoints(edge.id, currentScope.id))"
-          :marker-end="edge.relation === 'depends-on' ? 'url(#trace-arrow)' : ''"
-          :stroke="relationTheme[edge.relation].color"
-          :stroke-dasharray="relationTheme[edge.relation].dash"
-        />
-        <path
-          v-if="edge.relation === 'compares-with' && getTracePoints(edge.id, currentScope.id)"
-          class="trace trace--paired"
-          :class="{ 'is-active': isConnectedEdge(edge, focusNodeId) }"
-          :d="pointsToPath(getTracePoints(edge.id, currentScope.id).map(([x, y]) => [x + 7, y + 7]))"
-          :stroke="relationTheme[edge.relation].color"
-          stroke-dasharray="3 5"
-        />
-      </g>
-    </svg>
+          <g v-for="edge in currentScope.edges" :key="edge.id">
+            <path
+              v-if="getTracePoints(edge.id, currentScope.id)"
+              class="trace"
+              :class="[
+                `trace--${edge.relation}`,
+                {
+                  'is-active': isConnectedEdge(edge, focusNodeId),
+                  'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
+                },
+              ]"
+              :d="pointsToPath(getTracePoints(edge.id, currentScope.id))"
+              :marker-end="edge.relation === 'depends-on' ? 'url(#trace-arrow)' : ''"
+              :stroke="relationTheme[edge.relation].color"
+              :stroke-dasharray="relationTheme[edge.relation].dash"
+            />
+            <path
+              v-if="edge.relation === 'compares-with' && getTracePoints(edge.id, currentScope.id)"
+              class="trace trace--paired"
+              :class="{ 'is-active': isConnectedEdge(edge, focusNodeId) }"
+              :d="pointsToPath(getTracePoints(edge.id, currentScope.id).map(([x, y]) => [x + 7, y + 7]))"
+              :stroke="relationTheme[edge.relation].color"
+              stroke-dasharray="3 5"
+            />
+          </g>
+        </svg>
 
-    <button
-      v-for="node in currentScope.nodes"
-      :key="node.id"
-      :class="[nodeClass(node.type), nodeState(node)]"
+        <div class="node-layer">
+          <button
+            v-for="node in currentScope.nodes"
+            :key="node.id"
+            :class="[nodeClass(node.type), nodeState(node)]"
       :style="{
         '--node-color': getDomainColor(node.domain),
         left: `${getNodeLayout(node.id, currentScope.id).x}px`,
@@ -127,15 +239,18 @@ function handleShowLocal(nodeId) {
       @dblclick="handleNodeOpen(node)"
       @mouseenter="hoveredNodeId = node.id"
       @mouseleave="hoveredNodeId = ''"
-    >
-      <span class="node-port node-port--top"></span>
-      <span class="node-port node-port--right"></span>
-      <span class="node-port node-port--bottom"></span>
-      <span class="node-port node-port--left"></span>
-      <span class="node-pin"></span>
-      <span class="node-title">{{ node.title }}</span>
-      <span class="node-meta">{{ node.type }} / {{ node.domain }}</span>
-    </button>
+          >
+            <span class="node-port node-port--top"></span>
+            <span class="node-port node-port--right"></span>
+            <span class="node-port node-port--bottom"></span>
+            <span class="node-port node-port--left"></span>
+            <span class="node-pin"></span>
+            <span class="node-title">{{ node.title }}</span>
+            <span class="node-meta">{{ node.type }} / {{ node.domain }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="routing-label routing-label--a">
       SCOPE: {{ currentScope.type }} / SAME-LEVEL ONLY
@@ -160,11 +275,40 @@ function handleShowLocal(nodeId) {
   border-bottom: 1px solid var(--border-primary);
 }
 
-.trace-layer {
+.graph-viewport {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  cursor: grab;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.graph-viewport.is-panning {
+  cursor: grabbing;
+}
+
+.graph-board {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+.trace-layer,
+.node-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.node-layer {
+  width: 100%;
+  height: 100%;
+}
+
+.trace-layer {
   color: var(--relation-depends-on);
 }
 

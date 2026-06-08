@@ -16,7 +16,7 @@ const domainSelected = computed(() => isDomainNode(props.node.id));
 </script>
 
 <template>
-  <div class="node-context" :style="{ '--node-color': getDomainColor(node.domain) }">
+  <div class="node-context node-context-menu" :style="{ '--node-color': getDomainColor(node.domain) }">
     <div class="node-context__accent"></div>
     <div>
       <div class="node-context__eyebrow">Selected Node</div>

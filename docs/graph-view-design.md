@@ -159,6 +159,63 @@ vault/graph-layout.yaml
 - port choices
 - trace route points
 
+## Viewport, Board, And Camera
+
+The graph uses a fixed world coordinate system.
+
+Desktop graph board size:
+
+```txt
+2400 x 1600
+```
+
+Mobile graph board size:
+
+```txt
+900 x 1200
+```
+
+Layer model:
+
+```txt
+Graph Viewport
+└─ Graph Board
+   ├─ SVG Trace Layer
+   └─ HTML Node Layer
+```
+
+The viewport is only the visible window. Window resize changes the visible area only.
+
+The board is the fixed world. It does not resize when the app window changes.
+
+The trace layer and node layer must share the same board coordinate system.
+
+The SVG trace layer must use the board size for its `width`, `height`, and `viewBox`.
+
+Do not set the trace SVG to fill the viewport while HTML nodes use board-space CSS pixels.
+
+Camera state:
+
+```txt
+camera.x
+camera.y
+camera.zoom
+```
+
+Camera transform is applied to the whole board:
+
+```txt
+translate(camera.x, camera.y) scale(camera.zoom)
+```
+
+Interactions:
+
+- dragging empty graph space pans the board
+- mouse wheel zooms around the cursor
+- Fit and Reset View both fit the current scope
+- window resize does not change node positions, trace routes, pan, or zoom
+- node dragging is not implemented in the first version
+
 ## Implementation Shape
 
 Recommended code structure:

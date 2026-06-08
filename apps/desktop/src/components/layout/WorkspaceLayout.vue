@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from "vue";
 import NewLinkDialog from "../dialogs/NewLinkDialog.vue";
 import NewNoteDialog from "../dialogs/NewNoteDialog.vue";
 import GraphToolbar from "../graph/GraphToolbar.vue";
@@ -51,8 +52,14 @@ const emit = defineEmits([
   "show-view",
 ]);
 
+const graphViewRef = ref(null);
+
 function openLocalGraph(nodeId) {
   emit("select-node", nodeId);
+}
+
+function fitGraphView() {
+  graphViewRef.value?.fitCurrentScope();
 }
 </script>
 
@@ -79,10 +86,12 @@ function openLocalGraph(nodeId) {
 
         <template v-if="currentView === 'graph'">
           <GraphToolbar
+            @fit-view="fitGraphView"
             @open-dialog="$emit('open-dialog', $event)"
             @show-graph="$emit('show-graph', $event)"
           />
           <GraphView
+            ref="graphViewRef"
             :selected-node-id="selectedNodeId"
             :scope-id="graphScopeId"
             @open-dialog="$emit('open-dialog', $event)"

@@ -1,5 +1,5 @@
 <script setup>
-defineEmits(["open-dialog", "show-graph"]);
+defineEmits(["fit-view", "open-dialog", "show-graph"]);
 </script>
 
 <template>
@@ -21,8 +21,8 @@ defineEmits(["open-dialog", "show-graph"]);
     </button>
     <button class="hud-button" @click="$emit('show-graph', 'root')">Global</button>
     <button class="hud-button" style="--button-color: var(--simulation)">Local</button>
-    <button class="hud-button">Reset View</button>
-    <button class="hud-button">Fit</button>
+    <button class="hud-button" @click="$emit('fit-view')">Reset View</button>
+    <button class="hud-button" @click="$emit('fit-view')">Fit</button>
     <div class="graph-stats">nodes: 43 / edges: 62 / layout: pcb-grid</div>
   </div>
 </template>

@@ -1,7 +1,12 @@
 <script setup>
 import { computed } from "vue";
 import { getConnectedNodeIds } from "../../graph/graph-interactions.js";
-import { getNodeLayout, getTracePoints, pointsToPath } from "../../graph/graph-layout.js";
+import {
+  getNodeLayout,
+  getTracePoints,
+  graphBoardSize,
+  pointsToPath,
+} from "../../graph/graph-layout.js";
 import { graphEdges, graphNodes } from "../../graph/mock-graph-data.js";
 import { getDomainColor, relationTheme } from "../../graph/graph-theme.js";
 
@@ -23,6 +28,7 @@ const selectedNode = computed(
   () => graphNodes.find((node) => node.id === props.selectedNodeId) || graphNodes[0],
 );
 const connectedIds = computed(() => getConnectedNodeIds(selectedNode.value.id));
+const board = graphBoardSize.mobile;
 </script>
 
 <template>
@@ -36,40 +42,56 @@ const connectedIds = computed(() => getConnectedNodeIds(selectedNode.value.id));
       current node + direct relations
     </nav>
     <section class="mobile-graph technical-grid">
-      <svg viewBox="0 0 390 548" class="mobile-traces" aria-hidden="true">
-        <path
-          v-for="edge in edges"
-          :key="edge.id"
-          class="mobile-trace"
-          :d="pointsToPath(getTracePoints(edge.id, 'rendering-pipeline', 'mobile'))"
-          :stroke="relationTheme[edge.relation].color"
-          :stroke-dasharray="relationTheme[edge.relation].dash"
-        />
-      </svg>
-
-      <button
-        v-for="node in nodes"
-        :key="node.id"
-        class="mobile-node"
-        :class="{
-          'is-selected': node.id === selectedNode.id,
-          'is-faded': !connectedIds.has(node.id),
-        }"
+      <div
+        class="mobile-board"
         :style="{
-          '--node-color': getDomainColor(node.domain),
-          left: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').x}px`,
-          top: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').y}px`,
-          width: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').width}px`,
-          height: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').height}px`,
+          width: `${board.width}px`,
+          height: `${board.height}px`,
         }"
-        @click="$emit('open-note', node.id)"
       >
-        <i class="mobile-port mobile-port--top"></i>
-        <i class="mobile-port mobile-port--right"></i>
-        <i class="mobile-port mobile-port--bottom"></i>
-        <i class="mobile-port mobile-port--left"></i>
-        <span>{{ node.title }}</span>
-      </button>
+        <svg
+          :height="board.height"
+          :viewBox="`0 0 ${board.width} ${board.height}`"
+          :width="board.width"
+          class="mobile-traces"
+          aria-hidden="true"
+        >
+          <path
+            v-for="edge in edges"
+            :key="edge.id"
+            class="mobile-trace"
+            :d="pointsToPath(getTracePoints(edge.id, 'rendering-pipeline', 'mobile'))"
+            :stroke="relationTheme[edge.relation].color"
+            :stroke-dasharray="relationTheme[edge.relation].dash"
+          />
+        </svg>
+
+        <div class="mobile-node-layer">
+          <button
+            v-for="node in nodes"
+            :key="node.id"
+            class="mobile-node"
+            :class="{
+              'is-selected': node.id === selectedNode.id,
+              'is-faded': !connectedIds.has(node.id),
+            }"
+            :style="{
+              '--node-color': getDomainColor(node.domain),
+              left: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').x}px`,
+              top: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').y}px`,
+              width: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').width}px`,
+              height: `${getNodeLayout(node.id, 'rendering-pipeline', 'mobile').height}px`,
+            }"
+            @click="$emit('open-note', node.id)"
+          >
+            <i class="mobile-port mobile-port--top"></i>
+            <i class="mobile-port mobile-port--right"></i>
+            <i class="mobile-port mobile-port--bottom"></i>
+            <i class="mobile-port mobile-port--left"></i>
+            <span>{{ node.title }}</span>
+          </button>
+        </div>
+      </div>
     </section>
     <aside class="bottom-card">
       <div class="card-accent"></div>
@@ -132,9 +154,22 @@ const connectedIds = computed(() => getConnectedNodeIds(selectedNode.value.id));
   overflow: hidden;
 }
 
-.mobile-traces {
+.mobile-board {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  transform: translate(-255px, -326px);
+  transform-origin: 0 0;
+}
+
+.mobile-traces,
+.mobile-node-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.mobile-node-layer {
   width: 100%;
   height: 100%;
 }

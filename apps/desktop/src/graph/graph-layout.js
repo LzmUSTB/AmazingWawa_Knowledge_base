@@ -1,7 +1,30 @@
-export const graphCanvasSize = {
-  desktop: { width: 1180, height: 780 },
-  mobile: { width: 390, height: 548 },
+export const graphBoardSize = {
+  desktop: { width: 2400, height: 1600 },
+  mobile: { width: 900, height: 1200 },
 };
+
+export const graphCanvasSize = graphBoardSize;
+
+const desktopOffset = { x: 610, y: 410 };
+const mobileOffset = { x: 255, y: 326 };
+
+function offsetLayout(layout, offset) {
+  return Object.fromEntries(
+    Object.entries(layout).map(([id, box]) => [
+      id,
+      { ...box, x: box.x + offset.x, y: box.y + offset.y },
+    ]),
+  );
+}
+
+function offsetRoutes(routes, offset) {
+  return Object.fromEntries(
+    Object.entries(routes).map(([id, points]) => [
+      id,
+      points.map(([x, y]) => [x + offset.x, y + offset.y]),
+    ]),
+  );
+}
 
 const rootNodeLayout = {
   graphics: { x: 132, y: 120, width: 156, height: 92 },
@@ -41,13 +64,13 @@ const mobileNodeLayout = {
 };
 
 const scopeLayouts = {
-  root: rootNodeLayout,
-  graphics: graphicsNodeLayout,
-  "rendering-pipeline": focusNodeLayout,
+  root: offsetLayout(rootNodeLayout, desktopOffset),
+  graphics: offsetLayout(graphicsNodeLayout, desktopOffset),
+  "rendering-pipeline": offsetLayout(focusNodeLayout, desktopOffset),
 };
 
 const traceRoutes = {
-  root: {
+  root: offsetRoutes({
     "root-graphics-ml": [
       [288, 166],
       [392, 166],
@@ -66,8 +89,8 @@ const traceRoutes = {
       [640, 563],
       [554, 563],
     ],
-  },
-  graphics: {
+  }, desktopOffset),
+  graphics: offsetRoutes({
     "graphics-rendering-pipeline": [
       [500, 348],
       [416, 348],
@@ -102,8 +125,8 @@ const traceRoutes = {
       [635, 579],
       [840, 579],
     ],
-  },
-  "rendering-pipeline": {
+  }, desktopOffset),
+  "rendering-pipeline": offsetRoutes({
     "graphics-rendering-pipeline": [
       [308, 361],
       [404, 361],
@@ -127,8 +150,8 @@ const traceRoutes = {
       [756, 577],
       [836, 577],
     ],
-  },
-  mobile: {
+  }, desktopOffset),
+  mobile: offsetRoutes({
     "graphics-rendering-pipeline": [
       [187, 144],
       [187, 188],
@@ -152,11 +175,11 @@ const traceRoutes = {
       [320, 252],
       [320, 152],
     ],
-  },
+  }, mobileOffset),
 };
 
 export function getNodeLayout(id, scopeId = "graphics", size = "desktop") {
-  if (size === "mobile") return mobileNodeLayout[id];
+  if (size === "mobile") return offsetLayout(mobileNodeLayout, mobileOffset)[id];
   return scopeLayouts[scopeId]?.[id] || rootNodeLayout[id] || graphicsNodeLayout[id];
 }
 
