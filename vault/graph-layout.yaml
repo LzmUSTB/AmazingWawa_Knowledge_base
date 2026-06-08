@@ -1,0 +1,253 @@
+schemaVersion: 1
+
+boards:
+  root:
+    width: 2400
+    height: 1600
+    grid: 32
+
+    nodes:
+      graphics:
+        x: 360
+        y: 320
+        w: 180
+        h: 88
+      linear-algebra:
+        x: 760
+        y: 320
+        w: 200
+        h: 88
+      machine-learning:
+        x: 1180
+        y: 320
+        w: 240
+        h: 88
+      web-dev:
+        x: 1660
+        y: 640
+        w: 180
+        h: 88
+      game-dev:
+        x: 1180
+        y: 1040
+        w: 180
+        h: 88
+      career:
+        x: 760
+        y: 1040
+        w: 180
+        h: 88
+      language:
+        x: 360
+        y: 1040
+        w: 180
+        h: 88
+      simulation:
+        x: 360
+        y: 640
+        w: 180
+        h: 88
+
+    routes:
+      graphics-compares-with-machine-learning:
+        edge: graphics-compares-with-machine-learning
+        fromPort: right
+        toPort: left
+        points:
+          - [540, 364]
+          - [720, 364]
+          - [720, 364]
+          - [1180, 364]
+
+      graphics-used-in-simulation:
+        edge: graphics-used-in-simulation
+        fromPort: bottom
+        toPort: top
+        points:
+          - [450, 408]
+          - [450, 520]
+          - [450, 520]
+          - [450, 640]
+
+      web-dev-used-in-career:
+        edge: web-dev-used-in-career
+        fromPort: left
+        toPort: right
+        points:
+          - [1660, 684]
+          - [1320, 684]
+          - [1320, 1084]
+          - [940, 1084]
+
+  graphics:
+    width: 2400
+    height: 1600
+    grid: 32
+
+    nodes:
+      graphics:
+        x: 1100
+        y: 720
+        w: 220
+        h: 100
+      rendering-pipeline:
+        x: 560
+        y: 420
+        w: 240
+        h: 88
+      shader:
+        x: 560
+        y: 720
+        w: 180
+        h: 76
+      pbr:
+        x: 620
+        y: 1040
+        w: 160
+        h: 72
+      rasterization:
+        x: 1580
+        y: 420
+        w: 220
+        h: 88
+      post-process:
+        x: 1600
+        y: 720
+        w: 200
+        h: 76
+      material-system:
+        x: 1540
+        y: 1040
+        w: 240
+        h: 72
+
+    routes:
+      graphics-contains-rendering-pipeline:
+        edge: graphics-contains-rendering-pipeline
+        fromPort: left
+        toPort: right
+        points:
+          - [1100, 770]
+          - [940, 770]
+          - [940, 464]
+          - [800, 464]
+
+      graphics-contains-shader:
+        edge: graphics-contains-shader
+        fromPort: left
+        toPort: right
+        points:
+          - [1100, 770]
+          - [920, 770]
+          - [920, 758]
+          - [740, 758]
+
+      graphics-contains-pbr:
+        edge: graphics-contains-pbr
+        fromPort: bottom
+        toPort: right
+        points:
+          - [1210, 820]
+          - [1210, 1076]
+          - [780, 1076]
+
+      graphics-contains-rasterization:
+        edge: graphics-contains-rasterization
+        fromPort: right
+        toPort: left
+        points:
+          - [1320, 770]
+          - [1460, 770]
+          - [1460, 464]
+          - [1580, 464]
+
+      graphics-contains-post-process:
+        edge: graphics-contains-post-process
+        fromPort: right
+        toPort: left
+        points:
+          - [1320, 770]
+          - [1460, 770]
+          - [1460, 758]
+          - [1600, 758]
+
+      graphics-contains-material-system:
+        edge: graphics-contains-material-system
+        fromPort: bottom
+        toPort: left
+        points:
+          - [1210, 820]
+          - [1210, 1076]
+          - [1540, 1076]
+
+  rendering-pipeline:
+    width: 2400
+    height: 1600
+    grid: 32
+
+    nodes:
+      rendering-pipeline:
+        x: 1100
+        y: 720
+        w: 260
+        h: 100
+      graphics:
+        x: 560
+        y: 720
+        w: 200
+        h: 88
+      shader:
+        x: 1100
+        y: 420
+        w: 180
+        h: 76
+      rasterization:
+        x: 1540
+        y: 720
+        w: 220
+        h: 76
+      pbr:
+        x: 860
+        y: 1040
+        w: 160
+        h: 72
+
+    routes:
+      graphics-contains-rendering-pipeline:
+        edge: graphics-contains-rendering-pipeline
+        fromPort: right
+        toPort: left
+        points:
+          - [760, 764]
+          - [930, 764]
+          - [930, 770]
+          - [1100, 770]
+
+      rendering-pipeline-depends-on-shader:
+        edge: rendering-pipeline-depends-on-shader
+        fromPort: top
+        toPort: bottom
+        points:
+          - [1230, 720]
+          - [1230, 580]
+          - [1190, 580]
+          - [1190, 496]
+
+      rendering-pipeline-depends-on-rasterization:
+        edge: rendering-pipeline-depends-on-rasterization
+        fromPort: right
+        toPort: left
+        points:
+          - [1360, 770]
+          - [1460, 770]
+          - [1460, 758]
+          - [1540, 758]
+
+      pbr-compares-with-material-system:
+        edge: pbr-compares-with-material-system
+        fromPort: right
+        toPort: bottom
+        points:
+          - [1020, 1076]
+          - [1230, 1076]
+          - [1230, 820]

@@ -1,0 +1,20 @@
+id: post-process
+title: 后处理
+domain: graphics
+type: concept
+status: seed
+summary: 在主渲染完成后，对屏幕空间图像进行处理的阶段。
+
+createdAt: 2026-06-08
+updatedAt: 2026-06-08
+
+tags:
+  - graphics
+  - post-process
+  - screen-space
+
+prerequisites:
+  - rendering-pipeline
+
+related:
+  []

@@ -1,11 +1,24 @@
 id: rendering-pipeline
 title: 渲染管线
 domain: graphics
-type: concept
+type: topic
 status: growing
 summary: 把三维场景转换成屏幕像素的一系列处理阶段。
-prerequisites:
-  - coordinate-transform
-related:
+
+createdAt: 2026-06-08
+updatedAt: 2026-06-08
+
+tags:
+  - graphics
+  - rendering
+  - pipeline
   - shader
+
+prerequisites:
+  - shader
+  - rasterization
+
+related:
   - pbr
+  - post-process
+  - material-system

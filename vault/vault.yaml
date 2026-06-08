@@ -1,0 +1,15 @@
+schemaVersion: 1
+title: AmazingWawa Knowledge Base
+description: Local-first knowledge graph vault for technical learning, project knowledge, and review.
+language: zh-CN
+defaultDomain: graphics
+createdAt: 2026-06-08
+updatedAt: 2026-06-08
+
+app:
+  defaultView: graph
+  restoreLastSession: true
+
+policy:
+  publicFirst: true
+  allowPrivateNotes: false

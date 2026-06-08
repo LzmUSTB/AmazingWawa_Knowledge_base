@@ -2,19 +2,47 @@ domains:
   - id: graphics
     title: 图形学
     description: 渲染、Shader、PBR、材质、后处理、流体渲染等知识。
+    color: "#00B7FF"
+    order: 10
+
+  - id: linear-algebra
+    title: 线性代数
+    description: 向量、矩阵、空间变换、投影和图形学相关数学基础。
+    color: "#EDEDED"
+    order: 20
 
   - id: machine-learning
     title: 机器学习
     description: 机器学习、强化学习、优化方法和实验记录。
+    color: "#C8FF00"
+    order: 30
 
   - id: web-dev
     title: Web 开发
-    description: Nuxt、Vue、Astro、部署、SEO、前端工程。
+    description: Vue、Nuxt、Vite、部署、SEO、前端工程和知识库 viewer。
+    color: "#FF2BD6"
+    order: 40
 
   - id: game-dev
     title: 游戏开发
-    description: 游戏 AI、动画系统、工具链、引擎技术。
+    description: 游戏 AI、动画系统、工具链、引擎技术和实时交互系统。
+    color: "#FF3B30"
+    order: 50
 
   - id: career
-    title: 求职与研究计划
+    title: 求职与研究
     description: 面试准备、作品集、研究计划、申请材料的公开版总结。
+    color: "#FFD500"
+    order: 60
+
+  - id: simulation
+    title: 物理模拟
+    description: 流体、粒子、刚体、数值积分和实时模拟相关知识。
+    color: "#7C5CFF"
+    order: 70
+
+  - id: language
+    title: 语言学习
+    description: 日语、英语、技术表达、面试表达和写作素材。
+    color: "#00E5A8"
+    order: 80

@@ -1,0 +1,22 @@
+id: shader
+title: Shader
+domain: graphics
+type: topic
+status: growing
+summary: 运行在 GPU 可编程阶段中的程序，用于处理顶点、片元或通用并行计算。
+
+createdAt: 2026-06-08
+updatedAt: 2026-06-08
+
+tags:
+  - graphics
+  - gpu
+  - glsl
+  - hlsl
+
+prerequisites:
+  []
+
+related:
+  - rendering-pipeline
+  - material-system
