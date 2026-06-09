@@ -1,5 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import NoVaultView from "./components/layout/NoVaultView.vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
@@ -11,8 +12,7 @@ import {
   saveGraphLayoutBoard,
   writeNoteMarkdown,
 } from "./data/desktop-vault-adapter.js";
-import { loadStaticVault } from "./data/static-vault-loader.js";
-import { findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
+import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
 import { getGraphScope, hasGraphScope, scopeForDomain } from "./graph/graph-scope.js";
 
@@ -20,18 +20,19 @@ const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
 const UI_FONT_SCALE_KEY = "amazingwawa.uiFontScale";
 const savedSidebarPreference = localStorage.getItem(SIDEBAR_KEY);
 const savedUiFontScale = Number(localStorage.getItem(UI_FONT_SCALE_KEY));
-const initialVault = { ...loadStaticVault(), vaultRootPath: "", source: "static" };
+const initialVault = createEmptyVault();
 setActiveVault(initialVault);
 
 const currentView = ref("graph");
-const currentDomain = ref(initialVault.vault.defaultDomain || initialVault.domains[0]?.id || "root");
-const firstConcept = initialVault.nodes.find((node) => node.type !== "domain");
-const currentNoteId = ref(firstConcept?.id || currentDomain.value);
-const selectedNodeId = ref(currentDomain.value);
+const currentDomain = ref("");
+const currentNoteId = ref("");
+const selectedNodeId = ref("");
 const graphScopeId = ref("root");
 const noteMode = ref("read");
 const activeDialog = ref("");
 const activeVaultRootPath = ref("");
+const vaultLoading = ref(true);
+const vaultLoadError = ref("");
 const noteDirty = ref(false);
 const noteSaving = ref(false);
 const isLayoutEditing = ref(false);
@@ -54,6 +55,17 @@ const canSaveLayout = computed(() => Boolean(activeVaultRootPath.value));
 const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || "Knowledge Base");
 const currentDraftLayoutBoard = computed(() => layoutDraftBoards.value[graphScopeId.value] || null);
 const currentDraftMovedNodeIds = computed(() => layoutMovedNodeIds.value[graphScopeId.value] || []);
+const hasRealVault = computed(() => Boolean(activeVaultRootPath.value) && useActiveVault().value.source === "desktop");
+
+if (import.meta.env.DEV) {
+  watch([currentView, graphScopeId, selectedNodeId], ([view, scope, selected], [oldView, oldScope, oldSelected]) => {
+    console.debug("[nav-state]", {
+      from: { view: oldView, scope: oldScope, selected: oldSelected },
+      to: { view, scope, selected },
+      trace: new Error().stack,
+    });
+  });
+}
 
 onMounted(async () => {
   window.addEventListener("wheel", handleGlobalWheel, { passive: false });
@@ -61,8 +73,14 @@ onMounted(async () => {
   try {
     const vault = await loadInitialVault();
     applyVault(vault, { reset: true });
+    vaultLoadError.value = "";
   } catch (error) {
-    console.warn("[vault] Initial vault load failed; keeping static fallback.", error);
+    console.warn("[vault] Initial vault load failed.", error);
+    setActiveVault(createEmptyVault());
+    activeVaultRootPath.value = "";
+    vaultLoadError.value = String(error?.message || error);
+  } finally {
+    vaultLoading.value = false;
   }
 });
 
@@ -286,13 +304,20 @@ async function saveLayout() {
       movedNodeIds,
     });
     replaceVaultWithoutNavigation(updatedVault);
+    const targetScopeId = hasGraphScope(scopeId) ? scopeId : hasGraphScope(previousScopeId) ? previousScopeId : "root";
     currentView.value = "graph";
-    graphScopeId.value = hasGraphScope(previousScopeId) ? previousScopeId : "root";
+    graphScopeId.value = targetScopeId;
     selectedNodeId.value = findGraphNode(previousSelectedNodeId)
       ? previousSelectedNodeId
-      : getGraphScope(graphScopeId.value).selectedNodeId;
+      : getGraphScope(targetScopeId).selectedNodeId;
     currentDomain.value = hasDomain(previousCurrentDomain) ? previousCurrentDomain : getFallbackDomain();
     discardLayoutDraft({ confirm: false, scopeId });
+    console.debug("[save-layout:restored]", {
+      currentView: currentView.value,
+      graphScopeId: graphScopeId.value,
+      selectedNodeId: selectedNodeId.value,
+      savedScopeId: scopeId,
+    });
   } catch (error) {
     console.error("[vault] Failed to save graph-layout.yaml.", error);
     layoutError.value = String(error);
@@ -368,10 +393,13 @@ async function openVault() {
     if (!vaultRoot) return;
     const vault = await loadVaultFromPath(vaultRoot);
     applyVault(vault, { reset: true });
+    vaultLoadError.value = "";
+    vaultLoading.value = false;
     console.log("[vault] Opened desktop vault:", vaultRoot);
   } catch (error) {
     console.error("[vault] Failed to open vault.", error);
     const message = String(error);
+    vaultLoadError.value = message;
     window.alert(
       message.includes("missing vault.yaml")
         ? "Please select the vault folder that contains vault.yaml."
@@ -396,14 +424,24 @@ async function saveNote({ node, markdown }) {
     await writeNoteMarkdown(activeVaultRootPath.value, node, markdown);
     const updatedVault = await loadVaultFromPath(activeVaultRootPath.value);
     replaceVaultWithoutNavigation(updatedVault);
+    const targetScopeId = hasGraphScope(savedNodeId)
+      ? savedNodeId
+      : hasGraphScope(previousGraphScopeId)
+        ? previousGraphScopeId
+        : "root";
     currentView.value = "note";
     currentNoteId.value = savedNodeId;
     selectedNodeId.value = savedNodeId;
     currentDomain.value = findGraphNode(savedNodeId)?.domain || node.domain || previousCurrentDomain;
-    graphScopeId.value = hasGraphScope(previousGraphScopeId) ? previousGraphScopeId : "root";
-    if (!findGraphNode(previousSelectedNodeId)) selectedNodeId.value = savedNodeId;
+    graphScopeId.value = targetScopeId;
     noteDirty.value = false;
     noteMode.value = "read";
+    console.debug("[save-note:restored]", {
+      currentView: currentView.value,
+      graphScopeId: graphScopeId.value,
+      currentNoteId: currentNoteId.value,
+      selectedNodeId: selectedNodeId.value,
+    });
   } catch (error) {
     console.error("[vault] Failed to save note.md.", error);
     window.alert(`Failed to save note.md: ${error}`);
@@ -443,7 +481,14 @@ function toggleSidebar() {
 
 <template>
   <div class="prototype-shell" :style="{ '--ui-font-scale': uiFontScale }">
+    <NoVaultView
+      v-if="vaultLoading || !hasRealVault"
+      :error="vaultLoadError"
+      :loading="vaultLoading"
+      @open-vault="openVault"
+    />
     <WorkspaceLayout
+      v-else
       :active-dialog="activeDialog"
       :app-title="activeVaultTitle"
       :can-save-layout="canSaveLayout"
@@ -483,7 +528,7 @@ function toggleSidebar() {
       @toggle-sidebar="toggleSidebar"
     />
 
-    <div class="mobile-prototype">
+    <div v-if="hasRealVault" class="mobile-prototype">
       <MobileNoteView v-if="currentView !== 'graph'" :node="selectedNode" @show-graph="currentView = 'graph'" />
       <MobileLocalGraphView v-else :selected-node-id="selectedNodeId" @open-note="openNote" />
     </div>

@@ -212,9 +212,9 @@ Interactions:
 
 - dragging empty graph space pans the board
 - mouse wheel zooms around the cursor
-- Fit and Reset View both fit the current scope
+- Fit fits the current scope
 - window resize does not change node positions, trace routes, pan, or zoom
-- node dragging is not implemented in the first version
+- Layout Edit Mode supports node dragging with grid snapping
 
 ## Implementation Shape
 
@@ -222,7 +222,6 @@ Recommended code structure:
 
 ```txt
 src/graph/
-├─ mock-graph-data.js
 ├─ graph-scope.js
 ├─ graph-layout.js
 ├─ graph-theme.js

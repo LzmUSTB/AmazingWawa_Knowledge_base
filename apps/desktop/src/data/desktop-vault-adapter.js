@@ -1,7 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import YAML from "yaml";
 import { normalizeVault } from "../../../../packages/knowledge-core/src/index.js";
-import { loadStaticVault } from "./static-vault-loader.js";
 
 const LAST_VAULT_KEY = "amazingwawa.lastVaultRootPath";
 
@@ -22,15 +21,6 @@ function normalizeFromRaw(rawFiles, vaultRootPath) {
   };
 }
 
-function loadStaticFallback(reason) {
-  if (reason) console.warn("[vault] Using static sample vault fallback.", reason);
-  return {
-    ...loadStaticVault(),
-    vaultRootPath: "",
-    source: "static",
-  };
-}
-
 export async function chooseVaultRoot() {
   if (!isTauri()) return null;
   return invoke("choose_vault_root");
@@ -44,9 +34,13 @@ export async function loadVaultFromPath(vaultRootPath) {
 }
 
 export async function loadInitialVault() {
+  if (!isTauri()) {
+    throw new Error("Desktop filesystem access is required to load a vault.");
+  }
+
   const lastVaultPath = localStorage.getItem(LAST_VAULT_KEY);
 
-  if (lastVaultPath && isTauri()) {
+  if (lastVaultPath) {
     try {
       return await loadVaultFromPath(lastVaultPath);
     } catch (error) {
@@ -54,20 +48,14 @@ export async function loadInitialVault() {
     }
   }
 
-  if (isTauri()) {
-    try {
-      const defaultVaultPath = await invoke("resolve_default_vault_root");
-      if (defaultVaultPath) return await loadVaultFromPath(defaultVaultPath);
-    } catch (error) {
-      console.warn("[vault] Failed to load default development vault.", error);
-    }
+  try {
+    const defaultVaultPath = await invoke("resolve_default_vault_root");
+    if (defaultVaultPath) return await loadVaultFromPath(defaultVaultPath);
+  } catch (error) {
+    console.warn("[vault] Failed to load default development vault.", error);
   }
 
-  return loadStaticFallback(
-    lastVaultPath
-      ? "last vault path and default development vault failed"
-      : "no last vault path and default development vault unavailable",
-  );
+  throw new Error("No vault could be loaded. Please open a vault folder.");
 }
 
 export function getNoteRelativePath(node) {

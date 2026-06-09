@@ -20,11 +20,10 @@ Current desktop behavior:
 
 ```txt
 desktop-vault-adapter.js = desktop file access boundary
-static-vault-loader.js = repository sample fallback
 note.md save = real disk write
 New Note = real creation workflow
 New Link = prototype-only, no graph.yaml write yet
-Layout Edit Mode = next implementation stage
+Layout Edit Mode = writes graph-layout.yaml node positions
 ```
 
 The desktop app may currently write:
@@ -34,11 +33,10 @@ vault/content/<domain>/<id>/note.md
 vault/content/<domain>/<id>/meta.yaml
 vault/content/<domain>/<id>/assets/
 vault/graph.yaml
+vault/graph-layout.yaml
 ```
 
 `graph.yaml` is only written by New Note creation to append one `contains` edge from parent to new node.
-
-The desktop app must not write `graph-layout.yaml` until Layout Edit Mode is implemented.
 
 ## 2. Core Principles
 

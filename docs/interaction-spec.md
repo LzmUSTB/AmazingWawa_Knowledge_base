@@ -21,7 +21,6 @@ Current behavior:
 
 ```txt
 desktop-vault-adapter.js = desktop file access boundary
-static-vault-loader.js = repository sample fallback
 Open Vault = real Tauri folder open
 note.md Save = real disk write
 New Note = creates meta.yaml, note.md, assets/, and one contains edge
@@ -33,8 +32,8 @@ Startup behavior:
 ```txt
 try last opened vault path from localStorage
 -> if it loads, use that local vault
--> if no last path, try development ./vault
--> if it fails, load static sample vault as read-only fallback
+-> otherwise try development ./vault through Tauri filesystem APIs
+-> if it fails, show No Vault Loaded
 ```
 
 `Reset View` was removed because it duplicated `Fit`.

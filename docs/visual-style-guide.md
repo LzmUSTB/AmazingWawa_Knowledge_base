@@ -270,7 +270,6 @@ src/graph/
 ├─ graph-theme.js
 ├─ graph-layout.js
 ├─ graph-interactions.js
-├─ mock-graph-data.js
 └─ graph-scope.js
 ```
 

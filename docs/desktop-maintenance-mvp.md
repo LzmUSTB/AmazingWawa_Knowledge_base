@@ -14,7 +14,7 @@ apps/desktop/src/data/desktop-vault-adapter.js
 
 Vue components should not call Tauri filesystem APIs directly.
 
-The adapter owns opening a vault folder, reading vault files, normalizing raw text through `knowledge-core`, writing `note.md`, remembering the last opened vault path, and falling back to the static sample vault.
+The adapter owns opening a vault folder, reading vault files, normalizing raw text through `knowledge-core`, writing `note.md`, and remembering the last opened vault path.
 
 ## Open Vault Flow
 
@@ -37,9 +37,9 @@ Read mode displays `note.md` from the normalized vault. Edit mode shows raw mark
 
 After save, the app reloads the vault from disk and calls `setActiveVault(updatedVault)`.
 
-## Static Fallback
+## Startup Loading
 
-Startup attempts to load the last opened vault path from `localStorage`. If that fails, the app may load the repository sample vault through `static-vault-loader.js` as read-only fallback.
+Startup attempts to load the last opened vault path from `localStorage`. If that fails, the app tries the repository `./vault` through Tauri filesystem APIs. If no real vault can be loaded, the app shows `No Vault Loaded`.
 
 ## Responsive Desktop Layout
 

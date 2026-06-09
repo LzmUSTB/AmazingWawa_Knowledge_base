@@ -6,8 +6,8 @@ boards:
     grid: 32
     nodes:
       graphics:
-        x: 360
-        y: 320
+        x: 448
+        y: 384
         w: 180
         h: 88
       linear-algebra:
@@ -45,20 +45,6 @@ boards:
         y: 832
         w: 180
         h: 88
-    routes:
-      graphics-used-in-simulation:
-        edge: graphics-used-in-simulation
-        fromPort: bottom
-        toPort: top
-        points:
-          - - 450
-            - 408
-          - - 450
-            - 520
-          - - 450
-            - 520
-          - - 450
-            - 640
   graphics:
     width: 2400
     height: 1600
@@ -70,8 +56,8 @@ boards:
         w: 220
         h: 100
       rendering-pipeline:
-        x: 768
-        y: 640
+        x: 800
+        y: 608
         w: 240
         h: 88
       shader:
