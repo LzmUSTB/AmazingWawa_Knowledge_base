@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Block Preview</title>
+  <style>
+    :root {
+      --bg: #090909;
+      --panel: #111;
+      --panel2: #181818;
+      --line: #ededed;
+      --muted-line: #555;
+      --text: #f5f5f5;
+      --text2: #b8b8b8;
+      --text3: #777;
+      --graphics: #00b7ff;
+      --ml: #c8ff00;
+      --career: #ffd500;
+      --sim: #7c5cff;
+      --compare: #ff8a00;
+      --quiz: #00e5a8;
+      --danger: #ff3b30;
+      --mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-scale: 1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: calc(13px * var(--font-scale));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(237,237,237,0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(237,237,237,0.055) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0.35));
+    }
+
+    button, input, select { font: inherit; color: inherit; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-right: 1px solid var(--line);
+      background: var(--bg);
+      padding: 18px 16px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: grid;
+      gap: 6px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--muted-line);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      line-height: 1.5;
+    }
+
+    .toc {
+      display: grid;
+      gap: 6px;
+      margin-top: 18px;
+    }
+
+    .toc a {
+      display: grid;
+      grid-template-columns: 4px 1fr;
+      gap: 10px;
+      min-height: 30px;
+      align-items: center;
+      border: 1px solid transparent;
+      color: var(--text2);
+      text-decoration: none;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0 8px;
+    }
+
+    .toc a::before {
+      content: "";
+      width: 4px;
+      height: 16px;
+      background: var(--accent, var(--line));
+    }
+
+    .toc a:hover {
+      border-color: var(--line);
+      color: var(--text);
+      background: var(--panel2);
+    }
+
+    .main {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 24px;
+      min-height: 170px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .hero h2 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 5vw, 54px);
+      line-height: 0.95;
+      text-transform: uppercase;
+    }
+
+    .hero p {
+      max-width: 840px;
+      margin: 0;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    .hero-meta {
+      display: grid;
+      gap: 8px;
+      min-width: 210px;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .meta-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--muted-line);
+      padding-bottom: 6px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 22px;
+      max-width: 1180px;
+    }
+
+    .block {
+      --accent: var(--line);
+      display: grid;
+      grid-template-columns: 6px minmax(0, 1fr);
+      border: 1px solid var(--muted-line);
+      background: var(--panel);
+      scroll-margin-top: 24px;
+    }
+
+    .block:hover { border-color: var(--line); }
+
+    .accent { background: var(--accent); }
+
+    .block-body {
+      min-width: 0;
+      padding: 22px;
+    }
+
+    .block-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .label::before {
+      content: "";
+      width: 3px;
+      height: 14px;
+      background: var(--accent);
+    }
+
+    .block h3 {
+      margin: 8px 0 0;
+      font-size: 26px;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .block p {
+      color: var(--text2);
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      min-height: 24px;
+      padding: 5px 9px;
+      border: 1px solid var(--muted-line);
+      border-left: 4px solid var(--accent);
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field-card {
+      border: 1px solid var(--muted-line);
+      background: var(--bg);
+      padding: 14px;
+    }
+
+    .field-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .flow-canvas {
+      position: relative;
+      min-height: 390px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .flow-canvas::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(237,237,237,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(237,237,237,0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    .flow-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      color: var(--accent);
+      pointer-events: none;
+    }
+
+    .flow-line {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      opacity: 0.78;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .flow-line.is-muted {
+      stroke: rgba(237,237,237,0.32);
+    }
+
+    .flow-node {
+      position: absolute;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      min-height: 54px;
+      width: 150px;
+      border: 1px solid var(--muted-line);
+      border-left: 5px solid var(--accent);
+      background: var(--panel);
+      color: var(--text2);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.25;
+      padding: 8px 10px;
+      text-align: center;
+      text-transform: uppercase;
+      transform: translate(-50%, -50%);
+    }
+
+    .flow-node[aria-selected="true"], .flow-node:hover {
+      border-color: var(--line);
+      background: var(--panel2);
+      color: var(--text);
+    }
+
+    .flow-node.is-parallel {
+      border-left-color: var(--career);
+    }
+
+    .flow-node.is-output {
+      border-left-color: var(--quiz);
+    }
+
+    .flow-lane-label {
+      position: absolute;
+      z-index: 1;
+      left: 24%;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .flow-lane-label.depth { top: 16px; }
+    .flow-lane-label.thickness { bottom: 16px; }
+
+    .flow-detail {
+      border: 1px solid var(--line);
+      background: var(--bg);
+      padding: 18px;
+      min-height: 220px;
+      align-self: stretch;
+    }
+
+    .flow-detail h4 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      text-transform: uppercase;
+    }
+
+    .flow-detail-meta {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 14px;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .compare-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      font-family: var(--mono);
+    }
+
+    .compare-table th,
+    .compare-table td {
+      border: 1px solid var(--muted-line);
+      padding: 12px;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    .compare-table th {
+      background: var(--bg);
+      color: var(--text);
+      text-align: left;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .compare-table td {
+      color: var(--text2);
+      font-size: 12px;
+    }
+
+    .compare-table tr.is-highlight td {
+      background: rgba(255, 138, 0, 0.08);
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 14px;
+    }
+
+    pre.code {
+      margin: 0;
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      padding: 12px 0;
+    }
+
+    .code-line {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      cursor: pointer;
+      padding: 0 12px;
+      color: var(--text2);
+    }
+
+    .code-line:hover,
+    .code-line.is-active {
+      background: rgba(124, 92, 255, 0.14);
+      color: var(--text);
+    }
+
+    .line-no {
+      color: var(--text3);
+      user-select: none;
+    }
+
+    .explain-box {
+      border: 1px solid var(--line);
+      background: var(--bg);
+      padding: 16px;
+    }
+
+    .explain-box h4 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      text-transform: uppercase;
+    }
+
+    .quiz-card {
+      border: 1px solid var(--line);
+      background: var(--bg);
+      padding: 18px;
+    }
+
+    .quiz-question {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    .quiz-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-weight: 900;
+    }
+
+    .answer {
+      display: none;
+      border-top: 1px solid var(--muted-line);
+      margin-top: 16px;
+      padding-top: 16px;
+    }
+
+    .answer.is-open { display: block; }
+
+    .expression-layout {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .control-panel {
+      display: grid;
+      gap: 14px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      padding: 14px;
+      align-self: start;
+    }
+
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mode-tabs button,
+    .small-btn {
+      border: 1px solid var(--muted-line);
+      background: var(--panel);
+      color: var(--text2);
+      cursor: pointer;
+      padding: 8px 10px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .mode-tabs button.is-active,
+    .small-btn:hover {
+      border-color: var(--line);
+      color: var(--text);
+      background: var(--panel2);
+    }
+
+    .slider-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .formula {
+      border: 1px solid var(--muted-line);
+      background: var(--panel);
+      padding: 12px;
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 430px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 430px;
+    }
+
+    .canvas-hud {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      display: grid;
+      gap: 4px;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 10px;
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 1000px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .hero, .flow, .code-grid, .expression-layout, .two-col { grid-template-columns: 1fr; }
+      .main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Content Block Preview</h1>
+        <p>Local-first note renderer / design sandbox</p>
+      </div>
+      <nav class="toc">
+        <a href="#concept" style="--accent: var(--graphics)">Concept Card</a>
+        <a href="#flow" style="--accent: var(--career)">Process Flow</a>
+        <a href="#compare" style="--accent: var(--compare)">Compare Table</a>
+        <a href="#code" style="--accent: var(--sim)">Code Explain</a>
+        <a href="#quiz" style="--accent: var(--quiz)">Quiz</a>
+        <a href="#expr" style="--accent: var(--ml)">Expression Visualizer</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div>
+          <h2>Structured Note Blocks</h2>
+          <p>这是 Step 8 之前的视觉与交互预览页。目标是验证 note.md 中结构化知识块的阅读体验：概念卡、流程、对比、代码解释、复习题，以及 2D / 3D 参数表达式可视化。</p>
+        </div>
+        <div class="hero-meta">
+          <div class="meta-line"><span>Mode</span><span>Preview</span></div>
+          <div class="meta-line"><span>Style</span><span>PCB / Mono</span></div>
+          <div class="meta-line"><span>Editor</span><span>Markdown Text</span></div>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section id="concept" class="block" style="--accent: var(--graphics)">
+          <div class="accent"></div>
+          <div class="block-body">
+            <div class="block-head">
+              <div>
+                <div class="label">concept-card</div>
+                <h3>View Space Normal</h3>
+              </div>
+              <div class="chip-row">
+                <span class="chip">graphics</span>
+                <span class="chip">screen-space</span>
+                <span class="chip">normal</span>
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="field-card">
+                <strong>Summary</strong>
+                <p>View Space Normal 是以相机坐标系记录的表面法线。它常用于屏幕空间效果，因为视角相关计算更直接。</p>
+              </div>
+              <div class="field-card">
+                <strong>Why it matters</strong>
+                <p>SSAO、SSR、SSFR 等后处理 pass 通常在屏幕空间执行。View Space 可减少坐标系转换，并让深度重建逻辑更统一。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="flow" class="block" style="--accent: var(--career)">
+          <div class="accent"></div>
+          <div class="block-body">
+            <div class="block-head">
+              <div>
+                <div class="label">process-flow</div>
+                <h3>Screen Space Fluid Rendering</h3>
+              </div>
+              <div class="chip-row"><span class="chip">click steps</span></div>
+            </div>
+            <div class="flow">
+              <div class="flow-canvas" id="flowCanvas">
+                <svg class="flow-lines" viewBox="0 0 1000 390" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <marker id="flow-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+                    </marker>
+                  </defs>
+                  <g id="flowLines"></g>
+                </svg>
+                <div class="flow-lane-label depth">parallel branch / depth data</div>
+                <div class="flow-lane-label thickness">parallel branch / thickness data</div>
+                <div id="flowNodes"></div>
+              </div>
+              <div class="flow-detail">
+                <div class="flow-detail-meta" id="flowMeta"></div>
+                <h4 id="flowTitle"></h4>
+                <p id="flowText"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="compare" class="block" style="--accent: var(--compare)">
+          <div class="accent"></div>
+          <div class="block-body">
+            <div class="block-head">
+              <div>
+                <div class="label">compare-table</div>
+                <h3>SPH vs MLS-MPM</h3>
+              </div>
+              <div class="chip-row"><span class="chip">highlight differences</span></div>
+            </div>
+            <div class="compare-controls">
+              <button class="small-btn" id="toggleCompare">Highlight different rows</button>
+            </div>
+            <table class="compare-table">
+              <thead>
+                <tr><th>Aspect</th><th>SPH</th><th>MLS-MPM</th></tr>
+              </thead>
+              <tbody id="compareBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="code" class="block" style="--accent: var(--sim)">
+          <div class="accent"></div>
+          <div class="block-body">
+            <div class="block-head">
+              <div>
+                <div class="label">code-explain</div>
+                <h3>Cell Hash Flattening</h3>
+              </div>
+              <div class="chip-row"><span class="chip">click line</span><span class="chip">glsl</span></div>
+            </div>
+            <div class="code-grid">
+              <pre class="code" id="codeBlock"></pre>
+              <div class="explain-box">
+                <h4 id="codeTitle">Line Explain</h4>
+                <p id="codeText"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="quiz" class="block" style="--accent: var(--quiz)">
+          <div class="accent"></div>
+          <div class="block-body">
+            <div class="block-head">
+              <div>
+                <div class="label">quiz</div>
+                <h3>Recall Check</h3>
+              </div>
+              <button class="plain-btn" id="toggleAnswer">Show Answer</button>
+            </div>
+            <div class="quiz-card">
+              <div class="quiz-question">
+                <div class="quiz-mark">Q</div>
+                <p>为什么屏幕空间流体渲染通常先生成 thickness/depth，再做 normal reconstruction 和 lighting？</p>
+              </div>
+              <div class="answer" id="answer">
+                <div class="quiz-question">
+                  <div class="quiz-mark">A</div>
+                  <p>因为粒子本身不是连续表面。先将粒子投影到屏幕空间形成可滤波的厚度与深度，再从深度重建连续法线，可以获得更稳定的液体表面光照和边界。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="expr" class="block" style="--accent: var(--ml)">
+          <div class="accent"></div>
+          <div class="block-body">
+            <div class="block-head">
+              <div>
+                <div class="label">expression-visualizer</div>
+                <h3>Parametric Expression</h3>
+              </div>
+              <div class="chip-row"><span class="chip">2D</span><span class="chip">3D</span><span class="chip">interactive</span></div>
+            </div>
+            <div class="expression-layout">
+              <div class="control-panel">
+                <div class="mode-tabs">
+                  <button id="mode2d" class="is-active">2D Curve</button>
+                  <button id="mode3d">3D Surface</button>
+                </div>
+                <div class="label">formula</div>
+                <div class="formula" id="formulaText"></div>
+                <div id="sliderPanel"></div>
+                <button class="small-btn" id="resetExpr">Reset parameters</button>
+              </div>
+              <div class="canvas-wrap">
+                <canvas id="exprCanvas" width="900" height="520"></canvas>
+                <div class="canvas-hud">
+                  <span>drag: rotate 3d</span>
+                  <span>wheel: no-op preview</span>
+                  <span>grid: analytic space</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const flowData = [
+      {
+        id: "particles",
+        title: "Particle Buffers",
+        lane: "input",
+        x: 10,
+        y: 50,
+        kind: "input",
+        text: "SPH / MPM 等模拟 pass 输出粒子位置、半径、速度或材质信息。SSFR 后续 pass 从这些屏幕投影出深度和厚度。",
+      },
+      {
+        id: "depth",
+        title: "Depth Pass",
+        lane: "depth branch",
+        x: 30,
+        y: 25,
+        kind: "parallel",
+        text: "将粒子或球 billboard 投影到深度缓冲，得到屏幕空间下的液体近似前表面。它不依赖 thickness pass，因此可与 thickness pass 并行或互换顺序。",
+      },
+      {
+        id: "thickness",
+        title: "Thickness Pass",
+        lane: "thickness branch",
+        x: 30,
+        y: 75,
+        kind: "parallel",
+        text: "沿视线方向累加粒子的覆盖量，形成厚度图。它主要服务于吸收、透明度和体积感，不要求在 depth pass 之后执行。",
+      },
+      {
+        id: "depth-smooth",
+        title: "Depth Smoothing",
+        lane: "depth branch",
+        x: 52,
+        y: 25,
+        kind: "parallel",
+        text: "对 depth 做双边滤波或曲率感知滤波，减少粒子颗粒感，同时尽量保持边缘。Normal reconstruction 主要依赖这个结果。",
+      },
+      {
+        id: "thickness-smooth",
+        title: "Thickness Smoothing",
+        lane: "thickness branch",
+        x: 52,
+        y: 75,
+        kind: "parallel",
+        text: "对 thickness 做平滑，让透明吸收更连续。它可与 depth smoothing 平行处理。",
+      },
+      {
+        id: "normal",
+        title: "Normal Reconstruction",
+        lane: "surface data",
+        x: 74,
+        y: 25,
+        kind: "process",
+        text: "从平滑后的 depth 反推 view-space position，再用邻域差分得到液体表面法线。",
+      },
+      {
+        id: "lighting",
+        title: "Lighting Composite",
+        lane: "final composite",
+        x: 90,
+        y: 50,
+        kind: "output",
+        text: "综合 normal、depth、thickness 与场景颜色，执行折射、反射、高光、吸收和最终合成。",
+      },
+    ];
+
+    const flowEdges = [
+      ["particles", "depth"],
+      ["particles", "thickness"],
+      ["depth", "depth-smooth"],
+      ["thickness", "thickness-smooth"],
+      ["depth-smooth", "normal"],
+      ["normal", "lighting"],
+      ["depth-smooth", "lighting"],
+      ["thickness-smooth", "lighting"],
+    ];
+
+    const flowNodes = document.getElementById("flowNodes");
+    const flowLines = document.getElementById("flowLines");
+    const flowTitle = document.getElementById("flowTitle");
+    const flowText = document.getElementById("flowText");
+    const flowMeta = document.getElementById("flowMeta");
+    let activeFlow = 1;
+
+    function getFlowNode(id) {
+      return flowData.find((step) => step.id === id);
+    }
+
+    function linePath(from, to) {
+      const a = getFlowNode(from);
+      const b = getFlowNode(to);
+      const x1 = a.x * 10;
+      const y1 = a.y * 3.9;
+      const x2 = b.x * 10;
+      const y2 = b.y * 3.9;
+      const midX = (x1 + x2) / 2;
+      return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+    }
+
+    function renderFlow() {
+      const activeId = flowData[activeFlow].id;
+      flowLines.innerHTML = flowEdges.map(([from, to]) => {
+        const active = from === activeId || to === activeId;
+        return `<path class="flow-line ${active ? "" : "is-muted"}" d="${linePath(from, to)}" marker-end="url(#flow-arrow)"></path>`;
+      }).join("");
+
+      flowNodes.innerHTML = "";
+      flowData.forEach((step, index) => {
+        const btn = document.createElement("button");
+        btn.className = `flow-node is-${step.kind}`;
+        btn.style.left = `${step.x}%`;
+        btn.style.top = `${step.y}%`;
+        btn.setAttribute("aria-selected", index === activeFlow ? "true" : "false");
+        btn.innerHTML = `<span>${step.title}</span>`;
+        btn.onclick = () => { activeFlow = index; renderFlow(); };
+        flowNodes.appendChild(btn);
+      });
+      flowMeta.innerHTML = `<span>lane: ${flowData[activeFlow].lane}</span><span>click node to inspect pass</span>`;
+      flowTitle.textContent = flowData[activeFlow].title;
+      flowText.textContent = flowData[activeFlow].text;
+    }
+    renderFlow();
+
+    const compareRows = [
+      ["Representation", "Particles", "Grid + particles"],
+      ["Best for", "Free-surface fluid", "Continuum material"],
+      ["Topology", "Natural separation", "Stable deformation"],
+      ["Rendering", "Often screen-space", "Often mesh/particle surface"],
+      ["Numerical issue", "Neighbor search cost", "Grid transfer cost"],
+    ];
+    let highlight = false;
+    const compareBody = document.getElementById("compareBody");
+    function renderCompare() {
+      compareBody.innerHTML = compareRows.map((row) => `
+        <tr class="${highlight ? "is-highlight" : ""}">
+          <td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td>
+        </tr>
+      `).join("");
+    }
+    document.getElementById("toggleCompare").onclick = () => { highlight = !highlight; renderCompare(); };
+    renderCompare();
+
+    const codeLines = [
+      ["ivec3 cell = ivec3(floor((pos - gridOrigin) / cellSize));", "将世界坐标映射到网格坐标。floor 用于把连续位置落到离散 cell。"],
+      ["if (any(lessThan(cell, ivec3(0)))) return false;", "如果任一维度小于 0，说明粒子在网格外。any 会把向量布尔值归约成一个布尔值。"],
+      ["if (any(greaterThanEqual(cell, gridRes))) return false;", "如果任一维度超过网格分辨率，也判定为越界。"],
+      ["hash = uint(cell.x + cell.y * gridRes.x + cell.z * gridRes.x * gridRes.y);", "将三维 cell 坐标压平成一维 hash/index，便于排序、扫描和邻域查找。"],
+      ["return true;", "返回 true 表示 hash 可用，后续 pass 可以把粒子写入对应 bucket。"],
+    ];
+    let activeLine = 0;
+    const codeBlock = document.getElementById("codeBlock");
+    const codeTitle = document.getElementById("codeTitle");
+    const codeText = document.getElementById("codeText");
+    function renderCode() {
+      codeBlock.innerHTML = "";
+      codeLines.forEach(([line], index) => {
+        const div = document.createElement("div");
+        div.className = `code-line ${index === activeLine ? "is-active" : ""}`;
+        div.innerHTML = `<span class="line-no">${index + 1}</span><span>${line.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</span>`;
+        div.onclick = () => { activeLine = index; renderCode(); };
+        codeBlock.appendChild(div);
+      });
+      codeTitle.textContent = `Line ${activeLine + 1}`;
+      codeText.textContent = codeLines[activeLine][1];
+    }
+    renderCode();
+
+    const answer = document.getElementById("answer");
+    const toggleAnswer = document.getElementById("toggleAnswer");
+    toggleAnswer.onclick = () => {
+      answer.classList.toggle("is-open");
+      toggleAnswer.textContent = answer.classList.contains("is-open") ? "Hide Answer" : "Show Answer";
+    };
+
+    const canvas = document.getElementById("exprCanvas");
+    const ctx = canvas.getContext("2d");
+    const mode2d = document.getElementById("mode2d");
+    const mode3d = document.getElementById("mode3d");
+    const formulaText = document.getElementById("formulaText");
+    const sliderPanel = document.getElementById("sliderPanel");
+    let exprMode = "2d";
+    let rotX = -0.72;
+    let rotZ = 0.72;
+    let dragging = false;
+    let last = { x: 0, y: 0 };
+
+    const defaults = { amp: 1.0, freq: 1.5, phase: 0.0, offset: 0.0, spread: 1.0 };
+    const params = { ...defaults };
+
+    function slider(name, label, min, max, step) {
+      const row = document.createElement("div");
+      row.className = "slider-row";
+      row.innerHTML = `
+        <div class="slider-top"><span>${label}</span><span id="val-${name}"></span></div>
+        <input type="range" min="${min}" max="${max}" step="${step}" value="${params[name]}" />
+      `;
+      const input = row.querySelector("input");
+      const value = row.querySelector(`#val-${name}`);
+      const update = () => {
+        params[name] = Number(input.value);
+        value.textContent = params[name].toFixed(2);
+        drawExpression();
+      };
+      input.addEventListener("input", update);
+      update();
+      return row;
+    }
+
+    function renderSliders() {
+      sliderPanel.innerHTML = "";
+      sliderPanel.appendChild(slider("amp", "amplitude a", 0.1, 2.5, 0.05));
+      sliderPanel.appendChild(slider("freq", "frequency b", 0.2, 4.0, 0.05));
+      sliderPanel.appendChild(slider("phase", "phase c", -3.14, 3.14, 0.01));
+      sliderPanel.appendChild(slider("offset", "offset d", -1.5, 1.5, 0.05));
+      if (exprMode === "3d") sliderPanel.appendChild(slider("spread", "surface mix e", 0.1, 2.0, 0.05));
+    }
+
+    function setMode(mode) {
+      exprMode = mode;
+      mode2d.classList.toggle("is-active", mode === "2d");
+      mode3d.classList.toggle("is-active", mode === "3d");
+      renderSliders();
+      drawExpression();
+    }
+    mode2d.onclick = () => setMode("2d");
+    mode3d.onclick = () => setMode("3d");
+    document.getElementById("resetExpr").onclick = () => {
+      Object.assign(params, defaults);
+      renderSliders();
+      drawExpression();
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawExpression();
+    }
+
+    function clear() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#090909";
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = "rgba(237,237,237,0.12)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    }
+
+    function drawAxisLabel(text, x, y, color = "#ededed") {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = "800 12px Cascadia Mono, Consolas, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawArrowHead(x, y, angle, color = "rgba(237,237,237,0.72)") {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-9, -4);
+      ctx.lineTo(-9, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawAxes2d(w, h) {
+      const axisColor = "rgba(237,237,237,0.62)";
+      ctx.strokeStyle = axisColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(40, h/2); ctx.lineTo(w-24, h/2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w/2, 24); ctx.lineTo(w/2, h-24); ctx.stroke();
+      drawArrowHead(w-24, h/2, 0, axisColor);
+      drawArrowHead(w/2, 24, -Math.PI/2, axisColor);
+      drawAxisLabel("x", w-32, h/2 - 18, "#ededed");
+      drawAxisLabel("y", w/2 + 18, 34, "#ededed");
+      drawAxisLabel("0", w/2 - 14, h/2 + 16, "#777");
+    }
+
+    function draw2d() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      clear();
+      drawAxes2d(w, h);
+      formulaText.textContent = `y = a · sin(bx + c) + d\na=${params.amp.toFixed(2)}, b=${params.freq.toFixed(2)}, c=${params.phase.toFixed(2)}, d=${params.offset.toFixed(2)}`;
+      ctx.strokeStyle = "#c8ff00";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const xMin = -Math.PI * 2;
+      const xMax = Math.PI * 2;
+      for (let i = 0; i <= 600; i++) {
+        const t = i / 600;
+        const x = xMin + (xMax - xMin) * t;
+        const y = params.amp * Math.sin(params.freq * x + params.phase) + params.offset;
+        const sx = 40 + t * (w - 64);
+        const sy = h / 2 - y * 80;
+        if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+    }
+
+    function project3(x, y, z, w, h) {
+      const cz = Math.cos(rotZ), sz = Math.sin(rotZ);
+      let x1 = x * cz - y * sz;
+      let y1 = x * sz + y * cz;
+      let z1 = z;
+      const cx = Math.cos(rotX), sx = Math.sin(rotX);
+      let y2 = y1 * cx - z1 * sx;
+      let z2 = y1 * sx + z1 * cx;
+      const scale = 72;
+      return [w / 2 + x1 * scale, h / 2 - y2 * scale - 12, z2];
+    }
+
+    function surfaceZ(x, y) {
+      return params.amp * Math.sin(params.freq * x + params.phase) * Math.cos(params.spread * y) + params.offset;
+    }
+
+
+    function draw3dAxis(from, to, label, color) {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const [x1, y1] = project3(from[0], from[1], from[2], w, h);
+      const [x2, y2] = project3(to[0], to[1], to[2], w, h);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      drawArrowHead(x2, y2, angle, color);
+      drawAxisLabel(label, x2 + Math.cos(angle) * 16, y2 + Math.sin(angle) * 16, color);
+    }
+
+    function drawAxes3d() {
+      draw3dAxis([0,0,0], [3.3,0,0], "x axis", "#ededed");
+      draw3dAxis([0,0,0], [0,3.3,0], "y axis", "#00b7ff");
+      draw3dAxis([0,0,0], [0,0,2.4], "z axis", "#c8ff00");
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const [ox, oy] = project3(0, 0, 0, w, h);
+      ctx.save();
+      ctx.fillStyle = "#ededed";
+      ctx.fillRect(ox - 3, oy - 3, 6, 6);
+      drawAxisLabel("0", ox - 16, oy + 16, "#777");
+      ctx.restore();
+    }
+
+    function draw3d() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      clear();
+      formulaText.textContent = `z = a · sin(bx + c) · cos(e y) + d\na=${params.amp.toFixed(2)}, b=${params.freq.toFixed(2)}, c=${params.phase.toFixed(2)}, d=${params.offset.toFixed(2)}, e=${params.spread.toFixed(2)}`;
+      const n = 28;
+      const min = -2.8, max = 2.8;
+      ctx.lineWidth = 1;
+      for (let j = 0; j <= n; j++) {
+        ctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+          const x = min + (max-min) * i/n;
+          const y = min + (max-min) * j/n;
+          const z = surfaceZ(x, y);
+          const [sx, sy] = project3(x, y, z, w, h);
+          if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = j % 4 === 0 ? "rgba(200,255,0,0.72)" : "rgba(237,237,237,0.24)";
+        ctx.stroke();
+      }
+      for (let i = 0; i <= n; i++) {
+        ctx.beginPath();
+        for (let j = 0; j <= n; j++) {
+          const x = min + (max-min) * i/n;
+          const y = min + (max-min) * j/n;
+          const z = surfaceZ(x, y);
+          const [sx, sy] = project3(x, y, z, w, h);
+          if (j === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = i % 4 === 0 ? "rgba(200,255,0,0.72)" : "rgba(237,237,237,0.24)";
+        ctx.stroke();
+      }
+
+      // Draw axes last so they remain visible above the surface grid.
+      drawAxes3d();
+    }
+
+    function drawExpression() {
+      if (!ctx) return;
+      if (exprMode === "2d") draw2d(); else draw3d();
+    }
+
+    canvas.addEventListener("pointerdown", (e) => { dragging = true; last = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!dragging || exprMode !== "3d") return;
+      rotZ += (e.clientX - last.x) * 0.01;
+      rotX += (e.clientY - last.y) * 0.01;
+      rotX = Math.max(-1.4, Math.min(0.2, rotX));
+      last = { x: e.clientX, y: e.clientY };
+      drawExpression();
+    });
+    canvas.addEventListener("pointerup", () => { dragging = false; });
+    window.addEventListener("resize", resizeCanvas);
+    setMode("2d");
+    resizeCanvas();
+  </script>
+</body>
+</html>

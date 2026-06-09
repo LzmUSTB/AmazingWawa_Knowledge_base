@@ -120,3 +120,18 @@ boards:
         y: 448
         w: 190
         h: 80
+  simulation:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      simulation:
+        x: 992
+        y: 576
+        w: 220
+        h: 100
+      sph:
+        x: 960
+        y: 384
+        w: 190
+        h: 80
