@@ -69,6 +69,8 @@ A depends-on B
 = B is useful to understand before A
 ```
 
+The stored direction remains meaningful. Do not reverse the stored edge.
+
 ### `used-in`
 
 ```txt
@@ -76,9 +78,13 @@ A used-in B
 = A is applied in B
 ```
 
+The stored direction should match the visual direction.
+
 ### `compares-with`
 
 Conceptually undirected. Store only one edge.
+
+For duplicate validation, `A compares-with B` and `B compares-with A` are considered the same relationship.
 
 ## 6. Edge ID Rules
 
@@ -87,36 +93,6 @@ Recommended ID format:
 ```txt
 <from>-<relation>-<to>
 ```
-
-## Relation visual semantics
-
-Visual direction is only a rendering rule. The stored direction in `graph.yaml` does not change.
-
-```txt
-contains:
-  white solid line, no arrow
-
-depends-on:
-  yellow dashed reverse arrow
-  A depends-on B is displayed as B -> A
-
-used-in:
-  purple solid forward arrow
-  A used-in B is displayed as A -> B
-
-compares-with:
-  orange solid double line, bidirectional arrow
-```
-
-Example stored edge:
-
-```yaml
-from: A
-to: B
-relation: depends-on
-```
-
-This is still stored as `A depends-on B`, even though it is displayed as `B -> A`.
 
 Rules:
 
@@ -129,13 +105,51 @@ no spaces
 no Chinese/Japanese characters
 ```
 
-## 7. Duplicate Rules
+## 7. Relation Visual Semantics
+
+Visual direction is only a rendering rule. The stored direction in `graph.yaml` does not change.
+
+Final pre-Step-9 visual rules:
+
+```txt
+contains:
+  white or muted-white solid line
+  no arrow
+
+depends-on:
+  yellow dashed line
+  no arrow
+  stored as A depends-on B
+  displayed as a directionless dependency line to avoid misleading reverse arrows
+
+used-in:
+  purple solid forward arrow
+  A used-in B is displayed as A -> B
+
+compares-with:
+  orange solid double line
+  bidirectional arrowheads on the same relation
+  stored only once
+  displayed as a bidirectional comparison relation
+```
+
+Example stored edge:
+
+```yaml
+from: A
+to: B
+relation: depends-on
+```
+
+This is still stored as `A depends-on B`. It should be displayed as a yellow dashed line without arrowheads, not as `B -> A`.
+
+## 8. Duplicate Rules
 
 Duplicate edge is not allowed. Duplicate means same `from`, same `to`, and same `relation`.
 
 For `compares-with`, reverse direction is also considered duplicate.
 
-## 8. Graph Scope Generation
+## 9. Graph Scope Generation
 
 ### Root Scope
 
@@ -164,7 +178,7 @@ current node
 
 Focus scope ID is the focused node ID. Cross-domain one-hop neighbors are allowed and keep their own domain color.
 
-## 9. Creation Rules
+## 10. Creation Rules
 
 New Note creates exactly one `contains` edge.
 
@@ -178,7 +192,7 @@ compares-with
 
 Add Link must reject `contains`.
 
-## 10. Recommended Validation
+## 11. Recommended Validation
 
 When loading `graph.yaml`, validate:
 

@@ -9,11 +9,11 @@ const props = defineProps({
 });
 
 const canvasRef = ref(null);
-const mode = ref(props.data.mode === "3d" ? "3d" : "2d");
 const dragStart = ref(null);
 const rotation = ref({ x: -0.72, z: 0.72 });
 const parameterValues = ref({});
 
+const mode = computed(() => (props.data.mode === "3d" ? "3d" : "2d"));
 const parameterDefaults = computed(() => ({
   a: Number(props.data.parameters?.a ?? props.data.a ?? 1),
   b: Number(props.data.parameters?.b ?? props.data.b ?? 1.5),
@@ -24,12 +24,16 @@ const parameterDefaults = computed(() => ({
 const xRange = computed(() => props.data.range?.x || [-6.28, 6.28]);
 const yRange = computed(() => props.data.range?.y || [-2.8, 2.8]);
 const displayedFormula = computed(() => {
+  if (props.data.formula) return props.data.formula;
   if (mode.value === "3d") {
     return `z = a * sin(bx + c) * cos(e y) + d`;
   }
   return `y = a * sin(bx + c) + d`;
 });
-const visibleParameterKeys = computed(() => (mode.value === "3d" ? ["a", "b", "c", "d", "e"] : ["a", "b", "c", "d"]));
+const visibleParameterKeys = computed(() => {
+  if (mode.value === "3d") return ["a", "b", "c", "d", "e"];
+  return /\be\b/.test(displayedFormula.value) ? ["a", "b", "c", "d", "e"] : ["a", "b", "c", "d"];
+});
 
 watch(
   parameterDefaults,
@@ -41,10 +45,6 @@ watch(
 
 watch([parameterValues, rotation, mode], () => nextTick(draw), { deep: true });
 onMounted(draw);
-
-function setMode(nextMode) {
-  mode.value = nextMode;
-}
 
 function resetParameters() {
   parameterValues.value = { ...parameterDefaults.value };
@@ -148,8 +148,9 @@ function project3d(x, y, z, width, height) {
 
 function draw3d(ctx, width, height) {
   const steps = 28;
-  const xMin = props.data.range3d?.x?.[0] ?? -2.8;
-  const xMax = props.data.range3d?.x?.[1] ?? 2.8;
+  const surfaceXRange = props.data.range3d?.x || props.data.range?.x || [-2.8, 2.8];
+  const xMin = surfaceXRange[0];
+  const xMax = surfaceXRange[1];
   const yMin = yRange.value[0];
   const yMax = yRange.value[1];
   ctx.lineWidth = 1;
@@ -258,10 +259,7 @@ function handlePointerUp() {
         <div class="block-kicker">expression-visualizer</div>
         <h3>{{ data.title || "Parametric Expression" }}</h3>
       </div>
-      <div class="mode-tabs">
-        <button :class="{ 'is-active': mode === '2d' }" type="button" @click="setMode('2d')">2D Curve</button>
-        <button :class="{ 'is-active': mode === '3d' }" type="button" @click="setMode('3d')">3D Surface</button>
-      </div>
+      <div class="mode-badge">{{ mode === "3d" ? "3D Surface" : "2D Curve" }}</div>
     </div>
     <div class="expression-layout">
       <aside class="control-panel">
@@ -283,7 +281,7 @@ function handlePointerUp() {
           @pointercancel="handlePointerUp"
         ></canvas>
         <div class="canvas-hud">
-          <span>drag: rotate 3d</span>
+          <span v-if="mode === '3d'">drag: rotate 3d</span>
           <span>grid: analytic space</span>
         </div>
       </div>
@@ -341,20 +339,12 @@ h3 {
   padding: 14px;
 }
 
-.mode-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  min-width: min(280px, 100%);
-}
-
-.mode-tabs button,
+.mode-badge,
 .small-btn {
   border: 1px solid var(--border-muted);
   border-radius: 0;
   background: var(--background-panel);
   color: var(--text-secondary);
-  cursor: pointer;
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: var(--font-size-small);
   font-weight: 800;
@@ -362,8 +352,15 @@ h3 {
   text-transform: uppercase;
 }
 
-.mode-tabs button.is-active,
-.mode-tabs button:hover,
+.mode-badge {
+  align-self: start;
+  color: var(--text-primary);
+}
+
+.small-btn {
+  cursor: pointer;
+}
+
 .small-btn:hover {
   border-color: var(--border-primary);
   color: var(--text-primary);
@@ -428,8 +425,5 @@ input[type="range"] {
     display: grid;
   }
 
-  .mode-tabs {
-    min-width: 0;
-  }
 }
 </style>

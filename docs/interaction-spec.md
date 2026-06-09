@@ -29,6 +29,7 @@ New Note = creates meta.yaml, note.md, assets/, and one contains edge
 Right Relation Sidebar = inspect hierarchy and relations
 Add Link = writes depends-on / used-in / compares-with to graph.yaml
 Layout Edit Mode = node drag + save graph-layout.yaml board.nodes
+Content Block Renderer = read-mode block rendering for note.md
 ```
 
 There is no mock graph fallback and no static sample vault. Repository `./vault` is the default real vault and must be loaded through Tauri filesystem APIs.
@@ -150,29 +151,34 @@ Relation styles:
 
 | Relation | Trace Style |
 |---|---|
-| contains | solid white or muted gray line |
-| depends-on | dashed yellow reverse arrow |
+| contains | solid white or muted gray line, no arrow |
+| depends-on | dashed yellow line, no arrow |
 | used-in | solid purple forward arrow |
-| compares-with | paired or double orange bidirectional line |
+| compares-with | orange double line with bidirectional arrowheads |
 
-## Relation visual semantics
+## 5.4 Relation Visual Semantics
 
 Visual direction is only a rendering rule. The stored direction in `graph.yaml` does not change.
+
+Final pre-Step-9 visual rules:
 
 ```txt
 contains:
   white solid line, no arrow
 
 depends-on:
-  yellow dashed reverse arrow
-  A depends-on B is displayed as B -> A
+  yellow dashed line, no arrow
+  stored as A depends-on B
+  displayed as a directionless dependency line to avoid misleading reverse arrows
 
 used-in:
   purple solid forward arrow
   A used-in B is displayed as A -> B
 
 compares-with:
-  orange solid double line, bidirectional arrow
+  orange solid double line with bidirectional arrowheads
+  stored only once
+  displayed as one bidirectional comparison relation
 ```
 
 Example stored edge:
@@ -183,7 +189,7 @@ to: B
 relation: depends-on
 ```
 
-This is still stored as `A depends-on B`, even though it is displayed as `B -> A`.
+This is still stored as `A depends-on B`. It should not be rendered as a reverse arrow.
 
 ## 6. Right Relation Sidebar
 
@@ -230,8 +236,9 @@ Target:
   domain / top-level groups must show domain color
 
 Relations list:
-  display relation text and a small arrow/trace preview
-  both text and arrow use the relation color
+  display [source node] [relation middle] [target node]
+  source and target stay neutral
+  only relation middle uses relation color
 ```
 
 ## 7. Layout Editing Interactions
@@ -271,7 +278,7 @@ Read mode displays note content using document-style typography and supported co
 
 Edit mode remains raw Markdown textarea editing.
 
-First content block renderer supports:
+Content block renderer supports:
 
 ```txt
 concept-card
@@ -282,9 +289,25 @@ quiz
 expression-visualizer
 ```
 
-The renderer follows `content_block_preview_v4.html` visual direction.
+Plain Markdown sections should read like a document, not like boxed debug cards. Subheadings should be visually clear, larger than small panel labels, and should not each be wrapped in individual heavy boxes.
 
-Plain Markdown sections should read like a document, not like boxed debug cards. Subheadings should be visually clear, larger than current small labels, and should not each be wrapped in individual heavy boxes.
+Important block interaction rules:
+
+```txt
+process-flow:
+  nodes should not overlap
+  flow board scrolls when larger than the visible panel
+  clicking a node shows its description
+
+code-explain:
+  clicking a code line shows line-specific explanation if available
+  otherwise it shows block-level explanation
+
+expression-visualizer:
+  each block renders only its declared mode, 2d or 3d
+  it does not show a 2D/3D switcher
+  it visualizes parameter influence for a specific expression
+```
 
 ## 10. Unsaved Changes Policy
 
@@ -294,30 +317,34 @@ Before navigation, show a confirmation dialog if note or layout state is dirty.
 
 Implemented/current:
 
-- real Tauri vault loading
-- No Vault Loaded state
-- File Tree
-- Breadcrumb
-- Root Graph
-- Domain Graph
-- Focus Graph generated from edges
-- New Note creation
-- Right Relation Sidebar
-- Add Link graph.yaml write
-- Note Read mode
-- Note Edit mode
-- note.md Save
-- Show in Graph
-- sidebar collapse
-- right sidebar collapse
-- Layout Edit Mode
-- Save graph-layout.yaml board.nodes
-- UI font scale by Ctrl + wheel
+```txt
+real Tauri vault loading
+No Vault Loaded state
+File Tree
+Breadcrumb
+Root Graph
+Domain Graph
+Focus Graph generated from edges
+New Note creation
+Right Relation Sidebar
+Add Link graph.yaml write
+Note Read mode
+Note Edit mode
+note.md Save
+Show in Graph
+sidebar collapse
+right sidebar collapse
+Layout Edit Mode
+Save graph-layout.yaml board.nodes
+UI font scale by Ctrl + wheel
+Content Block Renderer
+```
 
 Next:
 
-- Content Block Renderer
-- Search / Quick Open
-- relation edit/delete
-- Git panel
-- AI assist
+```txt
+Search Overlay / Quick Search
+relation edit/delete
+Git panel
+AI assist
+```

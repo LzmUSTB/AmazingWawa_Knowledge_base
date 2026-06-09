@@ -102,29 +102,27 @@ function getResolvedTracePoints(edge) {
   return generateOrthogonalRoute(sourceBox, targetBox, { routeIndex });
 }
 
-function offsetTracePoints(points, offset = 7) {
+function offsetTracePoints(points, offset = 5) {
   return points.map(([x, y]) => [x + offset, y + offset]);
 }
 
-function reverseTracePoints(points) {
-  return [...points].reverse();
-}
-
 function getVisualTracePoints(edge) {
-  const points = getResolvedTracePoints(edge);
-  if (!points) return undefined;
-  return relationTheme[edge.relation]?.direction === "reverse" ? reverseTracePoints(points) : points;
+  return getResolvedTracePoints(edge);
 }
 
-function getPairedVisualTracePoints(edge) {
+function getCompareStrokePoints(edge, offset) {
   const points = getResolvedTracePoints(edge);
   if (!points) return undefined;
-  return offsetTracePoints(reverseTracePoints(points));
+  return offsetTracePoints(points, offset);
+}
+
+function traceMarkerStart(edge) {
+  return relationTheme[edge.relation]?.direction === "both" ? `url(#trace-arrow-start-${edge.relation})` : "";
 }
 
 function traceMarkerEnd(edge) {
   const direction = relationTheme[edge.relation]?.direction;
-  return direction === "forward" || direction === "reverse" || direction === "both" ? `url(#trace-arrow-${edge.relation})` : "";
+  return direction === "forward" || direction === "both" ? `url(#trace-arrow-end-${edge.relation})` : "";
 }
 
 function handleNodeClick(node) {
@@ -321,8 +319,8 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
         >
           <defs>
             <marker
-              v-for="relationKey in ['depends-on', 'used-in', 'compares-with']"
-              :id="`trace-arrow-${relationKey}`"
+              v-for="relationKey in ['used-in', 'compares-with']"
+              :id="`trace-arrow-end-${relationKey}`"
               :key="relationKey"
               markerHeight="8"
               markerWidth="8"
@@ -333,11 +331,22 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
             >
               <path d="M 0 0 L 8 4 L 0 8 z" :fill="relationTheme[relationKey].color" />
             </marker>
+            <marker
+              id="trace-arrow-start-compares-with"
+              markerHeight="8"
+              markerWidth="8"
+              orient="auto"
+              refX="1"
+              refY="4"
+              viewBox="0 0 8 8"
+            >
+              <path d="M 8 0 L 0 4 L 8 8 z" :fill="relationTheme['compares-with'].color" />
+            </marker>
           </defs>
 
           <g v-for="edge in currentScope.edges" :key="edge.id">
             <path
-              v-if="getVisualTracePoints(edge)"
+              v-if="edge.relation !== 'compares-with' && getVisualTracePoints(edge)"
               class="trace"
               :class="[
                 `trace--${edge.relation}`,
@@ -347,16 +356,31 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
                 },
               ]"
               :d="pointsToPath(getVisualTracePoints(edge))"
+              :marker-start="traceMarkerStart(edge)"
               :marker-end="traceMarkerEnd(edge)"
               :stroke="relationTheme[edge.relation].color"
               :stroke-dasharray="relationTheme[edge.relation].dash"
             />
             <path
-              v-if="edge.relation === 'compares-with' && getPairedVisualTracePoints(edge)"
-              class="trace trace--paired"
-              :class="{ 'is-active': isConnectedEdge(edge, focusNodeId) }"
-              :d="pointsToPath(getPairedVisualTracePoints(edge))"
-              marker-end="url(#trace-arrow-compares-with)"
+              v-if="edge.relation === 'compares-with' && getCompareStrokePoints(edge, -3)"
+              class="trace trace--compares-with trace--paired"
+              :class="{
+                'is-active': isConnectedEdge(edge, focusNodeId),
+                'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
+              }"
+              :d="pointsToPath(getCompareStrokePoints(edge, -3))"
+              marker-start="url(#trace-arrow-start-compares-with)"
+              :stroke="relationTheme[edge.relation].color"
+            />
+            <path
+              v-if="edge.relation === 'compares-with' && getCompareStrokePoints(edge, 3)"
+              class="trace trace--compares-with trace--paired"
+              :class="{
+                'is-active': isConnectedEdge(edge, focusNodeId),
+                'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
+              }"
+              :d="pointsToPath(getCompareStrokePoints(edge, 3))"
+              marker-end="url(#trace-arrow-end-compares-with)"
               :stroke="relationTheme[edge.relation].color"
             />
           </g>

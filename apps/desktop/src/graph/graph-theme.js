@@ -25,7 +25,7 @@ export const relationTheme = {
     color: "#FFD500",
     label: "DEPENDS-ON",
     dash: "8 7",
-    direction: "reverse",
+    direction: "none",
     lineStyle: "dashed",
     preview: "dashed",
   },
@@ -43,7 +43,7 @@ export const relationTheme = {
     dash: "",
     direction: "both",
     lineStyle: "double",
-    preview: "double",
+    preview: "double-bidirectional",
   },
 };
 

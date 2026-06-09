@@ -139,6 +139,9 @@ language: glsl
 code: |
   uint hash = cell.x + cell.y * gridRes.x + cell.z * gridRes.x * gridRes.y;
   density += mass * kernel(r, h);
+lines:
+  1: 把三维 cell 坐标压平成一维 hash，用于定位粒子所属空间桶。
+  2: 对邻居粒子的核函数贡献进行加权累积，得到密度估计的一部分。
 explain: |
   这段代码把 3D cell 坐标压平成 1D hash。SPH 的邻居搜索会先把粒子归入 cell，再遍历当前 cell 周围的 27 个 cell。这样可以把全局 O(n²) 搜索变成局部搜索，GPU 上通常还会配合 prefix sum 或固定 bucket 存储。
 :::

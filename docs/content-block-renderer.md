@@ -8,7 +8,7 @@ Editing remains raw Markdown in a textarea.
 
 Reading mode parses and renders supported blocks.
 
-The first implementation should follow the visual direction of `content_block_preview_v4.html`.
+The first implementation follows the hard-edged black technical HUD visual direction established for the desktop app.
 
 ## 2. Design Principles
 
@@ -25,7 +25,7 @@ The renderer must not mutate note content unless the user explicitly saves edits
 
 ## 3. Supported Blocks
 
-First version supports six block types:
+Current first-version supported block types:
 
 ```txt
 concept-card
@@ -54,10 +54,23 @@ Rules:
 opening fence: :::block-name
 closing fence: :::
 metadata: simple YAML-like key/value lines
-body: block-specific lines
-unknown block: render as safe fallback code/pre block
+unknown block: render as safe fallback
 parse failure: render fallback, do not crash
 ```
+
+Supported YAML-like value styles:
+
+```txt
+key: simple one-line value
+
+key: |
+  preserve line breaks exactly
+
+key: >
+  fold line breaks into paragraphs
+```
+
+The lightweight parser is not a full YAML parser. Keep supported syntax simple and predictable.
 
 ## 5. Plain Markdown Rendering
 
@@ -68,7 +81,7 @@ Requirements:
 ```txt
 H1 comes from note header, not repeated as boxed content
 H2/H3 are clear section headings
-section headings are larger than current tiny panel-labels
+section headings are larger than tiny panel labels
 ordinary paragraphs use readable line height
 do not put every subsection in its own heavy border box
 use subtle separators or spacing instead
@@ -106,7 +119,7 @@ why: 它决定实时渲染的处理顺序、数据流和可插入的优化点。
 :::
 ```
 
-Render as a compact concept card with clear title, summary, and optional why field.
+Render as a compact concept card with clear title, summary, and optional why/key intuition fields.
 
 ## 7. process-flow
 
@@ -118,7 +131,7 @@ visualize process order and dependency
 
 It must support both sequential and parallel branches.
 
-SSFR example:
+Example:
 
 ```md
 :::process-flow
@@ -149,12 +162,15 @@ parallel:
 :::
 ```
 
-Rendering requirement:
+Rendering requirements:
 
 ```txt
-parallel nodes should appear side-by-side when declared
+nodes must not overlap
+parallel nodes should be visually separated
 arrows show execution/data dependency
 clicking a step may show its description
+the flow board can be larger than the visible region
+the flow chart area scrolls on the necessary axis when too large
 ```
 
 Do not force all steps into one vertical list.
@@ -179,7 +195,7 @@ rows:
 :::
 ```
 
-Render as a clear table matching the app's technical style.
+Render as a clear hard-edged table matching the app's technical style.
 
 ## 9. code-explain
 
@@ -189,19 +205,61 @@ Purpose:
 show code and explanation side-by-side or stacked
 ```
 
-Example:
+Block-level explanation example:
 
 ```md
 :::code-explain
 language: glsl
-code:
+code: |
   hash = cell.x + cell.y * gridRes.x + cell.z * gridRes.x * gridRes.y;
-explain:
+explain: |
   将三维网格坐标压平成一维 index。
 :::
 ```
 
-Render with syntax-style monospace block and explanation panel.
+Line-specific explanation example:
+
+```md
+:::code-explain
+language: glsl
+code: |
+  uint hash = cell.x + cell.y * gridRes.x + cell.z * gridRes.x * gridRes.y;
+  density += mass * kernel(r, h);
+lines:
+  1: 把三维 cell 坐标压平成一维 hash，用于定位粒子所属空间桶。
+  2: 对邻居粒子的核函数贡献进行加权累积，得到密度估计的一部分。
+explain: |
+  这段代码展示 GPU SPH 邻居搜索和密度计算中常见的两个核心片段。
+:::
+```
+
+Rendering requirements:
+
+```txt
+code panel shows all lines
+long code lines scroll horizontally
+code must not be truncated with ellipsis
+line numbers remain visible
+clicking a code line updates the explanation panel
+if line-specific explanation exists, show it
+otherwise show block-level explain/explanation
+```
+
+Line-specific explanation lookup should support:
+
+```txt
+lines:
+  1: ...
+  2: ...
+
+line_explanations:
+  1: ...
+  2: ...
+
+explanations:
+  line-1: ...
+  line-2: ...
+```
 
 No full syntax highlighter is required in the first version.
 
@@ -237,10 +295,29 @@ No spaced repetition or scoring in first version.
 Purpose:
 
 ```txt
-interactive math expression visualization with adjustable parameters
+visualize how parameters in a specific expression affect the output
 ```
 
-It supports 2D and 3D.
+It is not a general graphing calculator. It is an educational block for intuitive parameter understanding.
+
+Each `expression-visualizer` block renders exactly one mode.
+
+```txt
+mode: 2d -> render only a 2D curve
+mode: 3d -> render only a 3D surface
+```
+
+The block must not show a 2D/3D switcher. The author chooses the mode in `note.md`.
+
+Formula rules:
+
+```txt
+display formula at the top
+use data.formula if provided
+fallback formula is allowed only when formula is missing
+do not evaluate arbitrary JavaScript
+use fixed supported formula families
+```
 
 ### 2D
 
@@ -265,9 +342,10 @@ Requirements:
 
 ```txt
 show formula at the top
-show sliders for parameters
+show sliders for relevant parameters
 draw graph on canvas
 label x axis and y axis clearly
+do not show 3D drag instructions
 ```
 
 ### 3D
@@ -295,11 +373,12 @@ Requirements:
 
 ```txt
 show formula at the top
-show sliders for parameters
+show sliders for relevant parameters
 draw 3D surface on canvas
 label x axis, y axis, z axis clearly
 z axis should point upward on screen
 drag canvas to rotate view
+draw axes after the surface mesh so labels stay visible
 ```
 
 The first version may use Canvas 2D projection instead of WebGL.
@@ -320,7 +399,7 @@ apps/desktop/src/components/note/blocks/
   ExpressionVisualizerBlock.vue
 ```
 
-A simpler first version may keep block components in one file if necessary, but parsing should be separated from rendering.
+A simpler first version may keep several block renderers in one file if necessary, but parsing should remain separated from rendering.
 
 ## 13. Safety and Failure Behavior
 
@@ -329,14 +408,14 @@ invalid block syntax -> render fallback
 unknown block -> render fallback
 parser error -> do not crash NoteView
 expression visualizer must not eval arbitrary JS
-only supported formulas are allowed in first version
+only supported formula families are allowed in first version
 ```
 
 For expression visualizer, do not evaluate arbitrary user-provided code. Use fixed formula families controlled by `mode` and supported parameter names.
 
 ## 14. Not Included
 
-Do not implement in first version:
+Do not implement in the first content-block version:
 
 ```txt
 rich-text editing

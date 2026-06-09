@@ -26,12 +26,12 @@ Add Link form
 real graph.yaml write for non-hierarchical relations
 ```
 
-Next refinement targets:
+Current refinement targets before Step 9:
 
 ```txt
-clearer target hierarchy list
-direction toggle instead of select dropdown
-relation rows with colored arrow/trace visualization
+final relation visual rules
+line-specific code-explain docs
+single-mode expression-visualizer docs
 ```
 
 ## 3. Layout
@@ -95,7 +95,7 @@ Parent
 Children
 
 RELATIONS
-relation rows with colored label + arrow/trace preview
+relation rows with colored label + trace preview
 ```
 
 `contains` edges belong in Hierarchy, not the ordinary Relations list.
@@ -190,36 +190,27 @@ A compares-with B
 
 Display the actual stored direction from `graph.yaml`.
 
-Each row should include:
+Each direct relation row should use this structure:
 
 ```txt
-relation text
-other node title/id
-small relation arrow or trace preview under the text
+[source node] [relation middle] [target node]
 ```
 
-Relation color mapping:
+Source and target node blocks:
 
 ```txt
-depends-on: var(--relation-depends-on)
-used-in: var(--relation-used-in)
-compares-with: var(--relation-compares-with)
+white / neutral text
+neutral border
+not relation-colored
 ```
 
-Both relation text and arrow/trace preview should use the relation color.
-
-Suggested row rendering:
+The middle relation block:
 
 ```txt
-渲染管线 DEPENDS-ON Shader
-Shader
-
-──────▶
+relation label
+trace / arrow indicator
+relation color only in this middle block
 ```
-
-For `used-in`, dashed or segmented line is recommended.
-
-For `compares-with`, double/paired line or bidirectional marker is recommended.
 
 Clicking the relation row's other node opens that node's local/focus graph:
 
@@ -229,37 +220,61 @@ openScope(otherNodeId, otherNodeId)
 
 Do not default relation row click to opening Note View.
 
-## Relation visual semantics
+## 9. Relation Visual Semantics
 
 Visual direction is only a rendering rule. The stored direction in `graph.yaml` does not change.
 
+Final pre-Step-9 visual rules:
+
 ```txt
 contains:
-  white solid line, no arrow
+  white solid line
+  no arrow
+  hierarchy only
 
 depends-on:
-  yellow dashed reverse arrow
-  A depends-on B is displayed as B -> A
+  yellow dashed line
+  no arrow
+  stored as A depends-on B
+  displayed as a directionless dependency line to avoid misleading reverse arrows
 
 used-in:
   purple solid forward arrow
   A used-in B is displayed as A -> B
 
 compares-with:
-  orange solid double line, bidirectional arrow
+  orange solid double line
+  bidirectional arrowheads on the same relation
+  stored only once
+  displayed as a bidirectional comparison relation
 ```
 
-Example stored edge:
+Direct relation row examples:
 
-```yaml
-from: A
-to: B
-relation: depends-on
+```txt
+A depends-on B
+
+[A] [DEPENDS-ON
+     - - - - -] [B]
 ```
 
-This is still stored as `A depends-on B`, even though it is displayed as `B -> A`.
+```txt
+A used-in B
 
-## 9. Add Link Validation
+[A] [USED-IN
+     ─────▶] [B]
+```
+
+```txt
+A compares-with B
+
+[A] [COMPARES-WITH
+     ◀════▶] [B]
+```
+
+For `compares-with`, the UI should not render two separated arrows. It should read as one comparison relation.
+
+## 10. Add Link Validation
 
 Before writing:
 
@@ -280,7 +295,7 @@ Recommended edge ID:
 <source>-<relation>-<target>
 ```
 
-## 10. graph.yaml Write
+## 11. graph.yaml Write
 
 Add Link appends one edge to `graph.yaml`:
 
@@ -305,7 +320,7 @@ right sidebar relation list updates
 
 If the current scope contains the new edge, Graph View updates. If not, do not force navigation.
 
-## 11. Future Work
+## 12. Future Work
 
 Later versions may add:
 

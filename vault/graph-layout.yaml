@@ -101,13 +101,13 @@ boards:
         w: 200
         h: 88
       shader:
-        x: 1280
-        y: 448
+        x: 1344
+        y: 544
         w: 180
         h: 76
       rasterization:
         x: 1440
-        y: 832
+        y: 896
         w: 220
         h: 76
       testnote:
