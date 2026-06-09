@@ -244,7 +244,8 @@ function submitLink() {
 </script>
 
 <template>
-  <aside class="relation-sidebar" :class="{ 'is-collapsed': collapsed }" :style="{ '--relation-node-color': nodeColor }">
+  <aside class="relation-sidebar" :class="{ 'is-collapsed': collapsed }"
+    :style="{ '--relation-node-color': nodeColor }">
     <button v-if="collapsed" class="relation-rail hud-button" @click="$emit('toggle-collapse')">
       Relations
     </button>
@@ -275,23 +276,16 @@ function submitLink() {
         <section class="sidebar-section">
           <div class="section-label">Actions</div>
           <div class="action-grid">
-            <button
-              v-if="domainSelected"
-              class="hud-button"
-              style="--button-color: var(--relation-node-color)"
-              @click="$emit('open-domain', node.id)"
-            >
+            <button v-if="domainSelected" class="hud-button" style="--button-color: var(--relation-node-color)"
+              @click="$emit('open-domain', node.id)">
               Open Domain Graph
             </button>
             <template v-else>
               <button class="hud-button" style="--button-color: var(--simulation)" @click="$emit('open-note', node.id)">
                 Open Note
               </button>
-              <button
-                class="hud-button"
-                style="--button-color: var(--relation-node-color)"
-                @click="$emit('open-scope', node.id, node.id)"
-              >
+              <button class="hud-button" style="--button-color: var(--relation-node-color)"
+                @click="$emit('open-scope', node.id, node.id)">
                 Show Local Graph
               </button>
             </template>
@@ -326,31 +320,18 @@ function submitLink() {
             <input v-model="targetSearch" placeholder="Filter nodes" spellcheck="false" />
           </label>
           <div class="target-tree">
-            <section
-              v-for="group in targetGroups"
-              :key="group.domain.id"
-              class="target-domain-group"
-              :style="{ '--target-domain-color': group.color }"
-            >
-              <button
-                class="target-domain-row"
+            <section v-for="group in targetGroups" :key="group.domain.id" class="target-domain-group"
+              :style="{ '--target-domain-color': group.color }">
+              <button class="target-domain-row"
                 :class="{ 'is-selected': targetId === group.domainNode?.id, 'is-static': !group.domainSelectable }"
-                type="button"
-                :disabled="!group.domainSelectable"
-                @click="group.domainSelectable && selectTarget(group.domainNode.id)"
-              >
+                type="button" :disabled="!group.domainSelectable"
+                @click="group.domainSelectable && selectTarget(group.domainNode.id)">
                 <span>{{ group.domain.title || group.domain.id }}</span>
                 <small>{{ group.domain.id }}</small>
               </button>
-              <button
-                v-for="row in group.rows"
-                :key="row.node.id"
-                class="target-node-row"
-                :class="{ 'is-selected': targetId === row.node.id }"
-                :style="targetDepthStyle(row, group)"
-                type="button"
-                @click="selectTarget(row.node.id)"
-              >
+              <button v-for="row in group.rows" :key="row.node.id" class="target-node-row"
+                :class="{ 'is-selected': targetId === row.node.id }" :style="targetDepthStyle(row, group)" type="button"
+                @click="selectTarget(row.node.id)">
                 <span>{{ row.node.title || row.node.id }}</span>
                 <small>{{ row.node.id }} / {{ row.node.type || "node" }}</small>
               </button>
@@ -361,12 +342,7 @@ function submitLink() {
           <div v-if="visibleFormError" class="form-error">{{ visibleFormError }}</div>
           <div class="form-actions">
             <button class="hud-button" :disabled="addLinkSaving" @click="closeForm">Cancel</button>
-            <button
-              class="hud-button"
-              :disabled="!canSubmit"
-              style="--button-color: var(--career)"
-              @click="submitLink"
-            >
+            <button class="hud-button" :disabled="!canSubmit" style="--button-color: var(--career)" @click="submitLink">
               {{ addLinkSaving ? "Adding..." : "Add Link" }}
             </button>
           </div>
@@ -375,23 +351,15 @@ function submitLink() {
         <section class="sidebar-section">
           <div class="section-label">Hierarchy</div>
           <div class="sub-label">Parent</div>
-          <button
-            v-for="edge in hierarchy.parentEdges"
-            :key="edge.id"
-            class="relation-row"
-            @click="openNodeGraph(edge.source)"
-          >
+          <button v-for="edge in hierarchy.parentEdges" :key="edge.id" class="relation-row"
+            @click="openNodeGraph(edge.source)">
             {{ getNodeTitleOrId(edge.source) }}
           </button>
           <p v-if="!hierarchy.parentEdges.length" class="empty-line">No parent edge</p>
 
           <div class="sub-label">Children</div>
-          <button
-            v-for="edge in hierarchy.childEdges"
-            :key="edge.id"
-            class="relation-row"
-            @click="openNodeGraph(edge.target)"
-          >
+          <button v-for="edge in hierarchy.childEdges" :key="edge.id" class="relation-row"
+            @click="openNodeGraph(edge.target)">
             {{ getNodeTitleOrId(edge.target) }}
           </button>
           <p v-if="!hierarchy.childEdges.length" class="empty-line">No child edges</p>
@@ -399,13 +367,8 @@ function submitLink() {
 
         <section class="sidebar-section">
           <div class="section-label">Relations</div>
-          <button
-            v-for="edge in directRelations"
-            :key="edge.id"
-            class="relation-row relation-row--direct"
-            :style="relationStyle(edge)"
-            @click="openNodeGraph(getOtherNodeId(edge, node.id))"
-          >
+          <button v-for="edge in directRelations" :key="edge.id" class="relation-row relation-row--direct"
+            :style="relationStyle(edge)" @click="openNodeGraph(getOtherNodeId(edge, node.id))">
             <span class="relation-endpoint relation-endpoint--source">
               <strong>{{ getNodeTitleOrId(edge.source) }}</strong>
               <small>source</small>
@@ -513,7 +476,7 @@ function submitLink() {
 .section-label,
 .sub-label,
 label span,
-.direction-field > span {
+.direction-field>span {
   color: var(--text-secondary);
   font-size: var(--font-size-small);
   font-weight: 800;
@@ -721,7 +684,7 @@ select:focus {
 
 .relation-row--direct {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(92px, 0.86fr) minmax(0, 1fr);
+  grid-template-columns: auto 1fr auto;
   gap: 8px;
   align-items: stretch;
   border-left-color: var(--border-muted);
@@ -730,13 +693,10 @@ select:focus {
 .relation-endpoint,
 .relation-middle {
   min-width: 0;
-  border: 1px solid var(--border-muted);
-  background: var(--background-main);
   display: grid;
   align-content: center;
   gap: 5px;
   min-height: 54px;
-  padding: 8px;
 }
 
 .relation-endpoint strong,
