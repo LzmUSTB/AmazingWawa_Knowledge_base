@@ -102,6 +102,31 @@ function getResolvedTracePoints(edge) {
   return generateOrthogonalRoute(sourceBox, targetBox, { routeIndex });
 }
 
+function offsetTracePoints(points, offset = 7) {
+  return points.map(([x, y]) => [x + offset, y + offset]);
+}
+
+function reverseTracePoints(points) {
+  return [...points].reverse();
+}
+
+function getVisualTracePoints(edge) {
+  const points = getResolvedTracePoints(edge);
+  if (!points) return undefined;
+  return relationTheme[edge.relation]?.direction === "reverse" ? reverseTracePoints(points) : points;
+}
+
+function getPairedVisualTracePoints(edge) {
+  const points = getResolvedTracePoints(edge);
+  if (!points) return undefined;
+  return offsetTracePoints(reverseTracePoints(points));
+}
+
+function traceMarkerEnd(edge) {
+  const direction = relationTheme[edge.relation]?.direction;
+  return direction === "forward" || direction === "reverse" || direction === "both" ? `url(#trace-arrow-${edge.relation})` : "";
+}
+
 function handleNodeClick(node) {
   if (suppressNodeOpen.value) {
     suppressNodeOpen.value = false;
@@ -296,7 +321,9 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
         >
           <defs>
             <marker
-              id="trace-arrow"
+              v-for="relationKey in ['depends-on', 'used-in', 'compares-with']"
+              :id="`trace-arrow-${relationKey}`"
+              :key="relationKey"
               markerHeight="8"
               markerWidth="8"
               orient="auto"
@@ -304,13 +331,13 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
               refY="4"
               viewBox="0 0 8 8"
             >
-              <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor" />
+              <path d="M 0 0 L 8 4 L 0 8 z" :fill="relationTheme[relationKey].color" />
             </marker>
           </defs>
 
           <g v-for="edge in currentScope.edges" :key="edge.id">
             <path
-              v-if="getResolvedTracePoints(edge)"
+              v-if="getVisualTracePoints(edge)"
               class="trace"
               :class="[
                 `trace--${edge.relation}`,
@@ -319,18 +346,18 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
                   'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
                 },
               ]"
-              :d="pointsToPath(getResolvedTracePoints(edge))"
-              :marker-end="edge.relation === 'depends-on' ? 'url(#trace-arrow)' : ''"
+              :d="pointsToPath(getVisualTracePoints(edge))"
+              :marker-end="traceMarkerEnd(edge)"
               :stroke="relationTheme[edge.relation].color"
               :stroke-dasharray="relationTheme[edge.relation].dash"
             />
             <path
-              v-if="edge.relation === 'compares-with' && getResolvedTracePoints(edge)"
+              v-if="edge.relation === 'compares-with' && getPairedVisualTracePoints(edge)"
               class="trace trace--paired"
               :class="{ 'is-active': isConnectedEdge(edge, focusNodeId) }"
-              :d="pointsToPath(getResolvedTracePoints(edge).map(([x, y]) => [x + 7, y + 7]))"
+              :d="pointsToPath(getPairedVisualTracePoints(edge))"
+              marker-end="url(#trace-arrow-compares-with)"
               :stroke="relationTheme[edge.relation].color"
-              stroke-dasharray="3 5"
             />
           </g>
         </svg>

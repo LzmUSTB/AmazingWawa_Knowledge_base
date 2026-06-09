@@ -101,8 +101,8 @@ boards:
         w: 200
         h: 88
       shader:
-        x: 1184
-        y: 480
+        x: 1280
+        y: 448
         w: 180
         h: 76
       rasterization:
@@ -116,8 +116,8 @@ boards:
         w: 190
         h: 80
       game-dev:
-        x: 736
-        y: 448
+        x: 768
+        y: 352
         w: 190
         h: 80
   simulation:

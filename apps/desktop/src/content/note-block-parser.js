@@ -25,6 +25,39 @@ function parseScalar(value = "") {
   return Number.isFinite(numberValue) && /^-?\d+(?:\.\d+)?$/.test(trimmed) ? numberValue : trimmed;
 }
 
+function getIndent(line = "") {
+  const match = line.match(/^\s*/);
+  return match ? match[0].length : 0;
+}
+
+function stripCommonIndent(lines) {
+  const nonEmptyIndents = lines
+    .filter((line) => line.trim())
+    .map(getIndent);
+  const commonIndent = nonEmptyIndents.length ? Math.min(...nonEmptyIndents) : 0;
+  return lines.map((line) => line.slice(Math.min(commonIndent, getIndent(line))));
+}
+
+function foldBlockScalar(lines) {
+  const paragraphs = [];
+  let current = [];
+  lines.forEach((line) => {
+    if (!line.trim()) {
+      if (current.length) paragraphs.push(current.join(" "));
+      current = [];
+      return;
+    }
+    current.push(line.trim());
+  });
+  if (current.length) paragraphs.push(current.join(" "));
+  return paragraphs.join("\n\n");
+}
+
+function parseBlockScalar(lines, style) {
+  const stripped = stripCommonIndent(lines);
+  return style === ">" ? foldBlockScalar(stripped) : stripped.join("\n").replace(/\s+$/, "");
+}
+
 function parseKeyValueLines(lines) {
   const data = {};
   let index = 0;
@@ -38,6 +71,21 @@ function parseKeyValueLines(lines) {
     }
 
     const [, key, value] = match;
+    const trimmedValue = value.trim();
+    if (trimmedValue === "|" || trimmedValue === ">") {
+      const blockLines = [];
+      index += 1;
+      while (
+        index < lines.length &&
+        (lines[index].trim() === "" || /^\s+/.test(lines[index]) || !/^[A-Za-z0-9_-]+:\s*/.test(lines[index]))
+      ) {
+        blockLines.push(lines[index]);
+        index += 1;
+      }
+      data[key] = parseBlockScalar(blockLines, trimmedValue);
+      continue;
+    }
+
     if (value.trim()) {
       data[key] = parseScalar(value);
       index += 1;
@@ -141,6 +189,12 @@ export function parseNoteBlocks(markdown = "") {
     const body = [];
     index += 1;
     while (index < lines.length && lines[index].trim() !== ":::") {
+      const inlineCloseMatch = lines[index].match(/^(.*):::\s*$/);
+      if (inlineCloseMatch) {
+        if (inlineCloseMatch[1].trim()) body.push(inlineCloseMatch[1]);
+        index += 1;
+        break;
+      }
       body.push(lines[index]);
       index += 1;
     }

@@ -151,9 +151,39 @@ Relation styles:
 | Relation | Trace Style |
 |---|---|
 | contains | solid white or muted gray line |
-| depends-on | solid yellow line with arrow |
-| used-in | dashed purple or blue line |
-| compares-with | paired or double orange line |
+| depends-on | dashed yellow reverse arrow |
+| used-in | solid purple forward arrow |
+| compares-with | paired or double orange bidirectional line |
+
+## Relation visual semantics
+
+Visual direction is only a rendering rule. The stored direction in `graph.yaml` does not change.
+
+```txt
+contains:
+  white solid line, no arrow
+
+depends-on:
+  yellow dashed reverse arrow
+  A depends-on B is displayed as B -> A
+
+used-in:
+  purple solid forward arrow
+  A used-in B is displayed as A -> B
+
+compares-with:
+  orange solid double line, bidirectional arrow
+```
+
+Example stored edge:
+
+```yaml
+from: A
+to: B
+relation: depends-on
+```
+
+This is still stored as `A depends-on B`, even though it is displayed as `B -> A`.
 
 ## 6. Right Relation Sidebar
 

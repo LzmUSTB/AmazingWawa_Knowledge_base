@@ -137,16 +137,8 @@ rows:
 :::code-explain
 language: glsl
 code: |
-  bool computeCellHash(vec3 pos, out uint hash) {
-      ivec3 cell = ivec3(floor((pos - gridOrigin) / cellSize));
-
-      if (any(lessThan(cell, ivec3(0))) || any(greaterThanEqual(cell, gridRes))) {
-          return false;
-      }
-
-      hash = uint(cell.x + cell.y * gridRes.x + cell.z * gridRes.x * gridRes.y);
-      return true;
-  }
+  uint hash = cell.x + cell.y * gridRes.x + cell.z * gridRes.x * gridRes.y;
+  density += mass * kernel(r, h);
 explain: |
   这段代码把 3D cell 坐标压平成 1D hash。SPH 的邻居搜索会先把粒子归入 cell，再遍历当前 cell 周围的 27 个 cell。这样可以把全局 O(n²) 搜索变成局部搜索，GPU 上通常还会配合 prefix sum 或固定 bucket 存储。
 :::

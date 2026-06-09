@@ -15,6 +15,12 @@ const activeFlowNode = ref({});
 const activeCodeLine = ref({});
 const blocks = computed(() => parseNoteBlocks(props.markdown));
 
+const FLOW_NODE_WIDTH = 180;
+const FLOW_NODE_HEIGHT = 64;
+const FLOW_X_GAP = 110;
+const FLOW_Y_GAP = 40;
+const FLOW_PADDING = 48;
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -123,9 +129,8 @@ function flowMarkerId(blockIndex) {
 function flowParallelLaneMap(data) {
   const laneMap = new Map();
   normalizeParallelGroups(data).forEach((group) => {
-    const spacing = group.length > 1 ? 50 / (group.length - 1) : 0;
     group.forEach((id, index) => {
-      laneMap.set(id, group.length === 1 ? 50 : 25 + spacing * index);
+      laneMap.set(id, index);
     });
   });
   return laneMap;
@@ -165,51 +170,42 @@ function flowLayout(data) {
   const maxLevel = Math.max(1, ...[...levels.values()]);
   const laneMap = flowParallelLaneMap(data);
   const outgoing = new Map();
-  const incoming = new Map();
-  edges.forEach((edge) => {
-    outgoing.set(edge.source, [...(outgoing.get(edge.source) || []), edge.target]);
-    incoming.set(edge.target, [...(incoming.get(edge.target) || []), edge.source]);
-  });
-
-  const placed = nodes.map((node) => {
+  edges.forEach((edge) => outgoing.set(edge.source, [...(outgoing.get(edge.source) || []), edge.target]));
+  const nodesByLevel = new Map();
+  nodes.forEach((node) => {
     const level = levels.get(node.id) || 0;
-    return {
-      ...node,
-      x: node.x ?? 10 + (level / maxLevel) * 80,
-      y: node.y ?? laneMap.get(node.id) ?? null,
-      isParallel: laneMap.has(node.id) || node.kind === "parallel",
-      isOutput: node.kind === "output" || !(outgoing.get(node.id) || []).length,
-    };
+    nodesByLevel.set(level, [...(nodesByLevel.get(level) || []), node]);
   });
 
-  const byId = new Map(placed.map((node) => [node.id, node]));
-  for (let pass = 0; pass < placed.length + 2; pass += 1) {
-    placed.forEach((node) => {
-      if (node.y !== null) return;
-      const sourceYs = (incoming.get(node.id) || []).map((id) => byId.get(id)?.y).filter((value) => value !== null && value !== undefined);
-      if (sourceYs.length === 1) {
-        node.y = sourceYs[0];
-      } else if (sourceYs.length > 1) {
-        node.y = sourceYs.reduce((sum, value) => sum + value, 0) / sourceYs.length;
-      }
+  const placed = [];
+  let maxRows = 1;
+  [...nodesByLevel.entries()].forEach(([level, levelNodes]) => {
+    const sorted = [...levelNodes].sort((a, b) => {
+      const aLane = laneMap.has(a.id) ? laneMap.get(a.id) : Number.MAX_SAFE_INTEGER;
+      const bLane = laneMap.has(b.id) ? laneMap.get(b.id) : Number.MAX_SAFE_INTEGER;
+      if (aLane !== bLane) return aLane - bLane;
+      return a.id.localeCompare(b.id);
     });
-  }
+    maxRows = Math.max(maxRows, sorted.length);
+    sorted.forEach((node, rowIndex) => {
+      placed.push({
+        ...node,
+        x: FLOW_PADDING + level * (FLOW_NODE_WIDTH + FLOW_X_GAP),
+        y: FLOW_PADDING + rowIndex * (FLOW_NODE_HEIGHT + FLOW_Y_GAP),
+        width: FLOW_NODE_WIDTH,
+        height: FLOW_NODE_HEIGHT,
+        isParallel: laneMap.has(node.id) || node.kind === "parallel",
+        isOutput: node.kind === "output" || !(outgoing.get(node.id) || []).length,
+      });
+    });
+  });
 
-  const levelGroups = new Map();
-  placed.forEach((node) => {
-    if (node.y === null) {
-      const level = levels.get(node.id) || 0;
-      levelGroups.set(level, [...(levelGroups.get(level) || []), node]);
-    }
-  });
-  levelGroups.forEach((group) => {
-    const spacing = group.length > 1 ? 44 / (group.length - 1) : 0;
-    group.forEach((node, index) => {
-      node.y = group.length === 1 ? 50 : 28 + spacing * index;
-    });
-  });
+  const width = FLOW_PADDING * 2 + (maxLevel + 1) * FLOW_NODE_WIDTH + maxLevel * FLOW_X_GAP;
+  const height = FLOW_PADDING * 2 + maxRows * FLOW_NODE_HEIGHT + Math.max(0, maxRows - 1) * FLOW_Y_GAP;
 
   return {
+    width,
+    height,
     nodes: placed,
     edges,
     nodesById: new Map(placed.map((node) => [node.id, node])),
@@ -217,10 +213,19 @@ function flowLayout(data) {
   };
 }
 
+function flowBoardStyle(layout) {
+  return {
+    width: `${layout.width}px`,
+    height: `${layout.height}px`,
+  };
+}
+
 function flowNodeStyle(node) {
   return {
-    left: `${node.x}%`,
-    top: `${node.y}%`,
+    left: `${node.x}px`,
+    top: `${node.y}px`,
+    width: `${node.width}px`,
+    height: `${node.height}px`,
   };
 }
 
@@ -228,8 +233,24 @@ function flowEdgePath(edge, layout) {
   const source = layout.nodesById.get(edge.source);
   const target = layout.nodesById.get(edge.target);
   if (!source || !target) return "";
-  const midX = (source.x + target.x) / 2;
-  return `M ${source.x} ${source.y} L ${midX} ${source.y} L ${midX} ${target.y} L ${target.x} ${target.y}`;
+  const sourceRight = source.x + source.width;
+  const sourceCenterY = source.y + source.height / 2;
+  const targetLeft = target.x;
+  const targetCenterY = target.y + target.height / 2;
+  const midX = (sourceRight + targetLeft) / 2;
+  return `M ${sourceRight} ${sourceCenterY} L ${midX} ${sourceCenterY} L ${midX} ${targetCenterY} L ${targetLeft} ${targetCenterY}`;
+}
+
+function fallbackNode(id) {
+  return {
+    id,
+    label: id,
+    description: "",
+    kind: "",
+    lane: "",
+    x: null,
+    y: null,
+  };
 }
 
 function flowDetail(blockIndex, data) {
@@ -258,6 +279,18 @@ function flowNodeClass(blockIndex, data, node) {
     "is-parallel": node.isParallel,
     "is-output": node.isOutput,
   };
+}
+
+function flowLanes(layout) {
+  const rows = new Map();
+  layout.nodes
+    .filter((node) => node.isParallel && node.lane)
+    .forEach((node) => rows.set(node.lane, node.y));
+  return [...rows.entries()].map(([label, y]) => ({ label, y }));
+}
+
+function flowLaneStyle(lane) {
+  return { top: `${lane.y - 24}px` };
 }
 
 function normalizeConceptItems(value) {
@@ -297,10 +330,6 @@ function flowNodeAriaLabel(node) {
   return node.description ? `${node.label}: ${node.description}` : node.label;
 }
 
-function isActiveFlowNode(blockIndex, nodeId) {
-  return activeFlowNode.value[blockIndex] === nodeId;
-}
-
 function normalizeTableCell(value) {
   if (Array.isArray(value)) return value.join(", ");
   return String(value || "");
@@ -332,14 +361,6 @@ function blockIntuition(data) {
 
 function normalizeEdgeLabel(edge) {
   return `${edge.source} -> ${edge.target}`;
-}
-
-function fallbackNode(id) {
-  return {
-    id,
-    label: id,
-    description: "",
-  };
 }
 
 function compareColumns(data) {
@@ -435,36 +456,51 @@ function codeLineExplanation(data, lineIndex) {
         <div class="block-kicker">Process Flow</div>
         <h3>{{ processTitle(block.data) }}</h3>
         <div class="flow-layout">
-          <div class="flow-canvas">
-            <svg class="flow-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <defs>
-                <marker :id="flowMarkerId(blockIndex)" markerHeight="7" markerWidth="7" orient="auto" refX="6" refY="3.5">
-                  <path d="M 0 0 L 7 3.5 L 0 7 z" fill="currentColor" />
-                </marker>
-              </defs>
-              <path
-                v-for="edge in flowLayout(block.data).edges"
-                :key="normalizeEdgeLabel(edge)"
-                class="flow-line"
-                :class="{ 'is-muted': !isSelectedFlowEdge(blockIndex, block.data, edge) }"
-                :d="flowEdgePath(edge, flowLayout(block.data))"
-                :marker-end="`url(#${flowMarkerId(blockIndex)})`"
-              />
-            </svg>
-            <div v-for="lane in flowLayout(block.data).lanes" :key="lane" class="flow-lane-label">{{ lane }}</div>
-            <button
-              v-for="flowNode in flowLayout(block.data).nodes"
-              :key="flowNode.id"
-              class="flow-node"
-              :class="flowNodeClass(blockIndex, block.data, flowNode)"
-              :style="flowNodeStyle(flowNode)"
-              type="button"
-              :aria-label="flowNodeAriaLabel(flowNode)"
-              :aria-selected="isSelectedFlowNode(blockIndex, block.data, flowNode.id)"
-              @click="selectFlowNode(blockIndex, flowNode.id)"
-            >
-              <strong>{{ flowNode.label }}</strong>
-            </button>
+          <div class="flow-canvas-scroll">
+            <div class="flow-canvas-board" :style="flowBoardStyle(flowLayout(block.data))">
+              <svg
+                class="flow-lines"
+                :height="flowLayout(block.data).height"
+                :viewBox="`0 0 ${flowLayout(block.data).width} ${flowLayout(block.data).height}`"
+                :width="flowLayout(block.data).width"
+                aria-hidden="true"
+              >
+                <defs>
+                  <marker :id="flowMarkerId(blockIndex)" markerHeight="7" markerWidth="7" orient="auto" refX="6" refY="3.5">
+                    <path d="M 0 0 L 7 3.5 L 0 7 z" fill="currentColor" />
+                  </marker>
+                </defs>
+                <path
+                  v-for="edge in flowLayout(block.data).edges"
+                  :key="normalizeEdgeLabel(edge)"
+                  class="flow-line"
+                  :class="{ 'is-muted': !isSelectedFlowEdge(blockIndex, block.data, edge) }"
+                  :d="flowEdgePath(edge, flowLayout(block.data))"
+                  :marker-end="`url(#${flowMarkerId(blockIndex)})`"
+                />
+              </svg>
+              <div
+                v-for="lane in flowLanes(flowLayout(block.data))"
+                :key="lane.label"
+                class="flow-lane-label"
+                :style="flowLaneStyle(lane)"
+              >
+                {{ lane.label }}
+              </div>
+              <button
+                v-for="flowNode in flowLayout(block.data).nodes"
+                :key="flowNode.id"
+                class="flow-node"
+                :class="flowNodeClass(blockIndex, block.data, flowNode)"
+                :style="flowNodeStyle(flowNode)"
+                type="button"
+                :aria-label="flowNodeAriaLabel(flowNode)"
+                :aria-selected="isSelectedFlowNode(blockIndex, block.data, flowNode.id)"
+                @click="selectFlowNode(blockIndex, flowNode.id)"
+              >
+                <strong>{{ flowNode.label }}</strong>
+              </button>
+            </div>
           </div>
           <aside class="flow-detail">
             <div class="flow-detail-meta">
@@ -718,15 +754,22 @@ h4.doc-heading {
   gap: 18px;
 }
 
-.flow-canvas {
-  position: relative;
+.flow-canvas-scroll {
+  max-width: 100%;
   min-height: 390px;
-  overflow: hidden;
+  overflow: auto;
   border: 1px solid var(--border-primary);
   background: var(--background-main);
 }
 
-.flow-canvas::before {
+.flow-canvas-board {
+  position: relative;
+  min-width: 100%;
+  min-height: 390px;
+  background: var(--background-main);
+}
+
+.flow-canvas-board::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -739,9 +782,8 @@ h4.doc-heading {
 
 .flow-lines {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  top: 0;
   color: var(--note-color, var(--career));
   pointer-events: none;
 }
@@ -763,7 +805,6 @@ h4.doc-heading {
 .flow-lane-label {
   position: absolute;
   left: 14px;
-  top: 14px;
   z-index: 1;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
@@ -775,8 +816,6 @@ h4.doc-heading {
 .flow-node {
   position: absolute;
   z-index: 2;
-  width: 150px;
-  min-height: 54px;
   border: 1px solid var(--border-muted);
   border-left: 5px solid var(--note-color, var(--career));
   background: var(--background-panel);
@@ -791,7 +830,6 @@ h4.doc-heading {
   padding: 8px 10px;
   text-align: center;
   text-transform: uppercase;
-  transform: translate(-50%, -50%);
 }
 
 .flow-node:hover,
@@ -869,13 +907,15 @@ th {
 .code-panel {
   display: grid;
   align-content: start;
+  overflow: auto;
   padding: 12px 0;
 }
 
 .code-line {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border: 0;
   border-left: 4px solid transparent;
   border-radius: 0;
@@ -901,12 +941,11 @@ th {
 }
 
 .code-line code {
-  overflow: hidden;
+  overflow: visible;
   border: 0;
   background: transparent;
   color: inherit;
   padding: 0;
-  text-overflow: ellipsis;
   white-space: pre;
 }
 
@@ -964,7 +1003,8 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .flow-canvas {
+  .flow-canvas-scroll,
+  .flow-canvas-board {
     min-height: 340px;
   }
 }

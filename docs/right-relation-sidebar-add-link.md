@@ -229,6 +229,36 @@ openScope(otherNodeId, otherNodeId)
 
 Do not default relation row click to opening Note View.
 
+## Relation visual semantics
+
+Visual direction is only a rendering rule. The stored direction in `graph.yaml` does not change.
+
+```txt
+contains:
+  white solid line, no arrow
+
+depends-on:
+  yellow dashed reverse arrow
+  A depends-on B is displayed as B -> A
+
+used-in:
+  purple solid forward arrow
+  A used-in B is displayed as A -> B
+
+compares-with:
+  orange solid double line, bidirectional arrow
+```
+
+Example stored edge:
+
+```yaml
+from: A
+to: B
+relation: depends-on
+```
+
+This is still stored as `A depends-on B`, even though it is displayed as `B -> A`.
+
 ## 9. Add Link Validation
 
 Before writing:

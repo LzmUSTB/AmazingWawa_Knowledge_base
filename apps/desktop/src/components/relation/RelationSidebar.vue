@@ -2,14 +2,13 @@
 import { computed, ref, watch } from "vue";
 import { findGraphNode, getActiveVault, getGraphEdges, getGraphNodes } from "../../graph/graph-data-store.js";
 import {
-  formatRelationLabel,
   getDirectRelationsForNode,
   getHierarchyForNode,
   getNodeTitleOrId,
   getOtherNodeId,
 } from "../../graph/graph-relations.js";
 import { isDomainNode } from "../../graph/graph-scope.js";
-import { getDomainColor } from "../../graph/graph-theme.js";
+import { getDomainColor, relationTheme } from "../../graph/graph-theme.js";
 
 const props = defineProps({
   addLinkCloseKey: {
@@ -149,7 +148,7 @@ function selectTarget(id) {
 }
 
 function relationStyle(edge) {
-  return { "--relation-row-color": relationColor(edge.relation) };
+  return { "--relation-row-color": relationTheme[edge.relation]?.color || relationColor(edge.relation) };
 }
 
 function targetDepthStyle(row, group) {
@@ -160,10 +159,22 @@ function targetDepthStyle(row, group) {
 }
 
 function relationColor(relationName) {
-  if (relationName === "depends-on") return "var(--relation-depends-on)";
-  if (relationName === "used-in") return "var(--relation-used-in)";
-  if (relationName === "compares-with") return "var(--relation-compares-with)";
+  if (relationName === "depends-on") return relationTheme["depends-on"].color;
+  if (relationName === "used-in") return relationTheme["used-in"].color;
+  if (relationName === "compares-with") return relationTheme["compares-with"].color;
   return "var(--graphics)";
+}
+
+function relationMiddleClass(edge) {
+  return {
+    "relation-middle--depends-on": edge.relation === "depends-on",
+    "relation-middle--used-in": edge.relation === "used-in",
+    "relation-middle--compares-with": edge.relation === "compares-with",
+  };
+}
+
+function relationLabel(edge) {
+  return relationTheme[edge.relation]?.label || edge.relation.toUpperCase();
 }
 
 const sourceId = computed(() => (direction.value === "out" ? props.nodeId : targetId.value));
@@ -395,9 +406,21 @@ function submitLink() {
             :style="relationStyle(edge)"
             @click="openNodeGraph(getOtherNodeId(edge, node.id))"
           >
-            <span class="relation-label">{{ formatRelationLabel(edge) }}</span>
-            <small>{{ getNodeTitleOrId(getOtherNodeId(edge, node.id)) }}</small>
-            <span class="relation-trace" :class="`relation-trace--${edge.relation}`" aria-hidden="true"></span>
+            <span class="relation-endpoint relation-endpoint--source">
+              <strong>{{ getNodeTitleOrId(edge.source) }}</strong>
+              <small>source</small>
+            </span>
+            <span class="relation-middle" :class="relationMiddleClass(edge)">
+              <strong>{{ relationLabel(edge) }}</strong>
+              <span class="relation-trace" aria-hidden="true">
+                <span class="relation-arrow relation-arrow--left"></span>
+                <span class="relation-arrow relation-arrow--right"></span>
+              </span>
+            </span>
+            <span class="relation-endpoint relation-endpoint--target">
+              <strong>{{ getNodeTitleOrId(edge.target) }}</strong>
+              <small>target</small>
+            </span>
           </button>
           <p v-if="!directRelations.length" class="empty-line">No direct relations</p>
         </section>
@@ -698,53 +721,118 @@ select:focus {
 
 .relation-row--direct {
   display: grid;
-  gap: 5px;
-  border-left-color: var(--relation-row-color, var(--relation-node-color, var(--border-primary)));
+  grid-template-columns: minmax(0, 1fr) minmax(92px, 0.86fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  border-left-color: var(--border-muted);
 }
 
-.relation-label {
+.relation-endpoint,
+.relation-middle {
+  min-width: 0;
+  border: 1px solid var(--border-muted);
+  background: var(--background-main);
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  min-height: 54px;
+  padding: 8px;
+}
+
+.relation-endpoint strong,
+.relation-middle strong {
+  overflow: hidden;
+  font-size: var(--font-size-small);
+  font-weight: 900;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.relation-endpoint strong {
+  color: var(--text-primary);
+}
+
+.relation-middle {
+  color: var(--relation-row-color, var(--text-primary));
+  text-align: center;
+}
+
+.relation-middle strong {
   color: var(--relation-row-color, var(--text-primary));
 }
 
-.relation-row small {
+.relation-row small,
+.relation-endpoint small {
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: var(--font-size-small);
   font-weight: 700;
+  text-transform: uppercase;
 }
 
 .relation-trace {
   display: block;
   width: 100%;
-  height: 8px;
-  border-top: 2px solid var(--relation-row-color, var(--border-primary));
+  height: 12px;
   position: relative;
 }
 
-.relation-trace::after {
+.relation-trace::before {
   content: "";
   position: absolute;
-  top: -5px;
-  right: 0;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  border-top: 2px solid var(--relation-row-color, var(--border-primary));
+  transform: translateY(-50%);
+}
+
+.relation-middle--depends-on .relation-trace::before {
+  border-top-style: dashed;
+}
+
+.relation-middle--used-in .relation-trace::before {
+  border-top-style: solid;
+}
+
+.relation-middle--compares-with .relation-trace::before {
+  border-top-style: double;
+  border-top-width: 4px;
+}
+
+.relation-middle--compares-with .relation-trace::before {
+  right: 12px;
+  left: 12px;
+}
+
+.relation-arrow {
+  display: none;
+  content: "";
+  position: absolute;
+  top: 50%;
   width: 7px;
   height: 7px;
   border-top: 2px solid var(--relation-row-color, var(--border-primary));
   border-right: 2px solid var(--relation-row-color, var(--border-primary));
-  transform: rotate(45deg);
 }
 
-.relation-trace--depends-on {
-  border-top-style: dashed;
+.relation-arrow--right {
+  right: 2px;
+  transform: translateY(-50%) rotate(45deg);
 }
 
-.relation-trace--used-in {
-  border-top-width: 4px;
+.relation-arrow--left {
+  left: 2px;
+  transform: translateY(-50%) rotate(-135deg);
 }
 
-.relation-trace--compares-with {
-  height: 10px;
-  border-top-style: double;
-  border-top-width: 4px;
+.relation-middle--depends-on .relation-arrow--left,
+.relation-middle--used-in .relation-arrow--right,
+.relation-middle--compares-with .relation-arrow--left,
+.relation-middle--compares-with .relation-arrow--right {
+  display: block;
 }
 
 .hud-button:disabled {
