@@ -98,7 +98,7 @@ const fileTree = computed(() => getActiveVault().fileTree);
   margin-top: 18px;
   padding: 0 16px;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--font-size-mono);
   font-weight: 800;
 }
 
@@ -121,7 +121,7 @@ const fileTree = computed(() => getActiveVault().fileTree);
   min-height: 28px;
   padding: 0 10px 0 7px;
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: var(--font-size-ui);
   font-weight: 800;
 }
 
@@ -146,7 +146,7 @@ const fileTree = computed(() => getActiveVault().fileTree);
   margin-top: 2px;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: var(--font-size-small);
   text-transform: uppercase;
 }
 
@@ -175,7 +175,7 @@ const fileTree = computed(() => getActiveVault().fileTree);
   border-left: 3px solid transparent;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: var(--font-size-small);
 }
 
 .concept-row:hover,

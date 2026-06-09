@@ -14,7 +14,7 @@ import {
 import { loadStaticVault } from "./data/static-vault-loader.js";
 import { findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
-import { getGraphScope, scopeForDomain } from "./graph/graph-scope.js";
+import { getGraphScope, hasGraphScope, scopeForDomain } from "./graph/graph-scope.js";
 
 const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
 const UI_FONT_SCALE_KEY = "amazingwawa.uiFontScale";
@@ -88,7 +88,7 @@ function applyVault(vault, { reset = false } = {}) {
   if (!findGraphNode(currentNoteId.value)) {
     currentNoteId.value = getGraphNodes().find((node) => node.type !== "domain")?.id || selectedNodeId.value;
   }
-  if (!getGraphScope(graphScopeId.value)?.id) {
+  if (!hasGraphScope(graphScopeId.value)) {
     graphScopeId.value = "root";
   }
 }
@@ -103,6 +103,15 @@ function resetNavigationForVault(vault) {
   currentView.value = "graph";
   noteMode.value = "read";
   noteDirty.value = false;
+}
+
+function hasDomain(domainId) {
+  return Boolean(useActiveVault().value.domains?.some((domain) => domain.id === domainId));
+}
+
+function getFallbackDomain() {
+  const activeVault = useActiveVault().value;
+  return activeVault.vault.defaultDomain || activeVault.domains?.[0]?.id || "root";
 }
 
 function clampUiFontScale(value) {
@@ -263,16 +272,23 @@ async function saveLayout() {
   const board = layoutDraftBoards.value[scopeId] || ensureLayoutDraft(scopeId);
   layoutSaveInProgress.value = true;
   layoutError.value = "";
+  const previousView = currentView.value;
   const previousScopeId = graphScopeId.value;
   const previousSelectedNodeId = selectedNodeId.value;
+  const previousCurrentDomain = currentDomain.value;
+  const movedNodeIds = layoutMovedNodeIds.value[scopeId] || [];
 
   try {
-    const updatedVault = await saveGraphLayoutBoard(activeVaultRootPath.value, scopeId, board);
+    const updatedVault = await saveGraphLayoutBoard(activeVaultRootPath.value, scopeId, board, {
+      movedNodeIds,
+    });
     applyVault(updatedVault, { reset: false });
-    graphScopeId.value = useActiveVault().value.scopes?.[previousScopeId] ? previousScopeId : "root";
+    currentView.value = "graph";
+    graphScopeId.value = hasGraphScope(previousScopeId) ? previousScopeId : "root";
     selectedNodeId.value = findGraphNode(previousSelectedNodeId)
       ? previousSelectedNodeId
       : getGraphScope(graphScopeId.value).selectedNodeId;
+    currentDomain.value = hasDomain(previousCurrentDomain) ? previousCurrentDomain : getFallbackDomain();
     discardLayoutDraft({ confirm: false });
   } catch (error) {
     console.error("[vault] Failed to save graph-layout.yaml.", error);
@@ -368,14 +384,23 @@ async function saveNote({ node, markdown }) {
     return;
   }
   noteSaving.value = true;
+  const previousView = currentView.value;
+  const previousGraphScopeId = graphScopeId.value;
+  const previousSelectedNodeId = selectedNodeId.value;
+  const previousCurrentDomain = currentDomain.value;
+  const previousNoteId = currentNoteId.value;
 
   try {
     await writeNoteMarkdown(activeVaultRootPath.value, node, markdown);
     const updatedVault = await loadVaultFromPath(activeVaultRootPath.value);
     applyVault(updatedVault, { reset: false });
+    currentView.value = "note";
     currentNoteId.value = node.id;
     selectedNodeId.value = node.id;
-    currentDomain.value = node.domain;
+    currentDomain.value = findGraphNode(node.id)?.domain || node.domain || previousCurrentDomain;
+    graphScopeId.value = hasGraphScope(previousGraphScopeId) ? previousGraphScopeId : "root";
+    if (!findGraphNode(previousNoteId)) currentNoteId.value = node.id;
+    if (!findGraphNode(previousSelectedNodeId)) selectedNodeId.value = node.id;
     noteDirty.value = false;
     noteMode.value = "read";
   } catch (error) {
@@ -490,6 +515,8 @@ function toggleSidebar() {
   --font-size-ui: calc(12px * var(--ui-font-scale));
   --font-size-small: calc(10px * var(--ui-font-scale));
   --font-size-title: calc(20px * var(--ui-font-scale));
+  --font-size-note-title: calc(36px * var(--ui-font-scale));
+  --font-size-mono: calc(13px * var(--ui-font-scale));
   color: var(--text-primary);
   background: var(--background-main);
   font-family:
@@ -546,7 +573,7 @@ button {
   background: var(--background-main);
   color: var(--text-primary);
   cursor: pointer;
-  font-size: calc(11px * var(--ui-font-scale));
+  font-size: var(--font-size-ui);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
@@ -614,14 +641,14 @@ button {
 .dialog-card h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 24px;
+  font-size: var(--font-size-title);
   line-height: 1.15;
 }
 
 .dialog-card p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--font-size-ui);
   line-height: 1.5;
 }
 
@@ -632,7 +659,7 @@ button {
 
 .dialog-card label span {
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: var(--font-size-small);
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -647,7 +674,7 @@ button {
   background: var(--background-main);
   color: var(--text-primary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--font-size-ui);
   padding: 0 12px;
 }
 

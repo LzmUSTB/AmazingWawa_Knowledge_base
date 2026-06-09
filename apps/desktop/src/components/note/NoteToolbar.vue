@@ -18,29 +18,28 @@ defineProps({
   },
 });
 
-defineEmits(["cancel-edit", "edit", "save", "set-mode", "show-graph"]);
+defineEmits(["cancel-edit", "edit", "save", "show-graph"]);
 </script>
 
 <template>
   <div class="note-toolbar">
-    <button class="hud-button" :class="{ 'is-active': mode === 'read' }" @click="$emit('set-mode', 'read')">
-      Read
-    </button>
-    <button
-      class="hud-button"
-      :class="{ 'is-active': mode === 'edit' }"
-      style="--button-color: var(--graphics)"
-      @click="$emit('edit')"
-    >
-      Edit
-    </button>
-    <button class="hud-button" :disabled="!canSaveNote || !dirty || saving" @click="$emit('save')">
-      Save
-    </button>
-    <button class="hud-button" :disabled="mode !== 'edit'" @click="$emit('cancel-edit')">Cancel</button>
-    <div class="note-meta">
-      {{ canSaveNote ? "desktop vault / writable" : "static sample / read only" }}
-    </div>
+    <template v-if="mode === 'edit'">
+      <button class="hud-button" :disabled="!canSaveNote || !dirty || saving" @click="$emit('save')">
+        Save
+      </button>
+      <button class="hud-button" :disabled="saving" @click="$emit('cancel-edit')">Cancel</button>
+    </template>
+    <template v-else>
+      <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('edit')">
+        Edit
+      </button>
+      <button class="hud-button" style="--button-color: var(--simulation)" @click="$emit('show-graph')">
+        Show in Graph
+      </button>
+      <div class="note-meta">
+        {{ canSaveNote ? "desktop vault / writable" : "static sample / read only" }}
+      </div>
+    </template>
   </div>
 </template>
 
@@ -62,7 +61,7 @@ defineEmits(["cancel-edit", "edit", "save", "set-mode", "show-graph"]);
   margin-left: auto;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: var(--font-size-small);
   text-transform: uppercase;
 }
 

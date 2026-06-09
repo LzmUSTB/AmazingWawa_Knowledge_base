@@ -353,21 +353,21 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
             v-for="node in currentScope.nodes"
             :key="node.id"
             :class="[nodeClass(node.type), nodeState(node)]"
-      :style="{
-        '--node-color': getDomainColor(node.domain),
-        left: `${getResolvedNodeLayout(node.id).x}px`,
-        top: `${getResolvedNodeLayout(node.id).y}px`,
-        width: `${getResolvedNodeLayout(node.id).width}px`,
-        height: `${getResolvedNodeLayout(node.id).height}px`,
-      }"
-      @click="handleNodeClick(node)"
-      @dblclick="handleNodeOpen(node)"
-      @mouseenter="hoveredNodeId = node.id"
-      @mouseleave="hoveredNodeId = ''"
-      @pointercancel="stopNodeDrag"
-      @pointerdown="handleNodePointerDown($event, node)"
-      @pointermove="handleNodePointerMove"
-      @pointerup="stopNodeDrag"
+            :style="{
+              '--node-color': getDomainColor(node.domain),
+              left: `${getResolvedNodeLayout(node.id).x}px`,
+              top: `${getResolvedNodeLayout(node.id).y}px`,
+              width: `${getResolvedNodeLayout(node.id).width}px`,
+              height: `${getResolvedNodeLayout(node.id).height}px`,
+            }"
+            @click="handleNodeClick(node)"
+            @dblclick="handleNodeOpen(node)"
+            @mouseenter="hoveredNodeId = node.id"
+            @mouseleave="hoveredNodeId = ''"
+            @pointercancel="stopNodeDrag"
+            @pointerdown="handleNodePointerDown($event, node)"
+            @pointermove="handleNodePointerMove"
+            @pointerup="stopNodeDrag"
           >
             <span class="node-port node-port--top"></span>
             <span class="node-port node-port--right"></span>
@@ -561,7 +561,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   overflow: hidden;
   max-width: 100%;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--font-size-mono);
   font-weight: 800;
   line-height: 1.16;
   text-align: center;
@@ -571,7 +571,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 }
 
 .pcb-node--root .node-title {
-  font-size: 16px;
+  font-size: calc(16px * var(--ui-font-scale));
 }
 
 .node-meta {
@@ -579,7 +579,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   max-width: 100%;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: var(--font-size-small);
   line-height: 1;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -606,7 +606,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   position: absolute;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: var(--font-size-small);
   text-transform: uppercase;
 }
 

@@ -247,7 +247,7 @@ export async function createKnowledgeItem(vaultRootPath, payload) {
   };
 }
 
-function serializeBoardForYaml(board, existingBoard = {}) {
+function serializeBoardForYaml(board, preservedRoutes = {}) {
   const nodes = Object.fromEntries(
     Object.entries(board.nodes || {}).map(([nodeId, box]) => [
       nodeId,
@@ -265,16 +265,37 @@ function serializeBoardForYaml(board, existingBoard = {}) {
     height: board.height || 1600,
     grid: board.grid || 32,
     nodes,
-    ...(existingBoard.routes ? { routes: existingBoard.routes } : {}),
+    ...(Object.keys(preservedRoutes).length ? { routes: preservedRoutes } : {}),
   };
 }
 
-export async function saveGraphLayoutBoard(vaultRootPath, scopeId, board) {
+function getPreservedManualRoutes(existingBoard, graphYaml, movedNodeIds = []) {
+  const existingRoutes = existingBoard.routes || {};
+  const moved = new Set(movedNodeIds);
+  if (!Object.keys(existingRoutes).length) return {};
+  if (!moved.size) return existingRoutes;
+  if (!graphYaml) return {};
+
+  const graph = YAML.parse(graphYaml) || {};
+  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+  const edgeById = new Map(edges.map((edge) => [edge.id, edge]));
+
+  return Object.fromEntries(
+    Object.entries(existingRoutes).filter(([routeId, route]) => {
+      const edge = edgeById.get(route?.edge || routeId);
+      if (!edge) return false;
+      return !moved.has(edge.from || edge.source) && !moved.has(edge.to || edge.target);
+    }),
+  );
+}
+
+export async function saveGraphLayoutBoard(vaultRootPath, scopeId, board, options = {}) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving layout.");
   if (!scopeId) throw new Error("Cannot save layout without a scope ID.");
   if (!board?.nodes) throw new Error("Cannot save layout without node positions.");
 
   let graphLayoutYaml = "";
+  let graphYaml = "";
   try {
     graphLayoutYaml = await invoke("read_text_file", {
       vaultRootPath,
@@ -283,17 +304,26 @@ export async function saveGraphLayoutBoard(vaultRootPath, scopeId, board) {
   } catch {
     graphLayoutYaml = "schemaVersion: 1\nboards: {}\n";
   }
+  try {
+    graphYaml = await invoke("read_text_file", {
+      vaultRootPath,
+      relativePath: "graph.yaml",
+    });
+  } catch {
+    graphYaml = "";
+  }
 
   const graphLayout = YAML.parse(graphLayoutYaml) || {};
   const boards = graphLayout.boards || {};
   const existingBoard = boards[scopeId] || {};
+  const preservedRoutes = getPreservedManualRoutes(existingBoard, graphYaml, options.movedNodeIds);
 
   const updatedLayout = {
     ...graphLayout,
     schemaVersion: graphLayout.schemaVersion || 1,
     boards: {
       ...boards,
-      [scopeId]: serializeBoardForYaml(board, existingBoard),
+      [scopeId]: serializeBoardForYaml(board, preservedRoutes),
     },
   };
 

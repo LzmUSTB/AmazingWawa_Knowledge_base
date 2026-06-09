@@ -105,7 +105,6 @@ function saveNote() {
       @cancel-edit="cancelEdit"
       @edit="startEdit"
       @save="saveNote"
-      @set-mode="$emit('set-mode', $event)"
       @show-graph="$emit('show-graph')"
     />
 
@@ -183,7 +182,7 @@ function saveNote() {
 h1 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 36px;
+  font-size: var(--font-size-note-title);
   line-height: 1.1;
 }
 
@@ -200,7 +199,7 @@ h1 {
   border: 1px solid var(--border-muted);
   border-left: 4px solid var(--note-color);
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: var(--font-size-small);
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -225,7 +224,7 @@ h1 {
 .note-block p {
   margin: 14px 0 0;
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: calc(16px * var(--ui-font-scale));
   line-height: 1.75;
 }
 
@@ -235,7 +234,7 @@ pre {
   margin: 14px 0 0;
   color: var(--text-secondary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 13px;
+  font-size: var(--font-size-mono);
   line-height: 1.55;
   overflow-wrap: anywhere;
   white-space: pre-wrap;

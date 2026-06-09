@@ -12,6 +12,10 @@ export function getGraphScope(scopeId) {
   };
 }
 
+export function hasGraphScope(scopeId) {
+  return Boolean(getActiveVault().scopes?.[scopeId]);
+}
+
 export function scopeForDomain(domainId) {
   return getActiveVault().scopes?.[domainId] ? domainId : "root";
 }

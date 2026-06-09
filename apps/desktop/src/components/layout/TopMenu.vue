@@ -41,7 +41,7 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
 .app-mark {
   overflow: hidden;
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: var(--font-size-ui);
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;

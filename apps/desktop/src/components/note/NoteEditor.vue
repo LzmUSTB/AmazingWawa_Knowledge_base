@@ -40,7 +40,7 @@ textarea {
   background: transparent;
   color: var(--text-secondary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 14px;
+  font-size: var(--font-size-mono);
   line-height: 1.65;
   overflow-wrap: anywhere;
   padding: 22px;

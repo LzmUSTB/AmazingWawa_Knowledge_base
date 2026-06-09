@@ -104,14 +104,14 @@ defineEmits([
   margin-left: auto;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: var(--font-size-small);
   text-transform: uppercase;
 }
 
 .layout-status {
   color: var(--language);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: var(--font-size-small);
   font-weight: 800;
   text-transform: uppercase;
 }
