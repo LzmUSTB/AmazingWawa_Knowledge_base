@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, ref, watch } from "vue";
+import { buildFullTextSearchResults } from "../../search/full-text-search-index.js";
 import { buildQuickSearchResults, flattenQuickSearchResults } from "../../search/quick-search-index.js";
 
 const props = defineProps({
@@ -22,7 +23,9 @@ const emit = defineEmits(["close", "execute", "update:mode", "update:query"]);
 const inputRef = ref(null);
 const selectedIndex = ref(0);
 const quickGroups = computed(() => buildQuickSearchResults(props.query));
-const flatResults = computed(() => flattenQuickSearchResults(quickGroups.value));
+const quickResults = computed(() => flattenQuickSearchResults(quickGroups.value));
+const fullTextResults = computed(() => buildFullTextSearchResults(props.query));
+const activeResults = computed(() => (props.mode === "full-text" ? fullTextResults.value : quickResults.value));
 const hasQuery = computed(() => props.query.trim().length > 0);
 const activeModeLabel = computed(() => (props.mode === "quick" ? "Quick Search" : "Full-text"));
 const groupSections = computed(() => [
@@ -47,7 +50,7 @@ watch(
   },
 );
 
-watch(flatResults, (results) => {
+watch(activeResults, (results) => {
   if (!results.length) {
     selectedIndex.value = 0;
     return;
@@ -64,21 +67,21 @@ function toggleMode() {
 }
 
 function moveSelection(delta) {
-  const count = flatResults.value.length;
+  const count = activeResults.value.length;
   if (!count) return;
   selectedIndex.value = (selectedIndex.value + delta + count) % count;
 }
 
 function resultIndex(result) {
-  return flatResults.value.findIndex((item) => item.id === result.id);
+  return activeResults.value.findIndex((item) => item.id === result.id);
 }
 
 function isSelected(result) {
   return resultIndex(result) === selectedIndex.value;
 }
 
-function executeResult(result = flatResults.value[selectedIndex.value], localGraph = false) {
-  if (!result || props.mode !== "quick") return;
+function executeResult(result = activeResults.value[selectedIndex.value], localGraph = false) {
+  if (!result) return;
   emit("execute", { result, localGraph });
 }
 
@@ -105,7 +108,7 @@ function handleKeydown(event) {
   }
   if (event.key === "Enter") {
     event.preventDefault();
-    executeResult(flatResults.value[selectedIndex.value], event.shiftKey);
+    executeResult(activeResults.value[selectedIndex.value], event.shiftKey);
   }
 }
 </script>
@@ -142,15 +145,42 @@ function handleKeydown(event) {
           </div>
         </header>
 
-        <div v-if="mode === 'full-text'" class="planned-message">
-          Full-text search is planned. It will search note.md contents and content blocks in a later step.
+        <div v-if="mode === 'full-text' && !hasQuery" class="search-empty">
+          Type text to search note.md contents and content blocks.
         </div>
+
+        <div v-else-if="mode === 'full-text' && fullTextResults.length" class="result-stack">
+          <section class="result-section">
+            <div class="result-group-label">FULL-TEXT</div>
+            <button
+              v-for="result in fullTextResults"
+              :key="result.id"
+              class="result-row result-row--fulltext"
+              :class="{ 'is-selected': isSelected(result) }"
+              type="button"
+              @click="executeResult(result)"
+              @mouseenter="selectedIndex = resultIndex(result)"
+            >
+              <span class="result-kind">text</span>
+              <span class="result-main">
+                <strong>{{ result.title }}</strong>
+                <small>{{ result.subtitle }}</small>
+              </span>
+              <span class="result-fulltext">
+                <strong>{{ result.section || result.blockType }}</strong>
+                <small>{{ result.snippet }}</small>
+              </span>
+            </button>
+          </section>
+        </div>
+
+        <div v-else-if="mode === 'full-text'" class="search-empty">No note content matched this query.</div>
 
         <div v-else-if="!hasQuery" class="search-empty">
           Type a node title, id, domain, summary, tag, or relation endpoint.
         </div>
 
-        <div v-else-if="flatResults.length" class="result-stack">
+        <div v-else-if="quickResults.length" class="result-stack">
           <template v-for="section in groupSections" :key="section.key">
             <section v-if="section.items.length" class="result-section">
               <div class="result-group-label">{{ section.label }}</div>
@@ -290,6 +320,11 @@ function handleKeydown(event) {
   text-align: left;
 }
 
+.result-row--fulltext {
+  grid-template-columns: 72px minmax(160px, 0.56fr) minmax(0, 1fr);
+  min-height: 68px;
+}
+
 .result-row:hover,
 .result-row.is-selected {
   border-color: var(--border-primary);
@@ -303,8 +338,16 @@ function handleKeydown(event) {
   min-width: 0;
 }
 
+.result-fulltext {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
 .result-main strong,
 .result-main small,
+.result-fulltext strong,
+.result-fulltext small,
 .result-summary {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -316,10 +359,23 @@ function handleKeydown(event) {
   font-size: var(--font-size-ui);
 }
 
+.result-fulltext strong {
+  color: var(--text-secondary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
 .result-main small,
+.result-fulltext small,
 .result-summary {
   color: var(--text-muted);
   font-size: var(--font-size-small);
+}
+
+.result-fulltext small {
+  line-height: 1.45;
+  white-space: normal;
 }
 
 .search-empty,
@@ -358,7 +414,12 @@ function handleKeydown(event) {
     grid-template-columns: 72px minmax(0, 1fr);
   }
 
-  .result-summary {
+  .result-row--fulltext {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .result-summary,
+  .result-fulltext {
     display: none;
   }
 }

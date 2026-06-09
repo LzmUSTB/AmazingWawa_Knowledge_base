@@ -460,7 +460,7 @@ function openSearchNode(result, localGraph = false) {
 function executeSearchResult({ result, localGraph = false }) {
   if (!result) return;
   let didOpen = false;
-  if (result.kind === "node") {
+  if (result.kind === "node" || result.kind === "full-text") {
     didOpen = openSearchNode(result, localGraph);
   } else if (result.kind === "domain") {
     didOpen = openDomain(result.targetId);
