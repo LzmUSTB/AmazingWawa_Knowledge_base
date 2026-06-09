@@ -140,7 +140,7 @@ function parseNestedValue(lines) {
       child.push(lines[index].replace(/^ {4}/, ""));
       index += 1;
     }
-    result[key] = parseKeyValueLines(child);
+    result[key] = parseNestedValue(child);
   }
   return result;
 }

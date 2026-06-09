@@ -56,10 +56,6 @@ edges:
     from: rendering-pipeline
     to: testnote
     relation: contains
-  - id: rendering-pipeline-used-in-game-dev
-    from: rendering-pipeline
-    to: game-dev
-    relation: used-in
   - id: rasterization-depends-on-post-process
     from: rasterization
     to: post-process

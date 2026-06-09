@@ -11,6 +11,8 @@ import {
   createKnowledgeItem,
   loadInitialVault,
   loadVaultFromPath,
+  removeGraphLink,
+  replaceGraphLink,
   saveGraphLayoutBoard,
   writeNoteMarkdown,
 } from "./data/desktop-vault-adapter.js";
@@ -58,6 +60,9 @@ const relationSidebarCollapsed = ref(savedRelationSidebarPreference === "true");
 const searchOverlayVisible = ref(false);
 const searchMode = ref("quick");
 const searchQuery = ref("");
+const relationEditEdgeId = ref("");
+const relationSaving = ref(false);
+const relationError = ref("");
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -133,6 +138,33 @@ function replaceVaultWithoutNavigation(vault) {
   activeVaultRootPath.value = vault.vaultRootPath || "";
 }
 
+function snapshotNavigation() {
+  return {
+    view: currentView.value,
+    scopeId: graphScopeId.value,
+    selectedNodeId: selectedNodeId.value,
+    currentNoteId: currentNoteId.value,
+    currentDomain: currentDomain.value,
+  };
+}
+
+function restoreNavigation(snapshot, fallbackNodeId = "") {
+  const targetScopeId = hasGraphScope(snapshot.scopeId) ? snapshot.scopeId : "root";
+  const fallbackScope = getGraphScope(targetScopeId);
+  const nextSelectedId = findGraphNode(snapshot.selectedNodeId)
+    ? snapshot.selectedNodeId
+    : findGraphNode(fallbackNodeId)
+      ? fallbackNodeId
+      : fallbackScope.selectedNodeId;
+  currentView.value = snapshot.view;
+  graphScopeId.value = targetScopeId;
+  selectedNodeId.value = nextSelectedId;
+  currentNoteId.value = findGraphNode(snapshot.currentNoteId) ? snapshot.currentNoteId : nextSelectedId;
+  currentDomain.value = hasDomain(snapshot.currentDomain)
+    ? snapshot.currentDomain
+    : findGraphNode(nextSelectedId)?.domain || getFallbackDomain();
+}
+
 function resetNavigationForVault(vault) {
   const defaultDomain = vault.vault.defaultDomain || vault.domains[0]?.id || "root";
   const rootScope = getGraphScope("root");
@@ -178,6 +210,11 @@ function handleGlobalKeydown(event) {
   if (searchOverlayVisible.value && event.key === "Escape") {
     event.preventDefault();
     closeSearchOverlay();
+    return;
+  }
+  if (relationEditEdgeId.value && event.key === "Escape") {
+    event.preventDefault();
+    closeRelationEdit();
     return;
   }
   if (event.key !== "Escape" || activeDialog.value || (!isLayoutEditing.value && !layoutDirty.value)) return;
@@ -587,6 +624,71 @@ async function createLink(payload) {
   }
 }
 
+function closeRelationEdit() {
+  if (relationSaving.value) return;
+  relationEditEdgeId.value = "";
+  relationError.value = "";
+}
+
+function requestEditRelation(edgeId) {
+  if (!confirmDiscardDirty()) return;
+  relationError.value = "";
+  relationEditEdgeId.value = edgeId;
+}
+
+async function requestDeleteRelation(edgeId) {
+  if (relationSaving.value) return;
+  if (!confirmDiscardDirty()) return;
+  const edge = useActiveVault().value.edges?.find((item) => item.id === edgeId);
+  if (!edge) {
+    window.alert(`Relation "${edgeId}" was not found.`);
+    return;
+  }
+  if (edge.relation === "contains") {
+    window.alert("Contains relations cannot be deleted from this menu.");
+    return;
+  }
+  const sourceTitle = findGraphNode(edge.source)?.title || edge.source;
+  const targetTitle = findGraphNode(edge.target)?.title || edge.target;
+  const confirmed = window.confirm(
+    `Delete relation?\n\n${sourceTitle} ${edge.relation} ${targetTitle}\n\nThis removes the edge from graph.yaml.`,
+  );
+  if (!confirmed) return;
+
+  relationSaving.value = true;
+  relationError.value = "";
+  const previousNavigation = snapshotNavigation();
+  try {
+    const updatedVault = await removeGraphLink(activeVaultRootPath.value, edgeId);
+    replaceVaultWithoutNavigation(updatedVault);
+    restoreNavigation(previousNavigation, edge.source);
+    if (relationEditEdgeId.value === edgeId) relationEditEdgeId.value = "";
+  } catch (error) {
+    console.error("[vault] Failed to delete graph link.", error);
+    window.alert(`Failed to delete relation: ${error}`);
+  } finally {
+    relationSaving.value = false;
+  }
+}
+
+async function saveEditedRelation(payload) {
+  if (relationSaving.value) return;
+  relationSaving.value = true;
+  relationError.value = "";
+  const previousNavigation = snapshotNavigation();
+  try {
+    const updatedVault = await replaceGraphLink(activeVaultRootPath.value, payload.oldEdgeId, payload);
+    replaceVaultWithoutNavigation(updatedVault);
+    restoreNavigation(previousNavigation, payload.sourceId);
+    relationEditEdgeId.value = "";
+  } catch (error) {
+    console.error("[vault] Failed to edit graph link.", error);
+    relationError.value = String(error?.message || error);
+  } finally {
+    relationSaving.value = false;
+  }
+}
+
 function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value;
   localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed.value));
@@ -628,13 +730,17 @@ function toggleRelationSidebar() {
       :layout-save-in-progress="layoutSaveInProgress"
       :note-mode="noteMode"
       :note-saving="noteSaving"
+      :relation-edit-edge-id="relationEditEdgeId"
+      :relation-error="relationError"
       :relation-sidebar-collapsed="relationSidebarCollapsed"
+      :relation-saving="relationSaving"
       :selected-node-id="selectedNodeId"
       :sidebar-collapsed="sidebarCollapsed"
       :ui-font-scale="uiFontScale"
       @add-link="createLink"
       @cancel-layout="discardLayoutDraft"
       @close-dialog="activeDialog = ''"
+      @close-relation-edit="closeRelationEdit"
       @create-note="createNote"
       @edit-layout="startLayoutEditing"
       @ensure-layout-draft="ensureLayoutDraft"
@@ -645,8 +751,11 @@ function toggleRelationSidebar() {
       @open-scope="openScope"
       @open-vault="openVault"
       @request-add-link="requestAddLink"
+      @request-delete-relation="requestDeleteRelation"
+      @request-edit-relation="requestEditRelation"
       @save-layout="saveLayout"
       @save-note="saveNote"
+      @save-relation-edit="saveEditedRelation"
       @select-node="selectedNodeId = $event"
       @set-note-dirty="noteDirty = $event"
       @set-note-mode="setNoteMode"

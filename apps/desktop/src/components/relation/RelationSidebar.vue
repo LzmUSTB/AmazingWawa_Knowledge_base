@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+import RelationContextMenu from "./RelationContextMenu.vue";
 import { findGraphNode, getActiveVault, getGraphEdges, getGraphNodes } from "../../graph/graph-data-store.js";
 import {
   getDirectRelationsForNode,
@@ -55,6 +56,8 @@ const emit = defineEmits([
   "open-note",
   "open-scope",
   "request-add-link",
+  "request-delete-relation",
+  "request-edit-relation",
   "toggle-collapse",
 ]);
 
@@ -63,6 +66,7 @@ const direction = ref("out");
 const relation = ref("depends-on");
 const targetId = ref("");
 const targetSearch = ref("");
+const contextMenu = ref({ edge: null, x: 0, y: 0 });
 
 const node = computed(() => findGraphNode(props.nodeId));
 const nodeColor = computed(() => getDomainColor(node.value?.domain));
@@ -213,7 +217,15 @@ watch(
 
 watch(
   () => props.nodeId,
-  () => closeForm(),
+  () => {
+    closeForm();
+    closeContextMenu();
+  },
+);
+
+watch(
+  () => props.currentView,
+  () => closeContextMenu(),
 );
 
 function closeForm() {
@@ -225,6 +237,7 @@ function closeForm() {
 }
 
 function openNodeGraph(nodeId) {
+  closeContextMenu();
   if (!nodeId) return;
   if (isDomainNode(nodeId)) {
     emit("open-domain", nodeId);
@@ -240,6 +253,29 @@ function submitLink() {
     targetId: resolvedTargetId.value,
     relation: relation.value,
   });
+}
+
+function openContextMenu(event, edge) {
+  event.preventDefault();
+  contextMenu.value = {
+    edge,
+    x: Math.min(event.clientX, window.innerWidth - 220),
+    y: Math.min(event.clientY, window.innerHeight - 130),
+  };
+}
+
+function closeContextMenu() {
+  contextMenu.value = { edge: null, x: 0, y: 0 };
+}
+
+function requestEditRelation(edgeId) {
+  closeContextMenu();
+  emit("request-edit-relation", edgeId);
+}
+
+function requestDeleteRelation(edgeId) {
+  closeContextMenu();
+  emit("request-delete-relation", edgeId);
 }
 </script>
 
@@ -265,7 +301,7 @@ function submitLink() {
         <p>Select a graph node or open a note to inspect relationships.</p>
       </div>
 
-      <div v-else class="relation-content">
+      <div v-else class="relation-content" @scroll="closeContextMenu">
         <section class="sidebar-section selected-node">
           <div class="section-label">Selected Node</div>
           <h2>{{ node.title }}</h2>
@@ -368,7 +404,8 @@ function submitLink() {
         <section class="sidebar-section">
           <div class="section-label">Relations</div>
           <button v-for="edge in directRelations" :key="edge.id" class="relation-row relation-row--direct"
-            :style="relationStyle(edge)" @click="openNodeGraph(getOtherNodeId(edge, node.id))">
+            :style="relationStyle(edge)" @click="openNodeGraph(getOtherNodeId(edge, node.id))"
+            @contextmenu="openContextMenu($event, edge)">
             <span class="relation-endpoint relation-endpoint--source">
               <strong>{{ getNodeTitleOrId(edge.source) }}</strong>
               <small>source</small>
@@ -388,6 +425,15 @@ function submitLink() {
           <p v-if="!directRelations.length" class="empty-line">No direct relations</p>
         </section>
       </div>
+
+      <RelationContextMenu
+        :edge="contextMenu.edge"
+        :x="contextMenu.x"
+        :y="contextMenu.y"
+        @close="closeContextMenu"
+        @delete="requestDeleteRelation"
+        @edit="requestEditRelation"
+      />
     </template>
   </aside>
 </template>

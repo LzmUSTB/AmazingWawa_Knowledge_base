@@ -68,12 +68,25 @@ function conceptTitle(data, fallback) {
 }
 
 function normalizeTableCell(value) {
-  if (Array.isArray(value)) return value.join(", ");
-  return String(value || "");
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) return value.map(normalizeTableCell).filter(Boolean).join(", ");
+  if (typeof value === "object") return Object.values(value).map(normalizeTableCell).filter(Boolean).join(", ");
+  return String(value);
 }
 
-function rowCells(row) {
-  return Array.isArray(row) ? row.map(normalizeTableCell) : String(row).split(",").map((item) => item.trim());
+function rowCells(row, columns) {
+  const columnList = columns || [];
+  let cells = [];
+  if (Array.isArray(row)) {
+    cells = row.map(normalizeTableCell);
+  } else if (row && typeof row === "object") {
+    const hasColumnKeys = columnList.some((column) => Object.prototype.hasOwnProperty.call(row, column));
+    cells = hasColumnKeys ? columnList.map((column) => normalizeTableCell(row[column])) : Object.values(row).map(normalizeTableCell);
+  } else {
+    cells = String(row || "").split(",").map((item) => item.trim());
+  }
+  if (!columnList.length) return cells;
+  return columnList.map((_, index) => cells[index] || "");
 }
 
 function conceptCardTitle(block) {
@@ -101,9 +114,10 @@ function compareColumns(data) {
 }
 
 function compareRows(data) {
+  const columns = compareColumns(data);
   return entries(data.rows).map(([label, row]) => ({
     label,
-    cells: rowCells(row),
+    cells: rowCells(row, columns),
   }));
 }
 

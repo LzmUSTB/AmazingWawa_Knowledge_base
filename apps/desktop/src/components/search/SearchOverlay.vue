@@ -114,7 +114,14 @@ function handleKeydown(event) {
   <Teleport to="body">
     <div v-if="visible" class="search-overlay" @keydown="handleKeydown">
       <section class="search-panel" role="dialog" aria-modal="true" :aria-label="activeModeLabel">
-        <header class="search-header">
+        <header class="search-bar">
+          <input
+            ref="inputRef"
+            class="search-input"
+            :placeholder="mode === 'quick' ? 'Search structured graph index...' : 'Full-text search'"
+            :value="query"
+            @input="emit('update:query', $event.target.value)"
+          />
           <div class="search-mode">
             <button
               class="mode-button"
@@ -133,16 +140,7 @@ function handleKeydown(event) {
               Full-text
             </button>
           </div>
-          <span class="search-shortcut">Ctrl+Q / Tab</span>
         </header>
-
-        <input
-          ref="inputRef"
-          class="search-input"
-          :placeholder="mode === 'quick' ? 'Search structured graph index...' : 'Full-text search'"
-          :value="query"
-          @input="emit('update:query', $event.target.value)"
-        />
 
         <div v-if="mode === 'full-text'" class="planned-message">
           Full-text search is planned. It will search note.md contents and content blocks in a later step.
@@ -205,18 +203,19 @@ function handleKeydown(event) {
   box-shadow: 0 0 0 1px rgba(0, 183, 255, 0.24);
 }
 
-.search-header {
-  display: flex;
+.search-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--border-muted);
-  padding: 12px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--background-panel);
 }
 
 .search-mode {
   display: flex;
+  align-items: center;
   gap: 8px;
+  padding: 0 12px;
 }
 
 .mode-button {
@@ -239,7 +238,6 @@ function handleKeydown(event) {
   color: var(--text-primary);
 }
 
-.search-shortcut,
 .result-group-label,
 .result-kind {
   color: var(--text-muted);
@@ -253,9 +251,9 @@ function handleKeydown(event) {
   width: 100%;
   min-height: 58px;
   border: 0;
-  border-bottom: 1px solid var(--border-primary);
+  border-right: 1px solid var(--border-muted);
   outline: 0;
-  background: var(--background-panel);
+  background: transparent;
   color: var(--text-primary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: calc(22px * var(--ui-font-scale));
@@ -343,9 +341,17 @@ function handleKeydown(event) {
     padding-top: 8vh;
   }
 
-  .search-header {
-    align-items: flex-start;
-    flex-direction: column;
+  .search-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .search-mode {
+    border-top: 1px solid var(--border-muted);
+    padding: 8px 12px;
+  }
+
+  .search-input {
+    border-right: 0;
   }
 
   .result-row {

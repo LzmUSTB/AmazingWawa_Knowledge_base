@@ -182,9 +182,7 @@ function getEdgeEndpoint(edge, key) {
   return edge[key] || edge[key === "from" ? "source" : "target"];
 }
 
-function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
-  const graph = YAML.parse(graphYaml) || {};
-  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+function validateGraphLinkPayload(edges, payload, nodeIds, { excludeEdgeId = "" } = {}) {
   const sourceId = payload.sourceId;
   const targetId = payload.targetId;
   const relation = payload.relation;
@@ -193,11 +191,14 @@ function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
   if (!nodeIds.has(sourceId)) throw new Error(`Source "${sourceId}" does not exist.`);
   if (!nodeIds.has(targetId)) throw new Error(`Target "${targetId}" does not exist.`);
   if (sourceId === targetId) throw new Error("Source and target must be different.");
-  if (!LINK_RELATIONS.has(relation)) throw new Error("Add Link supports depends-on, used-in, and compares-with only.");
-  if (edges.some((edge) => edge.id === edgeId)) throw new Error(`Edge "${edgeId}" already exists.`);
+  if (!LINK_RELATIONS.has(relation)) throw new Error("Relations support depends-on, used-in, and compares-with only.");
+  if (edges.some((edge) => edge.id === edgeId && edge.id !== excludeEdgeId)) {
+    throw new Error(`Edge "${edgeId}" already exists.`);
+  }
   if (
     edges.some(
       (edge) =>
+        edge.id !== excludeEdgeId &&
         getEdgeEndpoint(edge, "from") === sourceId &&
         getEdgeEndpoint(edge, "to") === targetId &&
         edge.relation === relation,
@@ -209,6 +210,7 @@ function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
     relation === "compares-with" &&
     edges.some(
       (edge) =>
+        edge.id !== excludeEdgeId &&
         getEdgeEndpoint(edge, "from") === targetId &&
         getEdgeEndpoint(edge, "to") === sourceId &&
         edge.relation === relation,
@@ -216,6 +218,14 @@ function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
   ) {
     throw new Error(`Duplicate reverse compares-with edge for ${sourceId}/${targetId}.`);
   }
+
+  return { edgeId, sourceId, targetId, relation };
+}
+
+function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
+  const graph = YAML.parse(graphYaml) || {};
+  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+  const { edgeId, sourceId, targetId, relation } = validateGraphLinkPayload(edges, payload, nodeIds);
 
   return YAML.stringify({
     ...graph,
@@ -229,6 +239,45 @@ function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
         relation,
       },
     ],
+  });
+}
+
+function buildGraphYamlWithoutLink(graphYaml, edgeId) {
+  const graph = YAML.parse(graphYaml) || {};
+  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+  const edge = edges.find((item) => item.id === edgeId);
+  if (!edge) throw new Error(`Edge "${edgeId}" does not exist.`);
+  if (!LINK_RELATIONS.has(edge.relation)) throw new Error("Only non-contains relations can be deleted here.");
+
+  return YAML.stringify({
+    ...graph,
+    schemaVersion: graph.schemaVersion || 1,
+    edges: edges.filter((item) => item.id !== edgeId),
+  });
+}
+
+function buildGraphYamlWithReplacedLink(graphYaml, oldEdgeId, payload, nodeIds) {
+  const graph = YAML.parse(graphYaml) || {};
+  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+  const edgeIndex = edges.findIndex((edge) => edge.id === oldEdgeId);
+  if (edgeIndex < 0) throw new Error(`Edge "${oldEdgeId}" does not exist.`);
+  const oldEdge = edges[edgeIndex];
+  if (!LINK_RELATIONS.has(oldEdge.relation)) throw new Error("Only non-contains relations can be edited here.");
+  const { edgeId, sourceId, targetId, relation } = validateGraphLinkPayload(edges, payload, nodeIds, {
+    excludeEdgeId: oldEdgeId,
+  });
+  const nextEdges = [...edges];
+  nextEdges[edgeIndex] = {
+    id: edgeId,
+    from: sourceId,
+    to: targetId,
+    relation,
+  };
+
+  return YAML.stringify({
+    ...graph,
+    schemaVersion: graph.schemaVersion || 1,
+    edges: nextEdges,
   });
 }
 
@@ -299,6 +348,42 @@ export async function createGraphLink(vaultRootPath, payload) {
   const nodeIds = new Set(currentVault.nodes.map((node) => node.id));
   const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
   const updatedGraphYaml = buildGraphYamlWithLink(graphYaml, payload, nodeIds);
+
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: "graph.yaml",
+    contents: updatedGraphYaml,
+  });
+
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function removeGraphLink(vaultRootPath, edgeId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting links.");
+  if (!edgeId) throw new Error("Edge ID is required.");
+
+  const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
+  const updatedGraphYaml = buildGraphYamlWithoutLink(graphYaml, edgeId);
+
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: "graph.yaml",
+    contents: updatedGraphYaml,
+  });
+
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function replaceGraphLink(vaultRootPath, oldEdgeId, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing links.");
+  if (!oldEdgeId) throw new Error("Existing edge ID is required.");
+  if (!payload?.sourceId) throw new Error("Source node is required.");
+  if (!payload?.targetId) throw new Error("Target node is required.");
+
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const nodeIds = new Set(currentVault.nodes.map((node) => node.id));
+  const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
+  const updatedGraphYaml = buildGraphYamlWithReplacedLink(graphYaml, oldEdgeId, payload, nodeIds);
 
   await invoke("write_text_file", {
     vaultRootPath,

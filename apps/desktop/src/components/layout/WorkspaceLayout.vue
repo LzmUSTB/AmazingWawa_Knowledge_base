@@ -5,6 +5,7 @@ import GraphToolbar from "../graph/GraphToolbar.vue";
 import GraphView from "../graph/GraphView.vue";
 import BreadcrumbBar from "../navigation/BreadcrumbBar.vue";
 import NoteView from "../note/NoteView.vue";
+import EditRelationDialog from "../relation/EditRelationDialog.vue";
 import RelationSidebar from "../relation/RelationSidebar.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
@@ -104,6 +105,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  relationEditEdgeId: {
+    type: String,
+    default: "",
+  },
+  relationError: {
+    type: String,
+    default: "",
+  },
+  relationSaving: {
+    type: Boolean,
+    default: false,
+  },
   uiFontScale: {
     type: Number,
     default: 1,
@@ -113,6 +126,7 @@ const props = defineProps({
 const emit = defineEmits([
   "add-link",
   "close-dialog",
+  "close-relation-edit",
   "open-dialog",
   "open-domain",
   "open-note",
@@ -124,8 +138,11 @@ const emit = defineEmits([
   "ensure-layout-draft",
   "layout-node-dragged",
   "request-add-link",
+  "request-delete-relation",
+  "request-edit-relation",
   "save-note",
   "save-layout",
+  "save-relation-edit",
   "select-node",
   "set-note-dirty",
   "set-note-mode",
@@ -260,11 +277,13 @@ function fitGraphView() {
         @open-note="$emit('open-note', $event)"
         @open-scope="relayOpenScope"
         @request-add-link="$emit('request-add-link')"
+        @request-delete-relation="$emit('request-delete-relation', $event)"
+        @request-edit-relation="$emit('request-edit-relation', $event)"
         @toggle-collapse="$emit('toggle-relation-sidebar')"
       />
     </div>
 
-    <div v-if="activeDialog" class="dialog-overlay" @click.self="$emit('close-dialog')">
+    <div v-if="activeDialog || relationEditEdgeId" class="dialog-overlay" @click.self="relationEditEdgeId ? $emit('close-relation-edit') : $emit('close-dialog')">
       <NewNoteDialog
         v-if="activeDialog === 'new-note'"
         :current-domain="currentDomain"
@@ -273,6 +292,14 @@ function fitGraphView() {
         :selected-node-id="selectedNodeId"
         @close="$emit('close-dialog')"
         @create-note="$emit('create-note', $event)"
+      />
+      <EditRelationDialog
+        v-else-if="relationEditEdgeId"
+        :edge-id="relationEditEdgeId"
+        :error="relationError"
+        :saving="relationSaving"
+        @close="$emit('close-relation-edit')"
+        @save="$emit('save-relation-edit', $event)"
       />
     </div>
   </div>

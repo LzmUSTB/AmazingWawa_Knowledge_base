@@ -97,7 +97,7 @@ boards:
         h: 100
       graphics:
         x: 704
-        y: 640
+        y: 704
         w: 200
         h: 88
       shader:
@@ -111,13 +111,13 @@ boards:
         w: 220
         h: 76
       testnote:
-        x: 864
-        y: 832
+        x: 928
+        y: 864
         w: 190
         h: 80
-      game-dev:
-        x: 768
-        y: 352
+      pbr:
+        x: 736
+        y: 576
         w: 190
         h: 80
   simulation:
