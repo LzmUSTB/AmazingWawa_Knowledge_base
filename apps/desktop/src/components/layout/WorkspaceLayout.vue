@@ -53,6 +53,10 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  currentRelationNodePinned: {
+    type: Boolean,
+    default: false,
+  },
   canSaveNote: {
     type: Boolean,
     default: false,
@@ -162,6 +166,7 @@ const emit = defineEmits([
   "show-graph",
   "show-view",
   "toggle-sidebar",
+  "toggle-pin-node",
   "toggle-relation-sidebar",
 ]);
 
@@ -286,6 +291,7 @@ function fitGraphView() {
         :add-link-saving="addLinkSaving"
         :collapsed="relationSidebarCollapsed"
         :current-note-id="currentNoteId"
+        :current-node-pinned="currentRelationNodePinned"
         :current-view="currentView"
         :graph-scope-id="graphScopeId"
         :node-id="currentRelationNodeId"
@@ -297,6 +303,7 @@ function fitGraphView() {
         @request-delete-relation="$emit('request-delete-relation', $event)"
         @request-edit-relation="$emit('request-edit-relation', $event)"
         @toggle-collapse="$emit('toggle-relation-sidebar')"
+        @toggle-pin-node="$emit('toggle-pin-node')"
       />
     </div>
 

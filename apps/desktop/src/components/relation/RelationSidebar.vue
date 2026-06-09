@@ -36,6 +36,10 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  currentNodePinned: {
+    type: Boolean,
+    default: false,
+  },
   currentView: {
     type: String,
     required: true,
@@ -59,6 +63,7 @@ const emit = defineEmits([
   "request-delete-relation",
   "request-edit-relation",
   "toggle-collapse",
+  "toggle-pin-node",
 ]);
 
 const formOpen = ref(false);
@@ -327,6 +332,9 @@ function requestDeleteRelation(edgeId) {
             </template>
             <button class="hud-button" style="--button-color: var(--career)" @click="$emit('request-add-link')">
               Add Link
+            </button>
+            <button class="hud-button" style="--button-color: var(--career)" @click="$emit('toggle-pin-node')">
+              {{ currentNodePinned ? "Unpin" : "Pin" }}
             </button>
           </div>
         </section>

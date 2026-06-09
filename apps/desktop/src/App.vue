@@ -19,6 +19,13 @@ import {
 import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
 import { getGraphScope, hasGraphScope, isDomainNode, scopeForDomain } from "./graph/graph-scope.js";
+import {
+  addRecentNode,
+  entriesToShortcutResults,
+  loadPinnedNodes,
+  loadRecentNodes,
+  togglePinnedNode,
+} from "./navigation/node-shortcuts.js";
 
 const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
 const RELATION_SIDEBAR_KEY = "amazingwawa.relationSidebarCollapsed";
@@ -67,6 +74,11 @@ const noteFindQuery = ref("");
 const noteFindOpenKey = ref(0);
 const noteFindCloseKey = ref(0);
 const noteFindVisible = ref(false);
+const pinnedNodes = ref(loadPinnedNodes());
+const recentNodes = ref(loadRecentNodes());
+const backStack = ref([]);
+const forwardStack = ref([]);
+const historySuppressed = ref(false);
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -82,6 +94,16 @@ const currentRelationNodeId = computed(() => {
   const scope = getGraphScope(graphScopeId.value);
   return selectedNodeId.value || scope.centerNodeId || scope.selectedNodeId || "";
 });
+const pinnedNodeIds = computed(() => pinnedNodes.value.map((entry) => entry.id));
+const pinnedNodeIdSet = computed(() => new Set(pinnedNodeIds.value));
+const currentRelationNodePinned = computed(() => pinnedNodeIdSet.value.has(currentRelationNodeId.value));
+const pinnedResults = computed(() => entriesToShortcutResults(pinnedNodes.value, "pinned", { limit: 8 }));
+const recentResults = computed(() =>
+  entriesToShortcutResults(recentNodes.value, "recent", {
+    limit: 8,
+    excludeIds: pinnedNodeIdSet.value,
+  }),
+);
 
 if (import.meta.env.DEV) {
   watch([currentView, graphScopeId, selectedNodeId], ([view, scope, selected], [oldView, oldScope, oldSelected]) => {
@@ -152,6 +174,71 @@ function snapshotNavigation() {
   };
 }
 
+function isSameNavigationEntry(a, b) {
+  return (
+    a?.view === b?.view &&
+    a?.scopeId === b?.scopeId &&
+    a?.selectedNodeId === b?.selectedNodeId &&
+    a?.currentNoteId === b?.currentNoteId &&
+    a?.currentDomain === b?.currentDomain
+  );
+}
+
+function pushNavigationHistory(nextEntry) {
+  if (historySuppressed.value) return;
+  const currentEntry = snapshotNavigation();
+  if (isSameNavigationEntry(currentEntry, nextEntry)) return;
+  backStack.value = [...backStack.value, currentEntry].slice(-50);
+  forwardStack.value = [];
+}
+
+function validatedNavigationEntry(entry) {
+  const scopeId = hasGraphScope(entry.scopeId) ? entry.scopeId : "root";
+  const scope = getGraphScope(scopeId);
+  const selectedId = findGraphNode(entry.selectedNodeId) ? entry.selectedNodeId : scope.selectedNodeId;
+  const noteId = findGraphNode(entry.currentNoteId) ? entry.currentNoteId : selectedId;
+  const domain = hasDomain(entry.currentDomain)
+    ? entry.currentDomain
+    : findGraphNode(selectedId)?.domain || getFallbackDomain();
+  return {
+    ...entry,
+    view: entry.view === "note" ? "note" : "graph",
+    scopeId,
+    selectedNodeId: selectedId,
+    currentNoteId: noteId,
+    currentDomain: domain,
+  };
+}
+
+function applyNavigationEntry(entry) {
+  const nextEntry = validatedNavigationEntry(entry);
+  historySuppressed.value = true;
+  currentView.value = nextEntry.view;
+  graphScopeId.value = nextEntry.scopeId;
+  selectedNodeId.value = nextEntry.selectedNodeId;
+  currentNoteId.value = nextEntry.currentNoteId;
+  currentDomain.value = nextEntry.currentDomain;
+  noteMode.value = "read";
+  historySuppressed.value = false;
+  recordRecentForNavigation(nextEntry);
+}
+
+function goBack() {
+  if (!backStack.value.length || !confirmDiscardDirty()) return;
+  const previous = backStack.value[backStack.value.length - 1];
+  backStack.value = backStack.value.slice(0, -1);
+  forwardStack.value = [...forwardStack.value, snapshotNavigation()].slice(-50);
+  applyNavigationEntry(previous);
+}
+
+function goForward() {
+  if (!forwardStack.value.length || !confirmDiscardDirty()) return;
+  const next = forwardStack.value[forwardStack.value.length - 1];
+  forwardStack.value = forwardStack.value.slice(0, -1);
+  backStack.value = [...backStack.value, snapshotNavigation()].slice(-50);
+  applyNavigationEntry(next);
+}
+
 function restoreNavigation(snapshot, fallbackNodeId = "") {
   const targetScopeId = hasGraphScope(snapshot.scopeId) ? snapshot.scopeId : "root";
   const fallbackScope = getGraphScope(targetScopeId);
@@ -190,6 +277,33 @@ function getFallbackDomain() {
   return activeVault.vault.defaultDomain || activeVault.domains?.[0]?.id || "root";
 }
 
+function recordRecentNode(nodeId) {
+  if (!findGraphNode(nodeId)) return;
+  recentNodes.value = addRecentNode(recentNodes.value, nodeId);
+}
+
+function recordRecentForNavigation(entry = snapshotNavigation()) {
+  if (entry.view === "note") {
+    recordRecentNode(entry.currentNoteId);
+    return;
+  }
+  const scope = getGraphScope(entry.scopeId);
+  if (scope.type === "domain") {
+    recordRecentNode(scope.id);
+    return;
+  }
+  if (scope.type === "focus") {
+    recordRecentNode(scope.centerNodeId || entry.selectedNodeId);
+    return;
+  }
+  recordRecentNode(entry.selectedNodeId);
+}
+
+function toggleCurrentPinnedNode() {
+  if (!currentRelationNodeId.value || !findGraphNode(currentRelationNodeId.value)) return;
+  pinnedNodes.value = togglePinnedNode(pinnedNodes.value, currentRelationNodeId.value);
+}
+
 function clampUiFontScale(value) {
   return Math.min(1.25, Math.max(0.85, value));
 }
@@ -206,6 +320,20 @@ function handleGlobalWheel(event) {
 }
 
 function handleGlobalKeydown(event) {
+  if (searchOverlayVisible.value && event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+    event.preventDefault();
+    return;
+  }
+  if (event.altKey && event.key === "ArrowLeft") {
+    event.preventDefault();
+    goBack();
+    return;
+  }
+  if (event.altKey && event.key === "ArrowRight") {
+    event.preventDefault();
+    goForward();
+    return;
+  }
   if (event.ctrlKey && event.key.toLowerCase() === "q") {
     event.preventDefault();
     toggleSearchOverlay();
@@ -418,45 +546,85 @@ async function saveLayout() {
 
 function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) {
   if (!confirmDiscardDirty()) return false;
-  graphScopeId.value = scopeId || "root";
-  const scope = getGraphScope(graphScopeId.value);
+  const nextScopeId = scopeId || "root";
+  const scope = getGraphScope(nextScopeId);
+  const nextSelectedNodeId = nextScopeId === "root" ? scope.selectedNodeId : nodeId;
+  pushNavigationHistory({
+    view: "graph",
+    scopeId: nextScopeId,
+    selectedNodeId: nextSelectedNodeId,
+    currentNoteId: currentNoteId.value,
+    currentDomain: scope.type === "domain" ? scope.id : scope.type === "focus" ? findGraphNode(scope.centerNodeId)?.domain || currentDomain.value : currentDomain.value,
+  });
+  graphScopeId.value = nextScopeId;
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
-  selectedNodeId.value = graphScopeId.value === "root" ? scope.selectedNodeId : nodeId;
+  selectedNodeId.value = nextSelectedNodeId;
   currentView.value = "graph";
+  recordRecentForNavigation();
   return true;
 }
 
 function openNote(nodeId) {
   if (!confirmDiscardDirty()) return false;
   const node = findGraphNode(nodeId);
-  if (node) {
-    currentDomain.value = node.domain;
-    currentNoteId.value = node.id;
-    selectedNodeId.value = node.id;
-  }
+  if (!node) return false;
+  pushNavigationHistory({
+    view: "note",
+    scopeId: graphScopeId.value,
+    selectedNodeId: node.id,
+    currentNoteId: node.id,
+    currentDomain: node.domain,
+  });
+  currentDomain.value = node.domain;
+  currentNoteId.value = node.id;
+  selectedNodeId.value = node.id;
   noteMode.value = "read";
   currentView.value = "note";
+  recordRecentNode(nodeId);
   return true;
 }
 
 function openDomain(domain) {
   if (!confirmDiscardDirty()) return false;
+  const nextScopeId = scopeForDomain(domain);
+  pushNavigationHistory({
+    view: "graph",
+    scopeId: nextScopeId,
+    selectedNodeId: domain,
+    currentNoteId: currentNoteId.value,
+    currentDomain: domain,
+  });
   currentDomain.value = domain;
   selectedNodeId.value = domain;
-  graphScopeId.value = scopeForDomain(domain);
+  graphScopeId.value = nextScopeId;
   currentView.value = "graph";
+  recordRecentNode(domain);
   return true;
 }
 
 function openScope(scopeId, selectedId = scopeId) {
   if (!confirmDiscardDirty()) return false;
+  const scope = getGraphScope(scopeId);
+  const nextDomain =
+    scope.type === "domain"
+      ? scope.id
+      : scope.type === "focus"
+        ? findGraphNode(scope.centerNodeId)?.domain || currentDomain.value
+        : currentDomain.value;
+  pushNavigationHistory({
+    view: "graph",
+    scopeId,
+    selectedNodeId: selectedId,
+    currentNoteId: currentNoteId.value,
+    currentDomain: nextDomain,
+  });
   graphScopeId.value = scopeId;
   selectedNodeId.value = selectedId;
-  const scope = getGraphScope(scopeId);
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
   currentView.value = "graph";
+  recordRecentForNavigation();
   return true;
 }
 
@@ -776,6 +944,7 @@ function toggleRelationSidebar() {
       :note-find-query="noteFindQuery"
       :relation-edit-edge-id="relationEditEdgeId"
       :relation-error="relationError"
+      :current-relation-node-pinned="currentRelationNodePinned"
       :relation-sidebar-collapsed="relationSidebarCollapsed"
       :relation-saving="relationSaving"
       :selected-node-id="selectedNodeId"
@@ -807,6 +976,7 @@ function toggleRelationSidebar() {
       @show-graph="showGraph"
       @show-view="showView"
       @toggle-sidebar="toggleSidebar"
+      @toggle-pin-node="toggleCurrentPinnedNode"
       @toggle-relation-sidebar="toggleRelationSidebar"
     />
 
@@ -820,6 +990,8 @@ function toggleRelationSidebar() {
       v-model:mode="searchMode"
       v-model:query="searchQuery"
       :visible="searchOverlayVisible"
+      :pinned-results="pinnedResults"
+      :recent-results="recentResults"
       @close="closeSearchOverlay"
       @execute="executeSearchResult"
     />

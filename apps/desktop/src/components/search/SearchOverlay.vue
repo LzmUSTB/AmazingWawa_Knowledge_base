@@ -16,6 +16,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  pinnedResults: {
+    type: Array,
+    default: () => [],
+  },
+  recentResults: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const emit = defineEmits(["close", "execute", "update:mode", "update:query"]);
@@ -25,8 +33,12 @@ const selectedIndex = ref(0);
 const quickGroups = computed(() => buildQuickSearchResults(props.query));
 const quickResults = computed(() => flattenQuickSearchResults(quickGroups.value));
 const fullTextResults = computed(() => buildFullTextSearchResults(props.query));
-const activeResults = computed(() => (props.mode === "full-text" ? fullTextResults.value : quickResults.value));
 const hasQuery = computed(() => props.query.trim().length > 0);
+const shortcutResults = computed(() => [...props.pinnedResults, ...props.recentResults]);
+const activeResults = computed(() => {
+  if (props.mode === "full-text") return hasQuery.value ? fullTextResults.value : [];
+  return hasQuery.value ? quickResults.value : shortcutResults.value;
+});
 const activeModeLabel = computed(() => (props.mode === "quick" ? "Quick Search" : "Full-text"));
 const groupSections = computed(() => [
   { key: "nodes", label: "NODES", items: quickGroups.value.nodes || [] },
@@ -176,8 +188,50 @@ function handleKeydown(event) {
 
         <div v-else-if="mode === 'full-text'" class="search-empty">No note content matched this query.</div>
 
-        <div v-else-if="!hasQuery" class="search-empty">
-          Type a node title, id, domain, summary, tag, or relation endpoint.
+        <div v-else-if="!hasQuery" class="result-stack">
+          <section class="result-section">
+            <div class="result-group-label">PINNED</div>
+            <button
+              v-for="result in pinnedResults"
+              :key="result.id"
+              class="result-row"
+              :class="{ 'is-selected': isSelected(result) }"
+              type="button"
+              @click="executeResult(result)"
+              @mouseenter="selectedIndex = resultIndex(result)"
+            >
+              <span class="result-kind">PIN</span>
+              <span class="result-main">
+                <strong>{{ result.title }}</strong>
+                <small>{{ result.subtitle }}</small>
+              </span>
+              <span class="result-summary">{{ result.summary }}</span>
+            </button>
+            <p v-if="!pinnedResults.length" class="shortcut-empty">
+              No pinned nodes yet. Open a node and choose Pin from the relation sidebar.
+            </p>
+          </section>
+
+          <section class="result-section">
+            <div class="result-group-label">RECENT</div>
+            <button
+              v-for="result in recentResults"
+              :key="result.id"
+              class="result-row"
+              :class="{ 'is-selected': isSelected(result) }"
+              type="button"
+              @click="executeResult(result)"
+              @mouseenter="selectedIndex = resultIndex(result)"
+            >
+              <span class="result-kind">recent</span>
+              <span class="result-main">
+                <strong>{{ result.title }}</strong>
+                <small>{{ result.subtitle }}</small>
+              </span>
+              <span class="result-summary">{{ result.summary }}</span>
+            </button>
+            <p v-if="!recentResults.length" class="shortcut-empty">No recent nodes yet.</p>
+          </section>
         </div>
 
         <div v-else-if="quickResults.length" class="result-stack">
@@ -379,11 +433,20 @@ function handleKeydown(event) {
 }
 
 .search-empty,
-.planned-message {
+.planned-message,
+.shortcut-empty {
   color: var(--text-secondary);
   font-size: var(--font-size-ui);
   line-height: 1.55;
   padding: 22px 18px 28px;
+}
+
+.shortcut-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+  padding: 8px 4px 10px;
+  text-transform: uppercase;
 }
 
 .planned-message {

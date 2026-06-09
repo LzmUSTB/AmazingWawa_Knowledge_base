@@ -16,7 +16,7 @@ boards:
         w: 200
         h: 88
       machine-learning:
-        x: 896
+        x: 864
         y: 576
         w: 240
         h: 88

@@ -1,16 +1,16 @@
 import { getDomains } from "./graph-data-store.js";
 
-export const domainColors = {
-  graphics: "#00B7FF",
-  "linear-algebra": "#EDEDED",
-  "machine-learning": "#C8FF00",
-  "web-dev": "#FF2BD6",
-  "game-dev": "#FF3B30",
-  career: "#FFD500",
-  simulation: "#7C5CFF",
-  language: "#00E5A8",
-  "dcc-tools": "#FF8A00",
-};
+export const fallbackDomainPalette = [
+  "#00B7FF",
+  "#7C5CFF",
+  "#C8FF00",
+  "#FF8A00",
+  "#FF2BD6",
+  "#00E5A8",
+  "#FFD500",
+  "#FF3B30",
+  "#EDEDED",
+];
 
 export const relationTheme = {
   contains: {
@@ -49,7 +49,18 @@ export const relationTheme = {
 
 export function getDomainColor(domain) {
   const activeDomain = getDomains().find((item) => item.id === domain);
-  return activeDomain?.color || domainColors[domain] || "#EDEDED";
+  return activeDomain?.color || getFallbackDomainColor(domain);
+}
+
+export function stableHash(value = "") {
+  return String(value).split("").reduce((hash, char) => {
+    return (hash * 31 + char.charCodeAt(0)) | 0;
+  }, 0);
+}
+
+export function getFallbackDomainColor(domainId) {
+  if (!domainId) return "#EDEDED";
+  return fallbackDomainPalette[Math.abs(stableHash(domainId)) % fallbackDomainPalette.length];
 }
 
 export function nodeClass(type) {
