@@ -80,6 +80,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  uiFontScale: {
+    type: Number,
+    default: 1,
+  },
 });
 
 const emit = defineEmits([
@@ -127,6 +131,7 @@ function fitGraphView() {
   <div class="desktop-prototype app-frame" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
     <TopMenu
       :app-title="appTitle"
+      :ui-font-scale="uiFontScale"
       @open-dialog="$emit('open-dialog', $event)"
       @open-vault="$emit('open-vault')"
       @show-view="$emit('show-view', $event)"

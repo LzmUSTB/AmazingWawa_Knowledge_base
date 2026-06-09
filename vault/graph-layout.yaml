@@ -70,8 +70,8 @@ boards:
         w: 220
         h: 100
       rendering-pipeline:
-        x: 800
-        y: 512
+        x: 768
+        y: 640
         w: 240
         h: 88
       shader:
@@ -85,8 +85,8 @@ boards:
         w: 160
         h: 72
       rasterization:
-        x: 1408
-        y: 576
+        x: 1376
+        y: 512
         w: 220
         h: 88
       post-process:
@@ -115,8 +115,8 @@ boards:
         w: 200
         h: 88
       shader:
-        x: 1216
-        y: 544
+        x: 1120
+        y: 480
         w: 180
         h: 76
       rasterization:

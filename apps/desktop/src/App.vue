@@ -93,6 +93,11 @@ function applyVault(vault, { reset = false } = {}) {
   }
 }
 
+function replaceVaultWithoutNavigation(vault) {
+  setActiveVault(vault);
+  activeVaultRootPath.value = vault.vaultRootPath || "";
+}
+
 function resetNavigationForVault(vault) {
   const defaultDomain = vault.vault.defaultDomain || vault.domains[0]?.id || "root";
   const rootScope = getGraphScope("root");
@@ -155,11 +160,10 @@ function confirmDiscardNoteDirty() {
   return confirmed;
 }
 
-function discardLayoutDraft({ confirm = true } = {}) {
+function discardLayoutDraft({ confirm = true, scopeId = activeLayoutScopeId.value || graphScopeId.value } = {}) {
   if (confirm && layoutDirty.value && !window.confirm("You have unsaved layout changes. Discard them?")) {
     return false;
   }
-  const scopeId = activeLayoutScopeId.value || graphScopeId.value;
   const nextBoards = { ...layoutDraftBoards.value };
   const nextMoved = { ...layoutMovedNodeIds.value };
   delete nextBoards[scopeId];
@@ -272,7 +276,6 @@ async function saveLayout() {
   const board = layoutDraftBoards.value[scopeId] || ensureLayoutDraft(scopeId);
   layoutSaveInProgress.value = true;
   layoutError.value = "";
-  const previousView = currentView.value;
   const previousScopeId = graphScopeId.value;
   const previousSelectedNodeId = selectedNodeId.value;
   const previousCurrentDomain = currentDomain.value;
@@ -282,14 +285,14 @@ async function saveLayout() {
     const updatedVault = await saveGraphLayoutBoard(activeVaultRootPath.value, scopeId, board, {
       movedNodeIds,
     });
-    applyVault(updatedVault, { reset: false });
+    replaceVaultWithoutNavigation(updatedVault);
     currentView.value = "graph";
     graphScopeId.value = hasGraphScope(previousScopeId) ? previousScopeId : "root";
     selectedNodeId.value = findGraphNode(previousSelectedNodeId)
       ? previousSelectedNodeId
       : getGraphScope(graphScopeId.value).selectedNodeId;
     currentDomain.value = hasDomain(previousCurrentDomain) ? previousCurrentDomain : getFallbackDomain();
-    discardLayoutDraft({ confirm: false });
+    discardLayoutDraft({ confirm: false, scopeId });
   } catch (error) {
     console.error("[vault] Failed to save graph-layout.yaml.", error);
     layoutError.value = String(error);
@@ -384,23 +387,21 @@ async function saveNote({ node, markdown }) {
     return;
   }
   noteSaving.value = true;
-  const previousView = currentView.value;
   const previousGraphScopeId = graphScopeId.value;
   const previousSelectedNodeId = selectedNodeId.value;
   const previousCurrentDomain = currentDomain.value;
-  const previousNoteId = currentNoteId.value;
+  const savedNodeId = node.id;
 
   try {
     await writeNoteMarkdown(activeVaultRootPath.value, node, markdown);
     const updatedVault = await loadVaultFromPath(activeVaultRootPath.value);
-    applyVault(updatedVault, { reset: false });
+    replaceVaultWithoutNavigation(updatedVault);
     currentView.value = "note";
-    currentNoteId.value = node.id;
-    selectedNodeId.value = node.id;
-    currentDomain.value = findGraphNode(node.id)?.domain || node.domain || previousCurrentDomain;
+    currentNoteId.value = savedNodeId;
+    selectedNodeId.value = savedNodeId;
+    currentDomain.value = findGraphNode(savedNodeId)?.domain || node.domain || previousCurrentDomain;
     graphScopeId.value = hasGraphScope(previousGraphScopeId) ? previousGraphScopeId : "root";
-    if (!findGraphNode(previousNoteId)) currentNoteId.value = node.id;
-    if (!findGraphNode(previousSelectedNodeId)) selectedNodeId.value = node.id;
+    if (!findGraphNode(previousSelectedNodeId)) selectedNodeId.value = savedNodeId;
     noteDirty.value = false;
     noteMode.value = "read";
   } catch (error) {
@@ -460,6 +461,7 @@ function toggleSidebar() {
       :note-saving="noteSaving"
       :selected-node-id="selectedNodeId"
       :sidebar-collapsed="sidebarCollapsed"
+      :ui-font-scale="uiFontScale"
       @cancel-layout="discardLayoutDraft"
       @close-dialog="activeDialog = ''"
       @create-note="createNote"

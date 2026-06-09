@@ -4,6 +4,10 @@ defineProps({
     type: String,
     default: "Knowledge Base",
   },
+  uiFontScale: {
+    type: Number,
+    default: 1,
+  },
 });
 
 defineEmits(["open-dialog", "open-vault", "show-view"]);
@@ -13,6 +17,7 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
   <header class="top-menu">
     <div class="app-mark">{{ appTitle || "Knowledge Base" }}</div>
     <nav class="top-actions" aria-label="Application actions">
+      <span class="font-scale-indicator">FONT {{ Math.round(uiFontScale * 100) }}%</span>
       <button class="hud-button" @click="$emit('open-vault')">Open Vault</button>
       <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
         New Note
@@ -56,6 +61,15 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
   min-width: 0;
   overflow-x: auto;
   padding-block: 4px;
+}
+
+.font-scale-indicator {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .hud-button:disabled {
