@@ -50,9 +50,6 @@ defineEmits([
     <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
       New Node
     </button>
-    <button class="hud-button" style="--button-color: var(--career)" @click="$emit('open-dialog', 'new-link')">
-      New Link
-    </button>
     <button class="hud-button" @click="$emit('show-graph', 'root')">Global</button>
     <button class="hud-button" :disabled="localDisabled" style="--button-color: var(--simulation)"
       @click="$emit('show-local')">

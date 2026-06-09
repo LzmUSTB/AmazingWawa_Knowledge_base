@@ -1,11 +1,11 @@
 <script setup>
 import { computed, ref } from "vue";
-import NewLinkDialog from "../dialogs/NewLinkDialog.vue";
 import NewNoteDialog from "../dialogs/NewNoteDialog.vue";
 import GraphToolbar from "../graph/GraphToolbar.vue";
 import GraphView from "../graph/GraphView.vue";
 import BreadcrumbBar from "../navigation/BreadcrumbBar.vue";
 import NoteView from "../note/NoteView.vue";
+import RelationSidebar from "../relation/RelationSidebar.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
 import { getScopeLayoutMode } from "../../graph/graph-layout.js";
@@ -15,6 +15,22 @@ const props = defineProps({
   activeDialog: {
     type: String,
     required: true,
+  },
+  addLinkCloseKey: {
+    type: Number,
+    default: 0,
+  },
+  addLinkError: {
+    type: String,
+    default: "",
+  },
+  addLinkOpenKey: {
+    type: Number,
+    default: 0,
+  },
+  addLinkSaving: {
+    type: Boolean,
+    default: false,
   },
   appTitle: {
     type: String,
@@ -31,6 +47,10 @@ const props = defineProps({
   currentView: {
     type: String,
     required: true,
+  },
+  currentRelationNodeId: {
+    type: String,
+    default: "",
   },
   canSaveNote: {
     type: Boolean,
@@ -80,6 +100,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  relationSidebarCollapsed: {
+    type: Boolean,
+    default: false,
+  },
   uiFontScale: {
     type: Number,
     default: 1,
@@ -87,6 +111,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
+  "add-link",
   "close-dialog",
   "open-dialog",
   "open-domain",
@@ -98,6 +123,7 @@ const emit = defineEmits([
   "edit-layout",
   "ensure-layout-draft",
   "layout-node-dragged",
+  "request-add-link",
   "save-note",
   "save-layout",
   "select-node",
@@ -106,6 +132,7 @@ const emit = defineEmits([
   "show-graph",
   "show-view",
   "toggle-sidebar",
+  "toggle-relation-sidebar",
 ]);
 
 const graphViewRef = ref(null);
@@ -113,13 +140,13 @@ const currentScope = computed(() => getGraphScope(props.graphScopeId));
 const localDisabled = computed(() => !props.selectedNodeId);
 const layoutMode = computed(() => getScopeLayoutMode(currentScope.value.id));
 
-function openLocalGraph(nodeId) {
-  emit("open-scope", nodeId, nodeId);
-}
-
 function openSelectedLocalGraph() {
   if (!props.selectedNodeId) return;
   emit("open-scope", props.selectedNodeId, props.selectedNodeId);
+}
+
+function relayOpenScope(scopeId, selectedId = scopeId) {
+  emit("open-scope", scopeId, selectedId);
 }
 
 function fitGraphView() {
@@ -128,7 +155,13 @@ function fitGraphView() {
 </script>
 
 <template>
-  <div class="desktop-prototype app-frame" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
+  <div
+    class="desktop-prototype app-frame"
+    :class="{
+      'is-sidebar-collapsed': sidebarCollapsed,
+      'is-relation-sidebar-collapsed': relationSidebarCollapsed,
+    }"
+  >
     <TopMenu
       :app-title="appTitle"
       :ui-font-scale="uiFontScale"
@@ -193,11 +226,9 @@ function fitGraphView() {
             :scope-id="graphScopeId"
             @ensure-layout-draft="$emit('ensure-layout-draft', $event)"
             @layout-node-dragged="$emit('layout-node-dragged', $event)"
-            @open-dialog="$emit('open-dialog', $event)"
             @open-note="$emit('open-note', $event)"
             @open-scope="$emit('open-scope', $event)"
             @select-node="$emit('select-node', $event)"
-            @show-local="openLocalGraph"
           />
         </template>
 
@@ -213,16 +244,29 @@ function fitGraphView() {
           @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
         />
       </main>
+
+      <RelationSidebar
+        :add-link-close-key="addLinkCloseKey"
+        :add-link-error="addLinkError"
+        :add-link-open-key="addLinkOpenKey"
+        :add-link-saving="addLinkSaving"
+        :collapsed="relationSidebarCollapsed"
+        :current-note-id="currentNoteId"
+        :current-view="currentView"
+        :graph-scope-id="graphScopeId"
+        :node-id="currentRelationNodeId"
+        @add-link="$emit('add-link', $event)"
+        @open-domain="$emit('open-domain', $event)"
+        @open-note="$emit('open-note', $event)"
+        @open-scope="relayOpenScope"
+        @request-add-link="$emit('request-add-link')"
+        @toggle-collapse="$emit('toggle-relation-sidebar')"
+      />
     </div>
 
     <div v-if="activeDialog" class="dialog-overlay" @click.self="$emit('close-dialog')">
-      <NewLinkDialog
-        v-if="activeDialog === 'new-link'"
-        :selected-node-id="selectedNodeId"
-        @close="$emit('close-dialog')"
-      />
       <NewNoteDialog
-        v-else-if="activeDialog === 'new-note'"
+        v-if="activeDialog === 'new-note'"
         :current-domain="currentDomain"
         :current-view="currentView"
         :graph-scope-id="graphScopeId"
@@ -237,6 +281,7 @@ function fitGraphView() {
 <style scoped>
 .app-frame {
   --sidebar-width: 260px;
+  --relation-sidebar-width: 320px;
   display: grid;
   grid-template-rows: 44px 1fr;
   width: 100vw;
@@ -250,9 +295,13 @@ function fitGraphView() {
   --sidebar-width: 44px;
 }
 
+.app-frame.is-relation-sidebar-collapsed {
+  --relation-sidebar-width: 44px;
+}
+
 .app-body {
   display: grid;
-  grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr) var(--relation-sidebar-width, 320px);
   min-width: 0;
   min-height: 0;
   overflow: hidden;

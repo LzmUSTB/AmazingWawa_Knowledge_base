@@ -6,6 +6,7 @@ import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
 import {
   chooseVaultRoot,
+  createGraphLink,
   createKnowledgeItem,
   loadInitialVault,
   loadVaultFromPath,
@@ -17,8 +18,10 @@ import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
 import { getGraphScope, hasGraphScope, scopeForDomain } from "./graph/graph-scope.js";
 
 const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
+const RELATION_SIDEBAR_KEY = "amazingwawa.relationSidebarCollapsed";
 const UI_FONT_SCALE_KEY = "amazingwawa.uiFontScale";
 const savedSidebarPreference = localStorage.getItem(SIDEBAR_KEY);
+const savedRelationSidebarPreference = localStorage.getItem(RELATION_SIDEBAR_KEY);
 const savedUiFontScale = Number(localStorage.getItem(UI_FONT_SCALE_KEY));
 const initialVault = createEmptyVault();
 setActiveVault(initialVault);
@@ -35,6 +38,10 @@ const vaultLoading = ref(true);
 const vaultLoadError = ref("");
 const noteDirty = ref(false);
 const noteSaving = ref(false);
+const addLinkOpenKey = ref(0);
+const addLinkCloseKey = ref(0);
+const addLinkSaving = ref(false);
+const addLinkError = ref("");
 const isLayoutEditing = ref(false);
 const layoutDirty = ref(false);
 const layoutDraftBoards = ref({});
@@ -46,6 +53,7 @@ const uiFontScale = ref(Number.isFinite(savedUiFontScale) ? clampUiFontScale(sav
 const sidebarCollapsed = ref(
   savedSidebarPreference === null ? window.innerWidth < 1000 : savedSidebarPreference === "true",
 );
+const relationSidebarCollapsed = ref(savedRelationSidebarPreference === "true");
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -56,6 +64,11 @@ const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || 
 const currentDraftLayoutBoard = computed(() => layoutDraftBoards.value[graphScopeId.value] || null);
 const currentDraftMovedNodeIds = computed(() => layoutMovedNodeIds.value[graphScopeId.value] || []);
 const hasRealVault = computed(() => Boolean(activeVaultRootPath.value) && useActiveVault().value.source === "desktop");
+const currentRelationNodeId = computed(() => {
+  if (currentView.value === "note") return currentNoteId.value;
+  const scope = getGraphScope(graphScopeId.value);
+  return selectedNodeId.value || scope.centerNodeId || scope.selectedNodeId || "";
+});
 
 if (import.meta.env.DEV) {
   watch([currentView, graphScopeId, selectedNodeId], ([view, scope, selected], [oldView, oldScope, oldSelected]) => {
@@ -473,9 +486,60 @@ async function createNote(payload) {
   }
 }
 
+function requestAddLink() {
+  if (!confirmDiscardDirty()) return;
+  addLinkError.value = "";
+  addLinkOpenKey.value += 1;
+}
+
+async function createLink(payload) {
+  if (addLinkSaving.value) return;
+  if (!activeVaultRootPath.value) {
+    addLinkError.value = "Open a desktop vault folder before creating links.";
+    return;
+  }
+
+  addLinkSaving.value = true;
+  addLinkError.value = "";
+  const previousView = currentView.value;
+  const previousGraphScopeId = graphScopeId.value;
+  const previousSelectedNodeId = selectedNodeId.value;
+  const previousCurrentNoteId = currentNoteId.value;
+  const previousCurrentDomain = currentDomain.value;
+
+  try {
+    const updatedVault = await createGraphLink(activeVaultRootPath.value, payload);
+    replaceVaultWithoutNavigation(updatedVault);
+    const sourceNode = findGraphNode(payload.sourceId);
+    const targetScopeId = hasGraphScope(previousGraphScopeId)
+      ? previousGraphScopeId
+      : hasGraphScope(payload.sourceId)
+        ? payload.sourceId
+        : "root";
+    currentView.value = previousView;
+    graphScopeId.value = targetScopeId;
+    selectedNodeId.value = findGraphNode(previousSelectedNodeId) ? previousSelectedNodeId : payload.sourceId;
+    currentNoteId.value = findGraphNode(previousCurrentNoteId) ? previousCurrentNoteId : payload.sourceId;
+    currentDomain.value = hasDomain(previousCurrentDomain)
+      ? previousCurrentDomain
+      : sourceNode?.domain || getFallbackDomain();
+    addLinkCloseKey.value += 1;
+  } catch (error) {
+    console.error("[vault] Failed to create graph link.", error);
+    addLinkError.value = String(error?.message || error);
+  } finally {
+    addLinkSaving.value = false;
+  }
+}
+
 function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value;
   localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed.value));
+}
+
+function toggleRelationSidebar() {
+  relationSidebarCollapsed.value = !relationSidebarCollapsed.value;
+  localStorage.setItem(RELATION_SIDEBAR_KEY, String(relationSidebarCollapsed.value));
 }
 </script>
 
@@ -490,11 +554,16 @@ function toggleSidebar() {
     <WorkspaceLayout
       v-else
       :active-dialog="activeDialog"
+      :add-link-close-key="addLinkCloseKey"
+      :add-link-error="addLinkError"
+      :add-link-open-key="addLinkOpenKey"
+      :add-link-saving="addLinkSaving"
       :app-title="activeVaultTitle"
       :can-save-layout="canSaveLayout"
       :can-save-note="canSaveNote"
       :current-domain="currentDomain"
       :current-note-id="currentNoteId"
+      :current-relation-node-id="currentRelationNodeId"
       :current-view="currentView"
       :draft-layout-board="currentDraftLayoutBoard"
       :draft-moved-node-ids="currentDraftMovedNodeIds"
@@ -504,9 +573,11 @@ function toggleSidebar() {
       :layout-save-in-progress="layoutSaveInProgress"
       :note-mode="noteMode"
       :note-saving="noteSaving"
+      :relation-sidebar-collapsed="relationSidebarCollapsed"
       :selected-node-id="selectedNodeId"
       :sidebar-collapsed="sidebarCollapsed"
       :ui-font-scale="uiFontScale"
+      @add-link="createLink"
       @cancel-layout="discardLayoutDraft"
       @close-dialog="activeDialog = ''"
       @create-note="createNote"
@@ -518,6 +589,7 @@ function toggleSidebar() {
       @open-note="openNote"
       @open-scope="openScope"
       @open-vault="openVault"
+      @request-add-link="requestAddLink"
       @save-layout="saveLayout"
       @save-note="saveNote"
       @select-node="selectedNodeId = $event"
@@ -526,6 +598,7 @@ function toggleSidebar() {
       @show-graph="showGraph"
       @show-view="showView"
       @toggle-sidebar="toggleSidebar"
+      @toggle-relation-sidebar="toggleRelationSidebar"
     />
 
     <div v-if="hasRealVault" class="mobile-prototype">

@@ -2,7 +2,7 @@
 
 ## Real Vault Only
 
-The desktop app does not use a mock graph fallback or a static sample vault.
+The desktop app does not use mock knowledge content or a static sample vault.
 
 The repository `./vault` directory is the default real vault during development. It is loaded through Tauri filesystem commands, not through Vite raw imports.
 
@@ -10,9 +10,9 @@ The repository `./vault` directory is the default real vault during development.
 
 On startup, the desktop app tries:
 
-1. The last opened vault path stored in localStorage.
-2. The repository `./vault` resolved by the Tauri `resolve_default_vault_root` command.
-3. If neither can be loaded, the app shows `No Vault Loaded`.
+1. the last opened vault path stored in localStorage;
+2. the repository `./vault` resolved by the Tauri `resolve_default_vault_root` command;
+3. if neither can be loaded, the app shows `No Vault Loaded`.
 
 Users can choose another real vault folder with `Open Vault`. The selected folder must contain `vault.yaml`.
 

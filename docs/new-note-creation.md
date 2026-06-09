@@ -31,7 +31,7 @@ Default parent selection:
 
 The parent must already exist and must belong to the selected domain.
 
-Do not use Parent for cross-domain relationships. Cross-domain `depends-on`, `used-in`, or `compares-with` links belong in New Link later.
+Do not use Parent for cross-domain relationships. Cross-domain `depends-on`, `used-in`, or `compares-with` links belong in Add Link from the right relation sidebar.
 
 ## 5. File Creation
 
@@ -98,9 +98,9 @@ Before writing:
 
 ## 9. Layout
 
-This phase does not write `graph-layout.yaml`.
+New Note does not write `graph-layout.yaml`.
 
-New nodes appear through generated layout and route fallback until manual layout editing is implemented.
+New nodes appear through generated layout and route fallback until the user saves manual layout for that scope.
 
 If a new note is created under a non-domain parent, it appears in that parent's Focus / Local Graph. It does not appear in the domain graph unless it is directly contained by the domain.
 
@@ -112,6 +112,12 @@ leaf node -> open Note
 center node in its own Local Graph -> open Note
 ```
 
-## 10. Not Included
+## 10. Relationship Editing Boundary
 
-This phase does not implement real New Link writing, graph-layout saving, node dragging, route editing, or drag-to-connect.
+New Note owns only `contains` creation. It does not create `depends-on`, `used-in`, or `compares-with`.
+
+Those non-hierarchical relations are created by Add Link in the right relation sidebar.
+
+## 11. Not Included
+
+New Note does not implement non-hierarchical link writing, relation deletion, graph-layout saving, route editing, or drag-to-connect.

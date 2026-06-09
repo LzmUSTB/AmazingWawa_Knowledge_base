@@ -3,6 +3,7 @@ import YAML from "yaml";
 import { normalizeVault } from "../../../../packages/knowledge-core/src/index.js";
 
 const LAST_VAULT_KEY = "amazingwawa.lastVaultRootPath";
+const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
 
 function normalizeFromRaw(rawFiles, vaultRootPath) {
   const normalizedVault = normalizeVault({
@@ -177,6 +178,60 @@ function buildGraphYamlWithEdge(graphYaml, edge) {
   });
 }
 
+function getEdgeEndpoint(edge, key) {
+  return edge[key] || edge[key === "from" ? "source" : "target"];
+}
+
+function buildGraphYamlWithLink(graphYaml, payload, nodeIds) {
+  const graph = YAML.parse(graphYaml) || {};
+  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+  const sourceId = payload.sourceId;
+  const targetId = payload.targetId;
+  const relation = payload.relation;
+  const edgeId = `${sourceId}-${relation}-${targetId}`;
+
+  if (!nodeIds.has(sourceId)) throw new Error(`Source "${sourceId}" does not exist.`);
+  if (!nodeIds.has(targetId)) throw new Error(`Target "${targetId}" does not exist.`);
+  if (sourceId === targetId) throw new Error("Source and target must be different.");
+  if (!LINK_RELATIONS.has(relation)) throw new Error("Add Link supports depends-on, used-in, and compares-with only.");
+  if (edges.some((edge) => edge.id === edgeId)) throw new Error(`Edge "${edgeId}" already exists.`);
+  if (
+    edges.some(
+      (edge) =>
+        getEdgeEndpoint(edge, "from") === sourceId &&
+        getEdgeEndpoint(edge, "to") === targetId &&
+        edge.relation === relation,
+    )
+  ) {
+    throw new Error(`Duplicate ${sourceId}/${targetId}/${relation} edge.`);
+  }
+  if (
+    relation === "compares-with" &&
+    edges.some(
+      (edge) =>
+        getEdgeEndpoint(edge, "from") === targetId &&
+        getEdgeEndpoint(edge, "to") === sourceId &&
+        edge.relation === relation,
+    )
+  ) {
+    throw new Error(`Duplicate reverse compares-with edge for ${sourceId}/${targetId}.`);
+  }
+
+  return YAML.stringify({
+    ...graph,
+    schemaVersion: graph.schemaVersion || 1,
+    edges: [
+      ...edges,
+      {
+        id: edgeId,
+        from: sourceId,
+        to: targetId,
+        relation,
+      },
+    ],
+  });
+}
+
 export async function createKnowledgeItem(vaultRootPath, payload) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating notes.");
   if (!payload.title?.trim()) throw new Error("Title is required.");
@@ -193,10 +248,10 @@ export async function createKnowledgeItem(vaultRootPath, payload) {
   if (!nodeIds.has(payload.parentId)) throw new Error(`Parent "${payload.parentId}" does not exist.`);
   const parentNode = nodeById.get(payload.parentId);
   if (parentNode.type === "domain" && parentNode.id !== payload.domain) {
-    throw new Error("Parent must belong to the selected domain. Use New Link for cross-domain relationships.");
+    throw new Error("Parent must belong to the selected domain. Use Add Link for cross-domain relationships.");
   }
   if (parentNode.type !== "domain" && parentNode.domain !== payload.domain) {
-    throw new Error("Parent must belong to the selected domain. Use New Link for cross-domain relationships.");
+    throw new Error("Parent must belong to the selected domain. Use Add Link for cross-domain relationships.");
   }
 
   const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
@@ -233,6 +288,25 @@ export async function createKnowledgeItem(vaultRootPath, payload) {
     vault: await loadVaultFromPath(vaultRootPath),
     newNodeId: payload.id,
   };
+}
+
+export async function createGraphLink(vaultRootPath, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating links.");
+  if (!payload?.sourceId) throw new Error("Source node is required.");
+  if (!payload?.targetId) throw new Error("Target node is required.");
+
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const nodeIds = new Set(currentVault.nodes.map((node) => node.id));
+  const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
+  const updatedGraphYaml = buildGraphYamlWithLink(graphYaml, payload, nodeIds);
+
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: "graph.yaml",
+    contents: updatedGraphYaml,
+  });
+
+  return loadVaultFromPath(vaultRootPath);
 }
 
 function serializeBoardForYaml(board, preservedRoutes = {}) {

@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines current interaction rules for the local-first knowledge graph desktop app.
+This document defines the current and next-stage interaction rules for the local-first knowledge graph desktop app.
 
 ```txt
 Top Menu
@@ -11,30 +11,26 @@ Top Menu
   + Breadcrumb
   + Graph View
   + Note View
++ Right Relation Sidebar   (Step 7)
 ```
 
 The desktop app is the primary maintenance environment. The mobile/web viewer is read-first.
 
 ## 1.1 Current Desktop Stage
 
-Current behavior:
+Current implemented behavior:
 
 ```txt
 desktop-vault-adapter.js = desktop file access boundary
 Open Vault = real Tauri folder open
+startup = last opened vault -> repository ./vault -> No Vault Loaded
 note.md Save = real disk write
 New Note = creates meta.yaml, note.md, assets/, and one contains edge
-New Link = prototype-only, no graph.yaml write yet
+Layout Edit Mode = real graph-layout.yaml board.nodes write
+mock/static sample = removed
 ```
 
-Startup behavior:
-
-```txt
-try last opened vault path from localStorage
--> if it loads, use that local vault
--> otherwise try development ./vault through Tauri filesystem APIs
--> if it fails, show No Vault Loaded
-```
+`./vault` is treated as a real vault, loaded through Tauri filesystem APIs. Frontend code must not raw-import `vault/**`.
 
 `Reset View` was removed because it duplicated `Fit`.
 
@@ -73,27 +69,40 @@ New Note creates hierarchy through one `contains` edge.
 
 ```txt
 Parent must belong to the selected domain.
-Cross-domain relationships should use New Link later, not Parent.
+Cross-domain relationships should use Add Link, not Parent.
 ```
 
 ## 2. Core Interaction Model
 
 | Surface | Role |
 |---|---|
-| File Tree | Physical storage structure |
+| Left File Tree | Physical storage structure |
 | Graph View | Conceptual relationship structure |
 | Note View | Knowledge explanation and editing surface |
+| Right Relation Sidebar | Current node actions, hierarchy, direct relations, Add Link |
 
 ## 3. Top Menu Interactions
 
-Current visible first-version items:
+Current pre-Step-7 visible items:
 
 ```txt
 Open Vault
 New Note
-New Link
+New Link     (legacy prototype button; remove in Step 7)
 Git disabled
+FONT indicator
 ```
+
+Step 7 target:
+
+```txt
+Open Vault
+New Note
+Git disabled
+FONT indicator
+```
+
+`New Link` must be removed from the global top menu in Step 7. Link creation becomes context-bound `Add Link` inside the right relation sidebar.
 
 Hidden until implemented:
 
@@ -133,21 +142,32 @@ Click behavior:
 | Double-click non-domain leaf node | Open Note View |
 | Double-click center node in own focus graph | Open Note View |
 | Hover node | Highlight one-hop neighbors |
-| Right-click node | Open node context menu |
+| Right-click node | Select node; floating menu is replaced by right sidebar in Step 7 |
 | Drag empty canvas | Pan viewport |
 | Mouse wheel | Graph zoom |
 | Click empty area | No navigation |
 
 ### 5.2 Graph Toolbar
 
-Current first-version toolbar:
+Current pre-Step-7 toolbar:
 
 ```txt
 New Node
-New Link
+New Link     (legacy prototype button; remove in Step 7)
 Global
 Local
 Fit
+Edit Layout / Save Layout / Cancel Layout
+```
+
+Step 7 target toolbar:
+
+```txt
+New Node
+Global
+Local
+Fit
+Edit Layout / Save Layout / Cancel Layout
 ```
 
 `Search` and `Reset View` are not shown.
@@ -175,8 +195,6 @@ Relation styles:
 
 ## 6. Layout Editing Interactions
 
-Layout editing is the next implementation stage.
-
 ### 6.1 Normal Mode
 
 ```txt
@@ -195,7 +213,7 @@ Entered by clicking `Edit Layout`.
 drag node = move node
 drag empty canvas = pan
 mouse wheel = graph zoom
-Save Layout = write current scope board.nodes to graph-layout.yaml
+Save Layout = write current scope board.nodes to graph-layout.yaml and exit Layout Edit Mode
 Cancel Layout = discard draft positions
 ```
 
@@ -217,19 +235,7 @@ Save writes:
 graph-layout.yaml boards[scopeId].nodes
 ```
 
-First version must not save generated route points.
-
-### 6.5 Route Behavior During Layout Editing
-
-When nodes move:
-
-```txt
-connected generated routes update immediately
-manual routes may be bypassed for affected edges if stale
-generated routes are not written to graph-layout.yaml
-```
-
-Generated orthogonal routes should use port selection, port offset, lane offset, and relation-aware style.
+Generated route points are not written. Manual routes connected to moved nodes are removed so generated routes can reconnect after reload. Save Layout stays in the current graph scope and exits Layout Edit Mode.
 
 ## 7. UI Font Size Interaction
 
@@ -260,28 +266,62 @@ Recommended range:
 
 Font scaling must not mutate vault files, change board coordinates, change node x/y/w/h, or change camera zoom.
 
-## 8. New Link
+## 8. Step 7: Right Relation Sidebar + Add Link
 
-Current stage:
+Step 7 replaces global `New Link` and floating `NodeContextMenu` with a collapsible right sidebar.
+
+Right sidebar appears in:
 
 ```txt
-New Link form exists for design validation only.
-Create Link is disabled.
-No graph.yaml write occurs.
+Graph View
+Note View
 ```
+
+Right sidebar responsibilities:
+
+```txt
+Selected node summary
+Open Note / Show Local Graph actions
+Hierarchy section
+Relations section
+Add Link button
+```
+
+Relation list example for current node `A`:
+
+```txt
+RELATIONS                         +
+-----------------------------------
+A depends-on B
+A used-in B
+B depends-on A
+A compares-with B
+```
+
+Clicking the other node in a relation opens that node's local/focus scope.
+
+Add Link is context-bound to the current node and writes `depends-on`, `used-in`, or `compares-with` to `graph.yaml`. It does not create `contains` edges.
 
 ## 9. Note View
 
 Read mode shows note content. Edit mode modifies `note.md`.
+
+Toolbar behavior:
+
+```txt
+Read mode: Edit / Show in Graph
+Edit mode: Save / Cancel only
+```
 
 Save behavior:
 
 ```txt
 Click Save
 -> write content to note.md
--> reload vault
+-> reload vault without navigation reset
 -> update dirty state
 -> return to Read mode
+-> stay on the same Note page
 ```
 
 ## 10. Unsaved Changes Policy
@@ -316,25 +356,29 @@ Before navigation, show a confirmation dialog if dirty.
 Implemented/current:
 
 - Tauri Open Vault
-- static fallback
+- repository `./vault` as default real vault
+- No Vault Loaded screen
 - File Tree
 - Breadcrumb
 - Root Graph
 - Domain Graph
 - Focus Graph generated from edges
 - New Note creation
-- New Link prototype-only dialog
+- legacy New Link prototype-only dialog
 - Note Read mode
 - Note Edit mode
 - note.md Save
 - Show in Graph
 - sidebar collapse
 - Fit
+- Layout Edit Mode
+- Save graph-layout.yaml board.nodes
+- Ctrl + wheel UI font scale
 
 Next:
 
-- Layout Edit Mode
-- Save graph-layout.yaml board.nodes
-- UI font scale by Ctrl + wheel
-- New Link writing
+- Right Relation Sidebar
+- Add Link writing to graph.yaml
+- remove global New Link buttons
+- replace floating NodeContextMenu
 - content block renderer

@@ -1,6 +1,5 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import NodeContextMenu from "./NodeContextMenu.vue";
 import {
   clamp,
   fitCameraToBounds,
@@ -46,11 +45,9 @@ const props = defineProps({
 const emit = defineEmits([
   "ensure-layout-draft",
   "layout-node-dragged",
-  "open-dialog",
   "open-note",
   "open-scope",
   "select-node",
-  "show-local",
 ]);
 
 const viewportRef = ref(null);
@@ -73,13 +70,6 @@ const scopeLabel = computed(() => {
 });
 const focusNodeId = computed(() => hoveredNodeId.value || props.selectedNodeId);
 const connectedIds = computed(() => getConnectedNodeIds(focusNodeId.value, currentScope.value.edges));
-const selectedNode = computed(
-  () =>
-    currentScope.value.nodes.find((node) => node.id === props.selectedNodeId) ||
-    currentScope.value.nodes.find((node) => node.id === currentScope.value.selectedNodeId) ||
-    currentScope.value.nodes[0],
-);
-
 function nodeState(node) {
   return {
     "is-selected": node.id === props.selectedNodeId,
@@ -137,6 +127,11 @@ function handleNodeOpen(node) {
   emit("open-note", node.id);
 }
 
+function handleNodeContextMenu(event, node) {
+  event.preventDefault();
+  emit("select-node", node.id);
+}
+
 function handleNodePointerDown(event, node) {
   if (!(props.isLayoutEditing || (event.ctrlKey && event.button === 0))) return;
   event.preventDefault();
@@ -182,16 +177,8 @@ function stopNodeDrag(event) {
   nodeDrag.value = null;
 }
 
-function handleShowLocal(nodeId) {
-  if (isDomainNode(nodeId)) {
-    emit("open-scope", nodeId);
-    return;
-  }
-  emit("open-scope", nodeId);
-}
-
 function isInteractiveTarget(event) {
-  return Boolean(event.target.closest("button, a, input, textarea, select, .node-context-menu"));
+  return Boolean(event.target.closest("button, a, input, textarea, select"));
 }
 
 function fitCurrentScope() {
@@ -361,6 +348,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
               height: `${getResolvedNodeLayout(node.id).height}px`,
             }"
             @click="handleNodeClick(node)"
+            @contextmenu="handleNodeContextMenu($event, node)"
             @dblclick="handleNodeOpen(node)"
             @mouseenter="hoveredNodeId = node.id"
             @mouseleave="hoveredNodeId = ''"
@@ -384,13 +372,6 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
     <div class="routing-label routing-label--a">
       {{ isLayoutEditing ? "LAYOUT EDIT / GRID SNAP" : scopeLabel }}
     </div>
-
-    <NodeContextMenu
-      :node="selectedNode"
-      @open-dialog="$emit('open-dialog', $event)"
-      @open-note="$emit('open-note', $event)"
-      @show-local="handleShowLocal"
-    />
   </section>
 </template>
 

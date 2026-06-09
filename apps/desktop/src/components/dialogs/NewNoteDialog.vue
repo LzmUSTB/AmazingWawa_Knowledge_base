@@ -159,7 +159,7 @@ function submit() {
             {{ node.title }} / {{ node.id }}
           </option>
         </select>
-        <code>Parent creates a contains edge. Use New Link later for cross-domain relationships.</code>
+        <code>Parent creates a contains edge. Use Add Link for cross-domain relationships.</code>
       </label>
     </div>
 

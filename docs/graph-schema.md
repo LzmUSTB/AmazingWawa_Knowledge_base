@@ -64,7 +64,7 @@ New Note parent rule:
 Parent must belong to the selected domain.
 ```
 
-Do not use `contains` for cross-domain conceptual references. Use `depends-on`, `used-in`, or `compares-with`.
+Do not use `contains` for cross-domain conceptual references. Use `depends-on`, `used-in`, or `compares-with` through Add Link.
 
 ### `depends-on`
 
@@ -149,7 +149,16 @@ Cross-domain edges are allowed for `depends-on`, `used-in`, and `compares-with`.
 
 Cross-domain `contains` should be rejected by New Note creation.
 
-## 11. Recommended Validation
+## 11. Edge Creation Responsibilities
+
+```txt
+New Note -> creates contains only
+Add Link -> creates depends-on / used-in / compares-with only
+```
+
+Add Link must not create `contains`. Hierarchy changes should later be handled by a dedicated Move Node / Change Parent flow.
+
+## 12. Recommended Validation
 
 When loading `graph.yaml`, validate:
 
@@ -174,6 +183,18 @@ new node ID does not exist
 new contains edge ID does not exist
 ```
 
-## 12. What Not to Store in `graph.yaml`
+When creating an Add Link edge, validate:
+
+```txt
+source exists
+target exists
+source != target
+relation is depends-on / used-in / compares-with
+edge ID does not exist
+no duplicate from/to/relation
+for compares-with, reverse direction also does not exist
+```
+
+## 13. What Not to Store in `graph.yaml`
 
 Do not store layout, style, interaction state, note content, UI font size, camera state, or selection.

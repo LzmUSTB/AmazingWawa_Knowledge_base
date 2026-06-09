@@ -22,9 +22,6 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
       <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
         New Note
       </button>
-      <button class="hud-button" style="--button-color: var(--career)" @click="$emit('open-dialog', 'new-link')">
-        New Link
-      </button>
       <button class="hud-button" disabled title="Git panel is not implemented yet">Git</button>
     </nav>
   </header>
