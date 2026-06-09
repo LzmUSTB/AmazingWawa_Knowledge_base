@@ -36,8 +36,8 @@ boards:
         w: 180
         h: 88
       simulation:
-        x: 360
-        y: 640
+        x: 160
+        y: 576
         w: 180
         h: 88
       language:

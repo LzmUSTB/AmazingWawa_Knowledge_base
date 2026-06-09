@@ -24,10 +24,6 @@ defineProps({
     type: Boolean,
     default: false,
   },
-  localDisabled: {
-    type: Boolean,
-    default: false,
-  },
   nodeCount: {
     type: Number,
     required: true,
@@ -40,8 +36,6 @@ defineEmits([
   "fit-view",
   "open-dialog",
   "save-layout",
-  "show-graph",
-  "show-local",
 ]);
 </script>
 
@@ -49,11 +43,6 @@ defineEmits([
   <div class="graph-toolbar">
     <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
       New Node
-    </button>
-    <button class="hud-button" @click="$emit('show-graph', 'root')">Global</button>
-    <button class="hud-button" :disabled="localDisabled" style="--button-color: var(--simulation)"
-      @click="$emit('show-local')">
-      Local
     </button>
     <button class="hud-button" @click="$emit('fit-view')">Fit</button>
     <button

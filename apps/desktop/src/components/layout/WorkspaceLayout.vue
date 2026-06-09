@@ -172,13 +172,7 @@ const emit = defineEmits([
 
 const graphViewRef = ref(null);
 const currentScope = computed(() => getGraphScope(props.graphScopeId));
-const localDisabled = computed(() => !props.selectedNodeId);
 const layoutMode = computed(() => getScopeLayoutMode(currentScope.value.id));
-
-function openSelectedLocalGraph() {
-  if (!props.selectedNodeId) return;
-  emit("open-scope", props.selectedNodeId, props.selectedNodeId);
-}
 
 function relayOpenScope(scopeId, selectedId = scopeId) {
   emit("open-scope", scopeId, selectedId);
@@ -242,15 +236,12 @@ function fitGraphView() {
             :layout-editing="isLayoutEditing"
             :layout-mode="layoutMode"
             :layout-save-in-progress="layoutSaveInProgress"
-            :local-disabled="localDisabled"
             :node-count="currentScope.nodes.length"
             @cancel-layout="$emit('cancel-layout')"
             @edit-layout="$emit('edit-layout')"
             @fit-view="fitGraphView"
             @open-dialog="$emit('open-dialog', $event)"
             @save-layout="$emit('save-layout')"
-            @show-local="openSelectedLocalGraph"
-            @show-graph="$emit('show-graph', $event)"
           />
           <GraphView
             ref="graphViewRef"

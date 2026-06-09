@@ -662,8 +662,11 @@ function closeNoteFind() {
 
 function executeSearchResult({ result, localGraph = false, query = "" }) {
   if (!result) return;
+
   let didOpen = false;
-  if (result.kind === "node" || result.kind === "full-text") {
+  const nodeLikeKinds = new Set(["node", "full-text", "pinned", "recent"]);
+
+  if (nodeLikeKinds.has(result.kind)) {
     didOpen = openSearchNode(result, localGraph);
   } else if (result.kind === "domain") {
     didOpen = openDomain(result.targetId);
@@ -672,8 +675,10 @@ function executeSearchResult({ result, localGraph = false, query = "" }) {
     if (!sourceNode) return;
     didOpen = openScope(nodeGraphScopeId(sourceNode), result.sourceId);
   }
+
   if (didOpen) {
     closeSearchOverlay();
+
     if (result.kind === "full-text" && !localGraph) {
       noteFindQuery.value = query;
       noteFindOpenKey.value += 1;
