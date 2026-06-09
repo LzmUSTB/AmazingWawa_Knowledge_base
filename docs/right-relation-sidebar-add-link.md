@@ -2,9 +2,7 @@
 
 ## 1. Purpose
 
-Step 7 replaces the global `New Link` interaction with context-bound relationship maintenance.
-
-Relations are not created from a global menu. They are created from the current node's right sidebar.
+The right relation sidebar replaces the old global `New Link` interaction with context-bound relationship maintenance.
 
 ```txt
 current node
@@ -14,9 +12,9 @@ current node
 -> reload vault without navigation reset
 ```
 
-## 2. Scope
+## 2. Current Scope
 
-Step 7 includes:
+Implemented baseline:
 
 ```txt
 right collapsible relation sidebar
@@ -28,35 +26,20 @@ Add Link form
 real graph.yaml write for non-hierarchical relations
 ```
 
-Step 7 does not include:
+Next refinement targets:
 
 ```txt
-relation deletion
-relation editing
-contains creation
-node parent moving
-manual route editing
-drag-to-connect
-AI suggestions
-Git panel
-content block renderer
+clearer target hierarchy list
+direction toggle instead of select dropdown
+relation rows with colored arrow/trace visualization
 ```
 
 ## 3. Layout
 
-Desktop layout becomes:
+Desktop layout:
 
 ```txt
 left vault sidebar | main workspace | right relation sidebar
-```
-
-Suggested CSS grid:
-
-```css
-grid-template-columns:
-  var(--sidebar-width)
-  minmax(0, 1fr)
-  var(--relation-sidebar-width);
 ```
 
 Right sidebar widths:
@@ -70,12 +53,6 @@ Preference key:
 
 ```txt
 amazingwawa.relationSidebarCollapsed
-```
-
-Collapsed rail label:
-
-```txt
-Relations
 ```
 
 ## 4. Current Node Resolution
@@ -93,23 +70,7 @@ Graph View:
 
 In Graph View, clicking a node updates the selected node and refreshes the right sidebar content.
 
-## 5. Replacing NodeContextMenu
-
-The floating `NodeContextMenu` should be removed or disabled.
-
-Its actions move to the right sidebar:
-
-```txt
-Selected Node -> right sidebar header
-Open Note -> right sidebar action
-Open Domain Graph -> right sidebar action when selected node is a domain
-Local Graph -> right sidebar action
-Add Link -> right sidebar + button
-```
-
-Right-clicking a node may simply select that node. It should not open a floating menu in Step 7.
-
-## 6. Sidebar Sections
+## 5. Sidebar Sections
 
 Recommended order:
 
@@ -121,17 +82,20 @@ SELECTED NODE
 ACTIONS
 Open Note
 Show Local Graph / Open Domain Graph
+Add Link
+
+ADD LINK
+[current node] [direction toggle arrow] [Target]
+relation selector
+hierarchical target picker
+preview
 
 HIERARCHY
-Parent: <node>
-Children:
-- <child>
+Parent
+Children
 
-RELATIONS                         +
-A depends-on B
-A used-in B
-B depends-on A
-A compares-with B
+RELATIONS
+relation rows with colored label + arrow/trace preview
 ```
 
 `contains` edges belong in Hierarchy, not the ordinary Relations list.
@@ -144,7 +108,76 @@ used-in
 compares-with
 ```
 
-## 7. Relation List Display
+## 6. Add Link Direction Control
+
+Do not use a direction dropdown.
+
+Use a compact visual direction row:
+
+```txt
+[Current Node] [→] [Target]
+```
+
+Behavior:
+
+```txt
+click arrow button -> toggle direction
+```
+
+When reversed:
+
+```txt
+[Target] [→] [Current Node]
+```
+
+The preview should update immediately.
+
+Direction is required because both are meaningful:
+
+```txt
+A depends-on B
+B depends-on A
+```
+
+`compares-with` is conceptually undirected, but it is still stored once with concrete `from` and `to`.
+
+## 7. Add Link Target Picker
+
+The target node list must not be a flat unclear list.
+
+Display targets grouped by hierarchy and domain.
+
+Minimum requirement:
+
+```txt
+Domain / top-level group row
+  direct child node
+    child node
+    child node
+  direct child node
+```
+
+Top-level domain rows must show domain color at least as a left border, marker, or accent strip.
+
+Filtering rules:
+
+```txt
+search by title, id, domain
+preserve visible hierarchy context where possible
+exclude current node
+```
+
+Each item should show at least:
+
+```txt
+title
+id
+type/domain or hierarchy depth
+```
+
+The UI should make it clear whether the user is choosing a domain or a normal knowledge item.
+
+## 8. Relation List Display
 
 For current node `A`, show all directly connected non-contains edges:
 
@@ -157,67 +190,46 @@ A compares-with B
 
 Display the actual stored direction from `graph.yaml`.
 
-Each row should expose the other node as a clickable target.
+Each row should include:
 
-Clicking the other node opens that node's local/focus graph:
+```txt
+relation text
+other node title/id
+small relation arrow or trace preview under the text
+```
+
+Relation color mapping:
+
+```txt
+depends-on: var(--relation-depends-on)
+used-in: var(--relation-used-in)
+compares-with: var(--relation-compares-with)
+```
+
+Both relation text and arrow/trace preview should use the relation color.
+
+Suggested row rendering:
+
+```txt
+渲染管线 DEPENDS-ON Shader
+Shader
+
+──────▶
+```
+
+For `used-in`, dashed or segmented line is recommended.
+
+For `compares-with`, double/paired line or bidirectional marker is recommended.
+
+Clicking the relation row's other node opens that node's local/focus graph:
 
 ```txt
 openScope(otherNodeId, otherNodeId)
 ```
 
-Do not default relation row click to opening Note View. Relation navigation should explore graph structure.
+Do not default relation row click to opening Note View.
 
-## 8. Add Link Entry Point
-
-Add Link entry points:
-
-```txt
-right sidebar + button
-right sidebar Add Link action
-```
-
-Remove global `New Link` buttons from:
-
-```txt
-TopMenu
-GraphToolbar
-```
-
-Do not keep the old NewLinkDialog as a global prototype dialog.
-
-## 9. Add Link Form
-
-Current node is fixed as `A`.
-
-Fields:
-
-```txt
-Direction:
-  A -> Target
-  Target -> A
-
-Relation:
-  depends-on
-  used-in
-  compares-with
-
-Target:
-  searchable node selector
-
-Preview:
-  A depends-on B
-```
-
-Direction is required because both of these are valid and mean different things:
-
-```txt
-A depends-on B
-B depends-on A
-```
-
-`compares-with` is conceptually undirected, but it is still stored once with a concrete from/to direction.
-
-## 10. Add Link Validation
+## 9. Add Link Validation
 
 Before writing:
 
@@ -238,7 +250,7 @@ Recommended edge ID:
 <source>-<relation>-<target>
 ```
 
-## 11. graph.yaml Write
+## 10. graph.yaml Write
 
 Add Link appends one edge to `graph.yaml`:
 
@@ -263,20 +275,7 @@ right sidebar relation list updates
 
 If the current scope contains the new edge, Graph View updates. If not, do not force navigation.
 
-## 12. Save-State Requirements
-
-Add Link must follow the same save-state pattern as note/layout saves:
-
-```txt
-write file
-load vault from disk
-replaceVaultWithoutNavigation(updatedVault)
-restore currentView / graphScopeId / selectedNodeId / currentNoteId
-```
-
-Do not call `applyVault(updatedVault, { reset: true })` after Add Link.
-
-## 13. Future Work
+## 11. Future Work
 
 Later versions may add:
 

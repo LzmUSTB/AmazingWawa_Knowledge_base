@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
-import { findGraphNode, getGraphNodes } from "../../graph/graph-data-store.js";
+import { findGraphNode, getActiveVault, getGraphEdges, getGraphNodes } from "../../graph/graph-data-store.js";
 import {
   formatRelationLabel,
   getDirectRelationsForNode,
@@ -70,15 +70,102 @@ const nodeColor = computed(() => getDomainColor(node.value?.domain));
 const domainSelected = computed(() => Boolean(node.value && isDomainNode(node.value.id)));
 const hierarchy = computed(() => (node.value ? getHierarchyForNode(node.value.id) : { parentEdges: [], childEdges: [] }));
 const directRelations = computed(() => (node.value ? getDirectRelationsForNode(node.value.id) : []));
-const targetOptions = computed(() => {
-  const query = targetSearch.value.trim().toLowerCase();
-  return getGraphNodes()
-    .filter((item) => item.id !== props.nodeId)
-    .filter((item) => {
-      if (!query) return true;
-      return `${item.title} ${item.id} ${item.domain}`.toLowerCase().includes(query);
+const queryText = computed(() => targetSearch.value.trim().toLowerCase());
+const targetGroups = computed(() => {
+  const nodes = getGraphNodes();
+  const domains = getActiveVault().domains || [];
+  const nodeById = new Map(nodes.map((item) => [item.id, item]));
+  const childrenByParent = new Map();
+  getGraphEdges()
+    .filter((edge) => edge.relation === "contains")
+    .forEach((edge) => {
+      childrenByParent.set(edge.source, [...(childrenByParent.get(edge.source) || []), edge.target]);
     });
+  const visited = new Set();
+  const groups = domains.map((domain) => {
+    const domainNode = nodeById.get(domain.id);
+    const rows = buildTargetRows(domain.id, 1, new Set([domain.id]), visited, childrenByParent, nodeById);
+    const domainMatches = matchesTarget(domainNode || domain);
+
+    if (domainNode?.id) {
+      visited.add(domainNode.id);
+    }
+
+    const ungrouped = nodes
+      .filter((item) => item.domain === domain.id && item.id !== props.nodeId && !visited.has(item.id))
+      .filter(matchesTarget)
+      .map((item) => ({ node: item, depth: 1, kind: "ungrouped" }));
+
+    return {
+      domain,
+      domainNode,
+      domainSelectable: Boolean(domainNode && domainNode.id !== props.nodeId),
+      domainVisible: !queryText.value || domainMatches,
+      color: getDomainColor(domain.id),
+      rows: [...rows, ...ungrouped],
+    };
+  });
+
+  return groups.filter((group) => group.domainVisible || group.rows.length);
 });
+
+const selectedTarget = computed(() => findGraphNode(targetId.value));
+const directionLeftLabel = computed(() => {
+  if (direction.value === "out") return node.value?.title || "Current Node";
+  return selectedTarget.value?.title || "Target";
+});
+const directionRightLabel = computed(() => {
+  if (direction.value === "out") return selectedTarget.value?.title || "Target";
+  return node.value?.title || "Current Node";
+});
+const directionTitle = computed(() => (direction.value === "out" ? "Current node points to target" : "Target points to current node"));
+
+function matchesTarget(item) {
+  if (!item) return false;
+  const query = targetSearch.value.trim().toLowerCase();
+  if (!query) return true;
+  return `${item.title || ""} ${item.id || ""} ${item.domain || item.id || ""}`.toLowerCase().includes(query);
+}
+
+function buildTargetRows(parentId, depth, path, visited, childrenByParent, nodeById) {
+  return (childrenByParent.get(parentId) || []).flatMap((childId) => {
+    if (path.has(childId)) return [];
+    const childNode = nodeById.get(childId);
+    const childRows = buildTargetRows(childId, depth + 1, new Set([...path, childId]), visited, childrenByParent, nodeById);
+    const includeSelf = childNode && childNode.id !== props.nodeId && (matchesTarget(childNode) || childRows.length);
+    if (childNode?.id) {
+      visited.add(childNode.id);
+    }
+    return includeSelf ? [{ node: childNode, depth, kind: "node" }, ...childRows] : childRows;
+  });
+}
+
+function toggleDirection() {
+  direction.value = direction.value === "out" ? "in" : "out";
+}
+
+function selectTarget(id) {
+  targetId.value = id;
+}
+
+function relationStyle(edge) {
+  return { "--relation-row-color": relationColor(edge.relation) };
+}
+
+function targetDepthStyle(row, group) {
+  return {
+    "--target-domain-color": group.color,
+    "--target-indent": `${10 + row.depth * 14}px`,
+  };
+}
+
+function relationColor(relationName) {
+  if (relationName === "depends-on") return "var(--relation-depends-on)";
+  if (relationName === "used-in") return "var(--relation-used-in)";
+  if (relationName === "compares-with") return "var(--relation-compares-with)";
+  return "var(--graphics)";
+}
+
 const sourceId = computed(() => (direction.value === "out" ? props.nodeId : targetId.value));
 const resolvedTargetId = computed(() => (direction.value === "out" ? targetId.value : props.nodeId));
 const preview = computed(() => {
@@ -205,13 +292,16 @@ function submitLink() {
 
         <section v-if="formOpen" class="sidebar-section add-link-panel">
           <div class="section-label">Add Link</div>
-          <label>
+          <div class="direction-field">
             <span>Direction</span>
-            <select v-model="direction">
-              <option value="out">{{ node.title }} -> Target</option>
-              <option value="in">Target -> {{ node.title }}</option>
-            </select>
-          </label>
+            <div class="direction-composer" :title="directionTitle">
+              <div class="direction-node">{{ directionLeftLabel }}</div>
+              <button class="direction-arrow" title="Reverse direction" type="button" @click="toggleDirection">
+                -&gt;
+              </button>
+              <div class="direction-node">{{ directionRightLabel }}</div>
+            </div>
+          </div>
           <label>
             <span>Relation</span>
             <select v-model="relation">
@@ -224,11 +314,38 @@ function submitLink() {
             <span>Target</span>
             <input v-model="targetSearch" placeholder="Filter nodes" spellcheck="false" />
           </label>
-          <select v-model="targetId" class="target-select" size="5">
-            <option v-for="target in targetOptions" :key="target.id" :value="target.id">
-              {{ target.title }} / {{ target.id }}
-            </option>
-          </select>
+          <div class="target-tree">
+            <section
+              v-for="group in targetGroups"
+              :key="group.domain.id"
+              class="target-domain-group"
+              :style="{ '--target-domain-color': group.color }"
+            >
+              <button
+                class="target-domain-row"
+                :class="{ 'is-selected': targetId === group.domainNode?.id, 'is-static': !group.domainSelectable }"
+                type="button"
+                :disabled="!group.domainSelectable"
+                @click="group.domainSelectable && selectTarget(group.domainNode.id)"
+              >
+                <span>{{ group.domain.title || group.domain.id }}</span>
+                <small>{{ group.domain.id }}</small>
+              </button>
+              <button
+                v-for="row in group.rows"
+                :key="row.node.id"
+                class="target-node-row"
+                :class="{ 'is-selected': targetId === row.node.id }"
+                :style="targetDepthStyle(row, group)"
+                type="button"
+                @click="selectTarget(row.node.id)"
+              >
+                <span>{{ row.node.title || row.node.id }}</span>
+                <small>{{ row.node.id }} / {{ row.node.type || "node" }}</small>
+              </button>
+            </section>
+            <p v-if="!targetGroups.length" class="empty-line">No matching target nodes</p>
+          </div>
           <div class="preview-line">{{ preview || "Choose a target to preview the link." }}</div>
           <div v-if="visibleFormError" class="form-error">{{ visibleFormError }}</div>
           <div class="form-actions">
@@ -275,10 +392,12 @@ function submitLink() {
             v-for="edge in directRelations"
             :key="edge.id"
             class="relation-row relation-row--direct"
+            :style="relationStyle(edge)"
             @click="openNodeGraph(getOtherNodeId(edge, node.id))"
           >
-            <span>{{ formatRelationLabel(edge) }}</span>
+            <span class="relation-label">{{ formatRelationLabel(edge) }}</span>
             <small>{{ getNodeTitleOrId(getOtherNodeId(edge, node.id)) }}</small>
+            <span class="relation-trace" :class="`relation-trace--${edge.relation}`" aria-hidden="true"></span>
           </button>
           <p v-if="!directRelations.length" class="empty-line">No direct relations</p>
         </section>
@@ -370,7 +489,8 @@ function submitLink() {
 
 .section-label,
 .sub-label,
-label span {
+label span,
+.direction-field > span {
   color: var(--text-secondary);
   font-size: var(--font-size-small);
   font-weight: 800;
@@ -412,9 +532,131 @@ select:focus {
   border-color: var(--border-primary);
 }
 
-.target-select {
-  min-height: 120px;
-  padding-block: 6px;
+.direction-field {
+  display: grid;
+  gap: 6px;
+}
+
+.direction-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+  align-items: stretch;
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+}
+
+.direction-node,
+.direction-arrow {
+  min-width: 0;
+  min-height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.direction-node {
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  padding: 8px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.direction-arrow {
+  border-left: 1px solid var(--border-muted);
+  border-right: 1px solid var(--border-muted);
+  color: var(--career);
+  cursor: pointer;
+}
+
+.direction-arrow:hover {
+  background: var(--background-main);
+  color: var(--text-primary);
+}
+
+.target-tree {
+  display: grid;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+}
+
+.target-domain-group {
+  display: grid;
+}
+
+.target-domain-row,
+.target-node-row {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-muted);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  text-align: left;
+}
+
+.target-domain-row {
+  border-left: 5px solid var(--target-domain-color, var(--graphics));
+  background: var(--background-main);
+}
+
+.target-domain-row.is-static {
+  cursor: default;
+}
+
+.target-domain-row:disabled {
+  opacity: 1;
+}
+
+.target-node-row {
+  border-left: 2px solid var(--target-domain-color, var(--graphics));
+  padding-left: var(--target-indent, 24px);
+}
+
+.target-domain-row span,
+.target-node-row span {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.target-domain-row small,
+.target-node-row small {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.target-domain-row:not(:disabled):hover,
+.target-node-row:hover,
+.target-domain-row.is-selected,
+.target-node-row.is-selected {
+  background: var(--background-main);
+  outline: 1px solid var(--target-domain-color, var(--border-primary));
+  outline-offset: -1px;
 }
 
 .preview-line,
@@ -456,7 +698,12 @@ select:focus {
 
 .relation-row--direct {
   display: grid;
-  gap: 4px;
+  gap: 5px;
+  border-left-color: var(--relation-row-color, var(--relation-node-color, var(--border-primary)));
+}
+
+.relation-label {
+  color: var(--relation-row-color, var(--text-primary));
 }
 
 .relation-row small {
@@ -464,6 +711,40 @@ select:focus {
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: var(--font-size-small);
   font-weight: 700;
+}
+
+.relation-trace {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-top: 2px solid var(--relation-row-color, var(--border-primary));
+  position: relative;
+}
+
+.relation-trace::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid var(--relation-row-color, var(--border-primary));
+  border-right: 2px solid var(--relation-row-color, var(--border-primary));
+  transform: rotate(45deg);
+}
+
+.relation-trace--depends-on {
+  border-top-style: dashed;
+}
+
+.relation-trace--used-in {
+  border-top-width: 4px;
+}
+
+.relation-trace--compares-with {
+  height: 10px;
+  border-top-style: double;
+  border-top-width: 4px;
 }
 
 .hud-button:disabled {

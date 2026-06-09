@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+import NoteBlockRenderer from "./NoteBlockRenderer.vue";
 import NoteEditor from "./NoteEditor.vue";
 import NoteToolbar from "./NoteToolbar.vue";
 import { findGraphNode, getActiveVault, getGraphNodes } from "../../graph/graph-data-store.js";
@@ -31,30 +32,7 @@ const accent = computed(() => getDomainColor(node.value.domain));
 const noteMarkdown = computed(() => getActiveVault().notes[props.noteId]?.markdown || "");
 const draftMarkdown = ref(noteMarkdown.value);
 const dirty = computed(() => draftMarkdown.value !== noteMarkdown.value);
-const noteBlocks = computed(() => {
-  if (!noteMarkdown.value) {
-    return [
-      {
-        label: "Summary",
-        body: node.value.summary || "No note.md was found for this node.",
-      },
-    ];
-  }
-
-  return noteMarkdown.value
-    .split(/\n(?=##\s+)/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block, index) => {
-      const lines = block.split("\n");
-      const heading = lines[0].replace(/^#+\s*/, "");
-      return {
-        label: index === 0 && lines[0].startsWith("# ") ? "Note" : heading,
-        body: index === 0 && lines[0].startsWith("# ") ? lines.slice(1).join("\n").trim() : lines.slice(1).join("\n").trim(),
-      };
-    })
-    .filter((block) => block.body || block.label);
-});
+const readMarkdown = computed(() => noteMarkdown.value || `## Summary\n\n${node.value.summary || "No note.md was found for this node."}`);
 
 watch(noteMarkdown, (nextMarkdown) => {
   if (props.mode !== "edit") draftMarkdown.value = nextMarkdown;
@@ -125,10 +103,7 @@ function saveNote() {
         <NoteEditor v-if="mode === 'edit'" v-model="draftMarkdown" />
 
         <div v-else class="read-surface">
-          <section v-for="section in noteBlocks" :key="section.label" class="note-block">
-            <div class="panel-label" :style="{ '--label-color': accent }">{{ section.label }}</div>
-            <pre class="markdown-preview">{{ section.body }}</pre>
-          </section>
+          <NoteBlockRenderer :markdown="readMarkdown" />
         </div>
       </div>
     </article>
@@ -205,39 +180,8 @@ h1 {
 }
 
 .read-surface {
-  display: grid;
-  gap: 24px;
   width: 100%;
   min-width: 0;
-  padding: clamp(16px, 3vw, 32px);
-}
-
-.note-block {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--border-muted);
-  background: var(--background-panel);
-  padding: 20px;
-}
-
-.note-block p {
-  margin: 14px 0 0;
-  color: var(--text-secondary);
-  font-size: calc(16px * var(--ui-font-scale));
-  line-height: 1.75;
-}
-
-pre {
-  overflow: auto;
-  max-width: 100%;
-  margin: 14px 0 0;
-  color: var(--text-secondary);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-mono);
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  word-break: break-word;
+  padding: clamp(20px, 3vw, 42px);
 }
 </style>

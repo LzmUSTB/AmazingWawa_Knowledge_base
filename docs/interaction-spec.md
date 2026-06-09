@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines the current and next-stage interaction rules for the local-first knowledge graph desktop app.
+This document defines current interaction rules for the local-first knowledge graph desktop app.
 
 ```txt
 Top Menu
@@ -11,7 +11,7 @@ Top Menu
   + Breadcrumb
   + Graph View
   + Note View
-+ Right Relation Sidebar   (Step 7)
++ Right Relation Sidebar
 ```
 
 The desktop app is the primary maintenance environment. The mobile/web viewer is read-first.
@@ -23,16 +23,15 @@ Current implemented behavior:
 ```txt
 desktop-vault-adapter.js = desktop file access boundary
 Open Vault = real Tauri folder open
-startup = last opened vault -> repository ./vault -> No Vault Loaded
+startup = last opened real vault -> repository ./vault -> No Vault Loaded
 note.md Save = real disk write
 New Note = creates meta.yaml, note.md, assets/, and one contains edge
-Layout Edit Mode = real graph-layout.yaml board.nodes write
-mock/static sample = removed
+Right Relation Sidebar = inspect hierarchy and relations
+Add Link = writes depends-on / used-in / compares-with to graph.yaml
+Layout Edit Mode = node drag + save graph-layout.yaml board.nodes
 ```
 
-`./vault` is treated as a real vault, loaded through Tauri filesystem APIs. Frontend code must not raw-import `vault/**`.
-
-`Reset View` was removed because it duplicated `Fit`.
+There is no mock graph fallback and no static sample vault. Repository `./vault` is the default real vault and must be loaded through Tauri filesystem APIs.
 
 ## 1.2 Scope-Based Graph Model
 
@@ -63,46 +62,25 @@ non-domain leaf node -> open note
 center node in its own local graph -> open note
 ```
 
-## 1.4 New Note Parent Rules
-
-New Note creates hierarchy through one `contains` edge.
-
-```txt
-Parent must belong to the selected domain.
-Cross-domain relationships should use Add Link, not Parent.
-```
-
 ## 2. Core Interaction Model
 
 | Surface | Role |
 |---|---|
-| Left File Tree | Physical storage structure |
+| File Tree | Physical storage structure |
 | Graph View | Conceptual relationship structure |
 | Note View | Knowledge explanation and editing surface |
-| Right Relation Sidebar | Current node actions, hierarchy, direct relations, Add Link |
+| Right Relation Sidebar | Current node inspection and relation maintenance |
 
 ## 3. Top Menu Interactions
 
-Current pre-Step-7 visible items:
-
-```txt
-Open Vault
-New Note
-New Link     (legacy prototype button; remove in Step 7)
-Git disabled
-FONT indicator
-```
-
-Step 7 target:
+Current visible first-version items:
 
 ```txt
 Open Vault
 New Note
 Git disabled
-FONT indicator
+FONT <scale>
 ```
-
-`New Link` must be removed from the global top menu in Step 7. Link creation becomes context-bound `Add Link` inside the right relation sidebar.
 
 Hidden until implemented:
 
@@ -111,16 +89,11 @@ Search
 Settings
 ```
 
+`New Link` is not a global top-menu command. Link creation is context-bound through the right relation sidebar.
+
 ## 4. Left File Tree Interactions
 
 The left file tree displays vault domain folders and knowledge item folders. It does not show raw static file buttons such as `graph.yaml`, `domains.yaml`, or `assets/`.
-
-Display rule:
-
-```txt
-show title as main text
-show id as secondary text or tooltip
-```
 
 Click behavior:
 
@@ -142,25 +115,14 @@ Click behavior:
 | Double-click non-domain leaf node | Open Note View |
 | Double-click center node in own focus graph | Open Note View |
 | Hover node | Highlight one-hop neighbors |
-| Right-click node | Select node; floating menu is replaced by right sidebar in Step 7 |
+| Right-click node | May select node only; no floating context menu |
 | Drag empty canvas | Pan viewport |
 | Mouse wheel | Graph zoom |
 | Click empty area | No navigation |
 
 ### 5.2 Graph Toolbar
 
-Current pre-Step-7 toolbar:
-
-```txt
-New Node
-New Link     (legacy prototype button; remove in Step 7)
-Global
-Local
-Fit
-Edit Layout / Save Layout / Cancel Layout
-```
-
-Step 7 target toolbar:
+Current toolbar:
 
 ```txt
 New Node
@@ -170,11 +132,11 @@ Fit
 Edit Layout / Save Layout / Cancel Layout
 ```
 
-`Search` and `Reset View` are not shown.
+`New Link`, `Search`, and `Reset View` are not shown.
 
 ### 5.3 PCB-Style Graph Rendering
 
-Edges should render as PCB-style traces:
+Edges render as PCB-style traces:
 
 ```txt
 90-degree turns
@@ -193,63 +155,74 @@ Relation styles:
 | used-in | dashed purple or blue line |
 | compares-with | paired or double orange line |
 
-## 6. Layout Editing Interactions
+## 6. Right Relation Sidebar
 
-### 6.1 Normal Mode
+The right relation sidebar is the primary node context panel.
 
-```txt
-click node = select
-double click node = navigate
-drag empty canvas = pan
-mouse wheel = graph zoom
-node drag disabled
-```
-
-### 6.2 Layout Edit Mode
-
-Entered by clicking `Edit Layout`.
+It shows:
 
 ```txt
-drag node = move node
-drag empty canvas = pan
-mouse wheel = graph zoom
-Save Layout = write current scope board.nodes to graph-layout.yaml and exit Layout Edit Mode
-Cancel Layout = discard draft positions
+Selected Node
+Actions
+Add Link
+Hierarchy
+Relations
 ```
 
-### 6.3 Ctrl + Left Drag Shortcut
+The sidebar is collapsible.
 
-Even outside Layout Edit Mode:
+Preference key:
 
 ```txt
-Ctrl + left mouse drag on node = temporarily move node
+amazingwawa.relationSidebarCollapsed
 ```
 
-This creates unsaved layout changes. The user must click Save Layout to persist them.
+### 6.1 Add Link Form
 
-### 6.4 Save Layout
-
-Save writes:
+Add Link is bound to the current node. It supports only non-hierarchical relations:
 
 ```txt
-graph-layout.yaml boards[scopeId].nodes
+depends-on
+used-in
+compares-with
 ```
 
-Generated route points are not written. Manual routes connected to moved nodes are removed so generated routes can reconnect after reload. Save Layout stays in the current graph scope and exits Layout Edit Mode.
+It must not create `contains`.
 
-## 7. UI Font Size Interaction
+UX requirements:
+
+```txt
+Direction:
+  [current node] [→ button toggles direction] [Target]
+
+Target:
+  show nodes grouped by hierarchy, not as a flat unclear list
+  domain / top-level groups must show domain color
+
+Relations list:
+  display relation text and a small arrow/trace preview
+  both text and arrow use the relation color
+```
+
+## 7. Layout Editing Interactions
+
+Layout Edit Mode supports node dragging, grid snapping, Save Layout, Cancel Layout, Ctrl + left drag shortcut, and generated orthogonal routes following moved nodes. It does not include manual route editing.
+
+After Save Layout:
+
+```txt
+reload vault
+stay in current graph scope
+keep selected node if possible
+exit Layout Edit Mode
+```
+
+## 8. UI Font Size Interaction
 
 Shortcut:
 
 ```txt
 Ctrl + mouse wheel = change UI font size
-```
-
-Rules:
-
-```txt
-Ctrl + wheel up = increase UI font scale
-Ctrl + wheel down = decrease UI font scale
 ```
 
 Store in localStorage:
@@ -258,127 +231,63 @@ Store in localStorage:
 amazingwawa.uiFontScale
 ```
 
-Recommended range:
-
-```txt
-0.85 to 1.25
-```
+Recommended range: `0.85 <= scale <= 1.25`.
 
 Font scaling must not mutate vault files, change board coordinates, change node x/y/w/h, or change camera zoom.
 
-## 8. Step 7: Right Relation Sidebar + Add Link
+## 9. Note View and Content Blocks
 
-Step 7 replaces global `New Link` and floating `NodeContextMenu` with a collapsible right sidebar.
+Read mode displays note content using document-style typography and supported content blocks.
 
-Right sidebar appears in:
+Edit mode remains raw Markdown textarea editing.
 
-```txt
-Graph View
-Note View
-```
-
-Right sidebar responsibilities:
+First content block renderer supports:
 
 ```txt
-Selected node summary
-Open Note / Show Local Graph actions
-Hierarchy section
-Relations section
-Add Link button
+concept-card
+process-flow
+compare-table
+code-explain
+quiz
+expression-visualizer
 ```
 
-Relation list example for current node `A`:
+The renderer follows `content_block_preview_v4.html` visual direction.
 
-```txt
-RELATIONS                         +
------------------------------------
-A depends-on B
-A used-in B
-B depends-on A
-A compares-with B
-```
-
-Clicking the other node in a relation opens that node's local/focus scope.
-
-Add Link is context-bound to the current node and writes `depends-on`, `used-in`, or `compares-with` to `graph.yaml`. It does not create `contains` edges.
-
-## 9. Note View
-
-Read mode shows note content. Edit mode modifies `note.md`.
-
-Toolbar behavior:
-
-```txt
-Read mode: Edit / Show in Graph
-Edit mode: Save / Cancel only
-```
-
-Save behavior:
-
-```txt
-Click Save
--> write content to note.md
--> reload vault without navigation reset
--> update dirty state
--> return to Read mode
--> stay on the same Note page
-```
+Plain Markdown sections should read like a document, not like boxed debug cards. Subheadings should be visually clear, larger than current small labels, and should not each be wrapped in individual heavy boxes.
 
 ## 10. Unsaved Changes Policy
 
-Dirty note state:
+Before navigation, show a confirmation dialog if note or layout state is dirty.
 
-```txt
-draftMarkdown !== original note.md markdown
-```
-
-Dirty layout state:
-
-```txt
-draft node positions differ from current saved board.nodes
-```
-
-Before navigation, show a confirmation dialog if dirty.
-
-## 11. Keyboard / Mouse Shortcuts
-
-| Shortcut | Action |
-|---|---|
-| Ctrl + O | Open Vault |
-| Ctrl + N | New Note |
-| Ctrl + S | Save note in Edit mode or Save Layout in Layout Edit Mode |
-| Esc | Close dialog / cancel layout edit |
-| Ctrl + left drag node | Move node as unsaved layout edit |
-| Ctrl + mouse wheel | Change UI font size |
-
-## 12. Current Implementation Scope
+## 11. Current Implementation Scope
 
 Implemented/current:
 
-- Tauri Open Vault
-- repository `./vault` as default real vault
-- No Vault Loaded screen
+- real Tauri vault loading
+- No Vault Loaded state
 - File Tree
 - Breadcrumb
 - Root Graph
 - Domain Graph
 - Focus Graph generated from edges
 - New Note creation
-- legacy New Link prototype-only dialog
+- Right Relation Sidebar
+- Add Link graph.yaml write
 - Note Read mode
 - Note Edit mode
 - note.md Save
 - Show in Graph
 - sidebar collapse
-- Fit
+- right sidebar collapse
 - Layout Edit Mode
 - Save graph-layout.yaml board.nodes
-- Ctrl + wheel UI font scale
+- UI font scale by Ctrl + wheel
 
 Next:
 
-- Right Relation Sidebar
-- Add Link writing to graph.yaml
-- remove global New Link buttons
-- replace floating NodeContextMenu
-- content block renderer
+- Content Block Renderer
+- Search / Quick Open
+- relation edit/delete
+- Git panel
+- AI assist

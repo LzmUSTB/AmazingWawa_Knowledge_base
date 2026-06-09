@@ -14,19 +14,17 @@ apps/desktop/src/data/desktop-vault-adapter.js
 
 Vue components should not call Tauri filesystem APIs directly.
 
-The adapter owns opening a vault folder, reading vault files, normalizing raw text through `knowledge-core`, writing `note.md`, writing `graph-layout.yaml`, creating new note folders, and remembering the last opened vault path.
+The adapter owns opening a vault folder, reading vault files, normalizing raw text through `knowledge-core`, writing `note.md`, writing `graph.yaml` relation links, writing `graph-layout.yaml`, and remembering the last opened vault path.
 
 ## Startup Loading
 
-Startup attempts to load:
+Startup attempts to load the last opened vault path from `localStorage`.
 
-```txt
-last opened vault path from localStorage
--> repository ./vault through Tauri filesystem APIs
--> No Vault Loaded screen if no real vault can be loaded
-```
+If that fails, the app tries the repository `./vault` through Tauri filesystem APIs.
 
-There is no mock graph fallback and no static sample vault. Repository `./vault` is the default real vault.
+If no real vault can be loaded, the app shows `No Vault Loaded`.
+
+There is no static sample vault and no mock graph fallback.
 
 ## Open Vault Flow
 
@@ -45,13 +43,17 @@ Required files are `vault.yaml`, `domains.yaml`, `graph.yaml`, and `content/`.
 
 ## Note Editing Flow
 
-Read mode displays `note.md` from the normalized vault. Edit mode shows raw markdown in a textarea. Save writes `vault/content/<domain>/<id>/note.md`.
+Read mode displays `note.md` from the normalized vault. Edit mode shows raw Markdown in a textarea.
 
-After save, the app reloads the vault from disk, replaces the active vault without navigation reset, stays on the same Note page, clears dirty state, and returns to Read mode.
+Save writes:
 
-## New Note Creation Flow
+```txt
+vault/content/<domain>/<id>/note.md
+```
 
-New Note creation is real:
+After save, the app reloads the vault from disk, replaces the active vault without navigation reset, and stays on the current note page.
+
+## New Note Flow
 
 ```txt
 New Note form
@@ -64,65 +66,57 @@ New Note form
 -> open new note in Edit mode
 ```
 
-## Layout Edit Flow
+## Right Relation Sidebar + Add Link
 
-Layout editing is real:
+The right relation sidebar is implemented as the node context surface.
+
+It supports:
+
+```txt
+selected node summary
+open note / show local graph
+hierarchy inspection
+direct relation inspection
+Add Link
+```
+
+Add Link writes one of:
+
+```txt
+depends-on
+used-in
+compares-with
+```
+
+It must not write `contains`.
+
+## Layout Edit Mode
+
+Layout editing supports:
 
 ```txt
 Edit Layout mode
--> node dragging or Ctrl + left drag
--> Save Layout writes current scope board.nodes to graph-layout.yaml
--> reload vault without navigation reset
--> stay in current graph scope
--> exit Layout Edit Mode
+node dragging
+Ctrl + left drag shortcut
+Save Layout to graph-layout.yaml board.nodes
+Cancel Layout
+generated orthogonal routes from node positions
+Ctrl + wheel UI font scale
 ```
 
-Generated route points are not written. Manual routes connected to moved nodes are removed so generated fallback routes reconnect after reload.
+Generated routes are not written. Manual routes connected to moved nodes may be removed/bypassed if stale.
 
-## Responsive Desktop Layout
+## Current Next Stage
 
-Rules:
+Next stage is Content Block Renderer.
 
-- no horizontal app overflow
-- workspace uses `minmax(0, 1fr)`
-- graph and note surfaces can shrink
-- toolbars may wrap or scroll horizontally
-- note content wraps or scrolls locally inside blocks
-
-## Collapsible Left Sidebar
-
-Preference key:
+It should:
 
 ```txt
-amazingwawa.sidebarCollapsed
+parse custom ::: blocks in note.md
+render concept-card / process-flow / compare-table / code-explain / quiz / expression-visualizer
+improve plain Markdown document typography
+keep edit mode as raw textarea
 ```
 
-## Graph Fit Behavior
-
-`Fit` fits the current scope into the visible graph viewport. `Reset View` was removed.
-
-## Current UI Status
-
-- FileTree no longer shows static `graph.yaml`, `domains.yaml`, or `assets/` buttons.
-- Note View no longer shows the debug Vault structure block.
-- Search and Settings are hidden until implemented.
-- Git remains visible but disabled.
-- TopMenu title comes from `vault.yaml`.
-- FileTree displays human titles with IDs as secondary labels.
-- FONT indicator displays current UI font scale.
-- Legacy global New Link buttons still exist before Step 7 and are prototype-only.
-
-## Next Stage: Right Relation Sidebar + Add Link
-
-The next stage replaces global `New Link` and floating `NodeContextMenu` with a collapsible right sidebar.
-
-```txt
-Right Relation Sidebar
--> current node actions
--> hierarchy section
--> relations section
--> Add Link form
--> write depends-on / used-in / compares-with edges to graph.yaml
-```
-
-It should not implement relation deletion, relation editing, drag-to-connect, Git panel, AI panel, content block renderer, or manual route editing.
+It should not implement rich-text editing, AI panel, Git panel, or arbitrary JavaScript expression evaluation.

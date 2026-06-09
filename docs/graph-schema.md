@@ -4,11 +4,12 @@
 
 This document defines the current schema for `vault/graph.yaml`.
 
-`graph.yaml` stores semantic relationships between knowledge nodes. It does not store visual layout, node positions, PCB trace routes, zoom, pan, or UI state.
+`graph.yaml` stores semantic relationships between knowledge nodes. It does not store visual layout, node positions, PCB trace routes, zoom, pan, UI state, note content, or content block data.
 
 ```txt
 graph.yaml = semantic knowledge relations
-graph-layout.yaml = visual node placement and PCB routing
+graph-layout.yaml = visual node placement and optional PCB routing
+note.md = node explanation content and optional content blocks
 ```
 
 ## 2. Recommended Structure
@@ -22,9 +23,9 @@ edges:
     to: rendering-pipeline
     relation: contains
 
-  - id: rendering-pipeline-depends-on-coordinate-transform
+  - id: rendering-pipeline-depends-on-rasterization
     from: rendering-pipeline
-    to: coordinate-transform
+    to: rasterization
     relation: depends-on
 ```
 
@@ -58,13 +59,7 @@ parent -> child
 
 New Note uses `contains` to attach a new node to a parent.
 
-New Note parent rule:
-
-```txt
-Parent must belong to the selected domain.
-```
-
-Do not use `contains` for cross-domain conceptual references. Use `depends-on`, `used-in`, or `compares-with` through Add Link.
+Do not use `contains` for cross-domain conceptual references. Use Add Link with `depends-on`, `used-in`, or `compares-with`.
 
 ### `depends-on`
 
@@ -95,24 +90,22 @@ Recommended ID format:
 
 Rules:
 
-- lowercase English
-- kebab-case
-- stable over time
-- unique in `graph.yaml`
-- should not contain spaces
-- should not contain Chinese/Japanese characters
+```txt
+lowercase English
+kebab-case
+stable over time
+unique in graph.yaml
+no spaces
+no Chinese/Japanese characters
+```
 
-## 7. Node ID Requirements
-
-Every `from` and `to` must reference an existing node ID from `domains.yaml` or `content/*/*/meta.yaml`.
-
-## 8. Duplicate Rules
+## 7. Duplicate Rules
 
 Duplicate edge is not allowed. Duplicate means same `from`, same `to`, and same `relation`.
 
 For `compares-with`, reverse direction is also considered duplicate.
 
-## 9. Graph Scope Generation
+## 8. Graph Scope Generation
 
 ### Root Scope
 
@@ -129,8 +122,6 @@ current domain
 
 Do not show grandchildren in the same domain scope.
 
-If `graphics contains rendering-pipeline` and `rendering-pipeline contains test-note`, the Graphics Domain Graph shows `graphics` and `rendering-pipeline`, not `test-note`.
-
 ### Focus Scope
 
 Focus scope shows:
@@ -143,22 +134,21 @@ current node
 
 Focus scope ID is the focused node ID. Cross-domain one-hop neighbors are allowed and keep their own domain color.
 
-## 10. Cross-Domain Edges
+## 9. Creation Rules
 
-Cross-domain edges are allowed for `depends-on`, `used-in`, and `compares-with`.
+New Note creates exactly one `contains` edge.
 
-Cross-domain `contains` should be rejected by New Note creation.
-
-## 11. Edge Creation Responsibilities
+Add Link creates exactly one non-hierarchical edge:
 
 ```txt
-New Note -> creates contains only
-Add Link -> creates depends-on / used-in / compares-with only
+depends-on
+used-in
+compares-with
 ```
 
-Add Link must not create `contains`. Hierarchy changes should later be handled by a dedicated Move Node / Change Parent flow.
+Add Link must reject `contains`.
 
-## 12. Recommended Validation
+## 10. Recommended Validation
 
 When loading `graph.yaml`, validate:
 
@@ -183,18 +173,15 @@ new node ID does not exist
 new contains edge ID does not exist
 ```
 
-When creating an Add Link edge, validate:
+When creating an Add Link relation, also validate:
 
 ```txt
 source exists
 target exists
-source != target
+source !== target
 relation is depends-on / used-in / compares-with
-edge ID does not exist
-no duplicate from/to/relation
-for compares-with, reverse direction also does not exist
+relation is not contains
+edge ID does not already exist
+same from/to/relation does not already exist
+for compares-with, reverse edge does not already exist
 ```
-
-## 13. What Not to Store in `graph.yaml`
-
-Do not store layout, style, interaction state, note content, UI font size, camera state, or selection.
