@@ -31,8 +31,8 @@ boards:
         w: 180
         h: 88
       career:
-        x: 704
-        y: 800
+        x: 640
+        y: 960
         w: 180
         h: 88
       simulation:

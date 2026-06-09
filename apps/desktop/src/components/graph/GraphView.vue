@@ -359,8 +359,6 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
               }"
               :d="pointsToPath(getVisualTracePoints(edge))"
-              marker-start="url(#trace-arrow-start-compares-with)"
-              marker-end="url(#trace-arrow-end-compares-with)"
               :stroke="relationTheme[edge.relation].color"
             />
             <path
@@ -371,6 +369,17 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
               }"
               :d="pointsToPath(getVisualTracePoints(edge))"
+            />
+            <path
+              v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
+              class="trace trace--compare-marker-carrier"
+              :class="{
+                'is-active': isConnectedEdge(edge, focusNodeId),
+                'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
+              }"
+              :d="pointsToPath(getVisualTracePoints(edge))"
+              marker-start="url(#trace-arrow-start-compares-with)"
+              marker-end="url(#trace-arrow-end-compares-with)"
             />
           </g>
         </svg>
@@ -494,6 +503,16 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 .trace--compare-cut.is-faded {
   opacity: 1;
+}
+
+.trace--compare-marker-carrier {
+  stroke: transparent;
+  stroke-width: 1;
+  opacity: 1;
+}
+
+.trace--compare-marker-carrier.is-faded {
+  opacity: 0.18;
 }
 
 .trace.is-active {

@@ -4,6 +4,7 @@ import NoVaultView from "./components/layout/NoVaultView.vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
+import SearchOverlay from "./components/search/SearchOverlay.vue";
 import {
   chooseVaultRoot,
   createGraphLink,
@@ -15,7 +16,7 @@ import {
 } from "./data/desktop-vault-adapter.js";
 import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
-import { getGraphScope, hasGraphScope, scopeForDomain } from "./graph/graph-scope.js";
+import { getGraphScope, hasGraphScope, isDomainNode, scopeForDomain } from "./graph/graph-scope.js";
 
 const SIDEBAR_KEY = "amazingwawa.sidebarCollapsed";
 const RELATION_SIDEBAR_KEY = "amazingwawa.relationSidebarCollapsed";
@@ -54,6 +55,9 @@ const sidebarCollapsed = ref(
   savedSidebarPreference === null ? window.innerWidth < 1000 : savedSidebarPreference === "true",
 );
 const relationSidebarCollapsed = ref(savedRelationSidebarPreference === "true");
+const searchOverlayVisible = ref(false);
+const searchMode = ref("quick");
+const searchQuery = ref("");
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -166,6 +170,16 @@ function handleGlobalWheel(event) {
 }
 
 function handleGlobalKeydown(event) {
+  if (event.ctrlKey && event.key.toLowerCase() === "q") {
+    event.preventDefault();
+    toggleSearchOverlay();
+    return;
+  }
+  if (searchOverlayVisible.value && event.key === "Escape") {
+    event.preventDefault();
+    closeSearchOverlay();
+    return;
+  }
   if (event.key !== "Escape" || activeDialog.value || (!isLayoutEditing.value && !layoutDirty.value)) return;
   event.preventDefault();
   discardLayoutDraft();
@@ -341,17 +355,18 @@ async function saveLayout() {
 }
 
 function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) {
-  if (!confirmDiscardDirty()) return;
+  if (!confirmDiscardDirty()) return false;
   graphScopeId.value = scopeId || "root";
   const scope = getGraphScope(graphScopeId.value);
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
   selectedNodeId.value = graphScopeId.value === "root" ? scope.selectedNodeId : nodeId;
   currentView.value = "graph";
+  return true;
 }
 
 function openNote(nodeId) {
-  if (!confirmDiscardDirty()) return;
+  if (!confirmDiscardDirty()) return false;
   const node = findGraphNode(nodeId);
   if (node) {
     currentDomain.value = node.domain;
@@ -360,24 +375,64 @@ function openNote(nodeId) {
   }
   noteMode.value = "read";
   currentView.value = "note";
+  return true;
 }
 
 function openDomain(domain) {
-  if (!confirmDiscardDirty()) return;
+  if (!confirmDiscardDirty()) return false;
   currentDomain.value = domain;
   selectedNodeId.value = domain;
   graphScopeId.value = scopeForDomain(domain);
   currentView.value = "graph";
+  return true;
 }
 
 function openScope(scopeId, selectedId = scopeId) {
-  if (!confirmDiscardDirty()) return;
+  if (!confirmDiscardDirty()) return false;
   graphScopeId.value = scopeId;
   selectedNodeId.value = selectedId;
   const scope = getGraphScope(scopeId);
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
   currentView.value = "graph";
+  return true;
+}
+
+function toggleSearchOverlay() {
+  searchOverlayVisible.value = !searchOverlayVisible.value;
+}
+
+function closeSearchOverlay() {
+  searchOverlayVisible.value = false;
+}
+
+function nodeGraphScopeId(node) {
+  if (!node) return "root";
+  if (isDomainNode(node.id)) return scopeForDomain(node.id);
+  return hasGraphScope(node.id) ? node.id : scopeForDomain(node.domain);
+}
+
+function openSearchNode(result, localGraph = false) {
+  const node = findGraphNode(result.targetId);
+  if (!node) return false;
+  if (isDomainNode(node.id)) return openDomain(node.id);
+  if (localGraph) return openScope(nodeGraphScopeId(node), node.id);
+  return openNote(node.id);
+}
+
+function executeSearchResult({ result, localGraph = false }) {
+  if (!result) return;
+  let didOpen = false;
+  if (result.kind === "node") {
+    didOpen = openSearchNode(result, localGraph);
+  } else if (result.kind === "domain") {
+    didOpen = openDomain(result.targetId);
+  } else if (result.kind === "relation") {
+    const sourceNode = findGraphNode(result.sourceId);
+    if (!sourceNode) return;
+    didOpen = openScope(nodeGraphScopeId(sourceNode), result.sourceId);
+  }
+  if (didOpen) closeSearchOverlay();
 }
 
 function openDialog(dialogName) {
@@ -605,6 +660,15 @@ function toggleRelationSidebar() {
       <MobileNoteView v-if="currentView !== 'graph'" :node="selectedNode" @show-graph="currentView = 'graph'" />
       <MobileLocalGraphView v-else :selected-node-id="selectedNodeId" @open-note="openNote" />
     </div>
+
+    <SearchOverlay
+      v-if="hasRealVault"
+      v-model:mode="searchMode"
+      v-model:query="searchQuery"
+      :visible="searchOverlayVisible"
+      @close="closeSearchOverlay"
+      @execute="executeSearchResult"
+    />
   </div>
 </template>
 
