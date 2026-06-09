@@ -788,7 +788,6 @@ select:focus {
   transform: translateY(-50%) rotate(-135deg);
 }
 
-.relation-middle--depends-on .relation-arrow--left,
 .relation-middle--used-in .relation-arrow--right,
 .relation-middle--compares-with .relation-arrow--left,
 .relation-middle--compares-with .relation-arrow--right {

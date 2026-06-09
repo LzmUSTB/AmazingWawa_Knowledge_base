@@ -102,18 +102,8 @@ function getResolvedTracePoints(edge) {
   return generateOrthogonalRoute(sourceBox, targetBox, { routeIndex });
 }
 
-function offsetTracePoints(points, offset = 5) {
-  return points.map(([x, y]) => [x + offset, y + offset]);
-}
-
 function getVisualTracePoints(edge) {
   return getResolvedTracePoints(edge);
-}
-
-function getCompareStrokePoints(edge, offset) {
-  const points = getResolvedTracePoints(edge);
-  if (!points) return undefined;
-  return offsetTracePoints(points, offset);
 }
 
 function traceMarkerStart(edge) {
@@ -362,26 +352,25 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
               :stroke-dasharray="relationTheme[edge.relation].dash"
             />
             <path
-              v-if="edge.relation === 'compares-with' && getCompareStrokePoints(edge, -3)"
-              class="trace trace--compares-with trace--paired"
+              v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
+              class="trace trace--compares-with trace--compare-outer"
               :class="{
                 'is-active': isConnectedEdge(edge, focusNodeId),
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
               }"
-              :d="pointsToPath(getCompareStrokePoints(edge, -3))"
+              :d="pointsToPath(getVisualTracePoints(edge))"
               marker-start="url(#trace-arrow-start-compares-with)"
+              marker-end="url(#trace-arrow-end-compares-with)"
               :stroke="relationTheme[edge.relation].color"
             />
             <path
-              v-if="edge.relation === 'compares-with' && getCompareStrokePoints(edge, 3)"
-              class="trace trace--compares-with trace--paired"
+              v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
+              class="trace trace--compare-cut"
               :class="{
                 'is-active': isConnectedEdge(edge, focusNodeId),
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
               }"
-              :d="pointsToPath(getCompareStrokePoints(edge, 3))"
-              marker-end="url(#trace-arrow-end-compares-with)"
-              :stroke="relationTheme[edge.relation].color"
+              :d="pointsToPath(getVisualTracePoints(edge))"
             />
           </g>
         </svg>
@@ -493,14 +482,31 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   stroke-width: 1.8;
 }
 
-.trace--compares-with,
-.trace--paired {
-  stroke-width: 1.6;
+.trace--compares-with {
+  stroke-width: 6;
+}
+
+.trace--compare-cut {
+  stroke: var(--background-main);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.trace--compare-cut.is-faded {
+  opacity: 1;
 }
 
 .trace.is-active {
   opacity: 1;
   stroke-width: 3;
+}
+
+.trace--compare-outer.is-active {
+  stroke-width: 7;
+}
+
+.trace--compare-cut.is-active {
+  stroke-width: 2.4;
 }
 
 .trace.is-faded {
