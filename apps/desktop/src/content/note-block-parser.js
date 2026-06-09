@@ -112,7 +112,7 @@ function parseNestedValue(lines) {
   if (lines.every((line) => line.trim().startsWith("- "))) {
     return lines.map((line) => parseScalar(line.trim().slice(2)));
   }
-  if (!lines.some((line) => /^ {0,2}[A-Za-z0-9_-][^:]*:\s*/.test(line.trim()))) {
+  if (!lines.some((line) => /^([^:\n]+):\s*(.*)$/.test(line.trim()))) {
     return lines.map((line) => line.trim()).filter(Boolean);
   }
 
@@ -120,13 +120,17 @@ function parseNestedValue(lines) {
   let index = 0;
   while (index < lines.length) {
     const line = lines[index].replace(/^ {2}/, "");
-    const match = line.match(/^([A-Za-z0-9_-][^:]*):\s*(.*)$/);
+    const match = line.match(/^([^:\n]+):\s*(.*)$/);
     if (!match) {
       index += 1;
       continue;
     }
 
     const key = match[1].trim();
+    if (!key) {
+      index += 1;
+      continue;
+    }
     const value = match[2].trim();
     if (value) {
       result[key] = parseScalar(value);

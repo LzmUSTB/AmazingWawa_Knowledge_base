@@ -1,10 +1,14 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   data: {
     type: Object,
     default: () => ({}),
+  },
+  searchQuery: {
+    type: String,
+    default: "",
   },
 });
 
@@ -21,6 +25,19 @@ const selectedFlowNodeId = computed(() => selectedNodeId.value || layout.value.n
 const selectedFlowNode = computed(
   () => layout.value.nodesById.get(selectedFlowNodeId.value) || layout.value.nodes[0] || fallbackNode("No step"),
 );
+const matchingFlowNodeIds = computed(() => {
+  const query = props.searchQuery.trim().toLowerCase();
+  if (!query) return new Set();
+  return new Set(
+    layout.value.nodes
+      .filter((node) =>
+        [node.id, node.label, node.description, node.lane, node.kind].some((value) =>
+          String(value || "").toLowerCase().includes(query),
+        ),
+      )
+      .map((node) => node.id),
+  );
+});
 const flowLanes = computed(() => {
   const rows = new Map();
   layout.value.nodes
@@ -28,6 +45,15 @@ const flowLanes = computed(() => {
     .forEach((node) => rows.set(node.lane, node.y));
   return [...rows.entries()].map(([label, y]) => ({ label, y }));
 });
+
+watch(
+  () => props.searchQuery,
+  () => {
+    const firstMatch = layout.value.nodes.find((node) => matchingFlowNodeIds.value.has(node.id));
+    if (firstMatch) selectedNodeId.value = firstMatch.id;
+  },
+  { immediate: true },
+);
 
 function entries(value = {}) {
   return Object.entries(value || {});
@@ -249,6 +275,7 @@ function isSelectedFlowEdge(edge) {
 function flowNodeClass(node) {
   return {
     "is-active": isSelectedFlowNode(node.id),
+    "is-search-match": matchingFlowNodeIds.value.has(node.id),
     "is-parallel": node.isParallel,
     "is-output": node.isOutput,
   };
@@ -444,6 +471,12 @@ function flowNodeAriaLabel(node) {
 .flow-node.is-active {
   border-color: var(--border-primary);
   background: var(--background-panel);
+  color: var(--text-primary);
+}
+
+.flow-node.is-search-match {
+  border-color: var(--career);
+  box-shadow: inset 0 0 0 1px var(--career);
   color: var(--text-primary);
 }
 

@@ -82,7 +82,7 @@ function isSelected(result) {
 
 function executeResult(result = activeResults.value[selectedIndex.value], localGraph = false) {
   if (!result) return;
-  emit("execute", { result, localGraph });
+  emit("execute", { result, localGraph, query: props.query });
 }
 
 function handleKeydown(event) {

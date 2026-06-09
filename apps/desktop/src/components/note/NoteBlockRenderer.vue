@@ -1,11 +1,15 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { parseMarkdownTokens, parseNoteBlocks } from "../../content/note-block-parser.js";
 import ExpressionVisualizerBlock from "./blocks/ExpressionVisualizerBlock.vue";
 import ProcessFlowBlock from "./blocks/ProcessFlowBlock.vue";
 
 const props = defineProps({
   markdown: {
+    type: String,
+    default: "",
+  },
+  searchQuery: {
     type: String,
     default: "",
   },
@@ -146,6 +150,40 @@ function codeLineExplanation(data, lineIndex) {
   const specific = explanations[lineIndex + 1] || explanations[String(lineIndex + 1)] || explanations[`line-${lineIndex + 1}`];
   return specific || codeExplanation(data) || "No line explanation was provided.";
 }
+
+function includesQuery(value, query) {
+  return String(value || "").toLowerCase().includes(String(query || "").trim().toLowerCase());
+}
+
+function matchingCodeLineIndex(data, query) {
+  if (!query.trim()) return -1;
+  const lines = normalizeCodeLines(data);
+  const explanations = lineExplanations(data);
+  return lines.findIndex((line, index) => {
+    const specific = explanations[index + 1] || explanations[String(index + 1)] || explanations[`line-${index + 1}`];
+    return includesQuery(line, query) || includesQuery(specific, query) || includesQuery(codeExplanation(data), query);
+  });
+}
+
+watch(
+  () => [props.searchQuery, blocks.value],
+  ([query]) => {
+    if (!query.trim()) return;
+    blocks.value.forEach((block, blockIndex) => {
+      if (block.type === "code-explain") {
+        const matchIndex = matchingCodeLineIndex(block.data, query);
+        if (matchIndex >= 0) selectCodeLine(blockIndex, matchIndex);
+      }
+      if (block.type === "quiz" && includesQuery(block.data.answer, query)) {
+        revealedQuiz.value = {
+          ...revealedQuiz.value,
+          [blockIndex]: true,
+        };
+      }
+    });
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -199,7 +237,7 @@ function codeLineExplanation(data, lineIndex) {
         </div>
       </section>
 
-      <ProcessFlowBlock v-else-if="block.type === 'process-flow'" :data="block.data" />
+      <ProcessFlowBlock v-else-if="block.type === 'process-flow'" :data="block.data" :search-query="searchQuery" />
 
       <section v-else-if="block.type === 'compare-table'" class="content-block compare-table-block">
         <div class="block-kicker">Compare Table</div>

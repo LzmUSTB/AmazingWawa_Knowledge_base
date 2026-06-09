@@ -93,6 +93,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  noteFindCloseKey: {
+    type: Number,
+    default: 0,
+  },
+  noteFindOpenKey: {
+    type: Number,
+    default: 0,
+  },
+  noteFindQuery: {
+    type: String,
+    default: "",
+  },
   selectedNodeId: {
     type: String,
     required: true,
@@ -144,6 +156,7 @@ const emit = defineEmits([
   "save-layout",
   "save-relation-edit",
   "select-node",
+  "set-note-find-visible",
   "set-note-dirty",
   "set-note-mode",
   "show-graph",
@@ -253,9 +266,13 @@ function fitGraphView() {
           v-else
           :can-save-note="canSaveNote"
           :mode="noteMode"
+          :note-find-close-key="noteFindCloseKey"
+          :note-find-open-key="noteFindOpenKey"
+          :note-find-query="noteFindQuery"
           :note-id="currentNoteId"
           :saving="noteSaving"
           @dirty-change="$emit('set-note-dirty', $event)"
+          @find-visible-change="$emit('set-note-find-visible', $event)"
           @save-note="$emit('save-note', $event)"
           @set-mode="$emit('set-note-mode', $event)"
           @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"

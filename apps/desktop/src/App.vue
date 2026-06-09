@@ -63,6 +63,10 @@ const searchQuery = ref("");
 const relationEditEdgeId = ref("");
 const relationSaving = ref(false);
 const relationError = ref("");
+const noteFindQuery = ref("");
+const noteFindOpenKey = ref(0);
+const noteFindCloseKey = ref(0);
+const noteFindVisible = ref(false);
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -207,6 +211,22 @@ function handleGlobalKeydown(event) {
     toggleSearchOverlay();
     return;
   }
+  if (event.ctrlKey && event.key.toLowerCase() === "f") {
+    if (searchOverlayVisible.value) {
+      event.preventDefault();
+      return;
+    }
+    if (
+      currentView.value === "note" &&
+      noteMode.value === "read" &&
+      !relationEditEdgeId.value &&
+      !activeDialog.value
+    ) {
+      event.preventDefault();
+      openNoteFind(noteFindQuery.value);
+    }
+    return;
+  }
   if (searchOverlayVisible.value && event.key === "Escape") {
     event.preventDefault();
     closeSearchOverlay();
@@ -215,6 +235,11 @@ function handleGlobalKeydown(event) {
   if (relationEditEdgeId.value && event.key === "Escape") {
     event.preventDefault();
     closeRelationEdit();
+    return;
+  }
+  if (noteFindVisible.value && currentView.value === "note" && event.key === "Escape") {
+    event.preventDefault();
+    closeNoteFind();
     return;
   }
   if (event.key !== "Escape" || activeDialog.value || (!isLayoutEditing.value && !layoutDirty.value)) return;
@@ -457,7 +482,17 @@ function openSearchNode(result, localGraph = false) {
   return openNote(node.id);
 }
 
-function executeSearchResult({ result, localGraph = false }) {
+function openNoteFind(query = "") {
+  noteFindQuery.value = query || noteFindQuery.value || "";
+  noteFindOpenKey.value += 1;
+}
+
+function closeNoteFind() {
+  noteFindCloseKey.value += 1;
+  noteFindVisible.value = false;
+}
+
+function executeSearchResult({ result, localGraph = false, query = "" }) {
   if (!result) return;
   let didOpen = false;
   if (result.kind === "node" || result.kind === "full-text") {
@@ -469,7 +504,13 @@ function executeSearchResult({ result, localGraph = false }) {
     if (!sourceNode) return;
     didOpen = openScope(nodeGraphScopeId(sourceNode), result.sourceId);
   }
-  if (didOpen) closeSearchOverlay();
+  if (didOpen) {
+    closeSearchOverlay();
+    if (result.kind === "full-text" && !localGraph) {
+      noteFindQuery.value = query;
+      noteFindOpenKey.value += 1;
+    }
+  }
 }
 
 function openDialog(dialogName) {
@@ -730,6 +771,9 @@ function toggleRelationSidebar() {
       :layout-save-in-progress="layoutSaveInProgress"
       :note-mode="noteMode"
       :note-saving="noteSaving"
+      :note-find-close-key="noteFindCloseKey"
+      :note-find-open-key="noteFindOpenKey"
+      :note-find-query="noteFindQuery"
       :relation-edit-edge-id="relationEditEdgeId"
       :relation-error="relationError"
       :relation-sidebar-collapsed="relationSidebarCollapsed"
@@ -758,6 +802,7 @@ function toggleRelationSidebar() {
       @save-relation-edit="saveEditedRelation"
       @select-node="selectedNodeId = $event"
       @set-note-dirty="noteDirty = $event"
+      @set-note-find-visible="noteFindVisible = $event"
       @set-note-mode="setNoteMode"
       @show-graph="showGraph"
       @show-view="showView"
