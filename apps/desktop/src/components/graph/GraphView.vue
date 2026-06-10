@@ -18,6 +18,8 @@ import {
 import { generateOrthogonalRoute } from "../../graph/graph-route-generator.js";
 import { getGraphScope, hasContainsChildren, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor, nodeClass, relationTheme } from "../../graph/graph-theme.js";
+import { getActiveVault } from "../../graph/graph-data-store.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   draftBoard: {
@@ -104,6 +106,46 @@ function getResolvedTracePoints(edge) {
 
 function getVisualTracePoints(edge) {
   return getResolvedTracePoints(edge);
+}
+
+const COMPARE_TRACE_TRIM = 10;
+
+function movePointToward(from, to, amount) {
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  const length = Math.hypot(dx, dy);
+
+  if (!length) return [...from];
+
+  const ratio = Math.min(amount / length, 0.48);
+  return [from[0] + dx * ratio, from[1] + dy * ratio];
+}
+
+function trimCompareTracePoints(points) {
+  if (!points || points.length < 2) return points;
+
+  const nextPoints = points.map((point) => [...point]);
+  const lastIndex = nextPoints.length - 1;
+
+  nextPoints[0] = movePointToward(points[0], points[1], COMPARE_TRACE_TRIM);
+  nextPoints[lastIndex] = movePointToward(points[lastIndex], points[lastIndex - 1], COMPARE_TRACE_TRIM);
+
+  return nextPoints;
+}
+
+function compareBodyPath(edge) {
+  return pointsToPath(trimCompareTracePoints(getVisualTracePoints(edge)));
+}
+
+function nodeHierarchyMarkerCount(node) {
+  if (isDomainNode(node.id)) return 3;
+  if (hasContainsChildren(node.id)) return 2;
+  return 1;
+}
+
+function hasNodeNote(node) {
+  const note = getActiveVault().notes?.[node.id];
+  return Boolean(note?.markdown?.trim());
 }
 
 function traceMarkerStart(edge) {
@@ -282,135 +324,76 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 <template>
   <section class="graph-view technical-grid">
-    <div
-      ref="viewportRef"
-      class="graph-viewport"
-      :class="{ 'is-panning': isPanning }"
-      @pointercancel="stopPanning"
-      @pointerdown="handlePointerDown"
-      @pointermove="handlePointerMove"
-      @pointerup="stopPanning"
-      @wheel="handleWheel"
-    >
-      <div
-        class="graph-board"
-        :style="{
-          width: `${board.width}px`,
-          height: `${board.height}px`,
-          transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
-        }"
-      >
-        <svg
-          class="trace-layer"
-          :height="board.height"
-          :viewBox="`0 0 ${board.width} ${board.height}`"
-          :width="board.width"
-          aria-hidden="true"
-        >
+    <div ref="viewportRef" class="graph-viewport" :class="{ 'is-panning': isPanning }" @pointercancel="stopPanning"
+      @pointerdown="handlePointerDown" @pointermove="handlePointerMove" @pointerup="stopPanning" @wheel="handleWheel">
+      <div class="graph-board" :style="{
+        width: `${board.width}px`,
+        height: `${board.height}px`,
+        transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
+      }">
+        <svg class="trace-layer" :height="board.height" :viewBox="`0 0 ${board.width} ${board.height}`"
+          :width="board.width" aria-hidden="true">
           <defs>
-            <marker
-              v-for="relationKey in ['used-in', 'compares-with']"
-              :id="`trace-arrow-end-${relationKey}`"
-              :key="relationKey"
-              markerHeight="8"
-              markerWidth="8"
-              orient="auto"
-              refX="7"
-              refY="4"
-              viewBox="0 0 8 8"
-            >
+            <marker v-for="relationKey in ['used-in', 'compares-with']" :id="`trace-arrow-end-${relationKey}`"
+              :key="relationKey" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4" viewBox="0 0 8 8">
               <path d="M 0 0 L 8 4 L 0 8 z" :fill="relationTheme[relationKey].color" />
             </marker>
-            <marker
-              id="trace-arrow-start-compares-with"
-              markerHeight="8"
-              markerWidth="8"
-              orient="auto"
-              refX="1"
-              refY="4"
-              viewBox="0 0 8 8"
-            >
+            <marker id="trace-arrow-start-compares-with" markerHeight="8" markerWidth="8" orient="auto" refX="1"
+              refY="4" viewBox="0 0 8 8">
               <path d="M 8 0 L 0 4 L 8 8 z" :fill="relationTheme['compares-with'].color" />
             </marker>
           </defs>
 
           <g v-for="edge in currentScope.edges" :key="edge.id">
-            <path
-              v-if="edge.relation !== 'compares-with' && getVisualTracePoints(edge)"
-              class="trace"
-              :class="[
-                `trace--${edge.relation}`,
-                {
-                  'is-active': isConnectedEdge(edge, focusNodeId),
-                  'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
-                },
-              ]"
-              :d="pointsToPath(getVisualTracePoints(edge))"
-              :marker-start="traceMarkerStart(edge)"
-              :marker-end="traceMarkerEnd(edge)"
-              :stroke="relationTheme[edge.relation].color"
-              :stroke-dasharray="relationTheme[edge.relation].dash"
-            />
-            <path
-              v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
-              class="trace trace--compares-with trace--compare-outer"
-              :class="{
+            <path v-if="edge.relation !== 'compares-with' && getVisualTracePoints(edge)" class="trace" :class="[
+              `trace--${edge.relation}`,
+              {
                 'is-active': isConnectedEdge(edge, focusNodeId),
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
-              }"
-              :d="pointsToPath(getVisualTracePoints(edge))"
-              :stroke="relationTheme[edge.relation].color"
-            />
-            <path
-              v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
-              class="trace trace--compare-cut"
-              :class="{
+              },
+            ]" :d="pointsToPath(getVisualTracePoints(edge))" :marker-start="traceMarkerStart(edge)"
+              :marker-end="traceMarkerEnd(edge)" :stroke="relationTheme[edge.relation].color"
+              :stroke-dasharray="relationTheme[edge.relation].dash" />
+            <path v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
+              class="trace trace--compares-with trace--compare-outer" :class="{
                 'is-active': isConnectedEdge(edge, focusNodeId),
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
-              }"
-              :d="pointsToPath(getVisualTracePoints(edge))"
-            />
-            <path
-              v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
-              class="trace trace--compare-marker-carrier"
-              :class="{
+              }" :d="compareBodyPath(edge)" :stroke="relationTheme[edge.relation].color" />
+            <path v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
+              class="trace trace--compare-cut" :class="{
                 'is-active': isConnectedEdge(edge, focusNodeId),
                 'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
-              }"
-              :d="pointsToPath(getVisualTracePoints(edge))"
-              marker-start="url(#trace-arrow-start-compares-with)"
-              marker-end="url(#trace-arrow-end-compares-with)"
-            />
+              }" :d="compareBodyPath(edge)" />
+            <path v-if="edge.relation === 'compares-with' && getVisualTracePoints(edge)"
+              class="trace trace--compare-marker-carrier" :class="{
+                'is-active': isConnectedEdge(edge, focusNodeId),
+                'is-faded': focusNodeId && !isConnectedEdge(edge, focusNodeId),
+              }" :d="pointsToPath(getVisualTracePoints(edge))" marker-start="url(#trace-arrow-start-compares-with)"
+              marker-end="url(#trace-arrow-end-compares-with)" />
           </g>
         </svg>
 
         <div class="node-layer">
-          <button
-            v-for="node in currentScope.nodes"
-            :key="node.id"
-            :class="[nodeClass(node.type), nodeState(node)]"
+          <button v-for="node in currentScope.nodes" :key="node.id" :class="[nodeClass(node.type), nodeState(node)]"
             :style="{
               '--node-color': getDomainColor(node.domain),
               left: `${getResolvedNodeLayout(node.id).x}px`,
               top: `${getResolvedNodeLayout(node.id).y}px`,
               width: `${getResolvedNodeLayout(node.id).width}px`,
               height: `${getResolvedNodeLayout(node.id).height}px`,
-            }"
-            @click="handleNodeClick(node)"
-            @contextmenu="handleNodeContextMenu($event, node)"
-            @dblclick="handleNodeOpen(node)"
-            @mouseenter="hoveredNodeId = node.id"
-            @mouseleave="hoveredNodeId = ''"
-            @pointercancel="stopNodeDrag"
-            @pointerdown="handleNodePointerDown($event, node)"
-            @pointermove="handleNodePointerMove"
-            @pointerup="stopNodeDrag"
-          >
-            <span class="node-port node-port--top"></span>
-            <span class="node-port node-port--right"></span>
-            <span class="node-port node-port--bottom"></span>
-            <span class="node-port node-port--left"></span>
-            <span class="node-pin"></span>
+            }" @click="handleNodeClick(node)" @contextmenu="handleNodeContextMenu($event, node)"
+            @dblclick="handleNodeOpen(node)" @mouseenter="hoveredNodeId = node.id" @mouseleave="hoveredNodeId = ''"
+            @pointercancel="stopNodeDrag" @pointerdown="handleNodePointerDown($event, node)"
+            @pointermove="handleNodePointerMove" @pointerup="stopNodeDrag">
+            <span v-if="hasNodeNote(node)" class="node-note-badge" title="This node has a note"
+              aria-label="This node has a note">
+              <AppIcon name="file-text" :size="11" />
+            </span>
+
+            <span class="node-corner-markers" aria-hidden="true">
+              <span v-for="index in nodeHierarchyMarkerCount(node)" :key="index" class="node-corner-marker"></span>
+            </span>
+
             <span class="node-title">{{ node.title }}</span>
             <span class="node-meta">{{ node.type }} / {{ node.domain }}</span>
           </button>
@@ -554,42 +537,6 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
     transform 150ms ease;
 }
 
-.node-port {
-  position: absolute;
-  background: var(--node-color);
-}
-
-.node-port--left,
-.node-port--right {
-  width: 12px;
-  height: 3px;
-}
-
-.node-port--left {
-  left: -12px;
-  top: 50%;
-}
-
-.node-port--right {
-  right: -12px;
-  top: 50%;
-}
-
-.node-port--top,
-.node-port--bottom {
-  left: 50%;
-  width: 3px;
-  height: 12px;
-}
-
-.node-port--top {
-  top: -12px;
-}
-
-.node-port--bottom {
-  bottom: -12px;
-}
-
 .pcb-node--root {
   border-color: var(--border-primary);
   outline: 1px solid var(--node-color);
@@ -604,13 +551,33 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   padding-inline: 13px;
 }
 
-.node-pin {
+.node-corner-markers {
   position: absolute;
   right: 8px;
   top: 8px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.node-corner-marker {
   width: 6px;
   height: 6px;
   background: var(--node-color);
+}
+
+.node-note-badge {
+  position: absolute;
+  left: 8px;
+  top: 7px;
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--node-color);
+  background: var(--background-main);
+  color: var(--node-color);
+  line-height: 0;
 }
 
 .node-title {
@@ -647,6 +614,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   z-index: 2;
   border: 2px solid var(--border-primary);
   outline: 1px solid var(--node-color);
+  border-left-width: 5px;
   outline-offset: 5px;
   transform: translateY(-1px);
 }
