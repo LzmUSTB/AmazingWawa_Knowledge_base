@@ -41,6 +41,15 @@ export function applyAiPackage(vaultRoot, packageRoot, options = {}) {
     fs.writeFileSync(target, write.contents || "", "utf8");
   });
 
+  (plan.binaryWrites || []).forEach((write) => {
+    const target = safeJoin(vaultRoot, write.relativePath);
+    if (write.createOnly && fs.existsSync(target)) {
+      throw new Error(`Asset already exists: ${write.relativePath}`);
+    }
+    ensureParent(target);
+    fs.writeFileSync(target, Buffer.from(write.base64 || "", "base64"));
+  });
+
   return {
     packageId: plan.packageId,
     backupRelativeDir: plan.backupRelativeDir,

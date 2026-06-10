@@ -8,7 +8,7 @@ import {
 import { isAllowedKnowledgeStatus, isAllowedKnowledgeType } from "../schema.js";
 import { potentialDuplicateNodeWarnings } from "./dedupe.js";
 
-const PACKAGE_ID_PATTERN = /^ai-import-[a-z0-9-]+$/;
+const PACKAGE_ID_PATTERN = /^(?:ai-import|wawa-import)-[a-z0-9-]+$/;
 const KEBAB_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
 const SUPPORTED_INSERT_MODES = new Set(["after-heading", "before-heading", "end"]);
@@ -19,9 +19,28 @@ const FORBIDDEN_MARKDOWN_PATTERNS = [
   { pattern: /<\s*iframe\b/i, label: "iframe tag" },
   { pattern: /\son[a-z]+\s*=/i, label: "inline event handler" },
   { pattern: /javascript\s*:/i, label: "javascript URL" },
+  { pattern: /data\s*:/i, label: "data URL" },
   { pattern: /<\s*(img|video|audio|source|link)\b[^>]*(src|href)\s*=\s*["']?https?:\/\//i, label: "remote HTML resource" },
   { pattern: /!\[[^\]]*\]\(\s*https?:\/\//i, label: "remote Markdown image" },
 ];
+const ALLOWED_ASSET_EXTENSIONS = new Set([
+  ".csv",
+  ".gif",
+  ".jpeg",
+  ".jpg",
+  ".json",
+  ".md",
+  ".mp3",
+  ".mp4",
+  ".pdf",
+  ".png",
+  ".txt",
+  ".wav",
+  ".webm",
+  ".webp",
+  ".yaml",
+  ".yml",
+]);
 
 function asArray(value) {
   return Array.isArray(value) ? value : value ? [value] : [];
@@ -103,6 +122,125 @@ function collectBlockTypes(markdown = "") {
     if (match) types.push(match[1]);
   }
   return types;
+}
+
+function extensionOf(path = "") {
+  const fileName = path.split("/").pop() || "";
+  const dotIndex = fileName.lastIndexOf(".");
+  return dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : "";
+}
+
+function nodeForAssetPath(path = "") {
+  const match = path.match(/^generated\/content\/([^/]+)\/([^/]+)\/assets\/(.+)$/);
+  return match ? { domain: match[1], nodeId: match[2], assetPath: match[3] } : null;
+}
+
+function noteAssetReferences(markdown = "") {
+  const refs = [];
+  const linkPattern = /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^)]*)?\)/g;
+  let match;
+  while ((match = linkPattern.exec(markdown))) {
+    refs.push({
+      image: match[1] === "!",
+      label: match[2] || "",
+      target: match[3] || "",
+    });
+  }
+  return refs;
+}
+
+function validateAssetReferencePath(target = "") {
+  const normalized = target.replaceAll("\\", "/");
+  if (!normalized.startsWith("assets/")) return { error: "asset references must start with assets/." };
+  if (
+    normalized.startsWith("/") ||
+    /^[A-Za-z]:/.test(normalized) ||
+    normalized.split("/").some((part) => part === ".." || part === "")
+  ) {
+    return { error: `unsafe asset path "${target}".` };
+  }
+  const extension = extensionOf(normalized);
+  if (!ALLOWED_ASSET_EXTENSIONS.has(extension)) return { error: `unsupported asset extension "${extension || "(none)"}".` };
+  return { path: normalized };
+}
+
+function validatePackageAssets(packageFiles, operations, errors, warnings) {
+  const assetFiles = packageFiles.assetFiles || [];
+  const assetByPackagePath = new Map(assetFiles.map((asset) => [asset.packageRelativePath, asset]));
+  const referencedPackagePaths = new Set();
+  const addNodeIds = new Map();
+  operations.forEach((operation) => {
+    if (operation.type === "add_node") addNodeIds.set(operation.id, operation.domain);
+  });
+
+  assetFiles.forEach((asset) => {
+    const parsed = nodeForAssetPath(asset.packageRelativePath);
+    if (!parsed) {
+      errors.push(`asset ${asset.packageRelativePath}: must be under generated/content/<domain>/<node-id>/assets/.`);
+      return;
+    }
+    if (!ALLOWED_ASSET_EXTENSIONS.has(extensionOf(asset.packageRelativePath))) {
+      errors.push(`asset ${asset.packageRelativePath}: unsupported asset extension.`);
+    }
+    if (asset.size > 20 * 1024 * 1024) {
+      errors.push(`asset ${asset.packageRelativePath}: asset file too large.`);
+    }
+    const addedDomain = addNodeIds.get(parsed.nodeId);
+    if (addedDomain && addedDomain !== parsed.domain) {
+      errors.push(`asset ${asset.packageRelativePath}: domain does not match add_node ${parsed.nodeId}.`);
+    }
+  });
+
+  operations.forEach((operation) => {
+    let nodeId = "";
+    let domain = "";
+    let markdown = "";
+    if (operation.type === "add_node") {
+      nodeId = operation.id;
+      domain = operation.domain;
+      markdown = packageFiles.generatedNoteFiles[generatedNotePath(operation)] || "";
+    } else if (operation.type === "append_note_section") {
+      nodeId = operation.targetId || operation.id;
+      domain = operation.domain || "";
+      markdown = operation.markdown || operation.content || "";
+    } else {
+      return;
+    }
+
+    noteAssetReferences(markdown).forEach((reference) => {
+      const target = reference.target.trim();
+      if (/^(https?:)?\/\//i.test(target)) {
+        if (reference.image) errors.push(`${operation.type} ${nodeId}: remote image URLs are not allowed; package images under assets/.`);
+        return;
+      }
+      if (/^data:/i.test(target)) {
+        errors.push(`${operation.type} ${nodeId}: data URLs are not allowed; package assets locally.`);
+        return;
+      }
+      if (!target.startsWith("assets/")) {
+        if (reference.image) errors.push(`${operation.type} ${nodeId}: image reference "${target}" must use assets/.`);
+        return;
+      }
+      const result = validateAssetReferencePath(target);
+      if (result.error) {
+        errors.push(`${operation.type} ${nodeId}: ${result.error}`);
+        return;
+      }
+      const ownerDomain = domain || addNodeIds.get(nodeId);
+      if (!ownerDomain) return;
+      const packagePath = `generated/content/${ownerDomain}/${nodeId}/${result.path}`;
+      referencedPackagePaths.add(packagePath);
+      if (!assetByPackagePath.has(packagePath)) {
+        errors.push(`${operation.type} ${nodeId}: missing packaged asset ${packagePath}.`);
+      }
+    });
+  });
+
+  assetFiles.forEach((asset) => {
+    if (!referencedPackagePaths.has(asset.packageRelativePath)) {
+      warnings.push(`asset ${asset.packageRelativePath}: packaged asset is not referenced by generated note content.`);
+    }
+  });
 }
 
 function scanForbiddenFields(value, path = []) {
@@ -364,6 +502,8 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
     if (operation.type === "add_block_type") validateAddBlockType(operation, context);
     if (operation.type === "propose_native_block") validateProposeNativeBlock(operation, context);
   });
+
+  validatePackageAssets(packageFiles, normalizedOperations, errors, warnings);
 
   return {
     valid: errors.length === 0,

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+import { convertFileSrc, isTauri } from "@tauri-apps/api/core";
 import { parseMarkdownTokens, parseNoteBlocks } from "../../content/note-block-parser.js";
 import ExpressionVisualizerBlock from "./blocks/ExpressionVisualizerBlock.vue";
 import GenericVisualBlock from "./blocks/GenericVisualBlock.vue";
@@ -17,6 +18,14 @@ const props = defineProps({
   blockRegistry: {
     type: Object,
     default: () => ({}),
+  },
+  node: {
+    type: Object,
+    default: null,
+  },
+  vaultRootPath: {
+    type: String,
+    default: "",
   },
 });
 
@@ -41,6 +50,32 @@ function inlineMarkdown(value = "") {
 
 function markdownTokens(markdown) {
   return parseMarkdownTokens(markdown);
+}
+
+function safeAssetPath(value = "") {
+  const normalized = String(value).replaceAll("\\", "/");
+  if (
+    !normalized.startsWith("assets/") ||
+    normalized.startsWith("/") ||
+    /^[A-Za-z]:/.test(normalized) ||
+    /^(https?:|data:|javascript:)/i.test(normalized) ||
+    normalized.split("/").some((part) => part === ".." || part === "")
+  ) {
+    return "";
+  }
+  return normalized;
+}
+
+function assetAbsolutePath(value = "") {
+  const safePath = safeAssetPath(value);
+  if (!safePath || !props.vaultRootPath || !props.node?.domain || !props.node?.id) return "";
+  return `${props.vaultRootPath.replace(/[\\/]+$/, "")}/content/${props.node.domain}/${props.node.id}/${safePath}`;
+}
+
+function assetHref(value = "") {
+  const absolutePath = assetAbsolutePath(value);
+  if (!absolutePath) return "";
+  return isTauri() ? convertFileSrc(absolutePath) : absolutePath;
 }
 
 function entries(value = {}) {
@@ -203,6 +238,16 @@ watch(
             v-html="inlineMarkdown(token.text)"
           />
           <p v-else-if="token.type === 'paragraph'" class="doc-paragraph" v-html="inlineMarkdown(token.text)" />
+          <figure v-else-if="token.type === 'image' && assetHref(token.src)" class="doc-asset-image">
+            <div class="asset-scroll">
+              <img :src="assetHref(token.src)" :alt="token.alt || ''" loading="lazy" />
+            </div>
+            <figcaption v-if="token.alt">{{ token.alt }}</figcaption>
+          </figure>
+          <a v-else-if="token.type === 'asset-link' && assetHref(token.href)" class="doc-asset-link" :href="assetHref(token.href)" target="_blank" rel="noreferrer">
+            <span>{{ token.label }}</span>
+            <small>{{ token.href }}</small>
+          </a>
           <pre v-else-if="token.type === 'code'" class="doc-code"><code>{{ token.text }}</code></pre>
           <ol v-else-if="token.type === 'list' && token.ordered" class="doc-list">
             <li v-for="(item, itemIndex) in token.items" :key="itemIndex" v-html="inlineMarkdown(item)" />
@@ -376,6 +421,53 @@ h4.doc-heading {
   font-size: var(--font-size-mono);
   line-height: 1.55;
   padding: 14px;
+}
+
+.doc-asset-image {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.asset-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-muted);
+  border-left: 5px solid var(--note-color, var(--graphics));
+  background: var(--background-panel);
+  padding: 10px;
+}
+
+.doc-asset-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.doc-asset-image figcaption {
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+}
+
+.doc-asset-link {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-muted);
+  border-left: 5px solid var(--note-color, var(--graphics));
+  background: var(--background-panel);
+  color: var(--text-primary);
+  padding: 12px;
+  text-decoration: none;
+}
+
+.doc-asset-link span {
+  font-weight: 800;
+}
+
+.doc-asset-link small {
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
 }
 
 :deep(code) {

@@ -302,6 +302,20 @@ export function parseMarkdownTokens(markdown = "") {
       continue;
     }
 
+    const image = line.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^)]*)?\)\s*$/);
+    if (image) {
+      tokens.push({ type: "image", alt: image[1], src: image[2] });
+      index += 1;
+      continue;
+    }
+
+    const assetLink = line.match(/^\[([^\]]+)\]\((assets\/[^)\s]+)(?:\s+["'][^)]*)?\)\s*$/);
+    if (assetLink) {
+      tokens.push({ type: "asset-link", label: assetLink[1], href: assetLink[2] });
+      index += 1;
+      continue;
+    }
+
     if (/^[-*]\s+/.test(line)) {
       const items = [];
       while (index < lines.length && /^[-*]\s+/.test(lines[index])) {

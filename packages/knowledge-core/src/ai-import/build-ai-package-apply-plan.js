@@ -80,6 +80,7 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
 
   const diff = diffAiPackage(currentVault, validation);
   const writes = [];
+  const binaryWrites = [];
   const createDirs = new Set();
   const backupPaths = new Set();
   const addedEdges = [];
@@ -130,6 +131,16 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
     }
   });
 
+  (packageFiles.assetFiles || []).forEach((asset) => {
+    binaryWrites.push({
+      relativePath: asset.vaultRelativePath,
+      base64: asset.base64,
+      createOnly: true,
+    });
+    createDirs.add(asset.vaultRelativePath.split("/").slice(0, -1).join("/"));
+    created.push(asset.vaultRelativePath);
+  });
+
   if (addedEdges.length) {
     backupPaths.add("graph.yaml");
     writes.push({
@@ -162,6 +173,7 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
     backupPaths: [...backupPaths],
     createDirs: [...createDirs].filter(Boolean),
     writes,
+    binaryWrites,
     history,
     diff,
     validation,

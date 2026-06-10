@@ -72,6 +72,8 @@ export async function listAiImportPackages(vaultRootPath) {
   return invoke("list_ai_import_packages", { vaultRootPath });
 }
 
+// Folder package support is retained for development/test helpers only.
+// Normal UI imports .wawapkg files through chooseWawaPackageFile/readWawaPackageFile.
 export async function chooseAiImportPackageRoot() {
   if (!isTauri()) return null;
   return invoke("choose_ai_import_package_root");
@@ -111,8 +113,7 @@ export async function readAiImportHistory(vaultRootPath, packageId) {
 }
 
 export async function exportAiContext(vaultRootPath) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting context.");
-  return invoke("export_ai_context", { vaultRootPath });
+  return exportContext(vaultRootPath);
 }
 
 export async function exportContext(vaultRootPath) {

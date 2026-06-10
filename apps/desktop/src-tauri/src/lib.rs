@@ -33,14 +33,24 @@ struct AiImportPackageFiles {
     patch_raw: String,
     generated_meta_files: HashMap<String, String>,
     generated_note_files: HashMap<String, String>,
+    asset_files: Vec<AiImportAssetFile>,
     block_type_files: HashMap<String, String>,
     review_files: HashMap<String, String>,
 }
 
+#[derive(Serialize)]
+struct AiImportAssetFile {
+    vault_relative_path: String,
+    package_relative_path: String,
+    base64: String,
+    mime_type: String,
+    size: u64,
+}
+
 const WAWAPKG_MIMETYPE: &str = "application/x-wawa-kb-ai-import-package";
-const MAX_WAWAPKG_TOTAL_SIZE: u64 = 50 * 1024 * 1024;
-const MAX_WAWAPKG_TEXT_FILE_SIZE: u64 = 10 * 1024 * 1024;
-const MAX_WAWAPKG_FILE_COUNT: u16 = 500;
+const MAX_WAWAPKG_TOTAL_SIZE: u64 = 100 * 1024 * 1024;
+const MAX_WAWAPKG_FILE_SIZE: u64 = 20 * 1024 * 1024;
+const MAX_WAWAPKG_FILE_COUNT: usize = 1000;
 
 #[derive(Serialize)]
 struct AiImportHistory {
@@ -59,16 +69,25 @@ struct AiImportPlanWrite {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct AiImportPlanBinaryWrite {
+    relative_path: String,
+    base64: String,
+    create_only: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct AiImportApplyPlan {
     package_id: String,
     backup_relative_dir: String,
     backup_paths: Vec<String>,
     create_dirs: Vec<String>,
     writes: Vec<AiImportPlanWrite>,
+    binary_writes: Vec<AiImportPlanBinaryWrite>,
 }
 
 fn is_safe_package_id(package_id: &str) -> bool {
-    package_id.starts_with("ai-import-")
+    (package_id.starts_with("ai-import-") || package_id.starts_with("wawa-import-"))
         && package_id
             .chars()
             .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-')
@@ -114,14 +133,15 @@ fn read_u32(data: &[u8], offset: usize) -> Result<u32, String> {
 
 fn normalize_zip_entry_path(entry_path: &str) -> Result<String, String> {
     let normalized = entry_path.replace('\\', "/");
+    let trimmed = normalized.trim_end_matches('/');
     if normalized.is_empty()
         || normalized.starts_with('/')
         || normalized.contains("../")
         || normalized.contains("/..")
-        || normalized.split('/').any(|part| part == ".." || part.is_empty())
+        || trimmed.split('/').any(|part| part == ".." || part.is_empty())
         || normalized.as_bytes().get(1) == Some(&b':')
     {
-        return Err(format!("Unsafe archive entry path: {entry_path}"));
+        return Err(format!("Invalid .wawapkg: unsafe path {entry_path}"));
     }
     Ok(normalized)
 }
@@ -142,6 +162,107 @@ fn allowed_wawapkg_top_level(entry_path: &str) -> bool {
 
 fn asset_entry(entry_path: &str) -> bool {
     entry_path.starts_with("generated/content/") && entry_path.contains("/assets/")
+}
+
+fn extension_of(entry_path: &str) -> String {
+    Path::new(entry_path)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| format!(".{}", value.to_ascii_lowercase()))
+        .unwrap_or_default()
+}
+
+fn allowed_asset_extension(entry_path: &str) -> bool {
+    matches!(
+        extension_of(entry_path).as_str(),
+        ".csv"
+            | ".gif"
+            | ".jpeg"
+            | ".jpg"
+            | ".json"
+            | ".md"
+            | ".mp3"
+            | ".mp4"
+            | ".pdf"
+            | ".png"
+            | ".txt"
+            | ".wav"
+            | ".webm"
+            | ".webp"
+            | ".yaml"
+            | ".yml"
+    )
+}
+
+fn asset_mime_type(entry_path: &str) -> &'static str {
+    match extension_of(entry_path).as_str() {
+        ".csv" => "text/csv",
+        ".gif" => "image/gif",
+        ".jpeg" | ".jpg" => "image/jpeg",
+        ".json" => "application/json",
+        ".md" => "text/markdown",
+        ".mp3" => "audio/mpeg",
+        ".mp4" => "video/mp4",
+        ".pdf" => "application/pdf",
+        ".png" => "image/png",
+        ".txt" => "text/plain",
+        ".wav" => "audio/wav",
+        ".webm" => "video/webm",
+        ".webp" => "image/webp",
+        ".yaml" | ".yml" => "application/yaml",
+        _ => "application/octet-stream",
+    }
+}
+
+fn asset_vault_relative_path(entry_path: &str) -> Result<String, String> {
+    let parts: Vec<&str> = entry_path.split('/').collect();
+    if parts.len() < 6 || parts[0] != "generated" || parts[1] != "content" || parts[4] != "assets" {
+        return Err(format!("Invalid .wawapkg: unsafe path {entry_path}"));
+    }
+    Ok(format!("content/{}/{}/assets/{}", parts[2], parts[3], parts[5..].join("/")))
+}
+
+fn manifest_yaml_field(raw: &str, field: &str) -> Option<String> {
+    let prefix = format!("{field}:");
+    raw.lines().find_map(|line| {
+        let trimmed = line.trim();
+        let rest = trimmed.strip_prefix(&prefix)?;
+        Some(rest.trim().trim_matches('"').trim_matches('\'').to_string())
+    })
+}
+
+fn decode_base64(input: &str) -> Result<Vec<u8>, String> {
+    let mut output = Vec::new();
+    let mut buffer: u32 = 0;
+    let mut bits: u8 = 0;
+    for byte in input.bytes().filter(|value| !value.is_ascii_whitespace()) {
+        if byte == b'=' {
+            break;
+        }
+        let value = match byte {
+            b'A'..=b'Z' => byte - b'A',
+            b'a'..=b'z' => byte - b'a' + 26,
+            b'0'..=b'9' => byte - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => return Err("Invalid base64 data".into()),
+        } as u32;
+        buffer = (buffer << 6) | value;
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            output.push(((buffer >> bits) & 0xff) as u8);
+        }
+    }
+    Ok(output)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WawaZipEntryPayload {
+    name: String,
+    size: u64,
+    base64: String,
 }
 
 fn safe_join(root: &str, relative_path: &str) -> Result<PathBuf, String> {
@@ -318,13 +439,13 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
         }
     }
     let eocd = eocd_offset.ok_or("Invalid .wawapkg: missing zip end record")?;
-    let entry_count = read_u16(&bytes, eocd + 10)?;
+    let entry_count = read_u16(&bytes, eocd + 10)? as usize;
     if entry_count > MAX_WAWAPKG_FILE_COUNT {
         return Err("Too many files in .wawapkg".into());
     }
     let mut offset = read_u32(&bytes, eocd + 16)? as usize;
     let mut total_size: u64 = 0;
-    let mut text_files: HashMap<String, String> = HashMap::new();
+    let mut expected_entries: HashMap<String, u64> = HashMap::new();
     for _ in 0..entry_count {
         if offset + 46 > bytes.len() {
             return Err("Invalid .wawapkg central directory range".into());
@@ -333,12 +454,12 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
             return Err("Invalid .wawapkg central directory".into());
         }
         let compression = read_u16(&bytes, offset + 10)?;
-        let compressed_size = read_u32(&bytes, offset + 20)? as usize;
+        let _compressed_size = read_u32(&bytes, offset + 20)? as usize;
         let uncompressed_size = read_u32(&bytes, offset + 24)? as u64;
         let name_len = read_u16(&bytes, offset + 28)? as usize;
         let extra_len = read_u16(&bytes, offset + 30)? as usize;
         let comment_len = read_u16(&bytes, offset + 32)? as usize;
-        let local_offset = read_u32(&bytes, offset + 42)? as usize;
+        let external_attributes = read_u32(&bytes, offset + 38)?;
         let name_start = offset + 46;
         let name_end = name_start + name_len;
         let next_offset = name_end + extra_len + comment_len;
@@ -358,45 +479,124 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
         if forbidden_wawapkg_extension(&entry_name) {
             return Err(format!("Forbidden archive entry type: {entry_name}"));
         }
+        if ((external_attributes >> 16) & 0o170000) == 0o120000 {
+            return Err(format!("Invalid .wawapkg: unsafe path {entry_name}"));
+        }
+        if asset_entry(&entry_name) && !allowed_asset_extension(&entry_name) {
+            return Err(format!("Unsupported asset file type: {entry_name}"));
+        }
         total_size += uncompressed_size;
         if total_size > MAX_WAWAPKG_TOTAL_SIZE {
-            return Err("Package exceeds 50 MB uncompressed size limit".into());
+            return Err("Package exceeds 100 MB uncompressed size limit".into());
         }
-        if asset_entry(&entry_name) {
+        if uncompressed_size > MAX_WAWAPKG_FILE_SIZE {
+            return Err(format!("Package file too large: {entry_name}"));
+        }
+        if compression != 0 && compression != 8 {
+            return Err(format!("Invalid .wawapkg: unsupported compression method {compression}"));
+        }
+        expected_entries.insert(entry_name, uncompressed_size);
+    }
+
+    let script = r#"
+param([string]$PackagePath)
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
+$entries = @()
+try {
+  foreach ($entry in $zip.Entries) {
+    if ($entry.FullName.EndsWith('/')) { continue }
+    $stream = $entry.Open()
+    $memory = New-Object System.IO.MemoryStream
+    try {
+      $stream.CopyTo($memory)
+      $entries += [pscustomobject]@{
+        name = $entry.FullName
+        size = [int64]$entry.Length
+        base64 = [Convert]::ToBase64String($memory.ToArray())
+      }
+    } finally {
+      $memory.Dispose()
+      $stream.Dispose()
+    }
+  }
+} finally {
+  $zip.Dispose()
+}
+[Console]::Out.Write(($entries | ConvertTo-Json -Depth 4 -Compress))
+"#;
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            script,
+            package_path.to_string_lossy().as_ref(),
+        ])
+        .output()
+        .map_err(|error| format!("Failed to read .wawapkg zip entries: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let raw_json = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let entries: Vec<WawaZipEntryPayload> = if raw_json.is_empty() {
+        Vec::new()
+    } else if raw_json.starts_with('[') {
+        serde_json::from_str(&raw_json).map_err(|error| format!("Failed to parse .wawapkg entries: {error}"))?
+    } else {
+        vec![serde_json::from_str(&raw_json).map_err(|error| format!("Failed to parse .wawapkg entry: {error}"))?]
+    };
+
+    let mut text_files: HashMap<String, String> = HashMap::new();
+    let mut asset_files: Vec<AiImportAssetFile> = Vec::new();
+    for entry in entries {
+        let entry_name = normalize_zip_entry_path(&entry.name)?;
+        if entry_name.ends_with('/') || entry_name.starts_with("__MACOSX/") || entry_name.ends_with(".DS_Store") {
             continue;
         }
-        if uncompressed_size > MAX_WAWAPKG_TEXT_FILE_SIZE {
-            return Err(format!("Text file too large: {entry_name}"));
+        let Some(expected_size) = expected_entries.get(&entry_name) else {
+            return Err(format!("Invalid .wawapkg: unexpected entry {entry_name}"));
+        };
+        if *expected_size != entry.size {
+            return Err(format!("Invalid .wawapkg: size mismatch for {entry_name}"));
         }
-        if compression != 0 {
-            return Err(format!("Unsupported .wawapkg compression for {entry_name}; use npm run kb:pack-ai-import"));
+        if asset_entry(&entry_name) {
+            asset_files.push(AiImportAssetFile {
+                vault_relative_path: asset_vault_relative_path(&entry_name)?,
+                package_relative_path: entry_name.clone(),
+                base64: entry.base64,
+                mime_type: asset_mime_type(&entry_name).into(),
+                size: entry.size,
+            });
+        } else {
+            let bytes = decode_base64(&entry.base64)?;
+            let contents = String::from_utf8(bytes).map_err(|_| format!("Text file is not UTF-8: {entry_name}"))?;
+            text_files.insert(entry_name, contents);
         }
-        if local_offset + 30 > bytes.len() {
-            return Err("Invalid .wawapkg local header range".into());
-        }
-        if read_u32(&bytes, local_offset)? != 0x04034b50 {
-            return Err("Invalid .wawapkg local header".into());
-        }
-        let local_name_len = read_u16(&bytes, local_offset + 26)? as usize;
-        let local_extra_len = read_u16(&bytes, local_offset + 28)? as usize;
-        let data_offset = local_offset + 30 + local_name_len + local_extra_len;
-        let data_end = data_offset + compressed_size;
-        if data_offset > bytes.len() || data_end > bytes.len() {
-            return Err("Invalid .wawapkg file data range".into());
-        }
-        let contents = String::from_utf8(bytes[data_offset..data_end].to_vec())
-            .map_err(|_| format!("Text file is not UTF-8: {entry_name}"))?;
-        text_files.insert(entry_name, contents);
+    }
+
+    if !text_files.contains_key("mimetype") {
+        return Err("Invalid .wawapkg: missing mimetype".into());
     }
     if text_files.get("mimetype").map(|value| value.as_str()) != Some(WAWAPKG_MIMETYPE) {
         return Err("Invalid .wawapkg mimetype".into());
     }
-    let manifest_raw = text_files.get("manifest.yaml").cloned().ok_or("Missing manifest.yaml")?;
-    if !manifest_raw.contains("packageFormat: wawapkg") {
-        return Err("manifest.yaml: packageFormat must be wawapkg".into());
+    let manifest_raw = text_files.get("manifest.yaml").cloned().ok_or("Invalid .wawapkg: missing manifest.yaml")?;
+    if !text_files.contains_key("sources.yaml") {
+        return Err("Invalid .wawapkg: missing sources.yaml".into());
     }
-    if !manifest_raw.contains("packageKind: import") && !manifest_raw.contains("packageKind: ai-import") {
-        return Err("manifest.yaml: packageKind must be import".into());
+    if !text_files.contains_key("patch.yaml") {
+        return Err("Invalid .wawapkg: missing patch.yaml".into());
+    }
+    if manifest_yaml_field(&manifest_raw, "packageFormat").as_deref() != Some("wawapkg") {
+        return Err("Invalid .wawapkg: manifest.packageFormat must be wawapkg".into());
+    }
+    let package_kind = manifest_yaml_field(&manifest_raw, "packageKind").unwrap_or_default();
+    if package_kind != "import" && package_kind != "ai-import" {
+        return Err("Invalid .wawapkg: manifest.packageKind must be import".into());
+    }
+    if manifest_yaml_field(&manifest_raw, "schemaVersion").as_deref() != Some("1.1") {
+        return Err("Invalid .wawapkg: manifest.schemaVersion must be 1.1".into());
     }
     let package_id = package_id_from_manifest(&manifest_raw)?;
     let mut package = AiImportPackageFiles {
@@ -410,6 +610,7 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
         patch_raw: text_files.get("patch.yaml").cloned().unwrap_or_default(),
         generated_meta_files: HashMap::new(),
         generated_note_files: HashMap::new(),
+        asset_files,
         block_type_files: HashMap::new(),
         review_files: HashMap::new(),
     };
@@ -601,7 +802,7 @@ fn read_ai_import_package_files(
     package_id: String,
 ) -> Result<AiImportPackageFiles, String> {
     if !is_safe_package_id(&package_id) {
-        return Err("Invalid AI import package id".into());
+        return Err("Invalid import package id".into());
     }
     let package_root = safe_vault_path(&vault_root_path, &format!(".kb-ai/imports/{package_id}"))?;
     if !package_root.is_dir() {
@@ -634,6 +835,7 @@ fn read_ai_import_package_files(
         patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
         generated_meta_files,
         generated_note_files,
+        asset_files: Vec::new(),
         block_type_files,
         review_files,
     })
@@ -677,6 +879,7 @@ fn read_external_ai_import_package(package_root_path: String) -> Result<AiImport
         patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
         generated_meta_files,
         generated_note_files,
+        asset_files: Vec::new(),
         block_type_files,
         review_files,
     })
@@ -745,7 +948,7 @@ fn export_ai_context(vault_root_path: String) -> Result<String, String> {
 #[tauri::command]
 fn apply_ai_import_plan(vault_root_path: String, plan: AiImportApplyPlan) -> Result<(), String> {
     if !is_safe_package_id(&plan.package_id) {
-        return Err("Invalid AI import package id".into());
+        return Err("Invalid import package id".into());
     }
     if plan.backup_relative_dir != format!(".kb-ai/backups/{}", plan.package_id) {
         return Err("Invalid backup directory for AI import package".into());
@@ -795,6 +998,23 @@ fn apply_ai_import_plan(vault_root_path: String, plan: AiImportApplyPlan) -> Res
                 .map_err(|error| format!("Failed to create target directory: {error}"))?;
         }
         fs::write(&target, &write.contents)
+            .map_err(|error| format!("Failed to write {}: {error}", target.to_string_lossy()))?;
+    }
+
+    for write in &plan.binary_writes {
+        if !allowed_ai_apply_path(&write.relative_path) {
+            return Err(format!("Refusing to write outside AI import allowlist: {}", write.relative_path));
+        }
+        let target = safe_vault_path(&vault_root_path, &write.relative_path)?;
+        if write.create_only && target.exists() {
+            return Err(format!("Asset already exists: {}", write.relative_path));
+        }
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Failed to create target directory: {error}"))?;
+        }
+        let bytes = decode_base64(&write.base64)?;
+        fs::write(&target, bytes)
             .map_err(|error| format!("Failed to write {}: {error}", target.to_string_lossy()))?;
     }
 

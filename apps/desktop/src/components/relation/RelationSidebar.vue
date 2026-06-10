@@ -314,6 +314,11 @@ function requestDeleteRelation(edgeId) {
           <h2>{{ node.title }}</h2>
           <p>{{ node.id }}</p>
           <p>{{ node.type }} / {{ node.domain }}</p>
+          <button class="hud-button button-with-icon pin-action"
+            :class="{ 'is-pinned': currentNodePinned, 'is-unpinned': !currentNodePinned }"
+            style="--button-color: var(--career)" @click="$emit('toggle-pin-node')">
+            <AppIcon class="pin-icon" name="pin" />
+          </button>
         </section>
 
         <section class="sidebar-section">
@@ -340,12 +345,6 @@ function requestDeleteRelation(edgeId) {
               @click="$emit('request-add-link')">
               <AppIcon name="link" />
               <span class="button-icon-label">Add Link</span>
-            </button>
-            <button class="hud-button button-with-icon pin-action"
-              :class="{ 'is-pinned': currentNodePinned, 'is-unpinned': !currentNodePinned }"
-              style="--button-color: var(--career)" @click="$emit('toggle-pin-node')">
-              <AppIcon class="pin-icon" name="pin" />
-              <span class="button-icon-label">{{ currentNodePinned ? "Unpin" : "Pin" }}</span>
             </button>
           </div>
         </section>

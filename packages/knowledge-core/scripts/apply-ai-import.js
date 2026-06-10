@@ -34,6 +34,12 @@ try {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, write.contents || "", "utf8");
   });
+  (plan.binaryWrites || []).forEach((write) => {
+    const target = safeJoin(resolvedVaultRoot, write.relativePath);
+    if (write.createOnly && fs.existsSync(target)) throw new Error(`Asset already exists: ${write.relativePath}`);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, Buffer.from(write.base64 || "", "base64"));
+  });
   console.log(`Applied import package: ${plan.packageId}`);
   console.log(`Backup: ${plan.backupRelativeDir}`);
   console.log(`Created: ${plan.history.created.length}`);

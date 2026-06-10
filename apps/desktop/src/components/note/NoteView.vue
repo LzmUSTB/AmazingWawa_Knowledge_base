@@ -45,6 +45,7 @@ const node = computed(() => findGraphNode(props.noteId) || getGraphNodes()[0]);
 const accent = computed(() => getDomainColor(node.value.domain));
 const noteMarkdown = computed(() => getActiveVault().notes[props.noteId]?.markdown || "");
 const blockRegistry = computed(() => getActiveVault().blockRegistry || {});
+const vaultRootPath = computed(() => getActiveVault().vaultRootPath || "");
 const draftMarkdown = ref(noteMarkdown.value);
 const findOpen = ref(false);
 const findQuery = ref("");
@@ -284,7 +285,13 @@ function moveFind(delta) {
         <NoteEditor v-if="mode === 'edit'" v-model="draftMarkdown" />
 
         <div v-else ref="readSurfaceRef" class="read-surface">
-          <NoteBlockRenderer :markdown="readMarkdown" :search-query="findOpen ? findQuery : ''" :block-registry="blockRegistry" />
+          <NoteBlockRenderer
+            :markdown="readMarkdown"
+            :search-query="findOpen ? findQuery : ''"
+            :block-registry="blockRegistry"
+            :node="node"
+            :vault-root-path="vaultRootPath"
+          />
         </div>
       </div>
     </article>

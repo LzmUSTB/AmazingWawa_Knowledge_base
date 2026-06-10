@@ -2,13 +2,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
-import { WAWAPKG_MIMETYPE } from "../src/wawapkg/wawapkg.js";
+import { WAWAPKG_MIMETYPE, readWawaPackageBuffer } from "../src/wawapkg/wawapkg.js";
 
 const EXCLUDE_DIRS = new Set([".git", "node_modules", "__MACOSX"]);
 const EXCLUDE_FILES = new Set([".DS_Store"]);
 
 function usage() {
-  console.error("Usage: npm run kb:pack-ai-import -- ./package-folder ./ai-import-xxx.wawapkg");
+  console.error("Usage: npm run kb:pack-ai-import -- ./package-folder ./wawa-import-xxx.wawapkg");
 }
 
 function assertSafeEntry(entryPath) {
@@ -165,7 +165,9 @@ try {
     { relativePath: "manifest.yaml", contents: patchedManifest(packageRoot) },
   ].sort((left, right) => (left.relativePath === "mimetype" ? -1 : right.relativePath === "mimetype" ? 1 : left.relativePath.localeCompare(right.relativePath)));
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, buildZip(entries));
+  const archive = buildZip(entries);
+  readWawaPackageBuffer(archive, outputPath);
+  fs.writeFileSync(outputPath, archive);
   console.log(`Packed .wawapkg: ${outputPath}`);
 } catch (error) {
   console.error(`Failed to pack .wawapkg: ${error?.message || error}`);
