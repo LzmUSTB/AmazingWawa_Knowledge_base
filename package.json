@@ -12,6 +12,7 @@
     "dev:desktop": "npm run tauri dev -w apps/desktop",
     "dev:viewer": "npm run dev -w apps/viewer",
     "build:viewer": "npm run build -w apps/viewer",
+    "kb:export-ai-context": "node packages/knowledge-core/scripts/export-ai-context.js",
     "lint": "echo \"lint is not configured yet\"",
     "check": "echo \"check is not configured yet\""
   },

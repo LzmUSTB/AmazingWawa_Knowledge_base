@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { parseMarkdownTokens, parseNoteBlocks } from "../../content/note-block-parser.js";
 import ExpressionVisualizerBlock from "./blocks/ExpressionVisualizerBlock.vue";
+import GenericVisualBlock from "./blocks/GenericVisualBlock.vue";
 import ProcessFlowBlock from "./blocks/ProcessFlowBlock.vue";
 
 const props = defineProps({
@@ -13,11 +14,15 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  blockRegistry: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const revealedQuiz = ref({});
 const activeCodeLine = ref({});
-const blocks = computed(() => parseNoteBlocks(props.markdown));
+const blocks = computed(() => parseNoteBlocks(props.markdown, { blockRegistry: props.blockRegistry }));
 
 function escapeHtml(value = "") {
   return String(value)
@@ -297,23 +302,16 @@ watch(
         :data="block.data"
       />
 
-      <section v-else class="markdown-document">
-        <template v-for="(token, tokenIndex) in markdownTokens(block.raw)" :key="`fallback-${tokenIndex}`">
-          <component
-            :is="`h${Math.min(token.level || 2, 4)}`"
-            v-if="token.type === 'heading'"
-            class="doc-heading"
-            v-html="inlineMarkdown(token.text)"
-          />
-          <p v-else-if="token.type === 'paragraph'" class="doc-paragraph" v-html="inlineMarkdown(token.text)" />
-          <pre v-else-if="token.type === 'code'" class="doc-code"><code>{{ token.text }}</code></pre>
-          <ol v-else-if="token.type === 'list' && token.ordered" class="doc-list">
-            <li v-for="(item, itemIndex) in token.items" :key="itemIndex" v-html="inlineMarkdown(item)" />
-          </ol>
-          <ul v-else-if="token.type === 'list'" class="doc-list">
-            <li v-for="(item, itemIndex) in token.items" :key="itemIndex" v-html="inlineMarkdown(item)" />
-          </ul>
-        </template>
+      <GenericVisualBlock
+        v-else-if="block.blockKind === 'declarative-visual'"
+        :block="block"
+      />
+
+      <section v-else-if="block.type === 'unsupported-block'" class="content-block unsupported-block">
+        <div class="block-kicker">Unsupported Block</div>
+        <h3>{{ block.sourceType }}</h3>
+        <p>{{ block.error || "This block type is not registered in this vault." }}</p>
+        <pre v-if="block.raw"><code>{{ block.raw }}</code></pre>
       </section>
     </template>
   </div>
@@ -368,7 +366,7 @@ h4.doc-heading {
 
 .doc-code,
 .code-explain pre,
-.fallback-block pre {
+.unsupported-block pre {
   overflow: auto;
   margin: 0;
   border: 1px solid var(--border-muted);

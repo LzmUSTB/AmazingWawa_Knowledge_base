@@ -6,10 +6,10 @@
 
 ## 核心直觉
 
-::concept-card
+:::concept-card
 title: 核心直觉
 content: 
-::
+:::
 
 ## 正式解释
 
@@ -21,7 +21,7 @@ content:
 
 ## 复习问题
 
-::quiz
+:::quiz
 question: 
 answer: 
-::
+:::

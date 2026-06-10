@@ -56,8 +56,8 @@ boards:
         w: 220
         h: 100
       rendering-pipeline:
-        x: 800
-        y: 608
+        x: 736
+        y: 576
         w: 240
         h: 88
       shader:

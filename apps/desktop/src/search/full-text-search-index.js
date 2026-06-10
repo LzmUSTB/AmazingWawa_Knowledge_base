@@ -119,7 +119,7 @@ function baseChunk(node, nodeId, blockIndex, chunkIndex, blockType, section, tex
 function chunksForNote(nodeId, markdown) {
   const node = findGraphNode(nodeId);
   if (!node) return [];
-  return parseNoteBlocks(markdown || "").flatMap((block, blockIndex) => {
+  return parseNoteBlocks(markdown || "", { blockRegistry: getActiveVault().blockRegistry || {} }).flatMap((block, blockIndex) => {
     if (block.type === "markdown") return markdownChunks(node, nodeId, block, blockIndex);
     return contentBlockChunks(node, nodeId, block, blockIndex);
   });

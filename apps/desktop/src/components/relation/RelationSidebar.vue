@@ -289,20 +289,16 @@ function requestDeleteRelation(edgeId) {
   <aside class="relation-sidebar" :class="{ 'is-collapsed': collapsed }"
     :style="{ '--relation-node-color': nodeColor }">
     <button v-if="collapsed" class="relation-rail hud-button" @click="$emit('toggle-collapse')">
-      Relations
+      Details
     </button>
 
     <template v-else>
       <header class="relation-header">
         <div>
-          <div class="panel-label" :style="{ '--label-color': nodeColor || 'var(--graphics)' }">Relations</div>
+          <div class="panel-label" :style="{ '--label-color': nodeColor || 'var(--graphics)' }">Details</div>
         </div>
-        <button
-          class="collapse-button hud-button button-icon-only"
-          title="Collapse relations sidebar"
-          aria-label="Collapse relations sidebar"
-          @click="$emit('toggle-collapse')"
-        >
+        <button class="collapse-button hud-button button-icon-only" title="Collapse relations sidebar"
+          aria-label="Collapse relations sidebar" @click="$emit('toggle-collapse')">
           <AppIcon name="chevron-right" :size="13" />
         </button>
       </header>
@@ -323,13 +319,14 @@ function requestDeleteRelation(edgeId) {
         <section class="sidebar-section">
           <div class="section-label">Actions</div>
           <div class="action-grid">
-            <button v-if="domainSelected" class="hud-button button-with-icon" style="--button-color: var(--relation-node-color)"
-              @click="$emit('open-domain', node.id)">
+            <button v-if="domainSelected" class="hud-button button-with-icon"
+              style="--button-color: var(--relation-node-color)" @click="$emit('open-domain', node.id)">
               <AppIcon name="graph" />
               <span class="button-icon-label">Open Domain Graph</span>
             </button>
             <template v-else>
-              <button class="hud-button button-with-icon" style="--button-color: var(--simulation)" @click="$emit('open-note', node.id)">
+              <button class="hud-button button-with-icon" style="--button-color: var(--simulation)"
+                @click="$emit('open-note', node.id)">
                 <AppIcon name="file-text" />
                 <span class="button-icon-label">Open Note</span>
               </button>
@@ -339,16 +336,14 @@ function requestDeleteRelation(edgeId) {
                 <span class="button-icon-label">Show Local Graph</span>
               </button>
             </template>
-            <button class="hud-button button-with-icon" style="--button-color: var(--career)" @click="$emit('request-add-link')">
+            <button class="hud-button button-with-icon" style="--button-color: var(--career)"
+              @click="$emit('request-add-link')">
               <AppIcon name="link" />
               <span class="button-icon-label">Add Link</span>
             </button>
-            <button
-              class="hud-button button-with-icon pin-action"
+            <button class="hud-button button-with-icon pin-action"
               :class="{ 'is-pinned': currentNodePinned, 'is-unpinned': !currentNodePinned }"
-              style="--button-color: var(--career)"
-              @click="$emit('toggle-pin-node')"
-            >
+              style="--button-color: var(--career)" @click="$emit('toggle-pin-node')">
               <AppIcon class="pin-icon" name="pin" />
               <span class="button-icon-label">{{ currentNodePinned ? "Unpin" : "Pin" }}</span>
             </button>
@@ -361,13 +356,8 @@ function requestDeleteRelation(edgeId) {
             <span>Direction</span>
             <div class="direction-composer" :title="directionTitle">
               <div class="direction-node">{{ directionLeftLabel }}</div>
-              <button
-                class="direction-arrow"
-                title="Reverse direction"
-                aria-label="Reverse direction"
-                type="button"
-                @click="toggleDirection"
-              >
+              <button class="direction-arrow" title="Reverse direction" aria-label="Reverse direction" type="button"
+                @click="toggleDirection">
                 <AppIcon name="arrow-swap" :size="14" />
               </button>
               <div class="direction-node">{{ directionRightLabel }}</div>
@@ -456,14 +446,8 @@ function requestDeleteRelation(edgeId) {
         </section>
       </div>
 
-      <RelationContextMenu
-        :edge="contextMenu.edge"
-        :x="contextMenu.x"
-        :y="contextMenu.y"
-        @close="closeContextMenu"
-        @delete="requestDeleteRelation"
-        @edit="requestEditRelation"
-      />
+      <RelationContextMenu :edge="contextMenu.edge" :x="contextMenu.x" :y="contextMenu.y" @close="closeContextMenu"
+        @delete="requestDeleteRelation" @edit="requestEditRelation" />
     </template>
   </aside>
 </template>

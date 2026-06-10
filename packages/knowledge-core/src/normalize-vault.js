@@ -1,6 +1,7 @@
 import { buildFileTree } from "./build-file-tree.js";
 import { buildGraphScopes } from "./build-graph-scopes.js";
 import { buildNoteIndex, idFromContentPath } from "./build-note-index.js";
+import { getBlockRegistry, normalizeBlockTypes } from "./block-registry.js";
 import { parseYaml, parseYamlFiles } from "./parse-yaml.js";
 import { DEFAULT_BOARD_SIZE } from "./schema.js";
 import { validateVault } from "./validate-vault.js";
@@ -150,6 +151,7 @@ export function normalizeVault(rawFiles = {}) {
   const graphYaml = parseYaml(rawFiles.graphYaml, "vault/graph.yaml");
   const graphLayoutYaml = parseYaml(rawFiles.graphLayoutYaml, "vault/graph-layout.yaml");
   const metaYamlFiles = parseYamlFiles(rawFiles.metaFiles || {});
+  const blockTypeResult = normalizeBlockTypes(rawFiles.blockTypeFiles || {});
 
   const domains = asArray(domainsYaml.domains).map(normalizeDomain);
   const domainNodes = domains.map(normalizeDomainNode);
@@ -176,12 +178,16 @@ export function normalizeVault(rawFiles = {}) {
     edges,
     layouts,
     notes,
+    blockTypes: blockTypeResult.definitions,
+    blockTypeErrors: blockTypeResult.errors,
+    blockTypeWarnings: blockTypeResult.warnings,
     fileTree,
     scopes,
   };
 
   return {
     ...normalizedVault,
+    blockRegistry: getBlockRegistry(normalizedVault),
     validation: validateVault(normalizedVault),
   };
 }

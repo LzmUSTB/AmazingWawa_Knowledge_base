@@ -13,6 +13,7 @@ function normalizeFromRaw(rawFiles, vaultRootPath) {
     graphLayoutYaml: rawFiles.graph_layout_yaml,
     metaFiles: rawFiles.meta_files || {},
     noteFiles: rawFiles.note_files || {},
+    blockTypeFiles: rawFiles.block_type_files || {},
   });
 
   return {

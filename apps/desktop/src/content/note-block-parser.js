@@ -1,11 +1,11 @@
-const SUPPORTED_BLOCKS = new Set([
-  "concept-card",
-  "process-flow",
-  "compare-table",
-  "code-explain",
-  "quiz",
-  "expression-visualizer",
-]);
+import {
+  NATIVE_BLOCK_TYPES,
+  getRegisteredDeclarativeBlockType,
+  isNativeBlockType,
+  isRegisteredDeclarativeBlockType,
+} from "../../../../packages/knowledge-core/src/index.js";
+
+const NATIVE_BLOCK_TYPE_SET = new Set(NATIVE_BLOCK_TYPES);
 
 function parseScalar(value = "") {
   const trimmed = value.trim();
@@ -149,18 +149,41 @@ function parseNestedValue(lines) {
   return result;
 }
 
-function parseCustomBlock(type, raw) {
+function parseCustomBlock(type, raw, blockRegistry) {
   try {
+    const data = parseKeyValueLines(raw.split(/\r?\n/));
+    if (isNativeBlockType(type)) {
+      return {
+        type,
+        sourceType: type,
+        blockKind: "native",
+        data,
+        raw,
+      };
+    }
+    if (isRegisteredDeclarativeBlockType(type, blockRegistry)) {
+      return {
+        type,
+        sourceType: type,
+        blockKind: "declarative-visual",
+        definition: getRegisteredDeclarativeBlockType(type, blockRegistry),
+        data,
+        raw,
+      };
+    }
     return {
-      type: SUPPORTED_BLOCKS.has(type) ? type : "fallback",
+      type: "unsupported-block",
       sourceType: type,
-      data: parseKeyValueLines(raw.split(/\r?\n/)),
+      blockKind: "unsupported",
+      data,
       raw,
+      error: `Unsupported block type "${type}".`,
     };
   } catch (error) {
     return {
-      type: "fallback",
+      type: "unsupported-block",
       sourceType: type,
+      blockKind: NATIVE_BLOCK_TYPE_SET.has(type) ? "native" : "unsupported",
       data: {},
       raw,
       error: String(error?.message || error),
@@ -168,7 +191,8 @@ function parseCustomBlock(type, raw) {
   }
 }
 
-export function parseNoteBlocks(markdown = "") {
+export function parseNoteBlocks(markdown = "", options = {}) {
+  const blockRegistry = options.blockRegistry || {};
   const blocks = [];
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   let markdownBuffer = [];
@@ -203,7 +227,7 @@ export function parseNoteBlocks(markdown = "") {
       index += 1;
     }
     if (index < lines.length && lines[index].trim() === ":::") index += 1;
-    blocks.push(parseCustomBlock(blockType, body.join("\n")));
+    blocks.push(parseCustomBlock(blockType, body.join("\n"), blockRegistry));
   }
 
   flushMarkdown();

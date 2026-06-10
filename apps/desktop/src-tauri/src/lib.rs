@@ -12,6 +12,7 @@ struct VaultRawFiles {
     graph_layout_yaml: String,
     meta_files: HashMap<String, String>,
     note_files: HashMap<String, String>,
+    block_type_files: HashMap<String, String>,
 }
 
 fn safe_join(root: &str, relative_path: &str) -> Result<PathBuf, String> {
@@ -100,6 +101,44 @@ fn read_content_files(
     Ok(())
 }
 
+fn read_yaml_files_in_directory(
+    root: &Path,
+    relative_dir: &str,
+    output: &mut HashMap<String, String>,
+) -> Result<(), String> {
+    let dir = root.join(relative_dir);
+    if !dir.is_dir() {
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(&dir).map_err(|error| {
+        format!(
+            "Failed to read directory {}: {error}",
+            dir.to_string_lossy()
+        )
+    })? {
+        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let extension = path.extension().and_then(|value| value.to_str());
+        if !matches!(extension, Some("yaml") | Some("yml")) {
+            continue;
+        }
+        let key = path
+            .strip_prefix(root)
+            .map_err(|error| format!("Failed to make relative path: {error}"))?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let contents = fs::read_to_string(&path)
+            .map_err(|error| format!("Failed to read {}: {error}", path.to_string_lossy()))?;
+        output.insert(key, contents);
+    }
+
+    Ok(())
+}
+
 #[tauri::command]
 fn choose_vault_root() -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
@@ -148,8 +187,10 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
 
     let mut meta_files = HashMap::new();
     let mut note_files = HashMap::new();
+    let mut block_type_files = HashMap::new();
     read_content_files(&root, &root.join("content"), "meta.yaml", &mut meta_files)?;
     read_content_files(&root, &root.join("content"), "note.md", &mut note_files)?;
+    read_yaml_files_in_directory(&root, "block-types", &mut block_type_files)?;
 
     Ok(VaultRawFiles {
         vault_yaml: read_required(&root, "vault.yaml")?,
@@ -158,6 +199,7 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
         graph_layout_yaml: fs::read_to_string(root.join("graph-layout.yaml")).unwrap_or_default(),
         meta_files,
         note_files,
+        block_type_files,
     })
 }
 
