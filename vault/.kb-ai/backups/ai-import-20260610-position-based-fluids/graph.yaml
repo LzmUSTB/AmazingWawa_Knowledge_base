@@ -68,11 +68,3 @@ edges:
     from: sph
     to: shader
     relation: depends-on
-  - id: sph-contains-position-based-fluids
-    from: sph
-    to: position-based-fluids
-    relation: contains
-  - id: position-based-fluids-compares-with-sph
-    from: position-based-fluids
-    to: sph
-    relation: compares-with

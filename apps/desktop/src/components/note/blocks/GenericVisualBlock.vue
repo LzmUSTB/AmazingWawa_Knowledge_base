@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 
 const ALLOWED_LAYOUT_TYPES = new Set(["split-panel", "stack", "grid"]);
 const ALLOWED_PANEL_TYPES = new Set(["svg-scene", "inspector"]);
-const ALLOWED_ELEMENT_TYPES = new Set(["node", "edge", "arrow", "label", "badge", "formula-callout", "table"]);
+const ALLOWED_ELEMENT_TYPES = new Set(["node", "edge", "arrow", "label", "badge", "formula-callout"]);
 const ALLOWED_INTERACTIONS = new Set(["select", "highlight-related"]);
 
 const props = defineProps({
@@ -209,7 +209,7 @@ function selectElement(element) {
             </text>
 
             <g v-else-if="element.type === 'badge' || element.type === 'formula-callout'" class="scene-badge">
-              <rect :x="svgX(element.x) - 70" :y="svgY(element.y) - 18" width="140" height="36" />
+              <rect :x="svgX(element.x) - 150" :y="svgY(element.y) - 20" width="300" height="40" />
               <text :x="svgX(element.x)" :y="svgY(element.y)" text-anchor="middle" dominant-baseline="middle">
                 {{ element.text || element.label }}
               </text>
@@ -292,9 +292,13 @@ function selectElement(element) {
   background: var(--background-main);
 }
 
+.scene-panel {
+  overflow-x: auto;
+}
+
 .scene-svg {
   display: block;
-  width: 100%;
+  width: max(100%, 720px);
   min-height: 320px;
 }
 
@@ -333,14 +337,14 @@ function selectElement(element) {
 .scene-badge text {
   fill: var(--text-primary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 20px;
+  font-size: calc(17px * var(--ui-font-scale));
   font-weight: 800;
   pointer-events: none;
 }
 
 .scene-label {
   fill: var(--text-secondary);
-  font-size: 18px;
+  font-size: calc(15px * var(--ui-font-scale));
 }
 
 .inspector-panel,

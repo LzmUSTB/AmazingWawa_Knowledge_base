@@ -71,10 +71,36 @@ export async function listAiImportPackages(vaultRootPath) {
   return invoke("list_ai_import_packages", { vaultRootPath });
 }
 
+export async function chooseAiImportPackageRoot() {
+  if (!isTauri()) return null;
+  return invoke("choose_ai_import_package_root");
+}
+
 export async function readAiImportPackage(vaultRootPath, packageId) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before reading AI import packages.");
   const rawPackage = await invoke("read_ai_import_package_files", { vaultRootPath, packageId });
   return normalizeAiPackageFiles(rawPackage);
+}
+
+export async function readExternalAiImportPackage(packageRootPath) {
+  if (!packageRootPath) throw new Error("Choose an AI import package folder first.");
+  const rawPackage = await invoke("read_external_ai_import_package", { packageRootPath });
+  return normalizeAiPackageFiles(rawPackage);
+}
+
+export async function readAiImportHistory(vaultRootPath, packageId) {
+  if (!vaultRootPath || !packageId) return { applied: false, appliedAt: "", raw: "" };
+  const history = await invoke("read_ai_import_history", { vaultRootPath, packageId });
+  return {
+    applied: Boolean(history.applied),
+    appliedAt: history.applied_at || "",
+    raw: history.raw || "",
+  };
+}
+
+export async function exportAiContext(vaultRootPath) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting AI context.");
+  return invoke("export_ai_context", { vaultRootPath });
 }
 
 export async function inspectAiImportPackage(vaultRootPath, packageId) {
@@ -82,13 +108,36 @@ export async function inspectAiImportPackage(vaultRootPath, packageId) {
   const packageFiles = await readAiImportPackage(vaultRootPath, packageId);
   const validation = validateAiPackage(currentVault, packageFiles);
   const diff = diffAiPackage(currentVault, validation);
-  return { currentVault, packageFiles, validation, diff };
+  const history = await readAiImportHistory(vaultRootPath, validation.previewModel.packageId);
+  return { currentVault, packageFiles, validation, diff, history };
+}
+
+export async function inspectExternalAiImportPackage(vaultRootPath, packageRootPath) {
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const packageFiles = await readExternalAiImportPackage(packageRootPath);
+  const validation = validateAiPackage(currentVault, packageFiles);
+  const diff = diffAiPackage(currentVault, validation);
+  const history = await readAiImportHistory(vaultRootPath, validation.previewModel.packageId);
+  return { currentVault, packageFiles, validation, diff, history };
 }
 
 export async function applyAiImportPackage(vaultRootPath, packageId) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before applying AI import packages.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const packageFiles = await readAiImportPackage(vaultRootPath, packageId);
+  const history = await readAiImportHistory(vaultRootPath, packageFiles.packageId);
+  if (history.applied) throw new Error(`Package already applied: ${packageFiles.packageId}`);
+  const plan = buildAiPackageApplyPlan(currentVault, packageFiles);
+  await invoke("apply_ai_import_plan", { vaultRootPath, plan });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function applyExternalAiImportPackage(vaultRootPath, packageRootPath) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before applying AI import packages.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const packageFiles = await readExternalAiImportPackage(packageRootPath);
+  const history = await readAiImportHistory(vaultRootPath, packageFiles.packageId);
+  if (history.applied) throw new Error(`Package already applied: ${packageFiles.packageId}`);
   const plan = buildAiPackageApplyPlan(currentVault, packageFiles);
   await invoke("apply_ai_import_plan", { vaultRootPath, plan });
   return loadVaultFromPath(vaultRootPath);

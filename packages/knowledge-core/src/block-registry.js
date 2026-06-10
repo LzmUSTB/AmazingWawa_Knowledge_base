@@ -35,7 +35,6 @@ const ALLOWED_ELEMENT_TYPES = new Set([
   "label",
   "badge",
   "formula-callout",
-  "table",
 ]);
 const ALLOWED_INTERACTIONS = new Set(["select", "highlight-related"]);
 

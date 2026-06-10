@@ -1,0 +1,9 @@
+packageId: ai-import-20260610-position-based-fluids
+appliedAt: 2026-06-10T06:06:35.297Z
+created:
+  - block-types/solver-loop-diagram.yaml
+  - content/simulation/position-based-fluids/meta.yaml
+  - content/simulation/position-based-fluids/note.md
+modified:
+  - graph.yaml
+warnings: []

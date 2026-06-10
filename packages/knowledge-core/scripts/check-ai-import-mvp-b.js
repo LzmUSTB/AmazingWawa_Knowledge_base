@@ -39,11 +39,23 @@ function withPackageId(packageRoot, packageId) {
 }
 
 const vault = readVaultForCli(vaultRoot);
+const cleanVaultRoot = path.join(os.tmpdir(), `ai-import-clean-vault-${Date.now()}`);
+fs.cpSync(vaultRoot, cleanVaultRoot, { recursive: true });
+fs.rmSync(path.join(cleanVaultRoot, "content", "simulation", "position-based-fluids"), { recursive: true, force: true });
+fs.rmSync(path.join(cleanVaultRoot, "block-types", "solver-loop-diagram.yaml"), { force: true });
+fs.rmSync(path.join(cleanVaultRoot, ".kb-ai", "history", "ai-import-20260610-position-based-fluids.yaml"), { force: true });
+const cleanGraphPath = path.join(cleanVaultRoot, "graph.yaml");
+const cleanGraph = YAML.parse(fs.readFileSync(cleanGraphPath, "utf8"));
+cleanGraph.edges = (cleanGraph.edges || []).filter(
+  (edge) => ![edge.from, edge.to].includes("position-based-fluids"),
+);
+fs.writeFileSync(cleanGraphPath, YAML.stringify(cleanGraph), "utf8");
+const cleanVault = readVaultForCli(cleanVaultRoot);
 
-const valid = validateAiPackage(vault, readAiPackage(fixtureRoot));
+const valid = validateAiPackage(cleanVault, readAiPackage(fixtureRoot));
 assert(valid.valid, `Expected fixture to be valid: ${valid.errors.join("; ")}`);
 
-const diff = diffAiPackage(vault, valid);
+const diff = diffAiPackage(cleanVault, valid);
 assert(diff.nodesToAdd.some((node) => node.id === "position-based-fluids"), "Expected diff to include position-based-fluids.");
 assert(diff.edgesToAdd.some((edge) => edge.from === "sph" && edge.relation === "contains" && edge.to === "position-based-fluids"), "Expected diff to include structural contains edge.");
 assert(diff.edgesToAdd.some((edge) => edge.from === "position-based-fluids" && edge.relation === "compares-with" && edge.to === "sph"), "Expected diff to include compares-with edge.");
@@ -53,14 +65,14 @@ withPackageId(invalidRelationRoot, path.basename(invalidRelationRoot));
 const invalidRelationPatch = readPatch(invalidRelationRoot);
 invalidRelationPatch.operations.find((operation) => operation.type === "add_edge").relation = "related-to";
 writePatch(invalidRelationRoot, invalidRelationPatch);
-assert(!validateAiPackage(vault, readAiPackage(invalidRelationRoot)).valid, "Expected invalid relation type to fail.");
+assert(!validateAiPackage(cleanVault, readAiPackage(invalidRelationRoot)).valid, "Expected invalid relation type to fail.");
 
 const containsRoot = tempPackage("contains-edge");
 withPackageId(containsRoot, path.basename(containsRoot));
 const containsPatch = readPatch(containsRoot);
 containsPatch.operations.find((operation) => operation.type === "add_edge").relation = "contains";
 writePatch(containsRoot, containsPatch);
-assert(!validateAiPackage(vault, readAiPackage(containsRoot)).valid, "Expected add_edge contains to fail.");
+assert(!validateAiPackage(cleanVault, readAiPackage(containsRoot)).valid, "Expected add_edge contains to fail.");
 
 const duplicateRoot = tempPackage("duplicate-node");
 withPackageId(duplicateRoot, path.basename(duplicateRoot));
@@ -68,16 +80,16 @@ const duplicatePatch = readPatch(duplicateRoot);
 const addNode = duplicatePatch.operations.find((operation) => operation.type === "add_node");
 addNode.node.id = "sph";
 writePatch(duplicateRoot, duplicatePatch);
-assert(!validateAiPackage(vault, readAiPackage(duplicateRoot)).valid, "Expected duplicate node id to fail.");
+assert(!validateAiPackage(cleanVault, readAiPackage(duplicateRoot)).valid, "Expected duplicate node id to fail.");
 
 const scriptRoot = tempPackage("script-block");
 withPackageId(scriptRoot, path.basename(scriptRoot));
 const blockPath = path.join(scriptRoot, "block-types", "solver-loop-diagram.yaml");
 fs.appendFileSync(blockPath, "\nscript: alert(1)\n", "utf8");
-assert(!validateAiPackage(vault, readAiPackage(scriptRoot)).valid, "Expected executable block field to fail.");
+assert(!validateAiPackage(cleanVault, readAiPackage(scriptRoot)).valid, "Expected executable block field to fail.");
 
 const tempVault = path.join(os.tmpdir(), `ai-import-apply-vault-${Date.now()}`);
-fs.cpSync(vaultRoot, tempVault, { recursive: true });
+fs.cpSync(cleanVaultRoot, tempVault, { recursive: true });
 const applyResult = applyAiPackage(tempVault, fixtureRoot, { readVault: readVaultForCli });
 assert(applyResult.created.includes("content/simulation/position-based-fluids/meta.yaml"), "Expected apply to create meta.yaml.");
 const appliedGraph = fs.readFileSync(path.join(tempVault, "graph.yaml"), "utf8");

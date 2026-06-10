@@ -1,22 +1,3 @@
 # Block Registry
 
-## Native Blocks
-
-- concept-card
-- process-flow
-- compare-table
-- code-explain
-- quiz
-- expression-visualizer
-
-## Custom Declarative Blocks
-
-- none installed
-
-## Registry Warnings
-
-- none
-
-## Registry Errors
-
-- none
+Native blocks remain built into the desktop renderer. Custom blocks live in block-types/*.yaml.

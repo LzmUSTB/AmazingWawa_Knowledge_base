@@ -130,3 +130,28 @@ boards:
         y: 480
         w: 190
         h: 80
+  sph:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      sph:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      simulation:
+        x: 1105
+        y: 312
+        w: 190
+        h: 80
+      shader:
+        x: 1493
+        y: 984
+        w: 190
+        h: 80
+      position-based-fluids:
+        x: 704
+        y: 928
+        w: 190
+        h: 80

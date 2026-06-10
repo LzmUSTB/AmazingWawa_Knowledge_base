@@ -251,7 +251,7 @@ function validateAppendNoteSection(operation, context) {
     errors.push(`append_note_section ${targetId}: target note does not exist.`);
   }
   if (insertMode !== "end" && currentNote && !noteHeadingExists(currentNote, operation.headingSelector)) {
-    warnings.push(`append_note_section ${targetId}: headingSelector "${operation.headingSelector}" was not found for preview.`);
+    errors.push(`append_note_section ${targetId}: headingSelector "${operation.headingSelector}" was not found.`);
   }
   const heading = insertedHeading(markdown);
   if (heading && currentNote && noteHeadingExists(currentNote, heading)) {

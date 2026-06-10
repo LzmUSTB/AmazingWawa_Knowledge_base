@@ -1,16 +1,17 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
 import {
+  applyExternalAiImportPackage,
   applyAiImportPackage,
+  chooseAiImportPackageRoot,
+  exportAiContext,
+  inspectExternalAiImportPackage,
   inspectAiImportPackage,
-  listAiImportPackages,
 } from "../../data/desktop-vault-adapter.js";
 import AiImportApplyBar from "./AiImportApplyBar.vue";
-import AiImportBlockTypePreview from "./AiImportBlockTypePreview.vue";
 import AiImportConflictPanel from "./AiImportConflictPanel.vue";
 import AiImportGraphDiff from "./AiImportGraphDiff.vue";
 import AiImportNotePreview from "./AiImportNotePreview.vue";
-import AiImportPackagePicker from "./AiImportPackagePicker.vue";
 import AiImportSummary from "./AiImportSummary.vue";
 
 const props = defineProps({
@@ -22,43 +23,50 @@ const props = defineProps({
 
 const emit = defineEmits(["applied"]);
 
-const packages = ref([]);
 const selectedPackageId = ref("");
+const selectedExternalRootPath = ref("");
+const selectedNoteIndex = ref(0);
 const loading = ref(false);
 const applying = ref(false);
 const loadError = ref("");
 const applyError = ref("");
+const exportMessage = ref("");
 const inspection = ref(null);
 const confirmedWarnings = ref(false);
 
 const validation = computed(() => inspection.value?.validation || null);
 const diff = computed(() => inspection.value?.diff || null);
 const blockRegistry = computed(() => inspection.value?.validation?.blockRegistry || {});
-const selectedNotePreview = computed(() => diff.value?.notePreviews?.[0] || null);
-const selectedBlockType = computed(() => diff.value?.blockTypesToAdd?.[0] || null);
+const selectedNotePreview = computed(() => diff.value?.notePreviews?.[selectedNoteIndex.value] || diff.value?.notePreviews?.[0] || null);
+const history = computed(() => inspection.value?.history || { applied: false, appliedAt: "", raw: "" });
 const hasWarnings = computed(() => Boolean(validation.value?.warnings?.length));
 const canApply = computed(() => {
+  if (history.value.applied) return false;
   if (!validation.value?.valid) return false;
   if (hasWarnings.value && !confirmedWarnings.value) return false;
   return Boolean(selectedPackageId.value);
 });
 
-onMounted(() => refreshPackages());
+onMounted(() => {
+  inspection.value = null;
+});
 
 watch(selectedPackageId, () => {
   confirmedWarnings.value = false;
   applyError.value = "";
-  if (selectedPackageId.value) inspectSelectedPackage();
+  selectedNoteIndex.value = 0;
 });
 
-async function refreshPackages() {
+async function importPackage() {
   loading.value = true;
   loadError.value = "";
   try {
-    packages.value = await listAiImportPackages(props.vaultRootPath);
-    if (!selectedPackageId.value && packages.value.length) {
-      selectedPackageId.value = packages.value[0].package_id || packages.value[0].packageId;
-    }
+    const packageRoot = await chooseAiImportPackageRoot();
+    if (!packageRoot) return;
+    selectedExternalRootPath.value = packageRoot;
+    const result = await inspectExternalAiImportPackage(props.vaultRootPath, packageRoot);
+    inspection.value = result;
+    selectedPackageId.value = result.validation.previewModel.packageId;
   } catch (error) {
     loadError.value = String(error?.message || error);
   } finally {
@@ -67,11 +75,13 @@ async function refreshPackages() {
 }
 
 async function inspectSelectedPackage() {
+  if (!selectedPackageId.value) return;
   loading.value = true;
   loadError.value = "";
-  inspection.value = null;
   try {
-    inspection.value = await inspectAiImportPackage(props.vaultRootPath, selectedPackageId.value);
+    inspection.value = selectedExternalRootPath.value
+      ? await inspectExternalAiImportPackage(props.vaultRootPath, selectedExternalRootPath.value)
+      : await inspectAiImportPackage(props.vaultRootPath, selectedPackageId.value);
   } catch (error) {
     loadError.value = String(error?.message || error);
   } finally {
@@ -84,14 +94,26 @@ async function applySelectedPackage() {
   applying.value = true;
   applyError.value = "";
   try {
-    const updatedVault = await applyAiImportPackage(props.vaultRootPath, selectedPackageId.value);
+    const updatedVault = selectedExternalRootPath.value
+      ? await applyExternalAiImportPackage(props.vaultRootPath, selectedExternalRootPath.value)
+      : await applyAiImportPackage(props.vaultRootPath, selectedPackageId.value);
     emit("applied", updatedVault);
-    await refreshPackages();
     await inspectSelectedPackage();
   } catch (error) {
     applyError.value = String(error?.message || error);
   } finally {
     applying.value = false;
+  }
+}
+
+async function exportContext() {
+  exportMessage.value = "";
+  loadError.value = "";
+  try {
+    const location = await exportAiContext(props.vaultRootPath);
+    exportMessage.value = `AI context exported to ${location}`;
+  } catch (error) {
+    loadError.value = String(error?.message || error);
   }
 }
 </script>
@@ -103,34 +125,68 @@ async function applySelectedPackage() {
         <div class="panel-label" style="--label-color: var(--career)">AI Import</div>
         <h1>Draft Package Review</h1>
       </div>
-      <button class="hud-button" :disabled="loading" @click="refreshPackages">
+      <button class="hud-button" :disabled="loading || !selectedPackageId" @click="inspectSelectedPackage">
         {{ loading ? "Loading..." : "Refresh" }}
       </button>
     </header>
 
     <div class="ai-import-grid">
       <aside class="left-column">
-        <AiImportPackagePicker
-          :packages="packages"
-          :selected-package-id="selectedPackageId"
-          @select="selectedPackageId = $event"
-        />
+        <section class="ai-panel import-cta">
+          <div class="section-label">Import AI Package</div>
+          <p>Select an AI import package folder generated by AI.</p>
+          <button class="hud-button" style="--button-color: var(--career)" :disabled="loading" @click="importPackage">
+            Import Package...
+          </button>
+          <button class="hud-button" :disabled="loading" @click="exportContext">Export AI Context</button>
+          <p v-if="exportMessage" class="success-line">{{ exportMessage }}</p>
+        </section>
         <AiImportSummary :validation="validation" />
+        <section v-if="history.applied" class="ai-panel applied-panel">
+          <div class="section-label">Applied</div>
+          <strong>APPLIED</strong>
+          <small>{{ history.appliedAt || "history exists" }}</small>
+        </section>
         <AiImportConflictPanel
           :errors="validation?.errors || []"
           :warnings="validation?.warnings || []"
           :review-items="validation?.reviewItems || []"
         />
+        <section v-if="inspection?.packageFiles" class="ai-panel review-files">
+          <div class="section-label">Package Review Files</div>
+          <details v-for="(contents, filePath) in inspection.packageFiles.reviewFiles" :key="filePath">
+            <summary>{{ filePath.replace('review/', '') }}</summary>
+            <pre>{{ contents }}</pre>
+          </details>
+        </section>
       </aside>
 
       <main class="center-column">
         <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
+        <label v-if="diff?.notePreviews?.length > 1" class="note-preview-selector">
+          <span>Preview Note</span>
+          <select v-model.number="selectedNoteIndex">
+            <option v-for="(preview, index) in diff.notePreviews" :key="preview.nodeId" :value="index">
+              {{ preview.title || preview.nodeId }}
+            </option>
+          </select>
+        </label>
         <AiImportNotePreview :preview="selectedNotePreview" :block-registry="blockRegistry" />
-        <AiImportBlockTypePreview :block-type="selectedBlockType" :block-registry="blockRegistry" />
       </main>
 
       <aside class="right-column">
         <AiImportGraphDiff :diff="diff" />
+        <section class="ai-panel">
+          <div class="section-label">New Block Types</div>
+          <div v-if="diff?.blockTypesToAdd?.length" class="block-type-list">
+            <div v-for="block in diff.blockTypesToAdd" :key="block.type" class="block-type-row">
+              <strong>{{ block.type }}</strong>
+              <span>{{ block.kind }}</span>
+              <small>declarative visual</small>
+            </div>
+          </div>
+          <p v-else class="empty-line">No new block types.</p>
+        </section>
         <section class="ai-panel">
           <div class="section-label">File Diff</div>
           <div class="file-list">
@@ -205,13 +261,123 @@ async function applySelectedPackage() {
   overflow: auto;
 }
 
+.import-cta p,
+.success-line {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+}
+
+.success-line {
+  color: var(--language);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.applied-panel strong {
+  color: var(--language);
+  font-size: var(--font-size-ui);
+  text-transform: uppercase;
+}
+
+.applied-panel small {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.review-files details {
+  border: 1px solid var(--border-muted);
+  background: var(--background-main);
+  color: var(--text-secondary);
+}
+
+.review-files summary {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  padding: 8px;
+  text-transform: uppercase;
+}
+
+.review-files pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  border-top: 1px solid var(--border-muted);
+  color: var(--text-secondary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
 .center-column {
   align-content: stretch;
+}
+
+.note-preview-selector {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+  padding: 10px;
+}
+
+.note-preview-selector span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.note-preview-selector select {
+  min-width: 0;
+  min-height: 30px;
+  border: 1px solid var(--border-muted);
+  border-radius: 0;
+  background: var(--background-main);
+  color: var(--text-primary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
 }
 
 .file-list {
   display: grid;
   gap: 8px;
+}
+
+.block-type-list {
+  display: grid;
+  gap: 8px;
+}
+
+.block-type-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-muted);
+  background: var(--background-main);
+  padding: 9px;
+}
+
+.block-type-row strong {
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.block-type-row span,
+.block-type-row small {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
 }
 
 .file-row {
