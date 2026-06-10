@@ -1,0 +1,17 @@
+id: curl-noise-authoring-workflow
+title: Curl Noise 资产制作流程
+type: skill
+status: seed
+summary: 在 IlluGen 一类节点工具中，通过输入设计、UV derivative、强度调制、混合、动画和 tiling 处理制作 curl noise
+  资产。
+tags:
+- curl-noise
+- illugen
+- asset-authoring
+- flipbook
+- tiling
+domain: computer-graphics
+sourceIds:
+- linkedin-curl-noise-illugen
+createdAt: '2026-06-10T23:30:00+09:00'
+updatedAt: '2026-06-10T23:30:00+09:00'

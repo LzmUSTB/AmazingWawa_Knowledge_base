@@ -1,2 +1,22 @@
 schemaVersion: 1
-edges: []
+edges:
+  - id: computer-graphics-contains-procedural-vfx-textures
+    from: computer-graphics
+    to: procedural-vfx-textures
+    relation: contains
+  - id: procedural-vfx-textures-contains-curl-noise
+    from: procedural-vfx-textures
+    to: curl-noise
+    relation: contains
+  - id: procedural-vfx-textures-contains-curl-noise-authoring-workflow
+    from: procedural-vfx-textures
+    to: curl-noise-authoring-workflow
+    relation: contains
+  - id: curl-noise-authoring-workflow-depends-on-curl-noise
+    from: curl-noise-authoring-workflow
+    to: curl-noise
+    relation: depends-on
+  - id: curl-noise-used-in-procedural-vfx-textures
+    from: curl-noise
+    to: procedural-vfx-textures
+    relation: used-in

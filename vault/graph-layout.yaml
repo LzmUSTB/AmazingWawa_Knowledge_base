@@ -1,0 +1,27 @@
+schemaVersion: 1
+boards:
+  procedural-vfx-textures:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      procedural-vfx-textures:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      computer-graphics:
+        x: 960
+        y: 544
+        w: 190
+        h: 80
+      curl-noise:
+        x: 1472
+        y: 864
+        w: 190
+        h: 80
+      curl-noise-authoring-workflow:
+        x: 800
+        y: 864
+        w: 190
+        h: 80

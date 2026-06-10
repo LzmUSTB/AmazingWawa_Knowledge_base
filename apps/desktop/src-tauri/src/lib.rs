@@ -33,6 +33,7 @@ struct AiImportPackageFiles {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct AiImportAssetFile {
     vault_relative_path: String,
     package_relative_path: String,
@@ -531,7 +532,7 @@ try {
         .to_string();
 
     let output = Command::new("powershell")
-        .arg("-NoProfile")
+        .arg("-NoProfile") 
         .arg("-ExecutionPolicy")
         .arg("Bypass")
         .arg("-Command")

@@ -60,3 +60,10 @@ Constraints:
 - Link relations in add_edge: depends-on, used-in, compares-with
 - Do not include executable/source files: .js, .ts, .vue, .css, .html, .htm, .exe, .dll, .bat, .cmd, .sh, .ps1, .jar, .wasm
 - Do not include SVG unless the app later adds sanitization.
+
+Expression visualizer constraints:
+- formula_display is display-only.
+- render.kind: curve2d requires render.y.
+- render.kind: surface3d requires render.z.
+- parameters must explicitly define name/default/min/max/step.
+- Do not use expression-visualizer for vector fields, curl fields, symbolic derivatives, or arbitrary unsupported formulas.

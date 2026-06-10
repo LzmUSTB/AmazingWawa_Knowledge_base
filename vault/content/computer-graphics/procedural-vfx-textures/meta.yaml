@@ -1,0 +1,15 @@
+id: procedural-vfx-textures
+title: 程序化 VFX 纹理
+type: topic
+status: seed
+summary: 用噪声、图像处理、向量场和材质网络生成游戏实时特效纹理资产的方法。
+tags:
+- procedural-texture
+- real-time-vfx
+- noise
+- shader
+domain: computer-graphics
+sourceIds:
+- linkedin-curl-noise-illugen
+createdAt: '2026-06-10T23:30:00+09:00'
+updatedAt: '2026-06-10T23:30:00+09:00'
