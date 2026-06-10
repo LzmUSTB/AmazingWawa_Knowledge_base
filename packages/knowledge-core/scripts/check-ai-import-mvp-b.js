@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { diffAiPackage, validateAiPackage } from "../src/index.js";
+import { applyAiPackage } from "../src/ai-import/apply-ai-package.js";
 import { readAiPackage } from "../src/ai-import/read-ai-package.js";
 import { readVaultForCli } from "./read-vault-for-cli.js";
 
@@ -75,4 +76,16 @@ const blockPath = path.join(scriptRoot, "block-types", "solver-loop-diagram.yaml
 fs.appendFileSync(blockPath, "\nscript: alert(1)\n", "utf8");
 assert(!validateAiPackage(vault, readAiPackage(scriptRoot)).valid, "Expected executable block field to fail.");
 
-console.log("AI import MVP-B self-check passed.");
+const tempVault = path.join(os.tmpdir(), `ai-import-apply-vault-${Date.now()}`);
+fs.cpSync(vaultRoot, tempVault, { recursive: true });
+const applyResult = applyAiPackage(tempVault, fixtureRoot, { readVault: readVaultForCli });
+assert(applyResult.created.includes("content/simulation/position-based-fluids/meta.yaml"), "Expected apply to create meta.yaml.");
+const appliedGraph = fs.readFileSync(path.join(tempVault, "graph.yaml"), "utf8");
+assert(appliedGraph.includes("sph-contains-position-based-fluids"), "Expected graph.yaml to include structural contains edge.");
+assert(appliedGraph.includes("position-based-fluids-compares-with-sph"), "Expected graph.yaml to include compares-with edge.");
+assert(
+  fs.existsSync(path.join(tempVault, ".kb-ai", "history", "ai-import-20260610-position-based-fluids.yaml")),
+  "Expected import history to be written.",
+);
+
+console.log("AI import MVP-B/D self-check passed.");

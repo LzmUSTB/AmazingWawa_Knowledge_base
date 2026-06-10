@@ -1,6 +1,12 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import YAML from "yaml";
-import { normalizeVault } from "../../../../packages/knowledge-core/src/index.js";
+import {
+  buildAiPackageApplyPlan,
+  diffAiPackage,
+  normalizeAiPackageFiles,
+  normalizeVault,
+  validateAiPackage,
+} from "../../../../packages/knowledge-core/src/index.js";
 
 const LAST_VAULT_KEY = "amazingwawa.lastVaultRootPath";
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
@@ -58,6 +64,34 @@ export async function loadInitialVault() {
   }
 
   throw new Error("No vault could be loaded. Please open a vault folder.");
+}
+
+export async function listAiImportPackages(vaultRootPath) {
+  if (!vaultRootPath) return [];
+  return invoke("list_ai_import_packages", { vaultRootPath });
+}
+
+export async function readAiImportPackage(vaultRootPath, packageId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before reading AI import packages.");
+  const rawPackage = await invoke("read_ai_import_package_files", { vaultRootPath, packageId });
+  return normalizeAiPackageFiles(rawPackage);
+}
+
+export async function inspectAiImportPackage(vaultRootPath, packageId) {
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const packageFiles = await readAiImportPackage(vaultRootPath, packageId);
+  const validation = validateAiPackage(currentVault, packageFiles);
+  const diff = diffAiPackage(currentVault, validation);
+  return { currentVault, packageFiles, validation, diff };
+}
+
+export async function applyAiImportPackage(vaultRootPath, packageId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before applying AI import packages.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const packageFiles = await readAiImportPackage(vaultRootPath, packageId);
+  const plan = buildAiPackageApplyPlan(currentVault, packageFiles);
+  await invoke("apply_ai_import_plan", { vaultRootPath, plan });
+  return loadVaultFromPath(vaultRootPath);
 }
 
 export function getNoteRelativePath(node) {

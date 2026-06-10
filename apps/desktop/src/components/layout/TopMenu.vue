@@ -28,6 +28,10 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
         <AppIcon name="file-plus" />
         <span class="button-icon-label">New Note</span>
       </button>
+      <button class="hud-button button-with-icon" style="--button-color: var(--career)" @click="$emit('show-view', 'ai-import')">
+        <AppIcon name="file-text" />
+        <span class="button-icon-label">AI Import</span>
+      </button>
       <button class="hud-button button-with-icon" disabled title="Git panel is not implemented yet">
         <AppIcon name="git-branch" />
         <span class="button-icon-label">Git</span>

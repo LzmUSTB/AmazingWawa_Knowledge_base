@@ -176,6 +176,7 @@ export function normalizeVault(rawFiles = {}) {
     domains,
     nodes,
     edges,
+    rawGraphYaml: rawFiles.graphYaml || "",
     layouts,
     notes,
     blockTypes: blockTypeResult.definitions,

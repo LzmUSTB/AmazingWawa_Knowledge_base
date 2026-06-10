@@ -722,6 +722,12 @@ function showView(viewName) {
   currentView.value = viewName;
 }
 
+function handleAiImportApplied(updatedVault) {
+  replaceVaultWithoutNavigation(updatedVault);
+  noteDirty.value = false;
+  noteMode.value = "read";
+}
+
 async function openVault() {
   if (!confirmDiscardDirty()) return;
   try {
@@ -942,6 +948,7 @@ function toggleRelationSidebar() {
     <WorkspaceLayout
       v-else
       :active-dialog="activeDialog"
+      :active-vault-root-path="activeVaultRootPath"
       :add-link-close-key="addLinkCloseKey"
       :add-link-error="addLinkError"
       :add-link-open-key="addLinkOpenKey"
@@ -973,6 +980,7 @@ function toggleRelationSidebar() {
       :sidebar-collapsed="sidebarCollapsed"
       :ui-font-scale="uiFontScale"
       @add-link="createLink"
+      @ai-import-applied="handleAiImportApplied"
       @cancel-layout="discardLayoutDraft"
       @close-dialog="activeDialog = ''"
       @close-relation-edit="closeRelationEdit"
@@ -1162,6 +1170,22 @@ button {
   height: 15px;
   background: var(--label-color, var(--border-primary));
   content: "";
+}
+
+.ai-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+  padding: 12px;
+}
+
+.section-label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .technical-grid {

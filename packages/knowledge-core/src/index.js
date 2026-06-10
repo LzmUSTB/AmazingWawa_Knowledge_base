@@ -9,4 +9,6 @@ export * from "./validate-vault.js";
 export * from "./validate-layout.js";
 export * from "./ai-import/validate-ai-package.js";
 export * from "./ai-import/diff-ai-package.js";
+export * from "./ai-import/build-ai-package-apply-plan.js";
+export * from "./ai-import/normalize-ai-package-files.js";
 export * from "./ai-import/dedupe.js";

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
+import AiImportView from "../ai-import/AiImportView.vue";
 import NewNoteDialog from "../dialogs/NewNoteDialog.vue";
 import GraphToolbar from "../graph/GraphToolbar.vue";
 import GraphView from "../graph/GraphView.vue";
@@ -36,6 +37,10 @@ const props = defineProps({
   appTitle: {
     type: String,
     default: "Knowledge Base",
+  },
+  activeVaultRootPath: {
+    type: String,
+    required: true,
   },
   currentDomain: {
     type: String,
@@ -141,6 +146,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   "add-link",
+  "ai-import-applied",
   "close-dialog",
   "close-relation-edit",
   "open-dialog",
@@ -257,6 +263,12 @@ function fitGraphView() {
             @select-node="$emit('select-node', $event)"
           />
         </template>
+
+        <AiImportView
+          v-else-if="currentView === 'ai-import'"
+          :vault-root-path="activeVaultRootPath"
+          @applied="$emit('ai-import-applied', $event)"
+        />
 
         <NoteView
           v-else

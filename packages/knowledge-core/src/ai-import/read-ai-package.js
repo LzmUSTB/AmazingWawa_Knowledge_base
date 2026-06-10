@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { parseYaml } from "../parse-yaml.js";
+import { normalizeAiPackageFiles } from "./normalize-ai-package-files.js";
 
 function readTextIfExists(filePath) {
   try {
@@ -55,18 +55,15 @@ export function readAiPackage(packageRoot) {
     () => true,
   );
 
-  return {
+  return normalizeAiPackageFiles({
     packageRoot: resolvedRoot,
     packageId,
     manifestRaw,
     sourcesRaw,
     patchRaw,
-    manifest: manifestRaw ? parseYaml(manifestRaw, "manifest.yaml") : {},
-    sources: sourcesRaw ? parseYaml(sourcesRaw, "sources.yaml") : {},
-    patch: patchRaw ? parseYaml(patchRaw, "patch.yaml") : {},
     generatedMetaFiles,
     generatedNoteFiles,
     blockTypeFiles,
     reviewFiles,
-  };
+  });
 }

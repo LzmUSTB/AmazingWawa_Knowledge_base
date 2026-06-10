@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
@@ -13,6 +13,49 @@ struct VaultRawFiles {
     meta_files: HashMap<String, String>,
     note_files: HashMap<String, String>,
     block_type_files: HashMap<String, String>,
+}
+
+#[derive(Serialize)]
+struct AiImportPackageSummary {
+    package_id: String,
+    relative_path: String,
+}
+
+#[derive(Serialize)]
+struct AiImportPackageFiles {
+    package_id: String,
+    manifest_raw: String,
+    sources_raw: String,
+    patch_raw: String,
+    generated_meta_files: HashMap<String, String>,
+    generated_note_files: HashMap<String, String>,
+    block_type_files: HashMap<String, String>,
+    review_files: HashMap<String, String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AiImportPlanWrite {
+    relative_path: String,
+    contents: String,
+    create_only: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AiImportApplyPlan {
+    package_id: String,
+    backup_relative_dir: String,
+    backup_paths: Vec<String>,
+    create_dirs: Vec<String>,
+    writes: Vec<AiImportPlanWrite>,
+}
+
+fn is_safe_package_id(package_id: &str) -> bool {
+    package_id.starts_with("ai-import-")
+        && package_id
+            .chars()
+            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-')
 }
 
 fn safe_join(root: &str, relative_path: &str) -> Result<PathBuf, String> {
@@ -139,6 +182,39 @@ fn read_yaml_files_in_directory(
     Ok(())
 }
 
+fn read_package_files(
+    package_root: &Path,
+    current: &Path,
+    output: &mut HashMap<String, String>,
+    predicate: fn(&Path) -> bool,
+) -> Result<(), String> {
+    if !current.is_dir() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(current).map_err(|error| {
+        format!(
+            "Failed to read directory {}: {error}",
+            current.to_string_lossy()
+        )
+    })? {
+        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
+        let path = entry.path();
+        if path.is_dir() {
+            read_package_files(package_root, &path, output, predicate)?;
+        } else if path.is_file() && predicate(&path) {
+            let key = path
+                .strip_prefix(package_root)
+                .map_err(|error| format!("Failed to make relative path: {error}"))?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let contents = fs::read_to_string(&path)
+                .map_err(|error| format!("Failed to read {}: {error}", path.to_string_lossy()))?;
+            output.insert(key, contents);
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn choose_vault_root() -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
@@ -204,6 +280,132 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
 }
 
 #[tauri::command]
+fn list_ai_import_packages(vault_root_path: String) -> Result<Vec<AiImportPackageSummary>, String> {
+    let imports_dir = safe_vault_path(&vault_root_path, ".kb-ai/imports")?;
+    if !imports_dir.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let mut packages = Vec::new();
+    for entry in fs::read_dir(&imports_dir).map_err(|error| {
+        format!(
+            "Failed to read directory {}: {error}",
+            imports_dir.to_string_lossy()
+        )
+    })? {
+        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let package_id = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_string();
+        if !is_safe_package_id(&package_id) || !path.join("manifest.yaml").is_file() {
+            continue;
+        }
+        packages.push(AiImportPackageSummary {
+            relative_path: format!(".kb-ai/imports/{package_id}"),
+            package_id,
+        });
+    }
+    packages.sort_by(|left, right| left.package_id.cmp(&right.package_id));
+    Ok(packages)
+}
+
+#[tauri::command]
+fn read_ai_import_package_files(
+    vault_root_path: String,
+    package_id: String,
+) -> Result<AiImportPackageFiles, String> {
+    if !is_safe_package_id(&package_id) {
+        return Err("Invalid AI import package id".into());
+    }
+    let package_root = safe_vault_path(&vault_root_path, &format!(".kb-ai/imports/{package_id}"))?;
+    if !package_root.is_dir() {
+        return Err(format!("AI import package not found: {package_id}"));
+    }
+
+    let mut generated_meta_files = HashMap::new();
+    let mut generated_note_files = HashMap::new();
+    let mut block_type_files = HashMap::new();
+    let mut review_files = HashMap::new();
+    read_package_files(&package_root, &package_root.join("generated").join("content"), &mut generated_meta_files, |path| {
+        path.file_name().and_then(|name| name.to_str()) == Some("meta.yaml")
+    })?;
+    read_package_files(&package_root, &package_root.join("generated").join("content"), &mut generated_note_files, |path| {
+        path.file_name().and_then(|name| name.to_str()) == Some("note.md")
+    })?;
+    read_package_files(&package_root, &package_root.join("block-types"), &mut block_type_files, |path| {
+        matches!(path.extension().and_then(|value| value.to_str()), Some("yaml") | Some("yml"))
+    })?;
+    read_package_files(&package_root, &package_root.join("review"), &mut review_files, |_| true)?;
+
+    Ok(AiImportPackageFiles {
+        package_id,
+        manifest_raw: fs::read_to_string(package_root.join("manifest.yaml")).unwrap_or_default(),
+        sources_raw: fs::read_to_string(package_root.join("sources.yaml")).unwrap_or_default(),
+        patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
+        generated_meta_files,
+        generated_note_files,
+        block_type_files,
+        review_files,
+    })
+}
+
+#[tauri::command]
+fn apply_ai_import_plan(vault_root_path: String, plan: AiImportApplyPlan) -> Result<(), String> {
+    if !is_safe_package_id(&plan.package_id) {
+        return Err("Invalid AI import package id".into());
+    }
+    if plan.backup_relative_dir != format!(".kb-ai/backups/{}", plan.package_id) {
+        return Err("Invalid backup directory for AI import package".into());
+    }
+
+    for relative_dir in &plan.create_dirs {
+        fs::create_dir_all(safe_vault_path(&vault_root_path, relative_dir)?)
+            .map_err(|error| format!("Failed to create {relative_dir}: {error}"))?;
+    }
+
+    for relative_path in &plan.backup_paths {
+        let source = safe_vault_path(&vault_root_path, relative_path)?;
+        if !source.exists() {
+            continue;
+        }
+        let backup_relative_path = format!("{}/{}", plan.backup_relative_dir, relative_path);
+        let target = safe_vault_path(&vault_root_path, &backup_relative_path)?;
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Failed to create backup directory: {error}"))?;
+        }
+        fs::copy(&source, &target).map_err(|error| {
+            format!(
+                "Failed to backup {} to {}: {error}",
+                source.to_string_lossy(),
+                target.to_string_lossy()
+            )
+        })?;
+    }
+
+    for write in &plan.writes {
+        let target = safe_vault_path(&vault_root_path, &write.relative_path)?;
+        if write.create_only && target.exists() {
+            return Err(format!("Refusing to overwrite existing file: {}", write.relative_path));
+        }
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Failed to create target directory: {error}"))?;
+        }
+        fs::write(&target, &write.contents)
+            .map_err(|error| format!("Failed to write {}: {error}", target.to_string_lossy()))?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 fn resolve_default_vault_root() -> Result<Option<String>, String> {
     let mut candidates = Vec::new();
 
@@ -260,8 +462,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            apply_ai_import_plan,
             choose_vault_root,
             create_dir_all,
+            list_ai_import_packages,
+            read_ai_import_package_files,
             read_text_file,
             read_vault_files,
             resolve_default_vault_root,

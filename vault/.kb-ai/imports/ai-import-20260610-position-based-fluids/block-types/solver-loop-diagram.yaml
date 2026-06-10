@@ -1,0 +1,45 @@
+type: solver-loop-diagram
+title: Solver Loop Diagram
+kind: declarative-visual
+description: A safe visual grammar block for showing a compact solver pipeline.
+renderer:
+  engine: visual-grammar
+  layout:
+    type: split-panel
+    left:
+      type: svg-scene
+      scene: solver
+    right:
+      type: inspector
+visualGrammar:
+  scenes:
+    solver:
+      coordinateSystem: normalized-2d
+      elements:
+        - type: node
+          each: $.steps
+          template:
+            id: $.id
+            label: $.label
+            description: $.description
+            x: $.x
+            y: $.y
+            width: 0.16
+            height: 0.12
+        - type: arrow
+          each: $.edges
+          template:
+            id: $.from
+            from: $.from
+            to: $.to
+        - type: formula-callout
+          id: density-constraint
+          text: C_i(p) = rho_i / rho_0 - 1
+          x: 0.5
+          y: 0.72
+interactions:
+  - type: select
+  - type: highlight-related
+example:
+  id: pbf-solver-loop
+  label: PBF Solver Loop
