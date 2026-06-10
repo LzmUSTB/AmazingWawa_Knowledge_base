@@ -585,7 +585,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   overflow: hidden;
   max-width: 100%;
   color: var(--text-primary);
-  font-size: var(--font-size-mono);
+  font-size: var(--font-size-node-title);
   font-weight: 800;
   line-height: 1.16;
   text-align: center;
@@ -595,7 +595,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 }
 
 .pcb-node--root .node-title {
-  font-size: calc(16px * var(--ui-font-scale));
+  font-size: var(--font-size-node-title-root);
 }
 
 .node-meta {
@@ -603,7 +603,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   max-width: 100%;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-node-meta);
   line-height: 1;
   text-overflow: ellipsis;
   text-transform: uppercase;

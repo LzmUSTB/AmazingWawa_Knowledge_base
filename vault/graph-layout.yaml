@@ -16,8 +16,8 @@ boards:
         w: 200
         h: 88
       machine-learning:
-        x: 832
-        y: 608
+        x: 896
+        y: 576
         w: 240
         h: 88
       web-dev:
@@ -36,8 +36,8 @@ boards:
         w: 180
         h: 88
       simulation:
-        x: 64
-        y: 416
+        x: 96
+        y: 288
         w: 180
         h: 88
       language:
@@ -126,7 +126,7 @@ boards:
         w: 220
         h: 100
       sph:
-        x: 960
-        y: 384
+        x: 800
+        y: 480
         w: 190
         h: 80

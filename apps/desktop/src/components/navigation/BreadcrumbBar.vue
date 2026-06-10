@@ -55,7 +55,8 @@ const graphCrumbs = computed(() => scope.value.breadcrumb);
         <button class="bread-button">{{ currentNode.title }}</button>
       </template>
     </template>
-    <button v-if="currentView === 'note'" class="show-graph button-with-icon" @click="$emit('show-graph', currentNoteId, currentNoteId)">
+    <button v-if="currentView === 'note'" class="show-graph button-with-icon"
+      @click="$emit('show-graph', currentNoteId, currentNoteId)">
       <AppIcon name="graph" />
       <span class="button-icon-label">Show in Graph</span>
     </button>
@@ -72,7 +73,7 @@ const graphCrumbs = computed(() => scope.value.breadcrumb);
   border-bottom: 1px solid var(--border-primary);
   background: var(--background-main);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--font-size-label);
   font-weight: 800;
   text-transform: uppercase;
 }

@@ -305,7 +305,7 @@ function toggleCurrentPinnedNode() {
 }
 
 function clampUiFontScale(value) {
-  return Math.min(1.25, Math.max(0.85, value));
+  return Math.min(1.45, Math.max(0.85, value));
 }
 
 function setUiFontScale(value) {
@@ -1029,9 +1029,14 @@ function toggleRelationSidebar() {
   --ui-font-scale: 1;
   --font-size-ui: calc(12px * var(--ui-font-scale));
   --font-size-small: calc(10px * var(--ui-font-scale));
+  --font-size-label: calc(11px * var(--ui-font-scale));
   --font-size-title: calc(20px * var(--ui-font-scale));
   --font-size-note-title: calc(36px * var(--ui-font-scale));
   --font-size-mono: calc(13px * var(--ui-font-scale));
+
+  --font-size-node-title: calc(13px * var(--ui-font-scale));
+  --font-size-node-title-root: calc(16px * var(--ui-font-scale));
+  --font-size-node-meta: calc(10px * var(--ui-font-scale));
   color: var(--text-primary);
   background: var(--background-main);
   font-family:

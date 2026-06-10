@@ -210,7 +210,7 @@ function submit() {
 code {
   color: var(--career);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: var(--font-size-small);
 }
 
 textarea {
@@ -223,7 +223,7 @@ textarea {
   background: var(--background-main);
   color: var(--text-primary);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--font-size-ui);
   line-height: 1.5;
   padding: 12px;
 }
