@@ -386,13 +386,32 @@ fn read_yaml_files_in_directory(
 }
 
 fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles, String> {
+    let package_file_path = package_file_path.trim();
+
+    if package_file_path.contains('\0') || package_file_path.contains('\r') || package_file_path.contains('\n') {
+        return Err("Invalid .wawapkg path: path contains control characters".into());
+    }
+
     if !package_file_path.to_ascii_lowercase().ends_with(".wawapkg") {
         return Err("Package file must use .wawapkg extension".into());
     }
-    let package_path = PathBuf::from(package_file_path)
+
+    let original_package_path = PathBuf::from(package_file_path);
+
+    if !original_package_path.exists() {
+        return Err(format!("Invalid .wawapkg path: file does not exist: {}", package_file_path));
+    }
+
+    if !original_package_path.is_file() {
+        return Err(format!("Invalid .wawapkg path: not a file: {}", package_file_path));
+    }
+
+    let package_path = original_package_path
         .canonicalize()
         .map_err(|error| format!("Failed to resolve .wawapkg path: {error}"))?;
-    let bytes = fs::read(&package_path).map_err(|error| format!("Failed to read .wawapkg: {error}"))?;
+
+    let bytes = fs::read(&package_path)
+        .map_err(|error| format!("Failed to read .wawapkg: {error}"))?;
     let mut eocd_offset = None;
     let min_offset = bytes.len().saturating_sub(0xffff + 22);
     for offset in (min_offset..=bytes.len().saturating_sub(22)).rev() {
@@ -462,10 +481,28 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
     }
 
     let script = r#"
-param([string]$PackagePath)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$zip = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
+
+$PackagePath = [Environment]::GetEnvironmentVariable('WAWA_PKG_PATH', 'Process')
+
+if ([string]::IsNullOrWhiteSpace($PackagePath)) {
+  throw "Invalid .wawapkg path: WAWA_PKG_PATH is empty"
+}
+
+$PackagePath = $PackagePath.Trim()
+
+if ($PackagePath.Contains([char]0) -or $PackagePath.Contains("`r") -or $PackagePath.Contains("`n")) {
+  throw "Invalid .wawapkg path: path contains control characters"
+}
+
+$ResolvedPath = (Resolve-Path -LiteralPath $PackagePath).ProviderPath
+
+if (-not (Test-Path -LiteralPath $ResolvedPath -PathType Leaf)) {
+  throw "Package file does not exist: $ResolvedPath"
+}
+
+$zip = [System.IO.Compression.ZipFile]::OpenRead($ResolvedPath)
 $entries = @()
 try {
   foreach ($entry in $zip.Entries) {
@@ -489,17 +526,29 @@ try {
 }
 [Console]::Out.Write(($entries | ConvertTo-Json -Depth 4 -Compress))
 "#;
+    let powershell_package_path = original_package_path
+        .to_string_lossy()
+        .to_string();
+
     let output = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            script,
-            package_path.to_string_lossy().as_ref(),
-        ])
+        .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
+        .arg("-Command")
+        .arg(script)
+        .env("WAWA_PKG_PATH", &powershell_package_path)
         .output()
         .map_err(|error| format!("Failed to read .wawapkg zip entries: {error}"))?;
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        return Err(format!(
+            "Failed to read .wawapkg archive via PowerShell.\nPath: {}\nStderr: {}\nStdout: {}",
+            powershell_package_path,
+            stderr,
+            stdout
+        ));
     }
     let raw_json = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let entries: Vec<WawaZipEntryPayload> = if raw_json.is_empty() {
