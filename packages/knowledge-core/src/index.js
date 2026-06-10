@@ -7,3 +7,6 @@ export * from "./parse-yaml.js";
 export * from "./schema.js";
 export * from "./validate-vault.js";
 export * from "./validate-layout.js";
+export * from "./ai-import/validate-ai-package.js";
+export * from "./ai-import/diff-ai-package.js";
+export * from "./ai-import/dedupe.js";

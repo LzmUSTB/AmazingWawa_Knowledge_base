@@ -109,8 +109,8 @@ function parseKeyValueLines(lines) {
 
 function parseNestedValue(lines) {
   if (!lines.length) return "";
-  if (lines.every((line) => line.trim().startsWith("- "))) {
-    return lines.map((line) => parseScalar(line.trim().slice(2)));
+  if (lines.some((line) => line.trim().startsWith("- "))) {
+    return parseListValue(lines);
   }
   if (!lines.some((line) => /^([^:\n]+):\s*(.*)$/.test(line.trim()))) {
     return lines.map((line) => line.trim()).filter(Boolean);
@@ -147,6 +147,42 @@ function parseNestedValue(lines) {
     result[key] = parseNestedValue(child);
   }
   return result;
+}
+
+function parseListValue(lines) {
+  const items = [];
+  let current = null;
+
+  function flushCurrent() {
+    if (!current) return;
+    if (current.kind === "scalar") {
+      items.push(parseScalar(current.value));
+    } else {
+      items.push(parseKeyValueLines(current.lines));
+    }
+    current = null;
+  }
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    if (trimmed.startsWith("- ")) {
+      flushCurrent();
+      const rest = trimmed.slice(2);
+      if (/^[^:\n]+:\s*/.test(rest)) {
+        current = { kind: "object", lines: [rest] };
+      } else {
+        current = { kind: "scalar", value: rest };
+      }
+      return;
+    }
+    if (current?.kind === "object") {
+      current.lines.push(trimmed);
+    }
+  });
+
+  flushCurrent();
+  return items;
 }
 
 function parseCustomBlock(type, raw, blockRegistry) {

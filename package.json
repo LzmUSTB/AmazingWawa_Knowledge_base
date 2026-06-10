@@ -13,6 +13,9 @@
     "dev:viewer": "npm run dev -w apps/viewer",
     "build:viewer": "npm run build -w apps/viewer",
     "kb:export-ai-context": "node packages/knowledge-core/scripts/export-ai-context.js",
+    "kb:validate-ai-import": "node packages/knowledge-core/scripts/validate-ai-import.js",
+    "kb:diff-ai-import": "node packages/knowledge-core/scripts/diff-ai-import.js",
+    "kb:check-ai-import-mvp-b": "node packages/knowledge-core/scripts/check-ai-import-mvp-b.js",
     "lint": "echo \"lint is not configured yet\"",
     "check": "echo \"check is not configured yet\""
   },

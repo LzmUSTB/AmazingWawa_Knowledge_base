@@ -1,0 +1,5 @@
+sources:
+  - id: local-summary-pbf
+    title: Position Based Fluids summary
+    type: derived-notes
+    fullContentRequired: false
