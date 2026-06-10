@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import YAML from "yaml";
 
 function usage() {
-  console.error("Usage: npm run kb:reset-vault -- ./vault --yes");
+  console.error("Usage: npm run kb:reset-vault -- ./vault --yes [--empty-domains]");
 }
 
 function ensureInside(root, target) {
@@ -22,8 +23,8 @@ function resetDir(vaultRoot, relativePath) {
   fs.writeFileSync(path.join(target, ".gitkeep"), "", "utf8");
 }
 
-const [vaultRootArg, yesFlag] = process.argv.slice(2);
-if (!vaultRootArg || yesFlag !== "--yes") {
+const [vaultRootArg, ...flags] = process.argv.slice(2);
+if (!vaultRootArg || !flags.includes("--yes")) {
   usage();
   console.error("This removes vault content, custom block-types, layout, and .kb-ai runtime data. Re-run with --yes to confirm.");
   process.exit(1);
@@ -47,7 +48,16 @@ try {
   fs.writeFileSync(path.join(vaultRoot, "graph.yaml"), "schemaVersion: 1\nedges: []\n", "utf8");
   fs.rmSync(path.join(vaultRoot, "graph-layout.yaml"), { force: true });
 
+  if (flags.includes("--empty-domains")) {
+    fs.writeFileSync(path.join(vaultRoot, "domains.yaml"), "schemaVersion: 1\ndomains: []\n", "utf8");
+    const vaultPath = path.join(vaultRoot, "vault.yaml");
+    const vault = YAML.parse(fs.readFileSync(vaultPath, "utf8")) || {};
+    delete vault.defaultDomain;
+    fs.writeFileSync(vaultPath, YAML.stringify(vault), "utf8");
+  }
+
   console.log(`Reset vault: ${vaultRoot}`);
+  if (flags.includes("--empty-domains")) console.log("Domains: empty");
   console.log("Next: npm run kb:export-ai-context -- ./vault");
 } catch (error) {
   console.error(`Failed to reset vault: ${error?.message || error}`);

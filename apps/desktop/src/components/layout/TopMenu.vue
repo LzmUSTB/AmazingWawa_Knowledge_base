@@ -14,6 +14,10 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  canCreateNote: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
@@ -28,12 +32,18 @@ defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
         <AppIcon name="folder-open" />
         <span class="button-icon-label">Open Vault</span>
       </button>
-      <button class="hud-button button-with-icon" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
+      <button
+        class="hud-button button-with-icon"
+        style="--button-color: var(--graphics)"
+        :disabled="!canCreateNote"
+        :title="canCreateNote ? '' : 'Create or import a domain first.'"
+        @click="$emit('open-dialog', 'new-note')"
+      >
         <AppIcon name="file-plus" />
         <span class="button-icon-label">New Note</span>
       </button>
       <button class="hud-button button-with-icon" style="--button-color: var(--career)" @click="$emit('show-view', 'ai-import')">
-        <AppIcon name="file-text" />
+        <AppIcon name="import" />
         <span class="button-icon-label">Import</span>
       </button>
       <button
@@ -42,7 +52,7 @@ defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
         :disabled="!canExportContext"
         @click="$emit('export-context')"
       >
-        <AppIcon name="file-text" />
+        <AppIcon name="export" />
         <span class="button-icon-label">Export Context</span>
       </button>
       <button class="hud-button button-with-icon" disabled title="Git panel is not implemented yet">

@@ -62,7 +62,9 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
   const packageFiles = validatedPackage.packageFiles;
   const filesToCreate = [];
   const filesToModify = [];
+  const domainsToAdd = [];
   const nodesToAdd = [];
+  const assetsToAdd = [];
   const edgesToAdd = [];
   const blockTypesToAdd = [];
   const notePreviews = [];
@@ -70,6 +72,23 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
   const reviewItems = [...(validatedPackage.reviewItems || [])];
 
   validatedPackage.normalizedOperations.forEach((operation) => {
+    if (operation.type === "add_domain") {
+      domainsToAdd.push({
+        id: operation.id,
+        title: operation.title,
+        description: operation.description || "",
+        color: operation.color || "",
+        order: operation.order,
+        reason: "domain creation from package",
+      });
+      if (!filesToModify.some((file) => file.path === "domains.yaml")) {
+        filesToModify.push({ path: "domains.yaml", kind: "domains" });
+      }
+      if (!currentVault.vault?.defaultDomain && !filesToModify.some((file) => file.path === "vault.yaml")) {
+        filesToModify.push({ path: "vault.yaml", kind: "vault" });
+      }
+    }
+
     if (operation.type === "add_node") {
       const metaPath = targetMetaPath(operation);
       const notePath = targetNotePath(operation);
@@ -147,6 +166,16 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
     }
   });
 
+  (packageFiles.assetFiles || []).forEach((asset) => {
+    assetsToAdd.push({
+      path: asset.vaultRelativePath,
+      sourcePath: asset.packageRelativePath,
+      mimeType: asset.mimeType,
+      size: asset.size,
+    });
+    filesToCreate.push({ path: asset.vaultRelativePath, sourcePath: asset.packageRelativePath, kind: "asset" });
+  });
+
   if (edgesToAdd.length && !filesToModify.some((file) => file.path === "graph.yaml")) {
     filesToModify.push({ path: "graph.yaml", kind: "graph" });
   }
@@ -154,7 +183,9 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
   return {
     filesToCreate,
     filesToModify,
+    domainsToAdd,
     nodesToAdd,
+    assetsToAdd,
     edgesToAdd,
     blockTypesToAdd,
     notePreviews,

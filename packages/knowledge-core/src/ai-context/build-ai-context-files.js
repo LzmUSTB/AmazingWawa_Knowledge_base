@@ -34,6 +34,7 @@ export function buildAiContextFiles(vault = {}) {
     order: domain.order,
   }));
   const customBlocks = Object.values(registry.declarative || {});
+  const emptyDomains = domains.length === 0;
 
   return {
     "AI_KB_GUIDE.md": `# Wawa Package Guide
@@ -75,6 +76,14 @@ ${"```"}
 
 Remote URLs and data URLs are not allowed for note assets. Package images locally. Assets may come from source material or be simple original explanatory images generated for the note. Generated assets must be safe and non-executable.
 
+Domain rules:
+- Domains are high-level root categories.
+- If DOMAIN_INDEX.yaml is empty, start the package with add_domain.
+- If no suitable existing domain fits the content, create a small, stable, broad domain with add_domain.
+- Do not force content into an unrelated existing domain.
+- Do not create excessive narrow domains.
+- After add_domain, add nodes under that domain by setting node.domain and parentId to the new domain id.
+
 Do not ask the user to manually place package folders under .kb-ai/imports. Do not output an ordinary .zip as the final artifact.
 
 If you cannot create .wawapkg directly, output a source package folder and ask the developer to pack it with:
@@ -88,6 +97,7 @@ ${"```"}
       constraints: {
         idPattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
         allowedDomains: domains.map((domain) => domain.id),
+        canAddDomains: true,
         allowedNodeTypes: KNOWLEDGE_TYPES.filter((type) => type !== "domain"),
         allowedStatuses: KNOWLEDGE_STATUS.filter((status) => status !== "domain"),
         allowedRelations: RELATION_TYPES,
@@ -104,6 +114,13 @@ ${"```"}
         nodes: nodes.length,
         edges: edges.length,
         customBlockTypes: customBlocks.length,
+      },
+      state: {
+        emptyVault: domains.length === 0 && nodes.length === 0 && edges.length === 0,
+        emptyDomains,
+        guidance: emptyDomains
+          ? "This vault has no domains. A useful package should usually start with add_domain."
+          : "Use existing domains when appropriate, or add a new broad domain if needed.",
       },
     }),
     "NODE_INDEX.yaml": YAML.stringify({ nodes }),
@@ -157,6 +174,8 @@ Prefer existing native blocks. Create declarative visual blocks only when existi
 
 If a simple static diagram or image is enough, prefer a packaged local asset image. If interaction, structured comparison, or semantic highlighting is needed, use a declarative visual block. Propose a native block only when declarative blocks are insufficient.
 
+Packages cannot create relation types or native renderer code. Relation types are frozen: ${RELATION_TYPES.join(", ")}.
+
 Do not include executable JS, Vue, CSS, HTML, script, iframe, eval, inline event handlers, or remote resources.
 `,
     "NOTE_COMPOSITION_GUIDE.md": `# Note Composition Guide
@@ -196,7 +215,7 @@ packageFormat: wawapkg
 packageKind: import
 schemaVersion: "1.1"
 packageId: wawa-import-YYYYMMDD-topic-name
-status: draft
+status: seed
 preview:
   mode: in-app
   generatedHtmlPreview: false
@@ -205,15 +224,22 @@ ${"```"}
 ${"```yaml"}
 # patch.yaml
 operations:
+  - type: add_domain
+    domain:
+      id: computer-graphics
+      title: Computer Graphics
+      description: Rendering, geometry processing, shaders, and graphics pipelines.
+      color: "#00B7FF"
+      order: 10
   - type: add_node
     node:
       id: example-concept
       title: Example Concept
-      domain: simulation
+      domain: computer-graphics
       type: concept
-      status: draft
+      status: seed
       summary: One sentence summary.
-    parentId: simulation
+    parentId: computer-graphics
   - type: add_edge
     from: example-concept
     to: another-concept
@@ -231,6 +257,9 @@ ${"```markdown"}
 ${"```"}
 
 Constraints:
+- Use add_domain first when the vault has no suitable domain.
+- add_domain is create-only; it cannot update existing domains.
+- add_node may reference a domain created earlier in the same patch.
 - Allowed relations: ${RELATION_TYPES.join(", ")}
 - Link relations in add_edge: depends-on, used-in, compares-with
 - Do not include executable/source files: .js, .ts, .vue, .css, .html, .htm, .exe, .dll, .bat, .cmd, .sh, .ps1, .jar, .wasm

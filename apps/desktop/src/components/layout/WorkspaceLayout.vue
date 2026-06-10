@@ -70,6 +70,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  canCreateNote: {
+    type: Boolean,
+    default: true,
+  },
   graphScopeId: {
     type: String,
     required: true,
@@ -200,6 +204,7 @@ function fitGraphView() {
   >
     <TopMenu
       :app-title="appTitle"
+      :can-create-note="canCreateNote"
       :can-export-context="Boolean(activeVaultRootPath)"
       :ui-font-scale="uiFontScale"
       @export-context="$emit('export-context')"
@@ -241,6 +246,7 @@ function fitGraphView() {
           <GraphToolbar
             :edge-count="currentScope.edges.length"
             :can-save-layout="canSaveLayout"
+            :can-create-node="canCreateNote"
             :layout-dirty="layoutDirty"
             :layout-editing="isLayoutEditing"
             :layout-mode="layoutMode"

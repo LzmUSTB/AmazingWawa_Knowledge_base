@@ -20,6 +20,8 @@ defineProps({
         <strong :class="validation.valid ? 'is-valid' : 'is-invalid'">{{ validation.valid ? "valid" : "invalid" }}</strong>
         <span>Operations</span>
         <strong>{{ validation.previewModel.operationCount }}</strong>
+        <span>Domains</span>
+        <strong>{{ validation.previewModel.domainsToAdd || 0 }}</strong>
       </div>
     </template>
     <p v-else class="empty-line">Select a package to inspect it.</p>

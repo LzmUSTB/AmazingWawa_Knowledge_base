@@ -38,9 +38,42 @@ function withPackageId(packageRoot, packageId) {
   fs.writeFileSync(manifestPath, YAML.stringify(manifest), "utf8");
 }
 
-const vault = readVaultForCli(vaultRoot);
+function ensureSimulationSph(vaultRootPath) {
+  const domainsPath = path.join(vaultRootPath, "domains.yaml");
+  const domainsYaml = YAML.parse(fs.readFileSync(domainsPath, "utf8")) || {};
+  const domains = Array.isArray(domainsYaml.domains) ? domainsYaml.domains : [];
+  if (!domains.some((domain) => domain.id === "simulation")) {
+    domains.push({
+      id: "simulation",
+      title: "Simulation",
+      description: "Simulation knowledge.",
+      color: "#7C5CFF",
+      order: 10,
+    });
+    fs.writeFileSync(domainsPath, YAML.stringify({ ...domainsYaml, schemaVersion: 1, domains }), "utf8");
+  }
+
+  const sphRoot = path.join(vaultRootPath, "content", "simulation", "sph");
+  fs.mkdirSync(path.join(sphRoot, "assets"), { recursive: true });
+  fs.writeFileSync(path.join(sphRoot, "meta.yaml"), YAML.stringify({
+    id: "sph",
+    title: "SPH",
+    domain: "simulation",
+    type: "concept",
+    status: "seed",
+    summary: "Smoothed particle hydrodynamics.",
+    createdAt: "2026-06-10",
+    updatedAt: "2026-06-10",
+    tags: ["simulation"],
+    prerequisites: [],
+    related: [],
+  }), "utf8");
+  fs.writeFileSync(path.join(sphRoot, "note.md"), "# SPH\n\nSmoothed particle hydrodynamics.\n", "utf8");
+}
+
 const cleanVaultRoot = path.join(os.tmpdir(), `ai-import-clean-vault-${Date.now()}`);
 fs.cpSync(vaultRoot, cleanVaultRoot, { recursive: true });
+ensureSimulationSph(cleanVaultRoot);
 fs.rmSync(path.join(cleanVaultRoot, "content", "simulation", "position-based-fluids"), { recursive: true, force: true });
 fs.rmSync(path.join(cleanVaultRoot, "block-types", "solver-loop-diagram.yaml"), { force: true });
 fs.rmSync(path.join(cleanVaultRoot, ".kb-ai", "history", "ai-import-20260610-position-based-fluids.yaml"), { force: true });

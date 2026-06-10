@@ -42,6 +42,8 @@ try {
   });
   console.log(`Applied import package: ${plan.packageId}`);
   console.log(`Backup: ${plan.backupRelativeDir}`);
+  console.log(`Created domains: ${(plan.history.createdDomains || []).length}`);
+  (plan.history.createdDomains || []).forEach((item) => console.log(`- ${item}`));
   console.log(`Created: ${plan.history.created.length}`);
   plan.history.created.forEach((item) => console.log(`- ${item}`));
   console.log(`Modified: ${plan.history.modified.length}`);

@@ -4,19 +4,12 @@ vault:
   description: Local-first knowledge graph vault for technical learning, project
     knowledge, and review.
   language: zh-CN
-  defaultDomain: graphics
-generatedAt: 2026-06-10T08:05:15.915Z
+  defaultDomain: ""
+generatedAt: 2026-06-10T08:40:36.706Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-  allowedDomains:
-    - graphics
-    - linear-algebra
-    - machine-learning
-    - web-dev
-    - game-dev
-    - career
-    - simulation
-    - language
+  allowedDomains: []
+  canAddDomains: true
   allowedNodeTypes:
     - topic
     - concept
@@ -66,7 +59,12 @@ constraints:
     - .mp4
     - .webm
 counts:
-  domains: 8
+  domains: 0
   nodes: 0
   edges: 0
   customBlockTypes: 0
+state:
+  emptyVault: true
+  emptyDomains: true
+  guidance: This vault has no domains. A useful package should usually start with
+    add_domain.

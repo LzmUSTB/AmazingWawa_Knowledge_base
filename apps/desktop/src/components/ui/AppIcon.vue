@@ -24,6 +24,8 @@ import save from "../../assets/icons/save.svg?raw";
 import search from "../../assets/icons/search.svg?raw";
 import textSearch from "../../assets/icons/text-search.svg?raw";
 import x from "../../assets/icons/x.svg?raw";
+import importIcon from "../../assets/icons/import.svg?raw";
+import exportIcon from "../../assets/icons/export.svg?raw";
 
 const icons = {
   "arrow-swap": arrowSwap,
@@ -49,6 +51,8 @@ const icons = {
   search,
   "text-search": textSearch,
   x,
+  import: importIcon,
+  export: exportIcon,
 };
 
 const props = defineProps({

@@ -30,6 +30,10 @@ defineProps({
     type: Number,
     required: true,
   },
+  canCreateNode: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 defineEmits([
@@ -43,7 +47,13 @@ defineEmits([
 
 <template>
   <div class="graph-toolbar">
-    <button class="hud-button button-with-icon" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
+    <button
+      class="hud-button button-with-icon"
+      style="--button-color: var(--graphics)"
+      :disabled="!canCreateNode"
+      :title="canCreateNode ? '' : 'Create or import a domain first.'"
+      @click="$emit('open-dialog', 'new-note')"
+    >
       <AppIcon name="plus-node" />
       <span class="button-icon-label">New Node</span>
     </button>

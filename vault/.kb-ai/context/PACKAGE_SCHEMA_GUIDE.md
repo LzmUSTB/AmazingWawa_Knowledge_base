@@ -11,7 +11,7 @@ packageFormat: wawapkg
 packageKind: import
 schemaVersion: "1.1"
 packageId: wawa-import-YYYYMMDD-topic-name
-status: draft
+status: seed
 preview:
   mode: in-app
   generatedHtmlPreview: false
@@ -20,15 +20,22 @@ preview:
 ```yaml
 # patch.yaml
 operations:
+  - type: add_domain
+    domain:
+      id: computer-graphics
+      title: Computer Graphics
+      description: Rendering, geometry processing, shaders, and graphics pipelines.
+      color: "#00B7FF"
+      order: 10
   - type: add_node
     node:
       id: example-concept
       title: Example Concept
-      domain: simulation
+      domain: computer-graphics
       type: concept
-      status: draft
+      status: seed
       summary: One sentence summary.
-    parentId: simulation
+    parentId: computer-graphics
   - type: add_edge
     from: example-concept
     to: another-concept
@@ -46,6 +53,9 @@ Note reference:
 ```
 
 Constraints:
+- Use add_domain first when the vault has no suitable domain.
+- add_domain is create-only; it cannot update existing domains.
+- add_node may reference a domain created earlier in the same patch.
 - Allowed relations: contains, depends-on, used-in, compares-with
 - Link relations in add_edge: depends-on, used-in, compares-with
 - Do not include executable/source files: .js, .ts, .vue, .css, .html, .htm, .exe, .dll, .bat, .cmd, .sh, .ps1, .jar, .wasm

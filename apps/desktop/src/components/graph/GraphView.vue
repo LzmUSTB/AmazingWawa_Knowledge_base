@@ -326,6 +326,10 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   <section class="graph-view technical-grid">
     <div ref="viewportRef" class="graph-viewport" :class="{ 'is-panning': isPanning }" @pointercancel="stopPanning"
       @pointerdown="handlePointerDown" @pointermove="handlePointerMove" @pointerup="stopPanning" @wheel="handleWheel">
+      <div v-if="!currentScope.nodes.length" class="graph-empty-state">
+        <h2>No domains yet.</h2>
+        <p>Import a .wawapkg package or create a domain.</p>
+      </div>
       <div class="graph-board" :style="{
         width: `${board.width}px`,
         height: `${board.height}px`,
@@ -428,6 +432,29 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 .graph-viewport.is-panning {
   cursor: grabbing;
+}
+
+.graph-empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  pointer-events: none;
+}
+
+.graph-empty-state h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-title);
+  text-transform: uppercase;
+}
+
+.graph-empty-state p {
+  margin: 0;
+  font-size: var(--font-size-ui);
 }
 
 .graph-board {

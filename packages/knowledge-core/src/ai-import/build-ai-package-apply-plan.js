@@ -23,6 +23,47 @@ function edgeId(from, relation, to) {
   return `${from}-${relation}-${to}`;
 }
 
+const DOMAIN_COLORS = ["#00B7FF", "#C8FF00", "#FF2BD6", "#FFD500", "#7C5CFF", "#00E5A8", "#FF8A00"];
+
+function normalizeDomainForWrite(domain, index, existingCount) {
+  return {
+    id: domain.id,
+    title: domain.title,
+    description: domain.description || "",
+    color: domain.color || DOMAIN_COLORS[(existingCount + index) % DOMAIN_COLORS.length],
+    order: domain.order ?? (existingCount + index + 1) * 10,
+  };
+}
+
+function domainsYamlWithAddedDomains(currentVault, addedDomains) {
+  const existingCount = (currentVault.domains || []).length;
+  const domains = [
+    ...(currentVault.domains || []).map((domain, index) => ({
+      id: domain.id,
+      title: domain.title,
+      description: domain.description || "",
+      color: domain.color || DOMAIN_COLORS[index % DOMAIN_COLORS.length],
+      order: domain.order ?? (index + 1) * 10,
+    })),
+    ...addedDomains.map((domain, index) => normalizeDomainForWrite(domain, index, existingCount)),
+  ].sort((left, right) => (left.order ?? 999) - (right.order ?? 999) || String(left.title || left.id).localeCompare(String(right.title || right.id)));
+
+  return YAML.stringify({
+    schemaVersion: 1,
+    domains,
+  });
+}
+
+function vaultYamlWithDefaultDomain(currentVault, defaultDomain) {
+  return YAML.stringify({
+    schemaVersion: currentVault.vault?.schemaVersion || 1,
+    title: currentVault.vault?.title || "Knowledge Vault",
+    description: currentVault.vault?.description || "",
+    language: currentVault.vault?.language || "zh-CN",
+    defaultDomain,
+  });
+}
+
 function lineHeadingText(line = "") {
   return line.match(/^#{1,6}\s+(.+)$/)?.[1]?.trim() || "";
 }
@@ -84,10 +125,17 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
   const createDirs = new Set();
   const backupPaths = new Set();
   const addedEdges = [];
+  const addedDomains = [];
   const created = [];
+  const createdDomains = [];
   const modified = [];
 
   validation.normalizedOperations.forEach((operation) => {
+    if (operation.type === "add_domain") {
+      addedDomains.push(operation);
+      createdDomains.push(operation.id);
+    }
+
     if (operation.type === "add_block_type") {
       const contents = packageFiles.blockTypeFiles[operation.file];
       writes.push({ relativePath: operation.file, contents, createOnly: true });
@@ -131,6 +179,26 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
     }
   });
 
+  if (addedDomains.length) {
+    backupPaths.add("domains.yaml");
+    writes.push({
+      relativePath: "domains.yaml",
+      contents: domainsYamlWithAddedDomains(currentVault, addedDomains),
+      createOnly: false,
+    });
+    modified.push("domains.yaml");
+
+    if (!currentVault.vault?.defaultDomain && addedDomains[0]?.id) {
+      backupPaths.add("vault.yaml");
+      writes.push({
+        relativePath: "vault.yaml",
+        contents: vaultYamlWithDefaultDomain(currentVault, addedDomains[0].id),
+        createOnly: false,
+      });
+      modified.push("vault.yaml");
+    }
+  }
+
   (packageFiles.assetFiles || []).forEach((asset) => {
     binaryWrites.push({
       relativePath: asset.vaultRelativePath,
@@ -156,6 +224,7 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
     packageId: validation.previewModel.packageId,
     appliedAt: new Date().toISOString(),
     created: [...new Set(created)],
+    createdDomains: [...new Set(createdDomains)],
     modified: [...new Set(modified)],
     warnings: validation.warnings,
   };

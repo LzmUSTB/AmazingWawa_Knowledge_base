@@ -12,7 +12,7 @@ const PACKAGE_ID_PATTERN = /^(?:ai-import|wawa-import)-[a-z0-9-]+$/;
 const KEBAB_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
 const SUPPORTED_INSERT_MODES = new Set(["after-heading", "before-heading", "end"]);
-const OPERATION_TYPES = new Set(["add_node", "append_note_section", "add_edge", "add_block_type", "propose_native_block"]);
+const OPERATION_TYPES = new Set(["add_domain", "add_node", "append_note_section", "add_edge", "add_block_type", "propose_native_block"]);
 const FORBIDDEN_BLOCK_FIELD_PATTERN = /(^|\.)(script|iframe|eval|html|css|js|src|url|style|styles|javascript|on[a-z]+)/i;
 const FORBIDDEN_MARKDOWN_PATTERNS = [
   { pattern: /<\s*script\b/i, label: "script tag" },
@@ -53,6 +53,18 @@ function normalizeSchemaVersion(value) {
 
 function normalizeOperation(operation = {}) {
   const node = operation.node || operation;
+  if (operation.type === "add_domain") {
+    const domain = operation.domain || operation;
+    return {
+      ...operation,
+      id: domain.id,
+      title: domain.title,
+      description: domain.description || "",
+      color: domain.color || "",
+      order: domain.order,
+      aliases: domain.aliases || [],
+    };
+  }
   if (operation.type === "add_node") {
     return {
       ...operation,
@@ -87,8 +99,16 @@ function operationsFromPatch(patch = {}) {
   return asArray(patch.operations || patch.changes || patch.patch).map(normalizeOperation);
 }
 
-function nodeMap(currentVault, createdNodes = []) {
-  return new Map([...(currentVault.nodes || []), ...createdNodes].map((node) => [node.id, node]));
+function nodeMap(currentVault, createdNodes = [], createdDomains = []) {
+  const domainNodes = createdDomains.map((domain) => ({
+    id: domain.id,
+    title: domain.title,
+    domain: domain.id,
+    type: "domain",
+    status: "domain",
+    summary: domain.description || "",
+  }));
+  return new Map([...(currentVault.nodes || []), ...domainNodes, ...createdNodes].map((node) => [node.id, node]));
 }
 
 function generatedMetaPath(operation) {
@@ -164,7 +184,7 @@ function validateAssetReferencePath(target = "") {
   return { path: normalized };
 }
 
-function validatePackageAssets(packageFiles, operations, errors, warnings) {
+function validatePackageAssets(currentVault, packageFiles, operations, errors, warnings) {
   const assetFiles = packageFiles.assetFiles || [];
   const assetByPackagePath = new Map(assetFiles.map((asset) => [asset.packageRelativePath, asset]));
   const referencedPackagePaths = new Set();
@@ -201,7 +221,7 @@ function validatePackageAssets(packageFiles, operations, errors, warnings) {
       markdown = packageFiles.generatedNoteFiles[generatedNotePath(operation)] || "";
     } else if (operation.type === "append_note_section") {
       nodeId = operation.targetId || operation.id;
-      domain = operation.domain || "";
+      domain = operation.domain || (currentVault.nodes || []).find((node) => node.id === nodeId)?.domain || "";
       markdown = operation.markdown || operation.content || "";
     } else {
       return;
@@ -321,10 +341,10 @@ function validateSources(packageFiles, warnings) {
 }
 
 function validateAddNode(operation, context) {
-  const { currentVault, packageFiles, registry, createdNodes, createdIds, errors, warnings } = context;
+  const { currentVault, packageFiles, registry, createdNodes, createdDomains, createdIds, errors, warnings } = context;
   const currentNodeIds = new Set((currentVault.nodes || []).map((node) => node.id));
-  const domainIds = new Set((currentVault.domains || []).map((domain) => domain.id));
-  const nodes = nodeMap(currentVault, createdNodes);
+  const domainIds = new Set([...(currentVault.domains || []).map((domain) => domain.id), ...createdDomains.map((domain) => domain.id)]);
+  const nodes = nodeMap(currentVault, createdNodes, createdDomains);
 
   if (!KEBAB_PATTERN.test(operation.id || "")) errors.push(`add_node: id "${operation.id || ""}" must be lowercase kebab-case.`);
   if (currentNodeIds.has(operation.id)) errors.push(`add_node ${operation.id}: node already exists.`);
@@ -378,8 +398,8 @@ function validateAddNode(operation, context) {
 }
 
 function validateAppendNoteSection(operation, context) {
-  const { currentVault, registry, createdNodes, errors, warnings } = context;
-  const nodes = nodeMap(currentVault, createdNodes);
+  const { currentVault, registry, createdNodes, createdDomains, errors, warnings } = context;
+  const nodes = nodeMap(currentVault, createdNodes, createdDomains);
   const targetId = operation.targetId || operation.id;
   const insertMode = operation.insertMode || "end";
   const markdown = operation.markdown || operation.content || "";
@@ -403,8 +423,8 @@ function validateAppendNoteSection(operation, context) {
 }
 
 function validateAddEdge(operation, context) {
-  const { currentVault, createdNodes, packageEdges, errors } = context;
-  const nodes = nodeMap(currentVault, createdNodes);
+  const { currentVault, createdNodes, createdDomains, packageEdges, errors } = context;
+  const nodes = nodeMap(currentVault, createdNodes, createdDomains);
   const relation = operation.relation;
   const from = operation.from;
   const to = operation.to;
@@ -429,6 +449,42 @@ function validateAddEdge(operation, context) {
   }
   if (packageEdges.has(edgeId)) errors.push(`add_edge ${edgeId}: duplicate package edge.`);
   packageEdges.add(edgeId);
+}
+
+function validateAddDomain(operation, context) {
+  const { currentVault, createdDomains, createdDomainIds, errors, warnings } = context;
+  const currentDomainIds = new Set((currentVault.domains || []).map((domain) => domain.id));
+  const currentDomainTitles = new Set((currentVault.domains || []).map((domain) => String(domain.title || "").trim().toLowerCase()).filter(Boolean));
+
+  if (!KEBAB_PATTERN.test(operation.id || "")) errors.push(`add_domain: id "${operation.id || ""}" must be lowercase kebab-case.`);
+  if (currentDomainIds.has(operation.id)) errors.push(`add_domain ${operation.id}: domain already exists.`);
+  if (createdDomainIds.has(operation.id)) errors.push(`add_domain ${operation.id}: duplicate domain in package.`);
+  if (!operation.title) errors.push(`add_domain ${operation.id}: title is required.`);
+  if (operation.color && !/^#[0-9a-f]{6}$/i.test(operation.color)) {
+    errors.push(`add_domain ${operation.id}: color must be a hex color like #00B7FF.`);
+  }
+  if (operation.order !== undefined && typeof operation.order !== "number") {
+    errors.push(`add_domain ${operation.id}: order must be a number.`);
+  }
+  if (operation.aliases?.length) {
+    warnings.push(`add_domain ${operation.id}: aliases are not stored by the current domain schema.`);
+  }
+  const titleKey = String(operation.title || "").trim().toLowerCase();
+  if (titleKey && currentDomainTitles.has(titleKey)) {
+    warnings.push(`add_domain ${operation.id}: domain title duplicates an existing domain title.`);
+  }
+  if (titleKey && createdDomains.some((domain) => String(domain.title || "").trim().toLowerCase() === titleKey)) {
+    warnings.push(`add_domain ${operation.id}: domain title duplicates another package domain title.`);
+  }
+
+  createdDomainIds.add(operation.id);
+  createdDomains.push({
+    id: operation.id,
+    title: operation.title,
+    description: operation.description || "",
+    color: operation.color || "",
+    order: operation.order,
+  });
 }
 
 function validateAddBlockType(operation, context) {
@@ -473,6 +529,8 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
 
   const operations = operationsFromPatch(packageFiles.patch);
   const normalizedOperations = [];
+  const createdDomains = [];
+  const createdDomainIds = new Set();
   const createdNodes = [];
   const createdIds = new Set();
   const packageEdges = new Set();
@@ -482,6 +540,8 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
     currentVault,
     packageFiles,
     registry,
+    createdDomains,
+    createdDomainIds,
     createdNodes,
     createdIds,
     packageEdges,
@@ -496,6 +556,7 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
       return;
     }
     normalizedOperations.push(operation);
+    if (operation.type === "add_domain") validateAddDomain(operation, context);
     if (operation.type === "add_node") validateAddNode(operation, context);
     if (operation.type === "append_note_section") validateAppendNoteSection(operation, context);
     if (operation.type === "add_edge") validateAddEdge(operation, context);
@@ -503,7 +564,7 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
     if (operation.type === "propose_native_block") validateProposeNativeBlock(operation, context);
   });
 
-  validatePackageAssets(packageFiles, normalizedOperations, errors, warnings);
+  validatePackageAssets(currentVault, packageFiles, normalizedOperations, errors, warnings);
 
   return {
     valid: errors.length === 0,
@@ -517,6 +578,7 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
       schemaVersion: manifest.schemaVersion || "",
       packageFormat: packageFiles.packageFormat || manifest.packageFormat || "",
       operationCount: normalizedOperations.length,
+      domainsToAdd: createdDomains.length,
       packageBlockTypes: Object.keys(registry.packageDefinitions || {}),
     },
     packageFiles,

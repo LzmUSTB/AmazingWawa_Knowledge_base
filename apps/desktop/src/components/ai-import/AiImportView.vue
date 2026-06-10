@@ -156,6 +156,28 @@ async function applySelectedPackage() {
       <aside class="right-column">
         <AiImportGraphDiff :diff="diff" />
         <section class="ai-panel">
+          <div class="section-label">New Domains</div>
+          <div v-if="diff?.domainsToAdd?.length" class="domain-add-list">
+            <div v-for="domain in diff.domainsToAdd" :key="domain.id" class="domain-add-row" :style="{ '--domain-color': domain.color || 'var(--graphics)' }">
+              <strong>{{ domain.title }}</strong>
+              <span>{{ domain.id }}</span>
+              <small>{{ domain.description || domain.reason }}</small>
+            </div>
+          </div>
+          <p v-else class="empty-line">No new domains.</p>
+        </section>
+        <section class="ai-panel">
+          <div class="section-label">New Assets</div>
+          <div v-if="diff?.assetsToAdd?.length" class="asset-add-list">
+            <div v-for="asset in diff.assetsToAdd" :key="asset.path" class="asset-add-row">
+              <strong>{{ asset.path }}</strong>
+              <span>{{ asset.mimeType || "application/octet-stream" }}</span>
+              <small>{{ asset.size }} bytes</small>
+            </div>
+          </div>
+          <p v-else class="empty-line">No new assets.</p>
+        </section>
+        <section class="ai-panel">
           <div class="section-label">New Block Types</div>
           <div v-if="diff?.blockTypesToAdd?.length" class="block-type-list">
             <div v-for="block in diff.blockTypesToAdd" :key="block.type" class="block-type-row">
@@ -330,12 +352,67 @@ async function applySelectedPackage() {
   gap: 8px;
 }
 
+.domain-add-list {
+  display: grid;
+  gap: 8px;
+}
+
+.asset-add-list {
+  display: grid;
+  gap: 8px;
+}
+
 .block-type-row {
   display: grid;
   gap: 4px;
   border: 1px solid var(--border-muted);
   background: var(--background-main);
   padding: 9px;
+}
+
+.domain-add-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-muted);
+  border-left: 5px solid var(--domain-color, var(--graphics));
+  background: var(--background-main);
+  padding: 9px;
+}
+
+.asset-add-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-muted);
+  background: var(--background-main);
+  padding: 9px;
+}
+
+.asset-add-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+}
+
+.asset-add-row span,
+.asset-add-row small {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+}
+
+.domain-add-row strong {
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.domain-add-row span,
+.domain-add-row small {
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
 }
 
 .block-type-row strong {

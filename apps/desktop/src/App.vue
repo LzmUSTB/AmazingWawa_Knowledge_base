@@ -91,6 +91,7 @@ const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || 
 const currentDraftLayoutBoard = computed(() => layoutDraftBoards.value[graphScopeId.value] || null);
 const currentDraftMovedNodeIds = computed(() => layoutMovedNodeIds.value[graphScopeId.value] || []);
 const hasRealVault = computed(() => Boolean(activeVaultRootPath.value) && useActiveVault().value.source === "desktop");
+const hasDomains = computed(() => Boolean(useActiveVault().value.domains?.length));
 const currentRelationNodeId = computed(() => {
   if (currentView.value === "note") return currentNoteId.value;
   const scope = getGraphScope(graphScopeId.value);
@@ -706,6 +707,10 @@ function executeSearchResult({ result, localGraph = false, query = "" }) {
 }
 
 function openDialog(dialogName) {
+  if (dialogName === "new-note" && !hasDomains.value) {
+    window.alert("Create or import a domain first.");
+    return;
+  }
   if (dialogName === "new-note" && !confirmDiscardDirty()) return;
   activeDialog.value = dialogName;
 }
@@ -976,6 +981,7 @@ function toggleRelationSidebar() {
       :app-title="activeVaultTitle"
       :can-save-layout="canSaveLayout"
       :can-save-note="canSaveNote"
+      :can-create-note="hasDomains"
       :current-domain="currentDomain"
       :current-note-id="currentNoteId"
       :current-relation-node-id="currentRelationNodeId"

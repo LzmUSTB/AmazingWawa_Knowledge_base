@@ -32,6 +32,7 @@ try {
 
   printList("Files to create", diff.filesToCreate, (file) => `${file.path} (${file.kind})`);
   printList("Files to modify", diff.filesToModify, (file) => `${file.path} (${file.kind})`);
+  printList("Domains to add", diff.domainsToAdd || [], (domain) => `${domain.id} / ${domain.title}`);
   printList("Nodes to add", diff.nodesToAdd, (node) => `${node.id} / ${node.domain} / parent ${node.parentId}`);
   printList("Edges to add", diff.edgesToAdd, (edge) => `${edge.from} ${edge.relation} ${edge.to}`);
   printList("Block types to add", diff.blockTypesToAdd, (block) => `${block.type} / ${block.kind} / ${block.engine}`);

@@ -16,12 +16,6 @@ struct VaultRawFiles {
 }
 
 #[derive(Serialize)]
-struct AiImportPackageSummary {
-    package_id: String,
-    relative_path: String,
-}
-
-#[derive(Serialize)]
 struct AiImportPackageFiles {
     package_id: String,
     external_root_path: String,
@@ -108,7 +102,9 @@ fn package_id_from_manifest(raw: &str) -> Result<String, String> {
 }
 
 fn allowed_ai_apply_path(relative_path: &str) -> bool {
-    relative_path == "graph.yaml"
+    relative_path == "domains.yaml"
+        || relative_path == "graph.yaml"
+        || relative_path == "vault.yaml"
         || relative_path.starts_with("content/")
         || relative_path.starts_with("block-types/")
         || relative_path == ".kb-ai/history"
@@ -389,39 +385,6 @@ fn read_yaml_files_in_directory(
     Ok(())
 }
 
-fn read_package_files(
-    package_root: &Path,
-    current: &Path,
-    output: &mut HashMap<String, String>,
-    predicate: fn(&Path) -> bool,
-) -> Result<(), String> {
-    if !current.is_dir() {
-        return Ok(());
-    }
-    for entry in fs::read_dir(current).map_err(|error| {
-        format!(
-            "Failed to read directory {}: {error}",
-            current.to_string_lossy()
-        )
-    })? {
-        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
-        let path = entry.path();
-        if path.is_dir() {
-            read_package_files(package_root, &path, output, predicate)?;
-        } else if path.is_file() && predicate(&path) {
-            let key = path
-                .strip_prefix(package_root)
-                .map_err(|error| format!("Failed to make relative path: {error}"))?
-                .to_string_lossy()
-                .replace('\\', "/");
-            let contents = fs::read_to_string(&path)
-                .map_err(|error| format!("Failed to read {}: {error}", path.to_string_lossy()))?;
-            output.insert(key, contents);
-        }
-    }
-    Ok(())
-}
-
 fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles, String> {
     if !package_file_path.to_ascii_lowercase().ends_with(".wawapkg") {
         return Err("Package file must use .wawapkg extension".into());
@@ -662,42 +625,6 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 }
 
 #[tauri::command]
-fn choose_ai_import_package_root() -> Result<Option<String>, String> {
-    if !cfg!(target_os = "windows") {
-        return Err("Folder picker command is currently implemented for Windows only".into());
-    }
-
-    let script = r#"
-Add-Type -AssemblyName System.Windows.Forms
-$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = 'Select AI Import Package'
-$dialog.ShowNewFolderButton = $false
-if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-  [Console]::Out.Write($dialog.SelectedPath)
-}
-"#;
-
-    let output = Command::new("powershell")
-        .args(["-NoProfile", "-STA", "-Command", script])
-        .output()
-        .map_err(|error| format!("Failed to open folder picker: {error}"))?;
-
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-
-    let selected_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if selected_path.is_empty() {
-        return Ok(None);
-    }
-    let manifest_path = PathBuf::from(&selected_path).join("manifest.yaml");
-    if !manifest_path.is_file() {
-        return Err("Selected folder is not an AI import package root: missing manifest.yaml".into());
-    }
-    Ok(Some(selected_path))
-}
-
-#[tauri::command]
 fn choose_wawapkg_file() -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
         return Err("File picker command is currently implemented for Windows only".into());
@@ -761,131 +688,6 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
 }
 
 #[tauri::command]
-fn list_ai_import_packages(vault_root_path: String) -> Result<Vec<AiImportPackageSummary>, String> {
-    let imports_dir = safe_vault_path(&vault_root_path, ".kb-ai/imports")?;
-    if !imports_dir.is_dir() {
-        return Ok(Vec::new());
-    }
-
-    let mut packages = Vec::new();
-    for entry in fs::read_dir(&imports_dir).map_err(|error| {
-        format!(
-            "Failed to read directory {}: {error}",
-            imports_dir.to_string_lossy()
-        )
-    })? {
-        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
-        let path = entry.path();
-        if !path.is_dir() {
-            continue;
-        }
-        let package_id = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("")
-            .to_string();
-        if !is_safe_package_id(&package_id) || !path.join("manifest.yaml").is_file() {
-            continue;
-        }
-        packages.push(AiImportPackageSummary {
-            relative_path: format!(".kb-ai/imports/{package_id}"),
-            package_id,
-        });
-    }
-    packages.sort_by(|left, right| left.package_id.cmp(&right.package_id));
-    Ok(packages)
-}
-
-#[tauri::command]
-fn read_ai_import_package_files(
-    vault_root_path: String,
-    package_id: String,
-) -> Result<AiImportPackageFiles, String> {
-    if !is_safe_package_id(&package_id) {
-        return Err("Invalid import package id".into());
-    }
-    let package_root = safe_vault_path(&vault_root_path, &format!(".kb-ai/imports/{package_id}"))?;
-    if !package_root.is_dir() {
-        return Err(format!("AI import package not found: {package_id}"));
-    }
-
-    let mut generated_meta_files = HashMap::new();
-    let mut generated_note_files = HashMap::new();
-    let mut block_type_files = HashMap::new();
-    let mut review_files = HashMap::new();
-    read_package_files(&package_root, &package_root.join("generated").join("content"), &mut generated_meta_files, |path| {
-        path.file_name().and_then(|name| name.to_str()) == Some("meta.yaml")
-    })?;
-    read_package_files(&package_root, &package_root.join("generated").join("content"), &mut generated_note_files, |path| {
-        path.file_name().and_then(|name| name.to_str()) == Some("note.md")
-    })?;
-    read_package_files(&package_root, &package_root.join("block-types"), &mut block_type_files, |path| {
-        matches!(path.extension().and_then(|value| value.to_str()), Some("yaml") | Some("yml"))
-    })?;
-    read_package_files(&package_root, &package_root.join("review"), &mut review_files, |_| true)?;
-
-    Ok(AiImportPackageFiles {
-        package_id,
-        external_root_path: String::new(),
-        imported_from_external: false,
-        package_file_path: String::new(),
-        package_format: String::new(),
-        manifest_raw: fs::read_to_string(package_root.join("manifest.yaml")).unwrap_or_default(),
-        sources_raw: fs::read_to_string(package_root.join("sources.yaml")).unwrap_or_default(),
-        patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
-        generated_meta_files,
-        generated_note_files,
-        asset_files: Vec::new(),
-        block_type_files,
-        review_files,
-    })
-}
-
-#[tauri::command]
-fn read_external_ai_import_package(package_root_path: String) -> Result<AiImportPackageFiles, String> {
-    let package_root = PathBuf::from(&package_root_path)
-        .canonicalize()
-        .map_err(|error| format!("Failed to resolve package root: {error}"))?;
-    if !package_root.is_dir() {
-        return Err("AI import package root is not a directory".into());
-    }
-    let manifest_raw = fs::read_to_string(package_root.join("manifest.yaml"))
-        .map_err(|error| format!("Failed to read manifest.yaml: {error}"))?;
-    let package_id = package_id_from_manifest(&manifest_raw)?;
-
-    let mut generated_meta_files = HashMap::new();
-    let mut generated_note_files = HashMap::new();
-    let mut block_type_files = HashMap::new();
-    let mut review_files = HashMap::new();
-    read_package_files(&package_root, &package_root.join("generated").join("content"), &mut generated_meta_files, |path| {
-        path.file_name().and_then(|name| name.to_str()) == Some("meta.yaml")
-    })?;
-    read_package_files(&package_root, &package_root.join("generated").join("content"), &mut generated_note_files, |path| {
-        path.file_name().and_then(|name| name.to_str()) == Some("note.md")
-    })?;
-    read_package_files(&package_root, &package_root.join("block-types"), &mut block_type_files, |path| {
-        matches!(path.extension().and_then(|value| value.to_str()), Some("yaml") | Some("yml"))
-    })?;
-    read_package_files(&package_root, &package_root.join("review"), &mut review_files, |_| true)?;
-
-    Ok(AiImportPackageFiles {
-        package_id,
-        external_root_path: package_root.to_string_lossy().to_string(),
-        imported_from_external: true,
-        package_file_path: String::new(),
-        package_format: String::new(),
-        manifest_raw,
-        sources_raw: fs::read_to_string(package_root.join("sources.yaml")).unwrap_or_default(),
-        patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
-        generated_meta_files,
-        generated_note_files,
-        asset_files: Vec::new(),
-        block_type_files,
-        review_files,
-    })
-}
-
-#[tauri::command]
 fn read_wawapkg_file(package_file_path: String) -> Result<AiImportPackageFiles, String> {
     read_wawapkg_archive(&package_file_path)
 }
@@ -917,32 +719,6 @@ fn read_ai_import_history(vault_root_path: String, package_id: String) -> Result
         applied_at,
         raw,
     })
-}
-
-#[tauri::command]
-fn export_ai_context(vault_root_path: String) -> Result<String, String> {
-    let context_dir = safe_vault_path(&vault_root_path, ".kb-ai/context")?;
-    fs::create_dir_all(&context_dir)
-        .map_err(|error| format!("Failed to create AI context directory: {error}"))?;
-    let root = PathBuf::from(&vault_root_path);
-    let domains = fs::read_to_string(root.join("domains.yaml")).unwrap_or_default();
-    let graph = fs::read_to_string(root.join("graph.yaml")).unwrap_or_default();
-    let vault = fs::read_to_string(root.join("vault.yaml")).unwrap_or_default();
-    let files: Vec<(&str, String)> = vec![
-        ("AI_KB_GUIDE.md", "# AI Knowledge Base Guide\n\nAI must output a Draft AI Import Package. Do not directly modify the vault.\n".into()),
-        ("AI_CONTEXT.yaml", format!("vaultRoot: .\nexportedBy: desktop\n\nvaultYaml: |\n  {}\n", vault.replace('\n', "\n  "))),
-        ("NODE_INDEX.yaml", "nodes: []\n".into()),
-        ("RELATION_INDEX.yaml", graph),
-        ("DOMAIN_INDEX.yaml", domains),
-        ("BLOCK_REGISTRY.md", "# Block Registry\n\nNative blocks remain built into the desktop renderer. Custom blocks live in block-types/*.yaml.\n".into()),
-        ("BLOCK_CREATION_POLICY.md", "# Block Creation Policy\n\nUse declarative-visual blocks only. Do not include executable JS, CSS, HTML, script, iframe, eval, or remote resources.\n".into()),
-        ("NOTE_COMPOSITION_GUIDE.md", "# Note Composition Guide\n\nUse triple-colon content block syntax. Do not generate HTML previews.\n".into()),
-    ];
-    for (name, contents) in files {
-        fs::write(context_dir.join(name), contents)
-            .map_err(|error| format!("Failed to write {name}: {error}"))?;
-    }
-    Ok(".kb-ai/context/".into())
 }
 
 #[tauri::command]
@@ -1079,15 +855,10 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             apply_ai_import_plan,
-            choose_ai_import_package_root,
             choose_vault_root,
             choose_wawapkg_file,
             create_dir_all,
-            export_ai_context,
-            list_ai_import_packages,
             read_ai_import_history,
-            read_external_ai_import_package,
-            read_ai_import_package_files,
             read_wawapkg_file,
             read_text_file,
             read_vault_files,
