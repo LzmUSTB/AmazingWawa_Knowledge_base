@@ -58,7 +58,7 @@ const props = defineProps({
   },
   size: {
     type: [Number, String],
-    default: 14,
+    default: "var(--icon-size-ui)",
   },
   decorative: {
     type: Boolean,
@@ -81,13 +81,8 @@ const svgContent = computed(() => {
 </script>
 
 <template>
-  <span
-    class="app-icon"
-    :aria-hidden="decorative ? 'true' : undefined"
-    :role="decorative ? undefined : 'img'"
-    :style="{ '--icon-size': normalizedSize }"
-    v-html="svgContent"
-  ></span>
+  <span class="app-icon" :aria-hidden="decorative ? 'true' : undefined" :role="decorative ? undefined : 'img'"
+    :style="{ '--icon-size': normalizedSize }" v-html="svgContent"></span>
 </template>
 
 <style scoped>

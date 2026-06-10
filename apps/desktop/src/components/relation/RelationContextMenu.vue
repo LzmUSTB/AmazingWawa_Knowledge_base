@@ -65,11 +65,11 @@ onBeforeUnmount(() => {
     <div v-if="edge" class="relation-context-menu" :style="menuStyle()" role="menu">
       <div class="context-label">{{ formatRelationLabel(edge) }}</div>
       <button class="button-with-icon" type="button" role="menuitem" @click="editRelation">
-        <AppIcon name="edit" />
+        <AppIcon name="edit" :size="14" />
         <span class="button-icon-label">Edit Relation</span>
       </button>
       <button class="danger button-with-icon" type="button" role="menuitem" @click="deleteRelation">
-        <AppIcon name="delete" />
+        <AppIcon name="delete" :size="14" />
         <span class="button-icon-label">Delete Relation</span>
       </button>
     </div>

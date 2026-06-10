@@ -115,6 +115,23 @@ if (import.meta.env.DEV) {
   });
 }
 
+const uiScaleStyle = computed(() => ({
+  "--ui-font-scale": uiFontScale.value,
+  "--font-size-ui": `calc(12px * ${uiFontScale.value})`,
+  "--font-size-small": `calc(10px * ${uiFontScale.value})`,
+  "--font-size-label": `calc(11px * ${uiFontScale.value})`,
+  "--font-size-title": `calc(20px * ${uiFontScale.value})`,
+  "--font-size-note-title": `calc(36px * ${uiFontScale.value})`,
+  "--font-size-mono": `calc(13px * ${uiFontScale.value})`,
+  "--font-size-node-title": `calc(13px * ${uiFontScale.value})`,
+  "--font-size-node-title-root": `calc(16px * ${uiFontScale.value})`,
+  "--font-size-node-meta": `calc(10px * ${uiFontScale.value})`,
+
+  "--icon-size-ui": `calc(14px * ${uiFontScale.value})`,
+  "--icon-size-small": `calc(12px * ${uiFontScale.value})`,
+  "--icon-size-node-note": `calc(11px * ${uiFontScale.value})`,
+}));
+
 onMounted(async () => {
   window.addEventListener("wheel", handleGlobalWheel, { passive: false });
   window.addEventListener("keydown", handleGlobalKeydown);
@@ -915,7 +932,7 @@ function toggleRelationSidebar() {
 </script>
 
 <template>
-  <div class="prototype-shell" :style="{ '--ui-font-scale': uiFontScale }">
+  <div class="prototype-shell" :style="uiScaleStyle">
     <NoVaultView
       v-if="vaultLoading || !hasRealVault"
       :error="vaultLoadError"
