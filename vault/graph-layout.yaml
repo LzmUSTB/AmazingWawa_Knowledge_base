@@ -7,42 +7,42 @@ boards:
     nodes:
       graphics:
         x: 448
-        y: 352
+        y: 480
         w: 180
         h: 88
       linear-algebra:
-        x: 800
-        y: 384
+        x: 512
+        y: 256
         w: 200
         h: 88
       machine-learning:
-        x: 864
-        y: 576
+        x: 832
+        y: 608
         w: 240
         h: 88
       web-dev:
-        x: 928
-        y: 960
+        x: 736
+        y: 800
         w: 180
         h: 88
       game-dev:
-        x: 1152
-        y: 736
+        x: 800
+        y: 352
         w: 180
         h: 88
       career:
-        x: 640
-        y: 960
+        x: 416
+        y: 704
         w: 180
         h: 88
       simulation:
-        x: 160
-        y: 608
+        x: 64
+        y: 416
         w: 180
         h: 88
       language:
-        x: 384
-        y: 832
+        x: 160
+        y: 576
         w: 180
         h: 88
   graphics:
@@ -111,13 +111,8 @@ boards:
         w: 220
         h: 76
       testnote:
-        x: 928
-        y: 864
-        w: 190
-        h: 80
-      pbr:
-        x: 736
-        y: 576
+        x: 768
+        y: 896
         w: 190
         h: 80
   simulation:
