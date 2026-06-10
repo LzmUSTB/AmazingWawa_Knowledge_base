@@ -2,6 +2,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import YAML from "yaml";
 import {
   buildAiPackageApplyPlan,
+  buildAiContextFiles,
   diffAiPackage,
   normalizeAiPackageFiles,
   normalizeVault,
@@ -76,9 +77,20 @@ export async function chooseAiImportPackageRoot() {
   return invoke("choose_ai_import_package_root");
 }
 
+export async function chooseWawaPackageFile() {
+  if (!isTauri()) return null;
+  return invoke("choose_wawapkg_file");
+}
+
 export async function readAiImportPackage(vaultRootPath, packageId) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before reading AI import packages.");
   const rawPackage = await invoke("read_ai_import_package_files", { vaultRootPath, packageId });
+  return normalizeAiPackageFiles(rawPackage);
+}
+
+export async function readWawaPackageFile(packageFilePath) {
+  if (!packageFilePath) throw new Error("Choose a .wawapkg file first.");
+  const rawPackage = await invoke("read_wawapkg_file", { packageFilePath });
   return normalizeAiPackageFiles(rawPackage);
 }
 
@@ -99,8 +111,25 @@ export async function readAiImportHistory(vaultRootPath, packageId) {
 }
 
 export async function exportAiContext(vaultRootPath) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting AI context.");
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting context.");
   return invoke("export_ai_context", { vaultRootPath });
+}
+
+export async function exportContext(vaultRootPath) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting context.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const files = buildAiContextFiles(currentVault);
+  await invoke("create_dir_all", { vaultRootPath, relativePath: ".kb-ai/context" });
+  await Promise.all(
+    Object.entries(files).map(([fileName, contents]) =>
+      invoke("write_text_file", {
+        vaultRootPath,
+        relativePath: `.kb-ai/context/${fileName}`,
+        contents,
+      }),
+    ),
+  );
+  return ".kb-ai/context/";
 }
 
 export async function inspectAiImportPackage(vaultRootPath, packageId) {
@@ -115,6 +144,15 @@ export async function inspectAiImportPackage(vaultRootPath, packageId) {
 export async function inspectExternalAiImportPackage(vaultRootPath, packageRootPath) {
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const packageFiles = await readExternalAiImportPackage(packageRootPath);
+  const validation = validateAiPackage(currentVault, packageFiles);
+  const diff = diffAiPackage(currentVault, validation);
+  const history = await readAiImportHistory(vaultRootPath, validation.previewModel.packageId);
+  return { currentVault, packageFiles, validation, diff, history };
+}
+
+export async function inspectWawaPackage(vaultRootPath, packageFilePath) {
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const packageFiles = await readWawaPackageFile(packageFilePath);
   const validation = validateAiPackage(currentVault, packageFiles);
   const diff = diffAiPackage(currentVault, validation);
   const history = await readAiImportHistory(vaultRootPath, validation.previewModel.packageId);
@@ -136,6 +174,17 @@ export async function applyExternalAiImportPackage(vaultRootPath, packageRootPat
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before applying AI import packages.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const packageFiles = await readExternalAiImportPackage(packageRootPath);
+  const history = await readAiImportHistory(vaultRootPath, packageFiles.packageId);
+  if (history.applied) throw new Error(`Package already applied: ${packageFiles.packageId}`);
+  const plan = buildAiPackageApplyPlan(currentVault, packageFiles);
+  await invoke("apply_ai_import_plan", { vaultRootPath, plan });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function applyWawaPackage(vaultRootPath, packageFilePath) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before applying packages.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const packageFiles = await readWawaPackageFile(packageFilePath);
   const history = await readAiImportHistory(vaultRootPath, packageFiles.packageId);
   if (history.applied) throw new Error(`Package already applied: ${packageFiles.packageId}`);
   const plan = buildAiPackageApplyPlan(currentVault, packageFiles);

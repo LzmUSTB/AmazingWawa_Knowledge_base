@@ -12,3 +12,4 @@ export * from "./ai-import/diff-ai-package.js";
 export * from "./ai-import/build-ai-package-apply-plan.js";
 export * from "./ai-import/normalize-ai-package-files.js";
 export * from "./ai-import/dedupe.js";
+export * from "./ai-context/build-ai-context-files.js";

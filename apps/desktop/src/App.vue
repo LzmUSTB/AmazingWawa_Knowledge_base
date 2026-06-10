@@ -9,6 +9,7 @@ import {
   chooseVaultRoot,
   createGraphLink,
   createKnowledgeItem,
+  exportContext,
   loadInitialVault,
   loadVaultFromPath,
   removeGraphLink,
@@ -59,6 +60,7 @@ const layoutMovedNodeIds = ref({});
 const activeLayoutScopeId = ref("");
 const layoutSaveInProgress = ref(false);
 const layoutError = ref("");
+const contextExporting = ref(false);
 const uiFontScale = ref(Number.isFinite(savedUiFontScale) ? clampUiFontScale(savedUiFontScale) : 1);
 const sidebarCollapsed = ref(
   savedSidebarPreference === null ? window.innerWidth < 1000 : savedSidebarPreference === "true",
@@ -728,6 +730,24 @@ function handleAiImportApplied(updatedVault) {
   noteMode.value = "read";
 }
 
+async function handleExportContext() {
+  if (contextExporting.value) return;
+  if (!activeVaultRootPath.value) {
+    window.alert("Open a desktop vault folder before exporting context.");
+    return;
+  }
+  contextExporting.value = true;
+  try {
+    const location = await exportContext(activeVaultRootPath.value);
+    window.alert(`Context exported to ${location}`);
+  } catch (error) {
+    console.error("[vault] Failed to export context.", error);
+    window.alert(`Failed to export context: ${error}`);
+  } finally {
+    contextExporting.value = false;
+  }
+}
+
 async function openVault() {
   if (!confirmDiscardDirty()) return;
   try {
@@ -986,6 +1006,7 @@ function toggleRelationSidebar() {
       @close-relation-edit="closeRelationEdit"
       @create-note="createNote"
       @edit-layout="startLayoutEditing"
+      @export-context="handleExportContext"
       @ensure-layout-draft="ensureLayoutDraft"
       @layout-node-dragged="updateDraftNodeLayout"
       @open-dialog="openDialog"

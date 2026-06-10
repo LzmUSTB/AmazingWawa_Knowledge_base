@@ -149,6 +149,7 @@ const emit = defineEmits([
   "ai-import-applied",
   "close-dialog",
   "close-relation-edit",
+  "export-context",
   "open-dialog",
   "open-domain",
   "open-note",
@@ -199,7 +200,9 @@ function fitGraphView() {
   >
     <TopMenu
       :app-title="appTitle"
+      :can-export-context="Boolean(activeVaultRootPath)"
       :ui-font-scale="uiFontScale"
+      @export-context="$emit('export-context')"
       @open-dialog="$emit('open-dialog', $event)"
       @open-vault="$emit('open-vault')"
       @show-view="$emit('show-view', $event)"

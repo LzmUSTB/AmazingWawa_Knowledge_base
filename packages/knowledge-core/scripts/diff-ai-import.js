@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import path from "node:path";
 import { diffAiPackage, validateAiPackage } from "../src/index.js";
-import { readAiPackage } from "../src/ai-import/read-ai-package.js";
 import { readVaultForCli } from "./read-vault-for-cli.js";
+import { readPackageInput } from "./read-package-input.js";
 
 function usage() {
-  console.error("Usage: npm run kb:diff-ai-import -- ./vault ./vault/.kb-ai/imports/<packageId>");
+  console.error("Usage: npm run kb:diff-ai-import -- ./vault ./package.wawapkg");
 }
 
 function printList(title, items, formatter) {
@@ -25,9 +25,9 @@ if (!vaultRoot || !packageRoot) {
 
 try {
   const vault = readVaultForCli(vaultRoot);
-  const validation = validateAiPackage(vault, readAiPackage(path.resolve(packageRoot)));
+  const validation = validateAiPackage(vault, readPackageInput(path.resolve(packageRoot)));
   const diff = diffAiPackage(vault, validation);
-  console.log(`AI import diff: ${validation.previewModel.packageId}`);
+  console.log(`Import diff: ${validation.previewModel.packageId}`);
   console.log(`Validation: ${validation.valid ? "valid" : "invalid"} (${validation.errors.length} errors, ${validation.warnings.length} warnings)`);
 
   printList("Files to create", diff.filesToCreate, (file) => `${file.path} (${file.kind})`);
@@ -48,6 +48,6 @@ try {
   }
   process.exit(validation.valid ? 0 : 1);
 } catch (error) {
-  console.error(`Failed to diff AI import package: ${error?.message || error}`);
+  console.error(`Failed to diff import package: ${error?.message || error}`);
   process.exit(1);
 }

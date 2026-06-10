@@ -9,6 +9,9 @@ export function normalizeAiPackageFiles(rawPackage = {}) {
   return {
     packageRoot: rawPackage.packageRoot || rawPackage.package_root || "",
     packageId,
+    packageFilePath: rawPackage.packageFilePath || rawPackage.package_file_path || "",
+    packageFormat: rawPackage.packageFormat || rawPackage.package_format || "",
+    importedFromExternal: Boolean(rawPackage.importedFromExternal || rawPackage.imported_from_external),
     manifestRaw,
     sourcesRaw,
     patchRaw,

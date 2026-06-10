@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import path from "node:path";
 import { validateAiPackage } from "../src/index.js";
-import { readAiPackage } from "../src/ai-import/read-ai-package.js";
 import { readVaultForCli } from "./read-vault-for-cli.js";
+import { readPackageInput } from "./read-package-input.js";
 
 function usage() {
-  console.error("Usage: npm run kb:validate-ai-import -- ./vault ./vault/.kb-ai/imports/<packageId>");
+  console.error("Usage: npm run kb:validate-ai-import -- ./vault ./package.wawapkg");
 }
 
 const [vaultRoot, packageRoot] = process.argv.slice(2);
@@ -16,8 +16,8 @@ if (!vaultRoot || !packageRoot) {
 
 try {
   const vault = readVaultForCli(vaultRoot);
-  const result = validateAiPackage(vault, readAiPackage(path.resolve(packageRoot)));
-  console.log(`${result.valid ? "VALID" : "INVALID"} AI import package: ${result.previewModel.packageId}`);
+  const result = validateAiPackage(vault, readPackageInput(path.resolve(packageRoot)));
+  console.log(`${result.valid ? "VALID" : "INVALID"} import package: ${result.previewModel.packageId}`);
   console.log(`Operations: ${result.previewModel.operationCount}`);
   console.log(`Package block types: ${result.previewModel.packageBlockTypes.join(", ") || "none"}`);
   if (result.errors.length) {
@@ -34,6 +34,6 @@ try {
   }
   process.exit(result.valid ? 0 : 1);
 } catch (error) {
-  console.error(`Failed to validate AI import package: ${error?.message || error}`);
+  console.error(`Failed to validate import package: ${error?.message || error}`);
   process.exit(1);
 }

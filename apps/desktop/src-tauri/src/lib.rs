@@ -26,6 +26,8 @@ struct AiImportPackageFiles {
     package_id: String,
     external_root_path: String,
     imported_from_external: bool,
+    package_file_path: String,
+    package_format: String,
     manifest_raw: String,
     sources_raw: String,
     patch_raw: String,
@@ -34,6 +36,11 @@ struct AiImportPackageFiles {
     block_type_files: HashMap<String, String>,
     review_files: HashMap<String, String>,
 }
+
+const WAWAPKG_MIMETYPE: &str = "application/x-wawa-kb-ai-import-package";
+const MAX_WAWAPKG_TOTAL_SIZE: u64 = 50 * 1024 * 1024;
+const MAX_WAWAPKG_TEXT_FILE_SIZE: u64 = 10 * 1024 * 1024;
+const MAX_WAWAPKG_FILE_COUNT: u16 = 500;
 
 #[derive(Serialize)]
 struct AiImportHistory {
@@ -89,6 +96,52 @@ fn allowed_ai_apply_path(relative_path: &str) -> bool {
         || relative_path.starts_with(".kb-ai/history/")
         || relative_path == ".kb-ai/backups"
         || relative_path.starts_with(".kb-ai/backups/")
+}
+
+fn read_u16(data: &[u8], offset: usize) -> Result<u16, String> {
+    if offset + 2 > data.len() {
+        return Err("Invalid zip: unexpected end of file".into());
+    }
+    Ok(u16::from_le_bytes([data[offset], data[offset + 1]]))
+}
+
+fn read_u32(data: &[u8], offset: usize) -> Result<u32, String> {
+    if offset + 4 > data.len() {
+        return Err("Invalid zip: unexpected end of file".into());
+    }
+    Ok(u32::from_le_bytes([data[offset], data[offset + 1], data[offset + 2], data[offset + 3]]))
+}
+
+fn normalize_zip_entry_path(entry_path: &str) -> Result<String, String> {
+    let normalized = entry_path.replace('\\', "/");
+    if normalized.is_empty()
+        || normalized.starts_with('/')
+        || normalized.contains("../")
+        || normalized.contains("/..")
+        || normalized.split('/').any(|part| part == ".." || part.is_empty())
+        || normalized.as_bytes().get(1) == Some(&b':')
+    {
+        return Err(format!("Unsafe archive entry path: {entry_path}"));
+    }
+    Ok(normalized)
+}
+
+fn forbidden_wawapkg_extension(entry_path: &str) -> bool {
+    let lower = entry_path.to_ascii_lowercase();
+    [".js", ".ts", ".vue", ".css", ".html", ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".jar", ".wasm"]
+        .iter()
+        .any(|extension| lower.ends_with(extension))
+}
+
+fn allowed_wawapkg_top_level(entry_path: &str) -> bool {
+    let top = entry_path.split('/').next().unwrap_or("");
+    matches!(top, "mimetype" | "manifest.yaml" | "sources.yaml" | "patch.yaml" | "generated" | "block-types" | "review")
+        || top == "__MACOSX"
+        || entry_path.ends_with(".DS_Store")
+}
+
+fn asset_entry(entry_path: &str) -> bool {
+    entry_path.starts_with("generated/content/") && entry_path.contains("/assets/")
 }
 
 fn safe_join(root: &str, relative_path: &str) -> Result<PathBuf, String> {
@@ -248,6 +301,132 @@ fn read_package_files(
     Ok(())
 }
 
+fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles, String> {
+    if !package_file_path.to_ascii_lowercase().ends_with(".wawapkg") {
+        return Err("Package file must use .wawapkg extension".into());
+    }
+    let package_path = PathBuf::from(package_file_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve .wawapkg path: {error}"))?;
+    let bytes = fs::read(&package_path).map_err(|error| format!("Failed to read .wawapkg: {error}"))?;
+    let mut eocd_offset = None;
+    let min_offset = bytes.len().saturating_sub(0xffff + 22);
+    for offset in (min_offset..=bytes.len().saturating_sub(22)).rev() {
+        if read_u32(&bytes, offset)? == 0x06054b50 {
+            eocd_offset = Some(offset);
+            break;
+        }
+    }
+    let eocd = eocd_offset.ok_or("Invalid .wawapkg: missing zip end record")?;
+    let entry_count = read_u16(&bytes, eocd + 10)?;
+    if entry_count > MAX_WAWAPKG_FILE_COUNT {
+        return Err("Too many files in .wawapkg".into());
+    }
+    let mut offset = read_u32(&bytes, eocd + 16)? as usize;
+    let mut total_size: u64 = 0;
+    let mut text_files: HashMap<String, String> = HashMap::new();
+    for _ in 0..entry_count {
+        if offset + 46 > bytes.len() {
+            return Err("Invalid .wawapkg central directory range".into());
+        }
+        if read_u32(&bytes, offset)? != 0x02014b50 {
+            return Err("Invalid .wawapkg central directory".into());
+        }
+        let compression = read_u16(&bytes, offset + 10)?;
+        let compressed_size = read_u32(&bytes, offset + 20)? as usize;
+        let uncompressed_size = read_u32(&bytes, offset + 24)? as u64;
+        let name_len = read_u16(&bytes, offset + 28)? as usize;
+        let extra_len = read_u16(&bytes, offset + 30)? as usize;
+        let comment_len = read_u16(&bytes, offset + 32)? as usize;
+        let local_offset = read_u32(&bytes, offset + 42)? as usize;
+        let name_start = offset + 46;
+        let name_end = name_start + name_len;
+        let next_offset = name_end + extra_len + comment_len;
+        if name_end > bytes.len() || next_offset > bytes.len() {
+            return Err("Invalid .wawapkg central directory entry range".into());
+        }
+        let raw_name = std::str::from_utf8(&bytes[name_start..name_end])
+            .map_err(|_| "Invalid UTF-8 zip entry name")?;
+        let entry_name = normalize_zip_entry_path(raw_name)?;
+        offset = next_offset;
+        if entry_name.ends_with('/') || entry_name.starts_with("__MACOSX/") || entry_name.ends_with(".DS_Store") {
+            continue;
+        }
+        if !allowed_wawapkg_top_level(&entry_name) {
+            return Err(format!("Unknown top-level archive entry: {entry_name}"));
+        }
+        if forbidden_wawapkg_extension(&entry_name) {
+            return Err(format!("Forbidden archive entry type: {entry_name}"));
+        }
+        total_size += uncompressed_size;
+        if total_size > MAX_WAWAPKG_TOTAL_SIZE {
+            return Err("Package exceeds 50 MB uncompressed size limit".into());
+        }
+        if asset_entry(&entry_name) {
+            continue;
+        }
+        if uncompressed_size > MAX_WAWAPKG_TEXT_FILE_SIZE {
+            return Err(format!("Text file too large: {entry_name}"));
+        }
+        if compression != 0 {
+            return Err(format!("Unsupported .wawapkg compression for {entry_name}; use npm run kb:pack-ai-import"));
+        }
+        if local_offset + 30 > bytes.len() {
+            return Err("Invalid .wawapkg local header range".into());
+        }
+        if read_u32(&bytes, local_offset)? != 0x04034b50 {
+            return Err("Invalid .wawapkg local header".into());
+        }
+        let local_name_len = read_u16(&bytes, local_offset + 26)? as usize;
+        let local_extra_len = read_u16(&bytes, local_offset + 28)? as usize;
+        let data_offset = local_offset + 30 + local_name_len + local_extra_len;
+        let data_end = data_offset + compressed_size;
+        if data_offset > bytes.len() || data_end > bytes.len() {
+            return Err("Invalid .wawapkg file data range".into());
+        }
+        let contents = String::from_utf8(bytes[data_offset..data_end].to_vec())
+            .map_err(|_| format!("Text file is not UTF-8: {entry_name}"))?;
+        text_files.insert(entry_name, contents);
+    }
+    if text_files.get("mimetype").map(|value| value.as_str()) != Some(WAWAPKG_MIMETYPE) {
+        return Err("Invalid .wawapkg mimetype".into());
+    }
+    let manifest_raw = text_files.get("manifest.yaml").cloned().ok_or("Missing manifest.yaml")?;
+    if !manifest_raw.contains("packageFormat: wawapkg") {
+        return Err("manifest.yaml: packageFormat must be wawapkg".into());
+    }
+    if !manifest_raw.contains("packageKind: import") && !manifest_raw.contains("packageKind: ai-import") {
+        return Err("manifest.yaml: packageKind must be import".into());
+    }
+    let package_id = package_id_from_manifest(&manifest_raw)?;
+    let mut package = AiImportPackageFiles {
+        package_id,
+        external_root_path: String::new(),
+        imported_from_external: true,
+        package_file_path: package_path.to_string_lossy().to_string(),
+        package_format: "wawapkg".into(),
+        manifest_raw,
+        sources_raw: text_files.get("sources.yaml").cloned().unwrap_or_default(),
+        patch_raw: text_files.get("patch.yaml").cloned().unwrap_or_default(),
+        generated_meta_files: HashMap::new(),
+        generated_note_files: HashMap::new(),
+        block_type_files: HashMap::new(),
+        review_files: HashMap::new(),
+    };
+    for (entry_path, contents) in text_files {
+        if entry_path.starts_with("generated/content/") && entry_path.ends_with("/meta.yaml") {
+            package.generated_meta_files.insert(entry_path, contents);
+        } else if entry_path.starts_with("generated/content/") && entry_path.ends_with("/note.md") {
+            package.generated_note_files.insert(entry_path, contents);
+        } else if entry_path.starts_with("block-types/") && (entry_path.ends_with(".yaml") || entry_path.ends_with(".yml")) {
+            package.block_type_files.insert(entry_path, contents);
+        } else if entry_path.starts_with("review/") {
+            package.review_files.insert(entry_path, contents);
+        }
+    }
+    Ok(package)
+}
+
 #[tauri::command]
 fn choose_vault_root() -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
@@ -315,6 +494,38 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         return Err("Selected folder is not an AI import package root: missing manifest.yaml".into());
     }
     Ok(Some(selected_path))
+}
+
+#[tauri::command]
+fn choose_wawapkg_file() -> Result<Option<String>, String> {
+    if !cfg!(target_os = "windows") {
+        return Err("File picker command is currently implemented for Windows only".into());
+    }
+    let script = r#"
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.OpenFileDialog
+$dialog.Title = 'Import Wawa Package'
+$dialog.Filter = 'Wawa Package (*.wawapkg)|*.wawapkg'
+$dialog.Multiselect = $false
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  [Console]::Out.Write($dialog.FileName)
+}
+"#;
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-STA", "-Command", script])
+        .output()
+        .map_err(|error| format!("Failed to open file picker: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let selected_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if selected_path.is_empty() {
+        Ok(None)
+    } else if selected_path.to_ascii_lowercase().ends_with(".wawapkg") {
+        Ok(Some(selected_path))
+    } else {
+        Err("Selected file must use .wawapkg extension".into())
+    }
 }
 
 #[tauri::command]
@@ -416,6 +627,8 @@ fn read_ai_import_package_files(
         package_id,
         external_root_path: String::new(),
         imported_from_external: false,
+        package_file_path: String::new(),
+        package_format: String::new(),
         manifest_raw: fs::read_to_string(package_root.join("manifest.yaml")).unwrap_or_default(),
         sources_raw: fs::read_to_string(package_root.join("sources.yaml")).unwrap_or_default(),
         patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
@@ -457,6 +670,8 @@ fn read_external_ai_import_package(package_root_path: String) -> Result<AiImport
         package_id,
         external_root_path: package_root.to_string_lossy().to_string(),
         imported_from_external: true,
+        package_file_path: String::new(),
+        package_format: String::new(),
         manifest_raw,
         sources_raw: fs::read_to_string(package_root.join("sources.yaml")).unwrap_or_default(),
         patch_raw: fs::read_to_string(package_root.join("patch.yaml")).unwrap_or_default(),
@@ -465,6 +680,11 @@ fn read_external_ai_import_package(package_root_path: String) -> Result<AiImport
         block_type_files,
         review_files,
     })
+}
+
+#[tauri::command]
+fn read_wawapkg_file(package_file_path: String) -> Result<AiImportPackageFiles, String> {
+    read_wawapkg_archive(&package_file_path)
 }
 
 #[tauri::command]
@@ -641,12 +861,14 @@ pub fn run() {
             apply_ai_import_plan,
             choose_ai_import_package_root,
             choose_vault_root,
+            choose_wawapkg_file,
             create_dir_all,
             export_ai_context,
             list_ai_import_packages,
             read_ai_import_history,
             read_external_ai_import_package,
             read_ai_import_package_files,
+            read_wawapkg_file,
             read_text_file,
             read_vault_files,
             resolve_default_vault_root,

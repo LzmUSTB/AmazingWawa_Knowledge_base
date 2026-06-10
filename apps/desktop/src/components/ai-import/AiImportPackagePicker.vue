@@ -27,7 +27,7 @@ defineEmits(["select"]);
       <strong>{{ item.package_id || item.packageId }}</strong>
       <small>{{ item.relative_path || item.relativePath }}</small>
     </button>
-    <p v-if="!packages.length" class="empty-line">No packages under .kb-ai/imports</p>
+    <p v-if="!packages.length" class="empty-line">No packages selected.</p>
   </section>
 </template>
 

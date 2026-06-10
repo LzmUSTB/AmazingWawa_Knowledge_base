@@ -1,3 +1,14 @@
 # Block Registry
 
-Native blocks remain built into the desktop renderer. Custom blocks live in block-types/*.yaml.
+## Native Blocks
+
+- concept-card
+- process-flow
+- compare-table
+- code-explain
+- quiz
+- expression-visualizer
+
+## Custom Declarative Blocks
+
+- solver-loop-diagram: Solver Loop Diagram

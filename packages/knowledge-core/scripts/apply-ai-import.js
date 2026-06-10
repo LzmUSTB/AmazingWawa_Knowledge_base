@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { applyAiPackage } from "../src/ai-import/apply-ai-package.js";
+import fs from "node:fs";
+import { buildAiPackageApplyPlan } from "../src/index.js";
+import { safeJoin } from "../src/ai-import/path-safety.js";
 import { readVaultForCli } from "./read-vault-for-cli.js";
+import { readPackageInput } from "./read-package-input.js";
 
 function usage() {
-  console.error("Usage: npm run kb:apply-ai-import -- ./vault ./vault/.kb-ai/imports/<packageId>");
+  console.error("Usage: npm run kb:apply-ai-import -- ./vault ./package.wawapkg");
 }
 
 const [vaultRoot, packageRoot] = process.argv.slice(2);
@@ -14,17 +17,31 @@ if (!vaultRoot || !packageRoot) {
 }
 
 try {
-  const result = applyAiPackage(path.resolve(vaultRoot), path.resolve(packageRoot), {
-    readVault: readVaultForCli,
+  const resolvedVaultRoot = path.resolve(vaultRoot);
+  const vault = readVaultForCli(resolvedVaultRoot);
+  const plan = buildAiPackageApplyPlan(vault, readPackageInput(path.resolve(packageRoot)));
+  plan.createDirs.forEach((relativePath) => fs.mkdirSync(safeJoin(resolvedVaultRoot, relativePath), { recursive: true }));
+  plan.backupPaths.forEach((relativePath) => {
+    const source = safeJoin(resolvedVaultRoot, relativePath);
+    if (!fs.existsSync(source)) return;
+    const target = safeJoin(resolvedVaultRoot, `${plan.backupRelativeDir}/${relativePath}`);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
   });
-  console.log(`Applied AI import package: ${result.packageId}`);
-  console.log(`Backup: ${result.backupRelativeDir}`);
-  console.log(`Created: ${result.created.length}`);
-  result.created.forEach((item) => console.log(`- ${item}`));
-  console.log(`Modified: ${result.modified.length}`);
-  result.modified.forEach((item) => console.log(`- ${item}`));
+  plan.writes.forEach((write) => {
+    const target = safeJoin(resolvedVaultRoot, write.relativePath);
+    if (write.createOnly && fs.existsSync(target)) throw new Error(`Refusing to overwrite existing file: ${write.relativePath}`);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, write.contents || "", "utf8");
+  });
+  console.log(`Applied import package: ${plan.packageId}`);
+  console.log(`Backup: ${plan.backupRelativeDir}`);
+  console.log(`Created: ${plan.history.created.length}`);
+  plan.history.created.forEach((item) => console.log(`- ${item}`));
+  console.log(`Modified: ${plan.history.modified.length}`);
+  plan.history.modified.forEach((item) => console.log(`- ${item}`));
   process.exit(0);
 } catch (error) {
-  console.error(`Failed to apply AI import package: ${error?.message || error}`);
+  console.error(`Failed to apply import package: ${error?.message || error}`);
   process.exit(1);
 }

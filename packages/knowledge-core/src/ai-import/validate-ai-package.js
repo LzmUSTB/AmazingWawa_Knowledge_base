@@ -152,6 +152,10 @@ function validateManifest(packageFiles, errors) {
   if (manifest.packageId && manifest.packageId !== packageFiles.packageId) {
     errors.push(`manifest.yaml: packageId "${manifest.packageId}" must match directory name "${packageFiles.packageId}".`);
   }
+  if (packageFiles.packageFormat === "wawapkg") {
+    if (manifest.packageFormat !== "wawapkg") errors.push("manifest.yaml: packageFormat must be wawapkg.");
+    if (!["import", "ai-import"].includes(manifest.packageKind)) errors.push("manifest.yaml: packageKind must be import.");
+  }
   if (!manifest.status) errors.push("manifest.yaml: status is required.");
   if (manifest.preview?.mode !== "in-app") errors.push("manifest.yaml: preview.mode must be in-app.");
   if (manifest.preview?.generatedHtmlPreview !== false) {
@@ -371,6 +375,7 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
       packageId: manifest.packageId || packageFiles.packageId,
       status: manifest.status || "",
       schemaVersion: manifest.schemaVersion || "",
+      packageFormat: packageFiles.packageFormat || manifest.packageFormat || "",
       operationCount: normalizedOperations.length,
       packageBlockTypes: Object.keys(registry.packageDefinitions || {}),
     },

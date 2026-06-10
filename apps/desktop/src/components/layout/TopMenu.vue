@@ -10,9 +10,13 @@ defineProps({
     type: Number,
     default: 1,
   },
+  canExportContext: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-defineEmits(["open-dialog", "open-vault", "show-view"]);
+defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
 </script>
 
 <template>
@@ -30,7 +34,16 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
       </button>
       <button class="hud-button button-with-icon" style="--button-color: var(--career)" @click="$emit('show-view', 'ai-import')">
         <AppIcon name="file-text" />
-        <span class="button-icon-label">AI Import</span>
+        <span class="button-icon-label">Import</span>
+      </button>
+      <button
+        class="hud-button button-with-icon"
+        style="--button-color: var(--language)"
+        :disabled="!canExportContext"
+        @click="$emit('export-context')"
+      >
+        <AppIcon name="file-text" />
+        <span class="button-icon-label">Export Context</span>
       </button>
       <button class="hud-button button-with-icon" disabled title="Git panel is not implemented yet">
         <AppIcon name="git-branch" />
