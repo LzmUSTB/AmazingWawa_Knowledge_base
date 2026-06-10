@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { getActiveVault } from "../../graph/graph-data-store.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 defineProps({
   activeDomain: {
@@ -23,8 +24,13 @@ const fileTree = computed(() => getActiveVault().fileTree);
   <aside class="file-tree">
     <header class="tree-header">
       <div class="panel-label">Vault Source</div>
-      <button class="sidebar-toggle hud-button" title="Hide vault sidebar" @click="$emit('toggle-sidebar')">
-        &lt;
+      <button
+        class="sidebar-toggle hud-button button-icon-only"
+        title="Hide vault sidebar"
+        aria-label="Hide vault sidebar"
+        @click="$emit('toggle-sidebar')"
+      >
+        <AppIcon name="chevron-left" :size="13" />
       </button>
     </header>
     <button class="tree-root" @click="$emit('open-domain', activeDomain)">vault/</button>

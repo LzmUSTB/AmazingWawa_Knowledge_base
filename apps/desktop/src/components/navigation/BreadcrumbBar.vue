@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { findGraphNode } from "../../graph/graph-data-store.js";
 import { getGraphScope } from "../../graph/graph-scope.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   currentDomain: {
@@ -54,8 +55,9 @@ const graphCrumbs = computed(() => scope.value.breadcrumb);
         <button class="bread-button">{{ currentNode.title }}</button>
       </template>
     </template>
-    <button v-if="currentView === 'note'" class="show-graph" @click="$emit('show-graph', currentNoteId, currentNoteId)">
-      Show in Graph
+    <button v-if="currentView === 'note'" class="show-graph button-with-icon" @click="$emit('show-graph', currentNoteId, currentNoteId)">
+      <AppIcon name="graph" />
+      <span class="button-icon-label">Show in Graph</span>
     </button>
   </div>
 </template>

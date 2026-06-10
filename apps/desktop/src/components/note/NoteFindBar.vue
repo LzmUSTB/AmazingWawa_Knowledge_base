@@ -1,5 +1,6 @@
 <script setup>
 import { nextTick, ref, watch } from "vue";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   currentIndex: {
@@ -62,9 +63,15 @@ function handleKeydown(event) {
       @input="$emit('update:query', $event.target.value)"
     />
     <span class="find-count">{{ countLabel() }}</span>
-    <button type="button" title="Previous match" @click="$emit('previous')">&lt;</button>
-    <button type="button" title="Next match" @click="$emit('next')">&gt;</button>
-    <button type="button" title="Close find" @click="$emit('close')">x</button>
+    <button type="button" title="Previous match" aria-label="Previous match" @click="$emit('previous')">
+      <AppIcon name="chevron-up" :size="13" />
+    </button>
+    <button type="button" title="Next match" aria-label="Next match" @click="$emit('next')">
+      <AppIcon name="chevron-down" :size="13" />
+    </button>
+    <button type="button" title="Close find" aria-label="Close find" @click="$emit('close')">
+      <AppIcon name="x" :size="13" />
+    </button>
   </div>
 </template>
 

@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { KNOWLEDGE_STATUS, KNOWLEDGE_TYPES } from "../../../../../packages/knowledge-core/src/index.js";
 import { getDomains, getGraphNodes } from "../../graph/graph-data-store.js";
 import { getGraphScope, isDomainNode } from "../../graph/graph-scope.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   currentDomain: {
@@ -184,14 +185,18 @@ function submit() {
     </label>
 
     <footer>
-      <button class="hud-button" @click="$emit('close')">Cancel</button>
+      <button class="hud-button button-with-icon" @click="$emit('close')">
+        <AppIcon name="x" />
+        <span class="button-icon-label">Cancel</span>
+      </button>
       <button
-        class="hud-button"
+        class="hud-button button-with-icon"
         :disabled="!formValid"
         style="--button-color: var(--graphics)"
         @click="submit"
       >
-        Create Note
+        <AppIcon name="file-plus" />
+        <span class="button-icon-label">Create Note</span>
       </button>
     </footer>
   </div>

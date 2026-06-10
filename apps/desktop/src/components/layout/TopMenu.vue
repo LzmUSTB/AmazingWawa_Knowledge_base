@@ -1,4 +1,6 @@
 <script setup>
+import AppIcon from "../ui/AppIcon.vue";
+
 defineProps({
   appTitle: {
     type: String,
@@ -18,11 +20,18 @@ defineEmits(["open-dialog", "open-vault", "show-view"]);
     <div class="app-mark">{{ appTitle || "Knowledge Base" }}</div>
     <nav class="top-actions" aria-label="Application actions">
       <span class="font-scale-indicator">FONT {{ Math.round(uiFontScale * 100) }}%</span>
-      <button class="hud-button" @click="$emit('open-vault')">Open Vault</button>
-      <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
-        New Note
+      <button class="hud-button button-with-icon" @click="$emit('open-vault')">
+        <AppIcon name="folder-open" />
+        <span class="button-icon-label">Open Vault</span>
       </button>
-      <button class="hud-button" disabled title="Git panel is not implemented yet">Git</button>
+      <button class="hud-button button-with-icon" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
+        <AppIcon name="file-plus" />
+        <span class="button-icon-label">New Note</span>
+      </button>
+      <button class="hud-button button-with-icon" disabled title="Git panel is not implemented yet">
+        <AppIcon name="git-branch" />
+        <span class="button-icon-label">Git</span>
+      </button>
     </nav>
   </header>
 </template>

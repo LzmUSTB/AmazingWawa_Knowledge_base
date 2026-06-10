@@ -1,4 +1,6 @@
 <script setup>
+import AppIcon from "../ui/AppIcon.vue";
+
 defineProps({
   canSaveNote: {
     type: Boolean,
@@ -24,17 +26,23 @@ defineEmits(["cancel-edit", "edit", "save", "show-graph"]);
 <template>
   <div class="note-toolbar">
     <template v-if="mode === 'edit'">
-      <button class="hud-button" :disabled="!canSaveNote || !dirty || saving" @click="$emit('save')">
-        Save
+      <button class="hud-button button-with-icon" :disabled="!canSaveNote || !dirty || saving" @click="$emit('save')">
+        <AppIcon name="save" />
+        <span class="button-icon-label">Save</span>
       </button>
-      <button class="hud-button" :disabled="saving" @click="$emit('cancel-edit')">Cancel</button>
+      <button class="hud-button button-with-icon" :disabled="saving" @click="$emit('cancel-edit')">
+        <AppIcon name="x" />
+        <span class="button-icon-label">Cancel</span>
+      </button>
     </template>
     <template v-else>
-      <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('edit')">
-        Edit
+      <button class="hud-button button-with-icon" style="--button-color: var(--graphics)" @click="$emit('edit')">
+        <AppIcon name="edit" />
+        <span class="button-icon-label">Edit</span>
       </button>
-      <button class="hud-button" style="--button-color: var(--simulation)" @click="$emit('show-graph')">
-        Show in Graph
+      <button class="hud-button button-with-icon" style="--button-color: var(--simulation)" @click="$emit('show-graph')">
+        <AppIcon name="graph" />
+        <span class="button-icon-label">Show in Graph</span>
       </button>
       <div class="note-meta">
         {{ canSaveNote ? "desktop vault / writable" : "static sample / read only" }}

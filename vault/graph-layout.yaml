@@ -7,7 +7,7 @@ boards:
     nodes:
       graphics:
         x: 448
-        y: 384
+        y: 352
         w: 180
         h: 88
       linear-algebra:
@@ -37,7 +37,7 @@ boards:
         h: 88
       simulation:
         x: 160
-        y: 576
+        y: 608
         w: 180
         h: 88
       language:

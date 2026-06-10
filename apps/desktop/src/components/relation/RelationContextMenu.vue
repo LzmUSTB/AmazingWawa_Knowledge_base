@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted } from "vue";
 import { formatRelationLabel } from "../../graph/graph-relations.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   edge: {
@@ -63,8 +64,14 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <div v-if="edge" class="relation-context-menu" :style="menuStyle()" role="menu">
       <div class="context-label">{{ formatRelationLabel(edge) }}</div>
-      <button type="button" role="menuitem" @click="editRelation">Edit Relation</button>
-      <button class="danger" type="button" role="menuitem" @click="deleteRelation">Delete Relation</button>
+      <button class="button-with-icon" type="button" role="menuitem" @click="editRelation">
+        <AppIcon name="edit" />
+        <span class="button-icon-label">Edit Relation</span>
+      </button>
+      <button class="danger button-with-icon" type="button" role="menuitem" @click="deleteRelation">
+        <AppIcon name="delete" />
+        <span class="button-icon-label">Delete Relation</span>
+      </button>
     </div>
   </Teleport>
 </template>
@@ -98,6 +105,8 @@ onBeforeUnmount(() => {
 }
 
 button {
+  align-items: center;
+  justify-content: flex-start;
   min-height: 34px;
   border: 0;
   border-radius: 0;
@@ -114,6 +123,10 @@ button {
 button:hover {
   background: var(--background-main);
   outline: 1px solid var(--border-muted);
+}
+
+.relation-context-menu .button-with-icon {
+  justify-content: flex-start;
 }
 
 button.danger {

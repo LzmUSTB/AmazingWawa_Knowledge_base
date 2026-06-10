@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { findGraphNode, getActiveVault, getGraphEdges, getGraphNodes } from "../../graph/graph-data-store.js";
 import { getNodeTitleOrId } from "../../graph/graph-relations.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const LINK_RELATIONS = ["depends-on", "used-in", "compares-with"];
 
@@ -192,8 +193,14 @@ function submit() {
       <span>Source / Direction</span>
       <div class="direction-composer">
         <div class="direction-node">{{ sourceNode?.title || sourceId || "Source Node" }}</div>
-        <button class="direction-arrow" title="Swap source and target" type="button" @click="toggleDirection">
-          -&gt;
+        <button
+          class="direction-arrow"
+          title="Swap source and target"
+          aria-label="Swap source and target"
+          type="button"
+          @click="toggleDirection"
+        >
+          <AppIcon name="arrow-swap" :size="14" />
         </button>
         <div class="direction-node">{{ targetNode?.title || targetId || "Target Node" }}</div>
       </div>
@@ -245,9 +252,13 @@ function submit() {
     <div v-if="visibleError" class="form-error">{{ visibleError }}</div>
 
     <footer>
-      <button class="hud-button" :disabled="saving" @click="$emit('close')">Cancel</button>
-      <button class="hud-button" :disabled="!canSave" style="--button-color: var(--career)" @click="submit">
-        {{ saving ? "Saving..." : "Save Relation" }}
+      <button class="hud-button button-with-icon" :disabled="saving" @click="$emit('close')">
+        <AppIcon name="x" />
+        <span class="button-icon-label">Cancel</span>
+      </button>
+      <button class="hud-button button-with-icon" :disabled="!canSave" style="--button-color: var(--career)" @click="submit">
+        <AppIcon name="save" />
+        <span class="button-icon-label">{{ saving ? "Saving..." : "Save Relation" }}</span>
       </button>
     </footer>
   </div>
@@ -308,6 +319,8 @@ function submit() {
 }
 
 .direction-arrow {
+  display: grid;
+  place-items: center;
   border-left: 1px solid var(--border-muted);
   border-right: 1px solid var(--border-muted);
   color: var(--career);

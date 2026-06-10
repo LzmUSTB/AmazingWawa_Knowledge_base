@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 import { buildFullTextSearchResults } from "../../search/full-text-search-index.js";
 import { buildQuickSearchResults, flattenQuickSearchResults } from "../../search/quick-search-index.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   mode: {
@@ -139,20 +140,22 @@ function handleKeydown(event) {
           />
           <div class="search-mode">
             <button
-              class="mode-button"
+              class="mode-button button-with-icon"
               :class="{ 'is-active': mode === 'quick' }"
               type="button"
               @click="setMode('quick')"
             >
-              Quick
+              <AppIcon name="search" :size="12" />
+              <span class="button-icon-label">Quick Search</span>
             </button>
             <button
-              class="mode-button"
+              class="mode-button button-with-icon"
               :class="{ 'is-active': mode === 'full-text' }"
               type="button"
               @click="setMode('full-text')"
             >
-              Full-text
+              <AppIcon name="text-search" :size="12" />
+              <span class="button-icon-label">Full-text</span>
             </button>
           </div>
         </header>

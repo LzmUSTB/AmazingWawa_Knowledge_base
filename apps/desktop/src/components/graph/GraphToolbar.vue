@@ -1,4 +1,6 @@
 <script setup>
+import AppIcon from "../ui/AppIcon.vue";
+
 defineProps({
   edgeCount: {
     type: Number,
@@ -41,30 +43,37 @@ defineEmits([
 
 <template>
   <div class="graph-toolbar">
-    <button class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
-      New Node
+    <button class="hud-button button-with-icon" style="--button-color: var(--graphics)" @click="$emit('open-dialog', 'new-note')">
+      <AppIcon name="plus-node" />
+      <span class="button-icon-label">New Node</span>
     </button>
-    <button class="hud-button" @click="$emit('fit-view')">Fit</button>
+    <button class="hud-button button-with-icon" @click="$emit('fit-view')">
+      <AppIcon name="fit-screen" />
+      <span class="button-icon-label">Fit</span>
+    </button>
     <button
       v-if="!layoutEditing && !layoutDirty"
-      class="hud-button"
+      class="hud-button button-with-icon"
       style="--button-color: var(--language)"
       @click="$emit('edit-layout')"
     >
-      Edit Layout
+      <AppIcon name="layout-edit" />
+      <span class="button-icon-label">Edit Layout</span>
     </button>
     <template v-else>
       <button
-        class="hud-button"
+        class="hud-button button-with-icon"
         :disabled="!canSaveLayout || !layoutDirty || layoutSaveInProgress"
         style="--button-color: var(--language)"
         :title="canSaveLayout ? '' : 'Open a desktop vault folder before saving layout.'"
         @click="$emit('save-layout')"
       >
-        Save Layout
+        <AppIcon name="layout-save" />
+        <span class="button-icon-label">Save Layout</span>
       </button>
-      <button class="hud-button" :disabled="layoutSaveInProgress" @click="$emit('cancel-layout')">
-        Cancel Layout
+      <button class="hud-button button-with-icon" :disabled="layoutSaveInProgress" @click="$emit('cancel-layout')">
+        <AppIcon name="x" />
+        <span class="button-icon-label">Cancel Layout</span>
       </button>
       <span class="layout-status">{{ layoutDirty ? "UNSAVED LAYOUT" : "LAYOUT EDITING" }}</span>
     </template>

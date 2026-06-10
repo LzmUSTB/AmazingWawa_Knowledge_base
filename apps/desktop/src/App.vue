@@ -1102,6 +1102,27 @@ button {
   background: var(--background-elevated);
 }
 
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.button-icon-only {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+
+.button-icon-label {
+  display: inline-block;
+}
+
 .panel-label {
   display: flex;
   align-items: center;
