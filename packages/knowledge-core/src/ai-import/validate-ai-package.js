@@ -25,20 +25,20 @@ const FORBIDDEN_MARKDOWN_PATTERNS = [
   { pattern: /!\[[^\]]*\]\(\s*https?:\/\//i, label: "remote Markdown image" },
 ];
 const FORBIDDEN_HTML_PATTERNS = [
-  { pattern: /<\s*script\b/i, label: "script tag" },
-  { pattern: /<\s*iframe\b/i, label: "iframe tag" },
   { pattern: /<\s*object\b/i, label: "object tag" },
   { pattern: /<\s*embed\b/i, label: "embed tag" },
-  { pattern: /<\s*link\b/i, label: "link tag" },
-  { pattern: /<\s*style\b/i, label: "style tag" },
-  { pattern: /\son[a-z]+\s*=/i, label: "inline event handler" },
-  { pattern: /\sstyle\s*=/i, label: "inline style" },
-  { pattern: /javascript\s*:/i, label: "javascript URL" },
-  { pattern: /data\s*:/i, label: "data URL" },
+  { pattern: /\b(src|href|poster)\s*=\s*["']?data:/i, label: "data URL resource" },
+  { pattern: /\b(src|href|poster)\s*=\s*["']?javascript:/i, label: "javascript URL resource" },
 ];
 const ALLOWED_ASSET_EXTENSIONS = new Set([
   ".csv", ".gif", ".jpeg", ".jpg", ".json", ".md", ".mp3", ".mp4", ".pdf", ".png", ".txt", ".wav", ".webm", ".webp", ".yaml", ".yml",
 ]);
+const SOURCE_URL_MEDIA_EXTENSIONS = new Set([".gif", ".jpeg", ".jpg", ".mp4", ".png", ".webm", ".webp"]);
+const HTML_REQUIRED_REVIEW_FILES = [
+  "review/source-coverage-plan.md",
+  "review/source-asset-manifest.md",
+  "review/interactive-demo-coverage.md",
+];
 
 function asArray(value) { return Array.isArray(value) ? value : value ? [value] : []; }
 function normalizeSchemaVersion(value) { if (value === 1.1 || value === "1.1") return "1.1"; return String(value || ""); }
@@ -93,21 +93,26 @@ function noteHeadingExists(markdown = "", headingSelector = "") {
 }
 function insertedHeading(markdown = "") { return markdown.split(/\r?\n/).map((line) => line.match(/^#{1,6}\s+(.+)$/)?.[1]?.trim()).find(Boolean); }
 function collectBlockTypes(markdown = "") { const types = []; markdown.replace(/\r\n/g, "\n").split("\n").forEach((line) => { const match = line.match(/^:::([A-Za-z0-9_-]+)\s*$/); if (match) types.push(match[1]); }); return types; }
-function extensionOf(path = "") { const fileName = path.split("/").pop() || ""; const dotIndex = fileName.lastIndexOf("."); return dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : ""; }
+function extensionOf(path = "") { const cleanPath = String(path || "").split(/[?#]/)[0]; const fileName = cleanPath.split("/").pop() || ""; const dotIndex = fileName.lastIndexOf("."); return dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : ""; }
 function nodeForAssetPath(path = "") { const match = path.match(/^generated\/content\/([^/]+)\/([^/]+)\/assets\/(.+)$/); return match ? { domain: match[1], nodeId: match[2], assetPath: match[3] } : null; }
 
 function markdownAssetReferences(markdown = "") {
   const refs = [];
   const linkPattern = /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^)]*)?\)/g;
   let match;
-  while ((match = linkPattern.exec(markdown))) refs.push({ image: match[1] === "!", label: match[2] || "", target: match[3] || "" });
+  while ((match = linkPattern.exec(markdown))) refs.push({ format: "markdown", tag: match[1] === "!" ? "img" : "a", image: match[1] === "!", label: match[2] || "", target: match[3] || "" });
   return refs;
 }
 function htmlAssetReferences(html = "") {
   const refs = [];
-  const attrPattern = /\b(src|href)\s*=\s*["']([^"']+)["']/gi;
+  const tagPattern = /<\s*([a-z0-9-]+)\b[^>]*?\b(src|href|poster)\s*=\s*["']([^"']+)["'][^>]*>/gi;
   let match;
-  while ((match = attrPattern.exec(html))) refs.push({ attr: match[1].toLowerCase(), target: match[2] || "" });
+  while ((match = tagPattern.exec(html))) {
+    const tag = String(match[1] || "").toLowerCase();
+    const attr = String(match[2] || "").toLowerCase();
+    const target = match[3] || "";
+    refs.push({ format: "html", tag, attr, image: tag === "img", target });
+  }
   return refs;
 }
 function validateAssetReferencePath(target = "") {
@@ -118,6 +123,7 @@ function validateAssetReferencePath(target = "") {
   if (!ALLOWED_ASSET_EXTENSIONS.has(extension)) return { error: `unsupported asset extension "${extension || "(none)"}".` };
   return { path: normalized };
 }
+function isSourceUrlMediaExtension(target = "") { return SOURCE_URL_MEDIA_EXTENSIONS.has(extensionOf(target)); }
 
 function validatePackageAssets(currentVault, packageFiles, operations, errors, warnings) {
   const assetFiles = packageFiles.assetFiles || [];
@@ -138,35 +144,36 @@ function validatePackageAssets(currentVault, packageFiles, operations, errors, w
   operations.forEach((operation) => {
     let nodeId = "";
     let domain = "";
-    let content = "";
     let refs = [];
     let contextName = operation.type;
+    let contentFormat = "markdown";
     if (operation.type === "add_node") {
       nodeId = operation.id;
       domain = operation.domain;
       const format = noteFormatForOperation(operation, packageFiles);
-      if (format === "markdown") {
-        content = packageFiles.generatedNoteFiles[generatedMarkdownNotePath(operation)] || "";
-        refs = markdownAssetReferences(content);
-      } else if (format === "html") {
-        content = packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)] || "";
-        refs = htmlAssetReferences(content);
-      } else return;
+      contentFormat = format;
+      if (format === "markdown") refs = markdownAssetReferences(packageFiles.generatedNoteFiles[generatedMarkdownNotePath(operation)] || "");
+      else if (format === "html") refs = htmlAssetReferences(packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)] || "");
+      else return;
       contextName = `add_node ${nodeId}`;
     } else if (operation.type === "append_note_section") {
       nodeId = operation.targetId || operation.id;
       domain = operation.domain || (currentVault.nodes || []).find((node) => node.id === nodeId)?.domain || "";
-      content = operation.markdown || operation.content || "";
-      refs = markdownAssetReferences(content);
+      refs = markdownAssetReferences(operation.markdown || operation.content || "");
       contextName = `append_note_section ${nodeId}`;
     } else return;
 
     refs.forEach((reference) => {
       const target = reference.target.trim();
-      if (/^(https?:)?\/\//i.test(target)) return;
+      if (/^javascript:/i.test(target)) { errors.push(`${contextName}: javascript URLs are not allowed in resource attributes.`); return; }
       if (/^data:/i.test(target)) { errors.push(`${contextName}: data URLs are not allowed.`); return; }
+      if (/^(https?:)?\/\//i.test(target)) return;
       if (!target.startsWith("assets/")) {
-        if (reference.image) errors.push(`${contextName}: image reference "${target}" must use assets/.`);
+        if (reference.image) errors.push(`${contextName}: image reference "${target}" must use assets/ or a stable original source URL.`);
+        return;
+      }
+      if (contentFormat === "html" && isSourceUrlMediaExtension(target)) {
+        errors.push(`${contextName}: HTML rich notes must use original source URL media, not packaged local media "${target}". AI-generated or re-drawn images/videos are forbidden.`);
         return;
       }
       const result = validateAssetReferencePath(target);
@@ -196,8 +203,160 @@ function validateMarkdownBlocks(markdown, registry, errors, context) {
   FORBIDDEN_MARKDOWN_PATTERNS.forEach(({ pattern, label }) => { if (pattern.test(markdown)) errors.push(`${context}: forbidden ${label}.`); });
   collectBlockTypes(markdown).forEach((type) => { if (isNativeBlockType(type)) return; if (isRegisteredDeclarativeBlockType(type, registry)) return; errors.push(`${context}: unknown content block "${type}".`); });
 }
-function validateHtmlNote(html, errors, context) {
+
+function hasSourceBlock(html = "") {
+  return /<aside\b[^>]*class\s*=\s*["'][^"']*\bsource-block\b[^"']*["']/i.test(html);
+}
+function hasDirectOriginalMedia(html = "") {
+  return /<\s*(img|video|source|iframe)\b[^>]*(src|href)\s*=\s*["']https?:\/\//i.test(html);
+}
+function hasVisibleInteractiveElement(html = "") {
+  return /<\s*(canvas|svg|iframe)\b/i.test(html) || /<\s*script\b/i.test(html);
+}
+function hasReviewQuestionSection(html = "") {
+  return /(复习问题|自测|Review\s+Questions?|Self[-\s]?check|Quiz)/i.test(html);
+}
+function stripTags(value = "") {
+  return String(value || "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+function validateReviewQuestionAnswers(html = "", errors, warnings, context) {
+  if (!hasReviewQuestionSection(html)) return;
+  const detailsMatches = [...html.matchAll(/<details\b[\s\S]*?<\/details>/gi)].map((match) => match[0]);
+  if (!detailsMatches.length) {
+    warnings.push(`${context}: review questions should include answers using <details><summary>question</summary>answer</details>. Bare question lists reduce note quality.`);
+    return;
+  }
+  detailsMatches.forEach((block, index) => {
+    if (!/<summary\b[\s\S]*?<\/summary>/i.test(block)) {
+      warnings.push(`${context}: review answer block ${index + 1} is missing <summary> for the question.`);
+      return;
+    }
+    const answerText = stripTags(block.replace(/<summary\b[\s\S]*?<\/summary>/i, ""));
+    if (answerText.length < 40) {
+      warnings.push(`${context}: review answer block ${index + 1} has no substantive answer.`);
+    }
+  });
+  if (/<ol\b[\s\S]*?<li\b[\s\S]*?<\/ol>/i.test(html) && /复习问题|Review\s+Questions?/i.test(html)) {
+    warnings.push(`${context}: review section appears to contain a bare ordered list. Prefer one <details class="rich-qa"> per question.`);
+  }
+}
+function htmlSourceAssetIds(html = "") {
+  const ids = new Set();
+  const pattern = /\bdata-source-asset\s*=\s*["']([^"']+)["']/gi;
+  let match;
+  while ((match = pattern.exec(html))) ids.add(match[1]);
+  return ids;
+}
+function extractFirstYamlFence(markdown = "") {
+  const match = String(markdown || "").match(/```ya?ml\s*([\s\S]*?)```/i);
+  return match ? match[1].trim() : "";
+}
+function sourceAssetManifest(packageFiles) {
+  const raw = packageFiles.reviewFiles?.["review/source-asset-manifest.md"] || "";
+  const yaml = extractFirstYamlFence(raw);
+  if (!yaml) return [];
+  try {
+    const parsed = parseYaml(yaml, "review/source-asset-manifest.md");
+    return asArray(parsed.source_assets || parsed.sourceAssets);
+  } catch {
+    return [];
+  }
+}
+function noteOperationById(operations = []) {
+  const result = new Map();
+  operations.forEach((operation) => {
+    if (operation.type === "add_node") result.set(operation.id, operation);
+  });
+  return result;
+}
+
+function normalizeAssetNoteId(asset = {}) {
+  const explicit =
+    asset.represented_in_node ||
+    asset.representedInNode ||
+    asset.note_id ||
+    asset.noteId ||
+    asset.node_id ||
+    asset.nodeId ||
+    "";
+  if (String(explicit || "").trim()) return String(explicit).trim();
+
+  const location = asset.note_location || asset.noteLocation || "";
+  const firstSegment = String(location || "").split("/")[0].trim();
+  if (firstSegment && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(firstSegment)) return firstSegment;
+
+  return "";
+}
+
+function hasDirectOriginalMediaForAsset(html = "", asset = {}) {
+  const sourceUrl = String(asset.source_url || asset.sourceUrl || "").trim();
+  const originMatch = sourceUrl.match(/^https?:\/\/[^\/]+/i);
+  const origin = originMatch ? originMatch[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "https?:\\/\\/";
+  const mediaPattern = new RegExp(`<\\s*(img|video|source|iframe)\\b[^>]+(?:src|poster)\\s*=\\s*["']${origin}[^"']+["']`, "i");
+  return mediaPattern.test(html);
+}
+function validateSourceAssetCoverage(packageFiles, operations, errors, warnings) {
+  const htmlOperations = operations.filter((operation) => operation.type === "add_node" && noteFormatForOperation(operation, packageFiles) === "html");
+  if (!htmlOperations.length) return;
+
+  const assets = sourceAssetManifest(packageFiles);
+  if (!assets.length) {
+    warnings.push("review/source-asset-manifest.md: no parseable source_assets list found for HTML source-first notes.");
+    return;
+  }
+
+  const opsById = noteOperationById(operations);
+  const htmlByNodeId = new Map();
+  htmlOperations.forEach((operation) => {
+    htmlByNodeId.set(operation.id, packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)] || "");
+  });
+
+  assets.forEach((asset) => {
+    const id = asset?.id || "";
+    if (!id || asset.required !== true) return;
+    const noteId = normalizeAssetNoteId(asset);
+    const html = htmlByNodeId.get(noteId) || "";
+    if (!html) {
+      warnings.push(`source asset ${id}: required asset points to note "${noteId}", but that HTML note was not found.`);
+      return;
+    }
+
+    const representedIds = htmlSourceAssetIds(html);
+    if (!representedIds.has(id)) {
+      warnings.push(`source asset ${id}: required asset/demo should be marked in note.html with data-source-asset="${id}".`);
+    }
+
+    const type = String(asset.type || "").toLowerCase();
+    const strategy = String(asset.preservation_strategy || asset.preservationStrategy || "").toLowerCase();
+    const unavailableReason = String(asset.unavailable_reason || asset.unavailableReason || asset.embedding_blocked_reason || asset.embeddingBlockedReason || "").trim();
+
+    if (["image", "video", "animation"].includes(type) && !hasDirectOriginalMediaForAsset(html, asset) && !unavailableReason) {
+      warnings.push(`source asset ${id}: ${type} assets should be represented by direct original source media URL when possible. If unavailable, add unavailable_reason in source-asset-manifest.md.`);
+    }
+
+    if (type === "interactive-demo") {
+      const hasOriginalEmbed = hasDirectOriginalMediaForAsset(html, asset);
+      const hasSupplement = /<\s*(canvas|svg)\b/i.test(html);
+      if (!hasOriginalEmbed && !unavailableReason) {
+        warnings.push(`source asset ${id}: interactive demos need an original source iframe/media embed when possible. Source links and AI-authored canvas/svg demos are supplementary only; add unavailable_reason if original embedding is impossible.`);
+      }
+      if (/source-link/.test(strategy) && /js-reproduction/.test(strategy) && !hasOriginalEmbed) {
+        warnings.push(`source asset ${id}: preservation_strategy "${strategy}" is not sufficient for source-first quality. Prefer iframe/direct-source-media, or mark embedding as unavailable with a reason.`);
+      }
+      if (/source-link/.test(strategy) && !hasSupplement && !hasOriginalEmbed) {
+        warnings.push(`source asset ${id}: interactive demo is only linked and has no original embed or supplementary canvas/svg representation in the note.`);
+      }
+    }
+  });
+}
+
+function validateHtmlNote(html, errors, warnings, context) {
   FORBIDDEN_HTML_PATTERNS.forEach(({ pattern, label }) => { if (pattern.test(html)) errors.push(`${context}: forbidden ${label}.`); });
+  if (!hasSourceBlock(html)) errors.push(`${context}: missing nearby <aside class="source-block"> source attribution.`);
+  if (!/<\s*(img|video|iframe|canvas|svg)\b/i.test(html)) warnings.push(`${context}: HTML rich note contains no visible source media or interactive demo elements.`);
+  if (!hasDirectOriginalMedia(html)) warnings.push(`${context}: HTML rich note has no direct original source media/embed (<img>, <video>, <source>, or <iframe> with https:// URL). Source-root links and canvas reproductions alone are not enough for asset-rich sources.`);
+  if (!hasVisibleInteractiveElement(html)) warnings.push(`${context}: HTML rich note has no visible interactive element. Interactive/tutorial sources should preserve or reproduce important demos.`);
+  validateReviewQuestionAnswers(html, errors, warnings, context);
 }
 function packageBlockRegistry(currentVault, packageFiles) {
   const packageBlockTypes = normalizeBlockTypes(packageFiles.blockTypeFiles || {});
@@ -221,7 +380,20 @@ function validateSources(packageFiles, warnings) {
   const sourceList = asArray(sources.sources);
   if (!sourceList.length) { warnings.push("sources.yaml: sources array is missing or empty."); return; }
   const ids = new Set();
-  sourceList.forEach((source) => { if (!source?.id) return; if (ids.has(source.id)) warnings.push(`sources.yaml: duplicate source id "${source.id}".`); ids.add(source.id); if (source.fullContentRequired === true || source.requiresFullContent === true) warnings.push(`sources.yaml: source "${source.id}" should not require full source content.`); });
+  sourceList.forEach((source) => {
+    if (!source?.id) return;
+    if (ids.has(source.id)) warnings.push(`sources.yaml: duplicate source id "${source.id}".`);
+    ids.add(source.id);
+  });
+}
+function packageHasHtmlNotes(operations, packageFiles) {
+  return operations.some((operation) => operation.type === "add_node" && noteFormatForOperation(operation, packageFiles) === "html");
+}
+function validateHtmlReviewFiles(packageFiles, operations, errors) {
+  if (!packageHasHtmlNotes(operations, packageFiles)) return;
+  HTML_REQUIRED_REVIEW_FILES.forEach((filePath) => {
+    if (!packageFiles.reviewFiles?.[filePath]) errors.push(`${filePath}: required for HTML rich notes with source-first interactive rules.`);
+  });
 }
 
 function validateAddNode(operation, context) {
@@ -251,7 +423,7 @@ function validateAddNode(operation, context) {
   if (format === "markdown" && !packageFiles.generatedNoteFiles[generatedMarkdownNotePath(operation)]) errors.push(`add_node ${operation.id}: missing ${generatedMarkdownNotePath(operation)}.`);
   if (format === "html" && !packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)]) errors.push(`add_node ${operation.id}: missing ${generatedHtmlNotePath(operation)}.`);
   if (format === "markdown" && packageFiles.generatedNoteFiles[generatedMarkdownNotePath(operation)]) validateMarkdownBlocks(packageFiles.generatedNoteFiles[generatedMarkdownNotePath(operation)], registry, errors, `add_node ${operation.id} note.md`);
-  if (format === "html" && packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)]) validateHtmlNote(packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)], errors, `add_node ${operation.id} note.html`);
+  if (format === "html" && packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)]) validateHtmlNote(packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)], errors, warnings, `add_node ${operation.id} note.html`);
   if (metaRaw) {
     const meta = parseYaml(metaRaw, metaPath);
     if (meta.id !== operation.id) errors.push(`add_node ${operation.id}: generated meta id does not match patch.`);
@@ -367,6 +539,8 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
     if (operation.type === "add_block_type") validateAddBlockType(operation, context);
     if (operation.type === "propose_native_block") validateProposeNativeBlock(operation, context);
   });
+  validateHtmlReviewFiles(packageFiles, normalizedOperations, errors);
+  validateSourceAssetCoverage(packageFiles, normalizedOperations, errors, warnings);
   validatePackageAssets(currentVault, packageFiles, normalizedOperations, errors, warnings);
   return {
     valid: errors.length === 0,

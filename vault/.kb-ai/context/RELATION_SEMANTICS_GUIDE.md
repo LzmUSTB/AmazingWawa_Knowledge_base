@@ -17,7 +17,7 @@ Direction matters.
 Example:
 
 ```text
-curl-noise depends-on divergence-and-curl
+thin-lens-and-focus depends-on refraction-and-snell-law
 ```
 
 ## used-in
@@ -27,18 +27,12 @@ curl-noise depends-on divergence-and-curl
 Example:
 
 ```text
-curl-noise used-in real-time-vfx
+pinhole-camera-geometry used-in camera-projection
 ```
 
 ## compares-with
 
 A and B are alternatives, contrasts, or related concepts that answer similar questions.
-
-Example:
-
-```text
-curl-noise compares-with flow-map
-```
 
 ## Relation quality rules
 

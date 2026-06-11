@@ -2,7 +2,7 @@
 
 Use content blocks to improve learning density and clarity. Do not use blocks as decoration.
 
-For full tutorial/article presentation, use `contentFormat: html` instead of stacking many unrelated blocks.
+For full tutorial/article presentation, source assets, or interactivity, use `contentFormat: html` instead of stacking many unrelated blocks.
 
 ## concept-card
 
@@ -12,13 +12,9 @@ Use for definition, why it matters, and core intuition.
 
 Use for pipelines, algorithms, authoring workflows, dependency chains, and cause-effect stages.
 
-Use stable ids and `depends_on`.
-
 ## compare-table
 
 Use for technique comparisons, tradeoffs, alternatives, and misconception correction.
-
-Rows should be conceptual dimensions, not random facts.
 
 ## code-explain
 
@@ -32,10 +28,6 @@ Use for review questions, misconception checks, and transfer of knowledge.
 
 Use only when the expression is a scalar 2D curve or scalar 3D surface, a safe render spec is provided, and parameters have meaningful slider ranges.
 
-## declarative visual blocks
+## HTML interactive sections
 
-Use when structured labels and relationships matter.
-
-## packaged images
-
-Use when source material has a useful figure or the visual depends on raster detail.
+When more freedom is needed, use HTML with JavaScript in `note.html` and keep app style through `rich-*` classes and CSS variables.

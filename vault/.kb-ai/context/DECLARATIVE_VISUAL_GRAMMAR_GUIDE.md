@@ -10,6 +10,8 @@ renderer:
 
 Use declarative visual blocks when the note needs labeled nodes, explicit arrows, staged diagrams, formula callouts, simple geometry, or repeated visual elements based on block data.
 
+For maximum creative freedom or JavaScript interaction, use `contentFormat: html` and implement the interaction inside `note.html` instead of a declarative block type.
+
 ## Supported layout types
 
 - split-panel
@@ -36,19 +38,4 @@ Use declarative visual blocks when the note needs labeled nodes, explicit arrows
 
 Coordinates use normalized 2D values in [0, 1].
 
-## Data binding
-
-Elements may bind to note block data with `$.` paths.
-
-```yaml
-elements:
-  - type: node
-    each: $.items
-    template:
-      id: $.id
-      label: $.label
-      x: $.x
-      y: $.y
-```
-
-Do not include script, eval, iframe, HTML, CSS, JS, Vue, remote URLs, arbitrary event handlers, inline SVG, or executable code.
+Do not use declarative visual blocks to replace original source figures. Use original source asset URLs or HTML source frames when original visuals exist.

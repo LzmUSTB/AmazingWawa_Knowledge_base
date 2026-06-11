@@ -472,8 +472,11 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
     }
 
     let script = r#"
-param([string]$PackagePath)
 $ErrorActionPreference = 'Stop'
+$PackagePath = [Environment]::GetEnvironmentVariable('WAWA_PKG_PATH')
+if ([string]::IsNullOrWhiteSpace($PackagePath)) {
+  throw 'Missing WAWA_PKG_PATH environment variable.'
+}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
 $entries = @()
@@ -500,12 +503,8 @@ try {
 [Console]::Out.Write(($entries | ConvertTo-Json -Depth 4 -Compress))
 "#;
     let output = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            script,
-            package_path.to_string_lossy().as_ref(),
-        ])
+        .env("WAWA_PKG_PATH", package_path.to_string_lossy().to_string())
+        .args(["-NoProfile", "-Command", script])
         .output()
         .map_err(|error| format!("Failed to read .wawapkg zip entries: {error}"))?;
     if !output.status.success() {

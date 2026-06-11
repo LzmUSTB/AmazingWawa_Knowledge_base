@@ -5,7 +5,7 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: ""
-generatedAt: 2026-06-11T12:57:09.849Z
+generatedAt: 2026-06-11T14:37:19.328Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
   allowedDomains: []
@@ -40,17 +40,31 @@ constraints:
     - none
   packageFormat: wawapkg
   packageKind: import
+  mimetype: application/x-wawa-kb-ai-import-package
   recommendedPackageIdPrefix: wawa-import-
   assetPolicy:
-    markdown: local packaged assets only
-    html: local packaged assets preferred; stable https source assets allowed
+    generatedImagesAllowed: false
+    mustUseOriginalSourceAssets: true
+    html: source-url-first; original images/videos/demos required when central to
+      source clarity
+    markdown: local packaged original/source assets only; no AI-generated images
+    sourceBlocksRequired: true
   htmlRichNote:
-    fragmentOnly: true
-    allowedRootClass: rich-note-article
-    mustUseAppClasses: true
+    recommendedForTutorialSources: true
+    fragmentOrFullDocument: html note may contain rich HTML; renderer should isolate
+      it when JavaScript is used
+    allowJavaScript: true
+    allowInteractiveDemos: true
+    allowIframeSourceEmbeds: true
+    requireAppStyleCompatibility: true
     respondsToFontScale: true
-    disallowInlineStyle: true
-    disallowScript: true
+    useAppCssVariables: true
+    prohibitAiGeneratedImages: true
+    sourceBlockClass: source-block
+    reviewFilesRequiredForVisualSources:
+      - review/source-coverage-plan.md
+      - review/source-asset-manifest.md
+      - review/interactive-demo-coverage.md
   emptyNode:
     contentFormat: none
     omitNoteFiles: true
