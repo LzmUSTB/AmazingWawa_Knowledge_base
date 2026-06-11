@@ -6,24 +6,11 @@ import { getGraphScope, isDomainNode } from "../../graph/graph-scope.js";
 import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
-  currentDomain: {
-    type: String,
-    required: true,
-  },
-  currentView: {
-    type: String,
-    default: "graph",
-  },
-  graphScopeId: {
-    type: String,
-    required: true,
-  },
-  selectedNodeId: {
-    type: String,
-    required: true,
-  },
+  currentDomain: { type: String, required: true },
+  currentView: { type: String, default: "graph" },
+  graphScopeId: { type: String, required: true },
+  selectedNodeId: { type: String, required: true },
 });
-
 const emit = defineEmits(["close", "create-note"]);
 
 const nodeTypes = KNOWLEDGE_TYPES.filter((type) => type !== "domain");
@@ -31,10 +18,7 @@ const statusOptions = KNOWLEDGE_STATUS.filter((status) => status !== "domain");
 const domains = computed(() => getDomains());
 const nodes = computed(() => getGraphNodes());
 const nodeIds = computed(() => new Set(nodes.value.map((node) => node.id)));
-const parentCandidates = computed(() =>
-  nodes.value.filter((node) => node.id === domain.value || node.domain === domain.value),
-);
-
+const parentCandidates = computed(() => nodes.value.filter((node) => node.id === domain.value || node.domain === domain.value));
 const title = ref("");
 const id = ref("");
 const domain = ref(props.currentDomain);
@@ -43,197 +27,46 @@ const status = ref("seed");
 const summary = ref("");
 const parentId = ref(defaultParentId());
 const idTouched = ref(false);
+const createInitialNote = ref(true);
 
-function slugFromTitle(value) {
-  return value
-    .normalize("NFKD")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .toLowerCase()
-    .replace(/[_\s]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function defaultParentId() {
-  const scope = getGraphScope(props.graphScopeId);
-  if (scope.type === "domain") return scope.id;
-  if (scope.type === "focus") return scope.centerNodeId || scope.id;
-  if (props.selectedNodeId && isDomainNode(props.selectedNodeId)) return props.selectedNodeId;
-  return props.currentDomain;
-}
-
-function parentBelongsToDomain(parentNodeId) {
-  return parentCandidates.value.some((node) => node.id === parentNodeId);
-}
-
-function resetParentForDomain() {
-  parentId.value = parentCandidates.value.some((node) => node.id === domain.value)
-    ? domain.value
-    : parentCandidates.value[0]?.id || "";
-}
-
-watch(
-  () => props.currentDomain,
-  (nextDomain) => {
-    domain.value = nextDomain;
-    const nextParentId = defaultParentId();
-    parentId.value = parentBelongsToDomain(nextParentId) ? nextParentId : nextDomain;
-  },
-);
-
-watch(domain, () => {
-  resetParentForDomain();
-});
-
-watch(title, (nextTitle) => {
-  if (!idTouched.value) id.value = slugFromTitle(nextTitle);
-});
-
+function slugFromTitle(value) { return value.normalize("NFKD").replace(/[^\w\s-]/g, "").trim().toLowerCase().replace(/[_\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""); }
+function defaultParentId() { const scope = getGraphScope(props.graphScopeId); if (scope.type === "domain") return scope.id; if (scope.type === "focus") return scope.centerNodeId || scope.id; if (props.selectedNodeId && isDomainNode(props.selectedNodeId)) return props.selectedNodeId; return props.currentDomain; }
+function parentBelongsToDomain(parentNodeId) { return parentCandidates.value.some((node) => node.id === parentNodeId); }
+function resetParentForDomain() { parentId.value = parentCandidates.value.some((node) => node.id === domain.value) ? domain.value : parentCandidates.value[0]?.id || ""; }
+watch(() => props.currentDomain, (nextDomain) => { domain.value = nextDomain; const nextParentId = defaultParentId(); parentId.value = parentBelongsToDomain(nextParentId) ? nextParentId : nextDomain; });
+watch(domain, () => resetParentForDomain());
+watch(title, (nextTitle) => { if (!idTouched.value) id.value = slugFromTitle(nextTitle); });
 const idValid = computed(() => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id.value));
 const domainValid = computed(() => domains.value.some((item) => item.id === domain.value));
 const parentValid = computed(() => nodeIds.value.has(parentId.value) && parentBelongsToDomain(parentId.value));
-const formValid = computed(
-  () =>
-    title.value.trim() &&
-    id.value.trim() &&
-    idValid.value &&
-    domainValid.value &&
-    parentValid.value &&
-    nodeTypes.includes(type.value) &&
-    statusOptions.includes(status.value) &&
-    !nodeIds.value.has(id.value),
-);
-
+const formValid = computed(() => title.value.trim() && id.value.trim() && idValid.value && domainValid.value && parentValid.value && nodeTypes.includes(type.value) && statusOptions.includes(status.value) && !nodeIds.value.has(id.value));
 function submit() {
   if (!formValid.value) return;
-  emit("create-note", {
-    title: title.value.trim(),
-    id: id.value.trim(),
-    domain: domain.value,
-    type: type.value,
-    status: status.value,
-    summary: summary.value.trim(),
-    parentId: parentId.value,
-  });
+  emit("create-note", { title: title.value.trim(), id: id.value.trim(), domain: domain.value, type: type.value, status: status.value, summary: summary.value.trim(), parentId: parentId.value, createInitialNote: createInitialNote.value });
 }
 </script>
 
 <template>
   <div class="dialog-card new-note">
     <div class="dialog-accent"></div>
-    <header>
-      <h2>New Knowledge Node</h2>
-      <p>Create a vault item and link it to the selected parent with a contains edge.</p>
-    </header>
-
-    <label>
-      <span>Title</span>
-      <input v-model="title" autofocus placeholder="Deferred Rendering" />
-    </label>
-
-    <label>
-      <span>ID</span>
-      <input
-        v-model="id"
-        placeholder="deferred-rendering"
-        @input="idTouched = true"
-      />
-      <code v-if="id && !idValid">Use lowercase kebab-case letters, numbers, and hyphens.</code>
-      <code v-else-if="nodeIds.has(id)">This ID already exists.</code>
-    </label>
-
-    <div class="dialog-grid">
-      <label>
-        <span>Domain</span>
-        <select v-model="domain">
-          <option v-for="item in domains" :key="item.id" :value="item.id">
-            {{ item.title }} / {{ item.id }}
-          </option>
-        </select>
-      </label>
-
-      <label>
-        <span>Parent</span>
-        <select v-model="parentId">
-          <option v-for="node in parentCandidates" :key="node.id" :value="node.id">
-            {{ node.title }} / {{ node.id }}
-          </option>
-        </select>
-        <code>Parent creates a contains edge. Use Add Link for cross-domain relationships.</code>
-      </label>
-    </div>
-
-    <div class="dialog-grid">
-      <label>
-        <span>Type</span>
-        <select v-model="type">
-          <option v-for="item in nodeTypes" :key="item" :value="item">{{ item }}</option>
-        </select>
-      </label>
-      <label>
-        <span>Status</span>
-        <select v-model="status">
-          <option v-for="item in statusOptions" :key="item" :value="item">{{ item }}</option>
-        </select>
-      </label>
-    </div>
-
-    <label>
-      <span>Summary</span>
-      <textarea v-model="summary" placeholder="One-sentence summary"></textarea>
-    </label>
-
-    <footer>
-      <button class="hud-button button-with-icon" @click="$emit('close')">
-        <AppIcon name="x" />
-        <span class="button-icon-label">Cancel</span>
-      </button>
-      <button
-        class="hud-button button-with-icon"
-        :disabled="!formValid"
-        style="--button-color: var(--graphics)"
-        @click="submit"
-      >
-        <AppIcon name="file-plus" />
-        <span class="button-icon-label">Create Note</span>
-      </button>
-    </footer>
+    <header><h2>New Knowledge Node</h2><p>Create a graph node. You may create an initial Markdown note now, or leave it empty and add note.md / note.html later.</p></header>
+    <label><span>Title</span><input v-model="title" autofocus placeholder="Deferred Rendering" /></label>
+    <label><span>ID</span><input v-model="id" placeholder="deferred-rendering" @input="idTouched = true" /><code v-if="id && !idValid">Use lowercase kebab-case letters, numbers, and hyphens.</code><code v-else-if="nodeIds.has(id)">This ID already exists.</code></label>
+    <div class="dialog-grid"><label><span>Domain</span><select v-model="domain"><option v-for="item in domains" :key="item.id" :value="item.id">{{ item.title }} / {{ item.id }}</option></select></label><label><span>Parent</span><select v-model="parentId"><option v-for="node in parentCandidates" :key="node.id" :value="node.id">{{ node.title }} / {{ node.id }}</option></select><code>Parent creates a contains edge. Use Add Link for cross-domain relationships.</code></label></div>
+    <div class="dialog-grid"><label><span>Type</span><select v-model="type"><option v-for="item in nodeTypes" :key="item" :value="item">{{ item }}</option></select></label><label><span>Status</span><select v-model="status"><option v-for="item in statusOptions" :key="item" :value="item">{{ item }}</option></select></label></div>
+    <label><span>Summary</span><textarea v-model="summary" placeholder="One-sentence summary"></textarea></label>
+    <label class="checkbox-line"><input v-model="createInitialNote" type="checkbox" /><span>Create initial note.md</span><code v-if="!createInitialNote">Unchecked: only meta.yaml + contains edge will be created. The node appears in graph as an empty node.</code></label>
+    <footer><button class="hud-button button-with-icon" @click="$emit('close')"><AppIcon name="x" /><span class="button-icon-label">Cancel</span></button><button class="hud-button button-with-icon" :disabled="!formValid" style="--button-color: var(--graphics)" @click="submit"><AppIcon name="file-plus" /><span class="button-icon-label">{{ createInitialNote ? 'Create Note' : 'Create Empty Node' }}</span></button></footer>
   </div>
 </template>
 
 <style scoped>
-.new-note {
-  width: min(640px, calc(100vw - 48px));
-}
-
-code {
-  color: var(--career);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-}
-
-textarea {
-  min-height: 88px;
-  width: 100%;
-  border: 1px solid var(--border-muted);
-  border-radius: 0;
-  outline: 0;
-  resize: vertical;
-  background: var(--background-main);
-  color: var(--text-primary);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-ui);
-  line-height: 1.5;
-  padding: 12px;
-}
-
-textarea:focus {
-  border-color: var(--border-primary);
-}
-
-.hud-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
+.new-note { width: min(640px, calc(100vw - 48px)); }
+code { color: var(--career); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); }
+textarea { min-height: 88px; width: 100%; border: 1px solid var(--border-muted); border-radius: 0; outline: 0; resize: vertical; background: var(--background-main); color: var(--text-primary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-ui); line-height: 1.5; padding: 12px; }
+textarea:focus { border-color: var(--border-primary); }
+.checkbox-line { align-items: start; grid-template-columns: 20px minmax(0, 1fr); }
+.checkbox-line input { width: 16px; min-height: 16px; margin: 2px 0 0; accent-color: var(--graphics); }
+.checkbox-line code { grid-column: 2; }
+.hud-button:disabled { cursor: not-allowed; opacity: 0.42; }
 </style>

@@ -43,6 +43,7 @@ function normalizeConceptNode(meta = {}, filePath = "") {
     type: meta.type || "concept",
     status: meta.status || "seed",
     summary: meta.summary || "",
+    contentFormat: meta.contentFormat || meta.content_format || "auto",
     filePath,
   };
 }
@@ -160,7 +161,7 @@ export function normalizeVault(rawFiles = {}) {
     .filter((node) => node.id);
   const nodes = [...domainNodes, ...conceptNodes];
   const edges = asArray(graphYaml.edges).map(normalizeEdge);
-  const notes = buildNoteIndex(rawFiles.noteFiles || {});
+  const notes = buildNoteIndex(rawFiles.noteFiles || {}, rawFiles.noteHtmlFiles || {});
   const scopes = buildGraphScopes({ domains, nodes, edges });
   const layouts = ensureScopeBoards(normalizeLayouts(graphLayoutYaml), scopes);
   const fileTree = buildFileTree(domains, nodes);

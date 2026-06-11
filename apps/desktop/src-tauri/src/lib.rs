@@ -12,6 +12,7 @@ struct VaultRawFiles {
     graph_layout_yaml: String,
     meta_files: HashMap<String, String>,
     note_files: HashMap<String, String>,
+    note_html_files: HashMap<String, String>,
     block_type_files: HashMap<String, String>,
 }
 
@@ -27,6 +28,7 @@ struct AiImportPackageFiles {
     patch_raw: String,
     generated_meta_files: HashMap<String, String>,
     generated_note_files: HashMap<String, String>,
+    generated_html_note_files: HashMap<String, String>,
     asset_files: Vec<AiImportAssetFile>,
     block_type_files: HashMap<String, String>,
     review_files: HashMap<String, String>,
@@ -143,7 +145,14 @@ fn normalize_zip_entry_path(entry_path: &str) -> Result<String, String> {
     Ok(normalized)
 }
 
+fn html_note_entry(entry_path: &str) -> bool {
+    entry_path.starts_with("generated/content/") && entry_path.ends_with("/note.html")
+}
+
 fn forbidden_wawapkg_extension(entry_path: &str) -> bool {
+    if html_note_entry(entry_path) {
+        return false;
+    }
     let lower = entry_path.to_ascii_lowercase();
     [".js", ".ts", ".vue", ".css", ".html", ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".jar", ".wasm"]
         .iter()
@@ -387,32 +396,13 @@ fn read_yaml_files_in_directory(
 }
 
 fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles, String> {
-    let package_file_path = package_file_path.trim();
-
-    if package_file_path.contains('\0') || package_file_path.contains('\r') || package_file_path.contains('\n') {
-        return Err("Invalid .wawapkg path: path contains control characters".into());
-    }
-
     if !package_file_path.to_ascii_lowercase().ends_with(".wawapkg") {
         return Err("Package file must use .wawapkg extension".into());
     }
-
-    let original_package_path = PathBuf::from(package_file_path);
-
-    if !original_package_path.exists() {
-        return Err(format!("Invalid .wawapkg path: file does not exist: {}", package_file_path));
-    }
-
-    if !original_package_path.is_file() {
-        return Err(format!("Invalid .wawapkg path: not a file: {}", package_file_path));
-    }
-
-    let package_path = original_package_path
+    let package_path = PathBuf::from(package_file_path)
         .canonicalize()
         .map_err(|error| format!("Failed to resolve .wawapkg path: {error}"))?;
-
-    let bytes = fs::read(&package_path)
-        .map_err(|error| format!("Failed to read .wawapkg: {error}"))?;
+    let bytes = fs::read(&package_path).map_err(|error| format!("Failed to read .wawapkg: {error}"))?;
     let mut eocd_offset = None;
     let min_offset = bytes.len().saturating_sub(0xffff + 22);
     for offset in (min_offset..=bytes.len().saturating_sub(22)).rev() {
@@ -482,28 +472,10 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
     }
 
     let script = r#"
+param([string]$PackagePath)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-$PackagePath = [Environment]::GetEnvironmentVariable('WAWA_PKG_PATH', 'Process')
-
-if ([string]::IsNullOrWhiteSpace($PackagePath)) {
-  throw "Invalid .wawapkg path: WAWA_PKG_PATH is empty"
-}
-
-$PackagePath = $PackagePath.Trim()
-
-if ($PackagePath.Contains([char]0) -or $PackagePath.Contains("`r") -or $PackagePath.Contains("`n")) {
-  throw "Invalid .wawapkg path: path contains control characters"
-}
-
-$ResolvedPath = (Resolve-Path -LiteralPath $PackagePath).ProviderPath
-
-if (-not (Test-Path -LiteralPath $ResolvedPath -PathType Leaf)) {
-  throw "Package file does not exist: $ResolvedPath"
-}
-
-$zip = [System.IO.Compression.ZipFile]::OpenRead($ResolvedPath)
+$zip = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
 $entries = @()
 try {
   foreach ($entry in $zip.Entries) {
@@ -527,29 +499,17 @@ try {
 }
 [Console]::Out.Write(($entries | ConvertTo-Json -Depth 4 -Compress))
 "#;
-    let powershell_package_path = original_package_path
-        .to_string_lossy()
-        .to_string();
-
     let output = Command::new("powershell")
-        .arg("-NoProfile") 
-        .arg("-ExecutionPolicy")
-        .arg("Bypass")
-        .arg("-Command")
-        .arg(script)
-        .env("WAWA_PKG_PATH", &powershell_package_path)
+        .args([
+            "-NoProfile",
+            "-Command",
+            script,
+            package_path.to_string_lossy().as_ref(),
+        ])
         .output()
         .map_err(|error| format!("Failed to read .wawapkg zip entries: {error}"))?;
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
-        return Err(format!(
-            "Failed to read .wawapkg archive via PowerShell.\nPath: {}\nStderr: {}\nStdout: {}",
-            powershell_package_path,
-            stderr,
-            stdout
-        ));
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }
     let raw_json = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let entries: Vec<WawaZipEntryPayload> = if raw_json.is_empty() {
@@ -623,6 +583,7 @@ try {
         patch_raw: text_files.get("patch.yaml").cloned().unwrap_or_default(),
         generated_meta_files: HashMap::new(),
         generated_note_files: HashMap::new(),
+        generated_html_note_files: HashMap::new(),
         asset_files,
         block_type_files: HashMap::new(),
         review_files: HashMap::new(),
@@ -632,6 +593,8 @@ try {
             package.generated_meta_files.insert(entry_path, contents);
         } else if entry_path.starts_with("generated/content/") && entry_path.ends_with("/note.md") {
             package.generated_note_files.insert(entry_path, contents);
+        } else if html_note_entry(&entry_path) {
+            package.generated_html_note_files.insert(entry_path, contents);
         } else if entry_path.starts_with("block-types/") && (entry_path.ends_with(".yaml") || entry_path.ends_with(".yml")) {
             package.block_type_files.insert(entry_path, contents);
         } else if entry_path.starts_with("review/") {
@@ -721,9 +684,11 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
 
     let mut meta_files = HashMap::new();
     let mut note_files = HashMap::new();
+    let mut note_html_files = HashMap::new();
     let mut block_type_files = HashMap::new();
     read_content_files(&root, &root.join("content"), "meta.yaml", &mut meta_files)?;
     read_content_files(&root, &root.join("content"), "note.md", &mut note_files)?;
+    read_content_files(&root, &root.join("content"), "note.html", &mut note_html_files)?;
     read_yaml_files_in_directory(&root, "block-types", &mut block_type_files)?;
 
     Ok(VaultRawFiles {
@@ -733,6 +698,7 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
         graph_layout_yaml: fs::read_to_string(root.join("graph-layout.yaml")).unwrap_or_default(),
         meta_files,
         note_files,
+        note_html_files,
         block_type_files,
     })
 }
