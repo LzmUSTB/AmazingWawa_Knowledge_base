@@ -1,129 +1,41 @@
 # Content Block Usage Guide
 
-## Purpose
-
 Use content blocks to improve learning density and clarity. Do not use blocks as decoration.
+
+For full tutorial/article presentation, use `contentFormat: html` instead of stacking many unrelated blocks.
 
 ## concept-card
 
-Use for:
-- definition,
-- why the concept matters,
-- core intuition,
-- compact high-level memory hook.
-
-Good fields:
-```yaml
-title:
-summary:
-why:
-key_intuition:
-points:
-tags:
-```
-
-Avoid making the concept-card the entire note. It should introduce the concept, not replace full explanation.
+Use for definition, why it matters, and core intuition.
 
 ## process-flow
 
-Use for:
-- pipelines,
-- algorithms,
-- authoring workflows,
-- dependency chains,
-- cause-effect stages.
+Use for pipelines, algorithms, authoring workflows, dependency chains, and cause-effect stages.
 
 Use stable ids and `depends_on`.
 
-Good:
-```yaml
-steps:
-  - id: input-noise
-    label: Input Noise
-  - id: derivative
-    label: Compute Derivative
-    depends_on: input-noise
-```
-
-Avoid:
-```yaml
-steps:
-  - Make it
-  - Process it
-  - Finish it
-```
-
 ## compare-table
 
-Use for:
-- technique comparisons,
-- tradeoffs,
-- alternatives,
-- misconception correction.
+Use for technique comparisons, tradeoffs, alternatives, and misconception correction.
 
 Rows should be conceptual dimensions, not random facts.
 
-Good rows:
-```yaml
-rows:
-  physical_accuracy: [...]
-  authoring_control: [...]
-  runtime_cost: [...]
-  failure_mode: [...]
-```
-
 ## code-explain
 
-Use for:
-- shader code,
-- pseudo-code,
-- formulas translated into algorithm,
-- data transformation steps.
-
-Provide line explanations.
+Use for shader code, pseudo-code, formulas translated into algorithm, or data transformation steps.
 
 ## quiz
 
-Use for:
-- review questions,
-- misconception checks,
-- transfer of knowledge.
-
-Good quiz questions ask why/how/what-if, not trivia.
+Use for review questions, misconception checks, and transfer of knowledge.
 
 ## expression-visualizer
 
-Use only when:
-- the expression is a scalar 2D curve or scalar 3D surface,
-- a safe render spec is provided,
-- parameters have meaningful slider ranges.
-
-Do not use for:
-- vector fields,
-- symbolic derivatives,
-- formulas with no meaningful interactive parameter.
+Use only when the expression is a scalar 2D curve or scalar 3D surface, a safe render spec is provided, and parameters have meaningful slider ranges.
 
 ## declarative visual blocks
 
-Use when:
-- a structured visual explanation is more useful than text,
-- labels and relationships matter,
-- geometry or stages must be inspected.
-
-Use for:
-- vector field intuition,
-- architecture diagrams,
-- pipeline diagrams,
-- formula decomposition,
-- input/output mapping,
-- state transition diagrams.
+Use when structured labels and relationships matter.
 
 ## packaged images
 
-Use when:
-- a static diagram is enough,
-- source material has a useful figure,
-- the visual depends on raster detail,
-- a generated explanatory image is clearer than a block.
-
-Every image must have meaningful alt text.
+Use when source material has a useful figure or the visual depends on raster detail.

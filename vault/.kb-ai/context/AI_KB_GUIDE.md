@@ -4,7 +4,7 @@
 
 Final user-facing output must be a single `.wawapkg` file.
 
-`.wawapkg` is a ZIP-compatible archive with a custom extension. The archive root must contain:
+A `.wawapkg` is a ZIP-compatible archive. The archive root must contain:
 
 ```text
 mimetype
@@ -22,124 +22,46 @@ The `mimetype` file must contain exactly:
 application/x-wawa-kb-ai-import-package
 ```
 
-Do not output an ordinary `.zip` as the final artifact. Do not ask the user to manually place files into the vault.
-
 ## Primary goal
 
-The package must create **learnable knowledge**, not a loose summary.
+Create learnable knowledge, not a loose summary. A good package should help the user understand, recall, connect, and apply the source material.
 
-A good import package should help the user:
+## Required planning
 
-1. understand the mechanism,
-2. recall the concept later,
-3. connect the concept to existing knowledge,
-4. apply the knowledge in implementation or analysis,
-5. inspect source-derived claims.
+Before writing package files, create a plan and include it in `review/import-plan.md`:
 
-## Required workflow before writing package files
+1. source scope,
+2. knowledge extraction,
+3. candidate nodes and rejected nodes,
+4. relation plan,
+5. note format decision: `markdown`, `html`, or `none`,
+6. block/asset plan,
+7. quality self-check.
 
-Before creating files, internally perform this planning sequence and write the result into `review/import-plan.md`:
+## Content format decision
 
-1. **Source scope**  
-   What does the source actually cover? What is outside scope?
+Use `contentFormat: markdown` and `note.md` for compact structured notes.
 
-2. **Knowledge extraction**  
-   Extract concepts, mechanisms, procedures, parameters, examples, limitations, and misconceptions.
+Use `contentFormat: html` and `note.html` for high-quality tutorial/article notes, figure-heavy explanations, source-asset-heavy notes, and visual reading experiences.
 
-3. **Node plan**  
-   Decide which knowledge objects deserve nodes. Avoid one huge article node. Avoid overly tiny nodes.
+Use `contentFormat: none` for empty placeholder nodes that should appear in the graph but intentionally have no note yet.
 
-4. **Relation plan**  
-   Decide hierarchy and semantic relations. Use relation direction carefully.
+## Source asset policy
 
-5. **Note plan**  
-   Decide what each note must teach, what blocks/assets are needed, and what evidence supports each claim.
+Prefer original source assets when they are public/stable and improve explanation. HTML notes may reference stable `https://` image/video URLs directly, but packaged local assets are preferred for durability.
 
-6. **Quality self-check**  
-   Evaluate each note against `NOTE_QUALITY_RUBRIC.md`. Target score: 4 or higher.
-
-## Output language
-
-Write explanatory note content in Chinese by default. Keep standard technical terms in English when they are more precise, for example `Curl Noise`, `Divergence`, `gradient`, `vector field`, `shader`, `pipeline`.
-
-Use concise but complete technical Chinese. Do not mechanically translate English. Explain mechanisms.
-
-## Domain rules
-
-If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`.
-
-If no suitable existing domain fits, create a small, stable, broad domain with `add_domain`.
-
-Good domain examples:
-
-```text
-computer-graphics
-machine-learning
-web-dev
-simulation
-linear-algebra
-game-dev
-```
-
-Bad domain examples:
-
-```text
-curl-noise-from-linkedin-article
-nicholas-seavert-illugen-post
-random-vfx-tips
-```
-
-Do not create excessive narrow domains.
-
-## Asset rules
-
-Assets are allowed and encouraged when they improve explanation.
-
-Put packaged assets under:
-
-```text
-generated/content/<domain>/<node-id>/assets/<lowercase-kebab-name.ext>
-```
-
-Reference local assets from `note.md`:
+For Markdown notes, use local packaged assets only:
 
 ```markdown
 ![Alt text](assets/example-diagram.png)
-[Attachment label](assets/source-notes.pdf)
 ```
 
-Remote URLs and data URLs are not allowed for note assets. Package images locally.
+## Output language
 
-Use images for:
-- static diagrams,
-- source figures,
-- visual intuition,
-- screenshots,
-- comparison examples.
+Write explanatory note content in Chinese by default. Keep standard technical terms in English when they are more precise.
 
-Use declarative visual blocks for:
-- structured diagrams,
-- selectable nodes,
-- staged mechanisms,
-- repeated visual elements,
-- formula callouts with semantic labels.
+Do not mechanically translate English. Explain mechanisms.
 
-## Review files
+## Domain rules
 
-Every package should include:
-
-```text
-review/import-plan.md
-review/validation-checklist.md
-```
-
-Recommended additional review files:
-
-```text
-review/source-extraction.md
-review/relation-rationale.md
-review/block-decision-report.md
-review/unresolved-questions.md
-```
-
-Review files are not imported as notes. They are for human inspection and package quality control.
+If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`. If no suitable existing domain fits, create a small, stable, broad domain. Do not create excessive narrow domains.

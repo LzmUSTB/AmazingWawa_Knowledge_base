@@ -95,43 +95,10 @@ answer: 因为运动方向更倾向于沿等值线绕行。
 :::
 ```
 
-### expression-visualizer
+## HTML Rich Notes
 
-```markdown
-:::expression-visualizer
-title: Wave Surface
-mode: 3d
-formula_display: z = amplitude * sin(freqX * x) * cos(freqY * y)
-render:
-  kind: surface3d
-  z: amplitude * sin(freqX * x) * cos(freqY * y)
-  xRange: [-3.14, 3.14]
-  yRange: [-3.14, 3.14]
-  zRange: [-2, 2]
-parameters:
-  - name: amplitude
-    label: Amplitude
-    default: 1
-    min: 0
-    max: 2
-    step: 0.05
-  - name: freqX
-    label: X Frequency
-    default: 1
-    min: 0.1
-    max: 5
-    step: 0.1
-  - name: freqY
-    label: Y Frequency
-    default: 1
-    min: 0.1
-    max: 5
-    step: 0.1
-:::
-```
+Use `contentFormat: html` for tutorial/article pages that need full layout control. See `HTML_RICH_NOTE_GUIDE.md`.
 
 ## Custom Declarative Blocks
 
-If no custom declarative blocks are installed, create one only when a safe structured visual is clearly better than native blocks or a static image.
-
-Use `DECLARATIVE_VISUAL_GRAMMAR_GUIDE.md` for syntax.
+- none installed

@@ -1,78 +1,26 @@
 # Note Quality Rubric
 
-Use this rubric to self-check every generated note before packaging.
+Target score: 4 or higher.
 
-Target score: **4 or higher**.
+## 5 Excellent
 
-## Score 5 — Excellent
+Precise definition, clear problem, mechanism, examples, parameters, mistakes, relations, review questions, and purposeful visuals. Tutorial-style notes preserve and improve the original teaching rhythm.
 
-The note is directly useful for learning and later review.
+## 4 Good
 
-Criteria:
-- precise definition,
-- clear problem solved,
-- strong intuition,
-- mechanism explained,
-- implementation or formal detail when relevant,
-- concrete example,
-- parameters/variables explained,
-- limitations or misconceptions,
-- meaningful relations to other nodes,
-- review questions test understanding,
-- visuals/blocks are purposeful.
+Usable and mostly complete. Clear mechanism and at least one concrete example.
 
-## Score 4 — Good
+## 3 Shallow
 
-The note is usable and mostly complete.
+Structurally valid but too summary-like.
 
-Criteria:
-- definition and mechanism are clear,
-- at least one concrete example,
-- at least one common mistake or limitation,
-- relations are meaningful,
-- blocks support the explanation.
+## 2 Poor
 
-Missing one minor part is acceptable.
+Mostly paraphrase with little mechanism. Tutorial source is heavily compressed.
 
-## Score 3 — Acceptable but shallow
+## 1 Invalid
 
-The note is structurally valid but has limited learning value.
-
-Problems may include:
-- mostly summary,
-- weak example,
-- little mechanism,
-- few implementation details,
-- relations are generic,
-- review questions are superficial.
-
-Revise before packaging if the topic is important.
-
-## Score 2 — Poor
-
-The note is mainly a paraphrase of the source.
-
-Problems:
-- no clear mechanism,
-- no example,
-- no parameters,
-- no real relation reasoning,
-- content could not be used for review.
-
-Do not package without revision.
-
-## Score 1 — Invalid
-
-The note is misleading or nearly empty.
-
-Problems:
-- incorrect explanation,
-- fabricated details,
-- missing core fields,
-- broken block syntax,
-- irrelevant content.
-
-Reject or regenerate.
+Incorrect, empty, misleading, or broken.
 
 ## Mandatory self-check
 
@@ -81,6 +29,7 @@ For each note, answer in `review/validation-checklist.md`:
 ```yaml
 note_quality:
   node_id:
+  contentFormat: markdown | html | none
   estimated_score:
   strongest_part:
   weakest_part:
@@ -88,4 +37,11 @@ note_quality:
   revision_done: true | false
 ```
 
-If estimated score is below 4, revise before final package.
+For rich HTML notes, also check:
+
+- not shorter than the source when source is already clear,
+- original assets are used where needed,
+- visual rhythm helps understanding,
+- app style classes are used,
+- font-size scale can affect all text,
+- no inline scripts/styles.
