@@ -95,10 +95,36 @@ parameters:
 
 ## Supported expression syntax
 
-Allowed: numbers, variables `x`, `y`, `t`, declared parameter names, operators `+ - * / ^`, parentheses, constants `pi`, `PI`, `e`, and functions `sin`, `cos`, `tan`, `abs`, `sqrt`, `pow`, `exp`, `log`, `min`, `max`, `floor`, `ceil`.
+Allowed:
+- numbers,
+- variables `x`, `y`, `t`, and declared parameter names,
+- operators `+ - * / ^`,
+- parentheses,
+- constants `pi`, `PI`, `e`,
+- functions `sin`, `cos`, `tan`, `abs`, `sqrt`, `pow`, `exp`, `log`, `min`, `max`, `floor`, `ceil`.
 
-Unsupported: arbitrary JavaScript, member access, strings, arrays, objects, assignment, conditionals, semicolons, `window`, `document`, `fetch`, `Function`, `eval`, `constructor`, `prototype`, implicit multiplication such as `2x`, and symbolic derivatives such as `∂N/∂x`.
+Unsupported:
+- arbitrary JavaScript,
+- member access,
+- strings, arrays, objects,
+- assignment,
+- conditionals,
+- semicolons,
+- `window`, `document`, `fetch`, `Function`, `eval`, `constructor`, `prototype`,
+- implicit multiplication such as `2x`,
+- symbolic derivatives such as `∂N/∂x`.
 
 ## When not to use expression-visualizer
 
-Do not use `expression-visualizer` for vector fields such as `F(x,y) = (∂N/∂y, -∂N/∂x)`. This is not a 2D curve and not a scalar 3D surface. Prefer a packaged local image asset, a declarative visual block, or a future dedicated `vector-field-visualizer` block.
+Do not use `expression-visualizer` for vector fields such as:
+
+```text
+F(x,y) = (∂N/∂y, -∂N/∂x)
+```
+
+This is not a 2D curve and not a scalar 3D surface.
+
+Prefer:
+1. packaged local image asset,
+2. declarative visual block,
+3. future dedicated `vector-field-visualizer` block.

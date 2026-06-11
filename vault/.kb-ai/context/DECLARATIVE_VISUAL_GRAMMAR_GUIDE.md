@@ -34,7 +34,11 @@ Use declarative visual blocks when the note needs a structured technical visual:
 - `line`: primitive line
 - `circle`: primitive circle
 
-Coordinates use normalized 2D values: `x`, `y`, `x1`, `y1`, `x2`, `y2`, `width`, `height`, and `radius` are in [0, 1].
+Coordinates use normalized 2D values:
+
+```text
+x, y, x1, y1, x2, y2, width, height, radius ∈ [0, 1]
+```
 
 ## Data binding
 
@@ -50,6 +54,51 @@ elements:
       x: $.x
       y: $.y
 ```
+
+## Recommended visual patterns
+
+### Pipeline diagram
+
+Use nodes and arrows.
+
+```yaml
+elements:
+  - type: node
+    id: input
+    label: Input
+    x: 0.2
+    y: 0.4
+  - type: node
+    id: process
+    label: Process
+    x: 0.5
+    y: 0.4
+  - type: arrow
+    from: input
+    to: process
+```
+
+### Formula decomposition
+
+Use labels and formula-callout.
+
+```yaml
+elements:
+  - type: formula-callout
+    id: formula
+    text: F(x,y) = (dN/dy, -dN/dx)
+    x: 0.5
+    y: 0.25
+  - type: label
+    id: derivative-label
+    text: derivative gives local change
+    x: 0.5
+    y: 0.55
+```
+
+### Vector-field intuition
+
+Use primitive lines/arrows/circles to show direction and structure. Do not try to compute vector fields here; use it as a labeled conceptual diagram.
 
 ## Example block-type
 
@@ -107,4 +156,19 @@ interactions:
   - select
 ```
 
-Do not include script, eval, iframe, HTML, CSS, JS, Vue, remote URLs, arbitrary event handlers, inline SVG, or executable code.
+## Prohibited
+
+Do not include:
+- script,
+- eval,
+- iframe,
+- HTML,
+- CSS,
+- JS,
+- Vue,
+- remote URLs,
+- arbitrary event handlers,
+- inline SVG,
+- executable code.
+
+Prefer packaged images for static figures. Use visual grammar only when structured labels, dependencies, states, or repeated generated geometry make the explanation clearer.
