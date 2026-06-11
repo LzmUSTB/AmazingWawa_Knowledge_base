@@ -2,7 +2,7 @@
 
 Prefer existing native blocks. Create declarative visual blocks only when existing blocks are insufficient.
 
-If a simple static diagram or image is enough, prefer a packaged local asset image. If interaction, structured comparison, or semantic highlighting is needed, use a declarative visual block. Propose a native block only when declarative blocks are insufficient.
+If a simple static diagram or image is enough, prefer a packaged local asset image. If interaction, structured comparison, semantic highlighting, repeated geometry, or labeled technical structure is needed, use a declarative visual block. Propose a native block only when declarative blocks are insufficient.
 
 Packages cannot create relation types or native renderer code. Relation types are frozen: contains, depends-on, used-in, compares-with.
 

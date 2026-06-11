@@ -1,7 +1,2 @@
 schemaVersion: 1
-domains:
-  - id: computer-graphics
-    title: 计算机图形学
-    description: 渲染、Shader、程序化纹理、实时 VFX、材质、图像处理和图形数学相关知识。
-    color: "#00B7FF"
-    order: 10
+domains: []

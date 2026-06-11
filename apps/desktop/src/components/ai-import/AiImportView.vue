@@ -1,10 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
-import {
-  applyWawaPackage,
-  chooseWawaPackageFile,
-  inspectWawaPackage,
-} from "../../data/desktop-vault-adapter.js";
+import { applyWawaPackage, chooseWawaPackageFile, inspectWawaPackage } from "../../data/desktop-vault-adapter.js";
 import AiImportApplyBar from "./AiImportApplyBar.vue";
 import AiImportConflictPanel from "./AiImportConflictPanel.vue";
 import AiImportGraphDiff from "./AiImportGraphDiff.vue";
@@ -12,10 +8,7 @@ import AiImportNotePreview from "./AiImportNotePreview.vue";
 import AiImportSummary from "./AiImportSummary.vue";
 
 const props = defineProps({
-  vaultRootPath: {
-    type: String,
-    required: true,
-  },
+  vaultRootPath: { type: String, required: true },
 });
 
 const emit = defineEmits(["applied"]);
@@ -33,6 +26,7 @@ const confirmedWarnings = ref(false);
 const validation = computed(() => inspection.value?.validation || null);
 const diff = computed(() => inspection.value?.diff || null);
 const blockRegistry = computed(() => inspection.value?.validation?.blockRegistry || {});
+const assetFiles = computed(() => inspection.value?.packageFiles?.assetFiles || []);
 const selectedNotePreview = computed(() => diff.value?.notePreviews?.[selectedNoteIndex.value] || diff.value?.notePreviews?.[0] || null);
 const history = computed(() => inspection.value?.history || { applied: false, appliedAt: "", raw: "" });
 const hasWarnings = computed(() => Boolean(validation.value?.warnings?.length));
@@ -120,17 +114,21 @@ async function applySelectedPackage() {
             Import .wawapkg
           </button>
         </section>
+
         <AiImportSummary :validation="validation" />
+
         <section v-if="history.applied" class="ai-panel applied-panel">
           <div class="section-label">Applied</div>
           <strong>APPLIED</strong>
           <small>{{ history.appliedAt || "history exists" }}</small>
         </section>
+
         <AiImportConflictPanel
           :errors="validation?.errors || []"
           :warnings="validation?.warnings || []"
           :review-items="validation?.reviewItems || []"
         />
+
         <section v-if="inspection?.packageFiles" class="ai-panel review-files">
           <div class="section-label">Package Review Files</div>
           <details v-for="(contents, filePath) in inspection.packageFiles.reviewFiles" :key="filePath">
@@ -142,6 +140,7 @@ async function applySelectedPackage() {
 
       <main class="center-column">
         <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
+
         <label v-if="diff?.notePreviews?.length > 1" class="note-preview-selector">
           <span>Preview Note</span>
           <select v-model.number="selectedNoteIndex">
@@ -150,11 +149,13 @@ async function applySelectedPackage() {
             </option>
           </select>
         </label>
-        <AiImportNotePreview :preview="selectedNotePreview" :block-registry="blockRegistry" />
+
+        <AiImportNotePreview :preview="selectedNotePreview" :block-registry="blockRegistry" :asset-files="assetFiles" />
       </main>
 
       <aside class="right-column">
         <AiImportGraphDiff :diff="diff" />
+
         <section class="ai-panel">
           <div class="section-label">New Domains</div>
           <div v-if="diff?.domainsToAdd?.length" class="domain-add-list">
@@ -166,6 +167,7 @@ async function applySelectedPackage() {
           </div>
           <p v-else class="empty-line">No new domains.</p>
         </section>
+
         <section class="ai-panel">
           <div class="section-label">New Assets</div>
           <div v-if="diff?.assetsToAdd?.length" class="asset-add-list">
@@ -177,6 +179,7 @@ async function applySelectedPackage() {
           </div>
           <p v-else class="empty-line">No new assets.</p>
         </section>
+
         <section class="ai-panel">
           <div class="section-label">New Block Types</div>
           <div v-if="diff?.blockTypesToAdd?.length" class="block-type-list">
@@ -188,6 +191,7 @@ async function applySelectedPackage() {
           </div>
           <p v-else class="empty-line">No new block types.</p>
         </section>
+
         <section class="ai-panel">
           <div class="section-label">File Diff</div>
           <div class="file-list">
@@ -202,6 +206,7 @@ async function applySelectedPackage() {
           </div>
           <p v-if="!diff?.filesToCreate?.length && !diff?.filesToModify?.length" class="empty-line">No file changes.</p>
         </section>
+
         <AiImportApplyBar
           v-model:confirmed-warnings="confirmedWarnings"
           :applying="applying"
@@ -262,218 +267,25 @@ async function applySelectedPackage() {
   overflow: auto;
 }
 
-.import-cta p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-small);
-  line-height: 1.5;
-}
-
-.applied-panel strong {
-  color: var(--language);
-  font-size: var(--font-size-ui);
-  text-transform: uppercase;
-}
-
-.applied-panel small {
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.review-files details {
-  border: 1px solid var(--border-muted);
-  background: var(--background-main);
-  color: var(--text-secondary);
-}
-
-.review-files summary {
-  cursor: pointer;
-  color: var(--text-primary);
-  font-size: var(--font-size-small);
-  font-weight: 800;
-  padding: 8px;
-  text-transform: uppercase;
-}
-
-.review-files pre {
-  max-height: 220px;
-  overflow: auto;
-  margin: 0;
-  border-top: 1px solid var(--border-muted);
-  color: var(--text-secondary);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-  line-height: 1.5;
-  padding: 10px;
-  white-space: pre-wrap;
-}
-
-.center-column {
-  align-content: stretch;
-}
-
-.note-preview-selector {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--border-muted);
-  background: var(--background-panel);
-  padding: 10px;
-}
-
-.note-preview-selector span {
-  color: var(--text-secondary);
-  font-size: var(--font-size-small);
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.note-preview-selector select {
-  min-width: 0;
-  min-height: 30px;
-  border: 1px solid var(--border-muted);
-  border-radius: 0;
-  background: var(--background-main);
-  color: var(--text-primary);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-}
-
-.file-list {
-  display: grid;
-  gap: 8px;
-}
-
-.block-type-list {
-  display: grid;
-  gap: 8px;
-}
-
-.domain-add-list {
-  display: grid;
-  gap: 8px;
-}
-
-.asset-add-list {
-  display: grid;
-  gap: 8px;
-}
-
-.block-type-row {
-  display: grid;
-  gap: 4px;
-  border: 1px solid var(--border-muted);
-  background: var(--background-main);
-  padding: 9px;
-}
-
-.domain-add-row {
-  display: grid;
-  gap: 4px;
-  border: 1px solid var(--border-muted);
-  border-left: 5px solid var(--domain-color, var(--graphics));
-  background: var(--background-main);
-  padding: 9px;
-}
-
-.asset-add-row {
-  display: grid;
-  gap: 4px;
-  border: 1px solid var(--border-muted);
-  background: var(--background-main);
-  padding: 9px;
-}
-
-.asset-add-row strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  color: var(--text-primary);
-  font-size: var(--font-size-small);
-}
-
-.asset-add-row span,
-.asset-add-row small {
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-}
-
-.domain-add-row strong {
-  color: var(--text-primary);
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.domain-add-row span,
-.domain-add-row small {
-  overflow-wrap: anywhere;
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-}
-
-.block-type-row strong {
-  color: var(--text-primary);
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.block-type-row span,
-.block-type-row small {
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.file-row {
-  display: grid;
-  gap: 4px;
-  border: 1px solid var(--border-muted);
-  background: var(--background-main);
-  padding: 9px;
-}
-
-.file-row strong,
-.empty-line {
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.file-row span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  color: var(--text-primary);
-  font-size: var(--font-size-small);
-  font-weight: 800;
-}
-
-.empty-line {
-  margin: 0;
-}
-
-.error-banner {
-  border: 1px solid var(--game-dev);
-  background: var(--background-main);
-  color: var(--game-dev);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-  padding: 10px;
-}
-
-@media (max-width: 1180px) {
-  .ai-import-grid {
-    grid-template-columns: 260px minmax(0, 1fr);
-  }
-
-  .right-column {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
+.center-column { align-content: stretch; }
+.import-cta p { margin: 0; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.5; }
+.applied-panel strong { color: var(--language); font-size: var(--font-size-ui); text-transform: uppercase; }
+.applied-panel small { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); text-transform: uppercase; }
+.review-files details { border: 1px solid var(--border-muted); background: var(--background-main); color: var(--text-secondary); }
+.review-files summary { cursor: pointer; color: var(--text-primary); font-size: var(--font-size-small); font-weight: 800; padding: 8px; text-transform: uppercase; }
+.review-files pre { max-height: 220px; overflow: auto; margin: 0; border-top: 1px solid var(--border-muted); color: var(--text-secondary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); line-height: 1.5; padding: 10px; white-space: pre-wrap; }
+.note-preview-selector { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid var(--border-muted); background: var(--background-panel); padding: 10px; }
+.note-preview-selector span { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: 800; text-transform: uppercase; }
+.note-preview-selector select { min-width: 0; min-height: 30px; border: 1px solid var(--border-muted); border-radius: 0; background: var(--background-main); color: var(--text-primary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); }
+.file-list, .block-type-list, .domain-add-list, .asset-add-list { display: grid; gap: 8px; }
+.block-type-row, .asset-add-row, .file-row { display: grid; gap: 4px; border: 1px solid var(--border-muted); background: var(--background-main); padding: 9px; }
+.domain-add-row { display: grid; gap: 4px; border: 1px solid var(--border-muted); border-left: 5px solid var(--domain-color, var(--graphics)); background: var(--background-main); padding: 9px; }
+.asset-add-row strong { min-width: 0; overflow-wrap: anywhere; color: var(--text-primary); font-size: var(--font-size-small); }
+.asset-add-row span, .asset-add-row small, .domain-add-row span, .domain-add-row small, .block-type-row span, .block-type-row small { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); }
+.domain-add-row strong, .block-type-row strong { color: var(--text-primary); font-size: var(--font-size-small); text-transform: uppercase; }
+.file-row strong, .empty-line { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); text-transform: uppercase; }
+.file-row span { min-width: 0; overflow-wrap: anywhere; color: var(--text-primary); font-size: var(--font-size-small); font-weight: 800; }
+.empty-line { margin: 0; }
+.error-banner { border: 1px solid var(--game-dev); background: var(--background-main); color: var(--game-dev); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); padding: 10px; }
+@media (max-width: 1180px) { .ai-import-grid { grid-template-columns: 260px minmax(0, 1fr); } .right-column { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 </style>

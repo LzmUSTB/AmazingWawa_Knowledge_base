@@ -10,6 +10,10 @@ defineProps({
     type: Object,
     default: () => ({}),
   },
+  assetFiles: {
+    type: Array,
+    default: () => [],
+  },
 });
 </script>
 
@@ -22,9 +26,16 @@ defineProps({
       </div>
       <span v-if="preview" class="preview-mode">{{ preview.mode }}</span>
     </header>
+
     <div v-if="preview" class="note-preview-surface">
-      <NoteBlockRenderer :markdown="preview.markdown" :block-registry="blockRegistry" />
+      <NoteBlockRenderer
+        :markdown="preview.markdown"
+        :block-registry="blockRegistry"
+        :preview-node="preview"
+        :asset-files="assetFiles"
+      />
     </div>
+
     <p v-else class="empty-line">No generated note preview.</p>
   </section>
 </template>

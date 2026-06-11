@@ -33,8 +33,12 @@ const ALLOWED_ELEMENT_TYPES = new Set([
   "edge",
   "arrow",
   "label",
+  "text",
   "badge",
   "formula-callout",
+  "rect",
+  "line",
+  "circle",
 ]);
 const ALLOWED_INTERACTIONS = new Set(["select", "highlight-related"]);
 
@@ -44,57 +48,87 @@ function asArray(value) {
 
 function hasExecutableField(value, path = []) {
   if (!value || typeof value !== "object") return "";
+
   for (const [key, child] of Object.entries(value)) {
     const normalizedKey = key.toLowerCase();
     const nextPath = [...path, key];
+
     if (normalizedKey.startsWith("on") || EXECUTABLE_KEYS.has(normalizedKey)) {
       return nextPath.join(".");
     }
+
     const nested = hasExecutableField(child, nextPath);
     if (nested) return nested;
   }
+
   return "";
 }
 
 function layoutWarnings(definition) {
   const warnings = [];
   const layout = definition.renderer?.layout || {};
+
   if (layout.type && !ALLOWED_LAYOUT_TYPES.has(layout.type)) {
     warnings.push(`Unsupported declarative layout "${layout.type}".`);
   }
+
   asArray(layout.panels).forEach((panel) => {
     if (panel?.type && !ALLOWED_PANEL_TYPES.has(panel.type)) {
       warnings.push(`Unsupported panel type "${panel.type}".`);
     }
   });
-  ["left", "right"].forEach((slot) => {
+
+  ["left", "right", "panel"].forEach((slot) => {
     const panel = layout[slot];
     if (panel?.type && !ALLOWED_PANEL_TYPES.has(panel.type)) {
       warnings.push(`Unsupported ${slot} panel type "${panel.type}".`);
     }
   });
+
+  return warnings;
+}
+
+function grammarElementWarnings(element, context) {
+  const warnings = [];
+
+  if (!element || typeof element !== "object") return warnings;
+
+  if (element.type && !ALLOWED_ELEMENT_TYPES.has(element.type)) {
+    warnings.push(`${context}: Element "${element.type}" is unsupported and will be ignored.`);
+  }
+
+  if (element.template && typeof element.template === "object") {
+    warnings.push(...grammarElementWarnings(element.template, `${context}.template`));
+  }
+
+  asArray(element.elements).forEach((child, index) => {
+    warnings.push(...grammarElementWarnings(child, `${context}.elements[${index}]`));
+  });
+
   return warnings;
 }
 
 function grammarWarnings(definition) {
   const warnings = [];
   const scenes = definition.visualGrammar?.scenes || {};
+
   Object.entries(scenes).forEach(([sceneName, scene]) => {
     if (scene.coordinateSystem && !ALLOWED_COORDINATE_SYSTEMS.has(scene.coordinateSystem)) {
       warnings.push(`Scene "${sceneName}" uses unsupported coordinate system "${scene.coordinateSystem}".`);
     }
-    asArray(scene.elements).forEach((element) => {
-      if (element?.type && !ALLOWED_ELEMENT_TYPES.has(element.type)) {
-        warnings.push(`Element "${element.type}" is unsupported and will be ignored.`);
-      }
+
+    asArray(scene.elements).forEach((element, index) => {
+      warnings.push(...grammarElementWarnings(element, `Scene "${sceneName}".elements[${index}]`));
     });
   });
+
   asArray(definition.interactions).forEach((interaction) => {
     const type = typeof interaction === "string" ? interaction : interaction?.type;
     if (type && !ALLOWED_INTERACTIONS.has(type)) {
       warnings.push(`Interaction "${type}" is unsupported and will be ignored.`);
     }
   });
+
   return warnings;
 }
 
@@ -140,9 +174,10 @@ export function normalizeBlockTypes(blockTypeFiles = {}) {
       return;
     }
 
-    const definition = normalizeBlockTypeDefinition(filePath.replaceAll("\\", "/"), parsed);
+    const definition = normalizeBlockTypeDefinition(filePath.replaceAll("\\\\", "/"), parsed);
     definition.errors.forEach((message) => errors.push(`${filePath}: ${message}`));
     definition.warnings.forEach((message) => warnings.push(`${filePath}: ${message}`));
+
     if (!definition.errors.length && !definitions[definition.type]) {
       definitions[definition.type] = definition;
     } else if (definitions[definition.type]) {

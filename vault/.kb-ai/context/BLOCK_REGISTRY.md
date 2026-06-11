@@ -27,6 +27,9 @@ steps:
   - id: solve
     label: Solve constraints
     depends_on: predict
+  - id: update
+    label: Update velocity
+    depends_on: solve
 :::
 
 :::expression-visualizer
@@ -64,6 +67,20 @@ parameters:
 columns: [A, B]
 rows:
   stability: [high, medium]
+:::
+
+:::code-explain
+language: glsl
+code: |
+  vec2 uv = fragCoord / resolution;
+lines:
+  1: Normalize pixel position to UV coordinates.
+:::
+
+:::quiz
+question: Why does pressure projection reduce divergence?
+choices: [It cancels compressive velocity components, It adds noise, It changes mesh topology]
+answer: It cancels compressive velocity components.
 :::
 ```
 

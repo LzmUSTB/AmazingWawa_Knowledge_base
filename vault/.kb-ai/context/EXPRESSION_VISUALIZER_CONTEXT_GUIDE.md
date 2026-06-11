@@ -95,78 +95,10 @@ parameters:
 
 ## Supported expression syntax
 
-Allowed:
-- numbers
-- variables: `x`, `y`, `t`, and names declared in `parameters`
-- operators: `+`, `-`, `*`, `/`, `^`
-- parentheses
-- constants: `pi`, `PI`, `e`
-- functions:
-  - `sin`
-  - `cos`
-  - `tan`
-  - `abs`
-  - `sqrt`
-  - `pow`
-  - `exp`
-  - `log`
-  - `min`
-  - `max`
-  - `floor`
-  - `ceil`
+Allowed: numbers, variables `x`, `y`, `t`, declared parameter names, operators `+ - * / ^`, parentheses, constants `pi`, `PI`, `e`, and functions `sin`, `cos`, `tan`, `abs`, `sqrt`, `pow`, `exp`, `log`, `min`, `max`, `floor`, `ceil`.
 
-Unsupported:
-- arbitrary JavaScript
-- member access
-- strings
-- arrays
-- objects
-- assignment
-- conditionals
-- semicolons
-- `window`, `document`, `fetch`, `Function`, `eval`, `constructor`, `prototype`
-- implicit multiplication such as `2x`; write `2 * x`
-- symbolic derivatives such as `∂N/∂x`
-
-## Parameter rules
-
-Each slider parameter should include:
-
-```yaml
-- name: amplitude
-  label: Amplitude
-  default: 1
-  min: 0
-  max: 3
-  step: 0.05
-```
-
-Use meaningful parameter names. Do not rely on automatic `a`, `b`, `c`, `d` sliders unless the formula actually uses those names.
+Unsupported: arbitrary JavaScript, member access, strings, arrays, objects, assignment, conditionals, semicolons, `window`, `document`, `fetch`, `Function`, `eval`, `constructor`, `prototype`, implicit multiplication such as `2x`, and symbolic derivatives such as `∂N/∂x`.
 
 ## When not to use expression-visualizer
 
-Do not use `expression-visualizer` for vector fields such as:
-
-```text
-F(x,y) = (∂N/∂y, -∂N/∂x)
-```
-
-This is not a 2D curve and not a scalar 3D surface. For curl, divergence, flow fields, or vector-field intuition, prefer:
-
-1. a packaged local image asset,
-2. a declarative visual block,
-3. a future dedicated `vector-field-visualizer` block.
-
-## Package validation guidance
-
-A `.wawapkg` should be treated as invalid or should warn if:
-
-- `expression-visualizer` has a `formula` but no `render`.
-- `render.kind` is unsupported.
-- `render.y` / `render.z` references undeclared variables.
-- a parameter lacks a numeric `default`, `min`, `max`, or `step`.
-- expression syntax contains unsupported characters or functions.
-
-## Safe fallback
-
-If a block has no valid render spec, the renderer should show the formula and an explicit "not rendered" message. It must not draw a default sine curve or any unrelated demo graph.
+Do not use `expression-visualizer` for vector fields such as `F(x,y) = (∂N/∂y, -∂N/∂x)`. This is not a 2D curve and not a scalar 3D surface. Prefer a packaged local image asset, a declarative visual block, or a future dedicated `vector-field-visualizer` block.

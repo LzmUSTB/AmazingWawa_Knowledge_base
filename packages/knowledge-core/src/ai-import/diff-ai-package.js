@@ -36,6 +36,7 @@ function mergeMarkdown(currentMarkdown = "", operation = {}) {
   const lines = currentMarkdown.split(/\r?\n/);
   const index = lines.findIndex((line) => lineHeadingText(line).toLowerCase() === heading);
   if (index < 0) return `${currentMarkdown.replace(/\s+$/, "")}\n\n${markdown.trim()}\n`;
+
   const insertIndex = insertMode === "before-heading" ? index : index + 1;
   const nextLines = [...lines];
   nextLines.splice(insertIndex, 0, "", markdown.trim(), "");
@@ -81,9 +82,7 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
         order: operation.order,
         reason: "domain creation from package",
       });
-      if (!filesToModify.some((file) => file.path === "domains.yaml")) {
-        filesToModify.push({ path: "domains.yaml", kind: "domains" });
-      }
+      if (!filesToModify.some((file) => file.path === "domains.yaml")) filesToModify.push({ path: "domains.yaml", kind: "domains" });
       if (!currentVault.vault?.defaultDomain && !filesToModify.some((file) => file.path === "vault.yaml")) {
         filesToModify.push({ path: "vault.yaml", kind: "vault" });
       }
@@ -115,6 +114,7 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
       graphDiff.push({ action: "add", edge: containsEdge, reason: "structural contains edge for add_node" });
       notePreviews.push({
         nodeId: operation.id,
+        domain: operation.domain,
         title: operation.title,
         mode: "create",
         markdown: packageFiles.generatedNoteFiles[generatedNotePath(operation)] || "",
@@ -124,11 +124,13 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
     if (operation.type === "append_note_section") {
       const targetId = operation.targetId || operation.id;
       const node = (currentVault.nodes || []).find((item) => item.id === targetId);
-      const notePath = node ? `content/${node.domain}/${targetId}/note.md` : `content/${targetId}/note.md`;
+      const domain = operation.domain || node?.domain || "";
+      const notePath = domain ? `content/${domain}/${targetId}/note.md` : `content/${targetId}/note.md`;
       const currentMarkdown = currentVault.notes?.[targetId]?.markdown || "";
       filesToModify.push({ path: notePath, kind: "note", operation: "append_note_section" });
       notePreviews.push({
         nodeId: targetId,
+        domain,
         title: node?.title || targetId,
         mode: "modify",
         markdown: mergeMarkdown(currentMarkdown, operation),
@@ -144,16 +146,13 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
       };
       edgesToAdd.push(edge);
       graphDiff.push({ action: "add", edge, reason: "semantic relation from package" });
-      if (!filesToModify.some((file) => file.path === "graph.yaml")) {
-        filesToModify.push({ path: "graph.yaml", kind: "graph" });
-      }
+      if (!filesToModify.some((file) => file.path === "graph.yaml")) filesToModify.push({ path: "graph.yaml", kind: "graph" });
     }
 
     if (operation.type === "add_block_type") {
       const raw = packageFiles.blockTypeFiles[operation.file] || "";
       const summary = blockTypeSummary(raw, operation.file);
-      const targetPath = operation.file;
-      filesToCreate.push({ path: targetPath, sourcePath: operation.file, kind: "block-type" });
+      filesToCreate.push({ path: operation.file, sourcePath: operation.file, kind: "block-type" });
       blockTypesToAdd.push(summary);
     }
 
@@ -176,9 +175,7 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
     filesToCreate.push({ path: asset.vaultRelativePath, sourcePath: asset.packageRelativePath, kind: "asset" });
   });
 
-  if (edgesToAdd.length && !filesToModify.some((file) => file.path === "graph.yaml")) {
-    filesToModify.push({ path: "graph.yaml", kind: "graph" });
-  }
+  if (edgesToAdd.length && !filesToModify.some((file) => file.path === "graph.yaml")) filesToModify.push({ path: "graph.yaml", kind: "graph" });
 
   return {
     filesToCreate,

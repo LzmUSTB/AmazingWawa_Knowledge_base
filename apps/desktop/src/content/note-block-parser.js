@@ -1,3 +1,4 @@
+import YAML from "yaml";
 import {
   NATIVE_BLOCK_TYPES,
   getRegisteredDeclarativeBlockType,
@@ -10,19 +11,15 @@ const NATIVE_BLOCK_TYPE_SET = new Set(NATIVE_BLOCK_TYPES);
 function parseScalar(value = "") {
   const trimmed = value.trim();
   if (!trimmed) return "";
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) return trimmed.slice(1, -1);
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+  if (trimmed === "null") return null;
   if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-    return trimmed
-      .slice(1, -1)
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .map((item) => {
-        const numberValue = Number(item);
-        return Number.isFinite(numberValue) ? numberValue : item;
-      });
+    return trimmed.slice(1, -1).split(",").map((item) => item.trim()).filter(Boolean).map(parseScalar);
   }
   const numberValue = Number(trimmed);
-  return Number.isFinite(numberValue) && /^-?\d+(?:\.\d+)?$/.test(trimmed) ? numberValue : trimmed;
+  return Number.isFinite(numberValue) && /^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(trimmed) ? numberValue : trimmed;
 }
 
 function getIndent(line = "") {
@@ -31,11 +28,9 @@ function getIndent(line = "") {
 }
 
 function stripCommonIndent(lines) {
-  const nonEmptyIndents = lines
-    .filter((line) => line.trim())
-    .map(getIndent);
-  const commonIndent = nonEmptyIndents.length ? Math.min(...nonEmptyIndents) : 0;
-  return lines.map((line) => line.slice(Math.min(commonIndent, getIndent(line))));
+  const indents = lines.filter((line) => line.trim()).map(getIndent);
+  const common = indents.length ? Math.min(...indents) : 0;
+  return lines.map((line) => line.slice(Math.min(common, getIndent(line))));
 }
 
 function foldBlockScalar(lines) {
@@ -69,16 +64,13 @@ function parseKeyValueLines(lines) {
       index += 1;
       continue;
     }
-
     const [, key, value] = match;
     const trimmedValue = value.trim();
+
     if (trimmedValue === "|" || trimmedValue === ">") {
       const blockLines = [];
       index += 1;
-      while (
-        index < lines.length &&
-        (lines[index].trim() === "" || /^\s+/.test(lines[index]) || !/^[A-Za-z0-9_-]+:\s*/.test(lines[index]))
-      ) {
+      while (index < lines.length && (lines[index].trim() === "" || /^\s+/.test(lines[index]) || !/^[A-Za-z0-9_-]+:\s*/.test(lines[index]))) {
         blockLines.push(lines[index]);
         index += 1;
       }
@@ -94,28 +86,19 @@ function parseKeyValueLines(lines) {
 
     const nested = [];
     index += 1;
-    while (
-      index < lines.length &&
-      (lines[index].trim() === "" || /^\s+/.test(lines[index]) || !/^[A-Za-z0-9_-]+:\s*/.test(lines[index]))
-    ) {
+    while (index < lines.length && (lines[index].trim() === "" || /^\s+/.test(lines[index]) || !/^[A-Za-z0-9_-]+:\s*/.test(lines[index]))) {
       if (lines[index].trim()) nested.push(lines[index]);
       index += 1;
     }
     data[key] = parseNestedValue(nested);
   }
-
   return data;
 }
 
 function parseNestedValue(lines) {
   if (!lines.length) return "";
-  if (lines.some((line) => line.trim().startsWith("- "))) {
-    return parseListValue(lines);
-  }
-  if (!lines.some((line) => /^([^:\n]+):\s*(.*)$/.test(line.trim()))) {
-    return lines.map((line) => line.trim()).filter(Boolean);
-  }
-
+  if (lines.some((line) => line.trim().startsWith("- "))) return parseListValue(lines);
+  if (!lines.some((line) => /^([^:\n]+):\s*(.*)$/.test(line.trim()))) return lines.map((line) => line.trim()).filter(Boolean);
   const result = {};
   let index = 0;
   while (index < lines.length) {
@@ -125,19 +108,13 @@ function parseNestedValue(lines) {
       index += 1;
       continue;
     }
-
     const key = match[1].trim();
-    if (!key) {
-      index += 1;
-      continue;
-    }
     const value = match[2].trim();
     if (value) {
       result[key] = parseScalar(value);
       index += 1;
       continue;
     }
-
     const child = [];
     index += 1;
     while (index < lines.length && /^ {4}/.test(lines[index])) {
@@ -152,78 +129,48 @@ function parseNestedValue(lines) {
 function parseListValue(lines) {
   const items = [];
   let current = null;
-
   function flushCurrent() {
     if (!current) return;
-    if (current.kind === "scalar") {
-      items.push(parseScalar(current.value));
-    } else {
-      items.push(parseKeyValueLines(current.lines));
-    }
+    if (current.kind === "scalar") items.push(parseScalar(current.value));
+    else items.push(parseKeyValueLines(current.lines));
     current = null;
   }
-
   lines.forEach((line) => {
     const trimmed = line.trim();
     if (!trimmed) return;
     if (trimmed.startsWith("- ")) {
       flushCurrent();
       const rest = trimmed.slice(2);
-      if (/^[^:\n]+:\s*/.test(rest)) {
-        current = { kind: "object", lines: [rest] };
-      } else {
-        current = { kind: "scalar", value: rest };
-      }
+      current = /^[^:\n]+:\s*/.test(rest) ? { kind: "object", lines: [rest] } : { kind: "scalar", value: rest };
       return;
     }
-    if (current?.kind === "object") {
-      current.lines.push(trimmed);
-    }
+    if (current?.kind === "object") current.lines.push(trimmed);
   });
-
   flushCurrent();
   return items;
 }
 
+function parseBlockYaml(raw = "") {
+  const trimmed = raw.trim();
+  if (!trimmed) return {};
+  try {
+    const parsed = YAML.parse(trimmed);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return parseKeyValueLines(raw.split(/\r?\n/));
+  }
+}
+
 function parseCustomBlock(type, raw, blockRegistry) {
   try {
-    const data = parseKeyValueLines(raw.split(/\r?\n/));
-    if (isNativeBlockType(type)) {
-      return {
-        type,
-        sourceType: type,
-        blockKind: "native",
-        data,
-        raw,
-      };
-    }
+    const data = parseBlockYaml(raw);
+    if (isNativeBlockType(type)) return { type, sourceType: type, blockKind: "native", data, raw };
     if (isRegisteredDeclarativeBlockType(type, blockRegistry)) {
-      return {
-        type,
-        sourceType: type,
-        blockKind: "declarative-visual",
-        definition: getRegisteredDeclarativeBlockType(type, blockRegistry),
-        data,
-        raw,
-      };
+      return { type, sourceType: type, blockKind: "declarative-visual", definition: getRegisteredDeclarativeBlockType(type, blockRegistry), data, raw };
     }
-    return {
-      type: "unsupported-block",
-      sourceType: type,
-      blockKind: "unsupported",
-      data,
-      raw,
-      error: `Unsupported block type "${type}".`,
-    };
+    return { type: "unsupported-block", sourceType: type, blockKind: "unsupported", data, raw, error: `Unsupported block type "${type}".` };
   } catch (error) {
-    return {
-      type: "unsupported-block",
-      sourceType: type,
-      blockKind: NATIVE_BLOCK_TYPE_SET.has(type) ? "native" : "unsupported",
-      data: {},
-      raw,
-      error: String(error?.message || error),
-    };
+    return { type: "unsupported-block", sourceType: type, blockKind: NATIVE_BLOCK_TYPE_SET.has(type) ? "native" : "unsupported", data: {}, raw, error: String(error?.message || error) };
   }
 }
 
@@ -233,13 +180,11 @@ export function parseNoteBlocks(markdown = "", options = {}) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   let markdownBuffer = [];
   let index = 0;
-
   function flushMarkdown() {
     const markdownText = markdownBuffer.join("\n").trim();
     if (markdownText) blocks.push({ type: "markdown", markdown: markdownText });
     markdownBuffer = [];
   }
-
   while (index < lines.length) {
     const openMatch = lines[index].match(/^:::([A-Za-z0-9_-]+)\s*$/);
     if (!openMatch) {
@@ -247,7 +192,6 @@ export function parseNoteBlocks(markdown = "", options = {}) {
       index += 1;
       continue;
     }
-
     flushMarkdown();
     const blockType = openMatch[1];
     const body = [];
@@ -265,7 +209,6 @@ export function parseNoteBlocks(markdown = "", options = {}) {
     if (index < lines.length && lines[index].trim() === ":::") index += 1;
     blocks.push(parseCustomBlock(blockType, body.join("\n"), blockRegistry));
   }
-
   flushMarkdown();
   return blocks;
 }
@@ -274,14 +217,12 @@ export function parseMarkdownTokens(markdown = "") {
   const tokens = [];
   const lines = markdown.split(/\r?\n/);
   let index = 0;
-
   while (index < lines.length) {
     const line = lines[index];
     if (!line.trim()) {
       index += 1;
       continue;
     }
-
     const fenceMatch = line.match(/^```([A-Za-z0-9_-]*)\s*$/);
     if (fenceMatch) {
       const code = [];
@@ -294,28 +235,24 @@ export function parseMarkdownTokens(markdown = "") {
       tokens.push({ type: "code", language: fenceMatch[1], text: code.join("\n") });
       continue;
     }
-
     const heading = line.match(/^(#{1,4})\s+(.+)$/);
     if (heading) {
       tokens.push({ type: "heading", level: heading[1].length, text: heading[2] });
       index += 1;
       continue;
     }
-
     const image = line.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^)]*)?\)\s*$/);
     if (image) {
       tokens.push({ type: "image", alt: image[1], src: image[2] });
       index += 1;
       continue;
     }
-
     const assetLink = line.match(/^\[([^\]]+)\]\((assets\/[^)\s]+)(?:\s+["'][^)]*)?\)\s*$/);
     if (assetLink) {
       tokens.push({ type: "asset-link", label: assetLink[1], href: assetLink[2] });
       index += 1;
       continue;
     }
-
     if (/^[-*]\s+/.test(line)) {
       const items = [];
       while (index < lines.length && /^[-*]\s+/.test(lines[index])) {
@@ -325,7 +262,6 @@ export function parseMarkdownTokens(markdown = "") {
       tokens.push({ type: "list", ordered: false, items });
       continue;
     }
-
     if (/^\d+\.\s+/.test(line)) {
       const items = [];
       while (index < lines.length && /^\d+\.\s+/.test(lines[index])) {
@@ -335,22 +271,13 @@ export function parseMarkdownTokens(markdown = "") {
       tokens.push({ type: "list", ordered: true, items });
       continue;
     }
-
     const paragraph = [line];
     index += 1;
-    while (
-      index < lines.length &&
-      lines[index].trim() &&
-      !/^(#{1,4})\s+/.test(lines[index]) &&
-      !/^```/.test(lines[index]) &&
-      !/^[-*]\s+/.test(lines[index]) &&
-      !/^\d+\.\s+/.test(lines[index])
-    ) {
+    while (index < lines.length && lines[index].trim() && !/^(#{1,4})\s+/.test(lines[index]) && !/^```/.test(lines[index]) && !/^[-*]\s+/.test(lines[index]) && !/^\d+\.\s+/.test(lines[index]) && !/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^)]*)?\)\s*$/.test(lines[index])) {
       paragraph.push(lines[index]);
       index += 1;
     }
     tokens.push({ type: "paragraph", text: paragraph.join(" ") });
   }
-
   return tokens;
 }
