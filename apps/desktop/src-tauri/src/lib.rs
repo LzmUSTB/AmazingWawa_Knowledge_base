@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize)]
 struct VaultRawFiles {
@@ -83,6 +84,17 @@ struct AiImportApplyPlan {
     binary_writes: Vec<AiImportPlanBinaryWrite>,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SourceSnapshotResult {
+    url: String,
+    zip_path: String,
+    output_dir: String,
+    mode: String,
+    file_count: u64,
+    total_size: u64,
+}
+
 fn is_safe_package_id(package_id: &str) -> bool {
     (package_id.starts_with("ai-import-") || package_id.starts_with("wawa-import-"))
         && package_id
@@ -150,7 +162,7 @@ fn html_note_entry(entry_path: &str) -> bool {
 }
 
 fn forbidden_wawapkg_extension(entry_path: &str) -> bool {
-    if html_note_entry(entry_path) {
+    if html_note_entry(entry_path) || asset_entry(entry_path) {
         return false;
     }
     let lower = entry_path.to_ascii_lowercase();
@@ -181,20 +193,35 @@ fn extension_of(entry_path: &str) -> String {
 fn allowed_asset_extension(entry_path: &str) -> bool {
     matches!(
         extension_of(entry_path).as_str(),
-        ".csv"
+        ".avif"
+            | ".bin"
+            | ".css"
+            | ".csv"
             | ".gif"
+            | ".glb"
+            | ".gltf"
+            | ".htm"
+            | ".html"
             | ".jpeg"
             | ".jpg"
+            | ".js"
             | ".json"
             | ".md"
+            | ".mjs"
             | ".mp3"
             | ".mp4"
+            | ".otf"
             | ".pdf"
             | ".png"
+            | ".svg"
+            | ".ttf"
             | ".txt"
+            | ".wasm"
             | ".wav"
             | ".webm"
             | ".webp"
+            | ".woff"
+            | ".woff2"
             | ".yaml"
             | ".yml"
     )
@@ -202,19 +229,32 @@ fn allowed_asset_extension(entry_path: &str) -> bool {
 
 fn asset_mime_type(entry_path: &str) -> &'static str {
     match extension_of(entry_path).as_str() {
+        ".avif" => "image/avif",
+        ".bin" => "application/octet-stream",
+        ".css" => "text/css",
         ".csv" => "text/csv",
         ".gif" => "image/gif",
+        ".glb" => "model/gltf-binary",
+        ".gltf" => "model/gltf+json",
+        ".htm" | ".html" => "text/html",
         ".jpeg" | ".jpg" => "image/jpeg",
+        ".js" | ".mjs" => "text/javascript",
         ".json" => "application/json",
         ".md" => "text/markdown",
         ".mp3" => "audio/mpeg",
         ".mp4" => "video/mp4",
+        ".otf" => "font/otf",
         ".pdf" => "application/pdf",
         ".png" => "image/png",
+        ".svg" => "image/svg+xml",
+        ".ttf" => "font/ttf",
         ".txt" => "text/plain",
+        ".wasm" => "application/wasm",
         ".wav" => "audio/wav",
         ".webm" => "video/webm",
         ".webp" => "image/webp",
+        ".woff" => "font/woff",
+        ".woff2" => "font/woff2",
         ".yaml" | ".yml" => "application/yaml",
         _ => "application/octet-stream",
     }
@@ -603,6 +643,149 @@ try {
     Ok(package)
 }
 
+
+fn sanitize_snapshot_slug(url: &str) -> String {
+    let mut slug = url
+        .trim()
+        .trim_start_matches("https://")
+        .trim_start_matches("http://")
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() {
+                character.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>();
+
+    while slug.contains("--") {
+        slug = slug.replace("--", "-");
+    }
+    slug = slug.trim_matches('-').to_string();
+    if slug.is_empty() {
+        "source-snapshot".into()
+    } else {
+        slug.chars().take(72).collect()
+    }
+}
+
+fn default_snapshot_output_dir() -> PathBuf {
+    if cfg!(target_os = "windows") {
+        if let Ok(user_profile) = std::env::var("USERPROFILE") {
+            return PathBuf::from(user_profile)
+                .join("Downloads")
+                .join("wawa-source-snapshots");
+        }
+    }
+    if let Ok(home) = std::env::var("HOME") {
+        return PathBuf::from(home)
+            .join("Downloads")
+            .join("wawa-source-snapshots");
+    }
+    std::env::temp_dir().join("wawa-source-snapshots")
+}
+
+fn parse_snapshot_result(raw_json: &str, fallback_url: &str, fallback_zip_path: &Path) -> Result<SourceSnapshotResult, String> {
+    let value: serde_json::Value =
+        serde_json::from_str(raw_json).map_err(|error| format!("Failed to parse snapshot capture result: {error}"))?;
+
+    Ok(SourceSnapshotResult {
+        url: value
+            .get("url")
+            .and_then(|item| item.as_str())
+            .unwrap_or(fallback_url)
+            .to_string(),
+        zip_path: value
+            .get("zipPath")
+            .and_then(|item| item.as_str())
+            .map(|item| item.to_string())
+            .unwrap_or_else(|| fallback_zip_path.to_string_lossy().to_string()),
+        output_dir: value
+            .get("outputDir")
+            .and_then(|item| item.as_str())
+            .unwrap_or("")
+            .to_string(),
+        mode: value
+            .get("mode")
+            .and_then(|item| item.as_str())
+            .unwrap_or("unknown")
+            .to_string(),
+        file_count: value
+            .get("fileCount")
+            .and_then(|item| item.as_u64())
+            .unwrap_or(0),
+        total_size: value
+            .get("totalSize")
+            .and_then(|item| item.as_u64())
+            .unwrap_or(0),
+    })
+}
+
+#[tauri::command]
+fn capture_source_snapshot(url: String) -> Result<SourceSnapshotResult, String> {
+    let trimmed_url = url.trim().to_string();
+    if !(trimmed_url.starts_with("http://") || trimmed_url.starts_with("https://")) {
+        return Err("Snapshot URL must start with http:// or https://.".into());
+    }
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let desktop_dir = manifest_dir
+        .parent()
+        .ok_or("Failed to resolve desktop app directory.")?
+        .to_path_buf();
+    let script_path = desktop_dir.join("scripts").join("capture-source-snapshot.mjs");
+    if !script_path.is_file() {
+        return Err(format!(
+            "Snapshot capture script was not found: {}",
+            script_path.to_string_lossy()
+        ));
+    }
+
+    let output_dir = default_snapshot_output_dir();
+    fs::create_dir_all(&output_dir).map_err(|error| {
+        format!(
+            "Failed to create snapshot output directory {}: {error}",
+            output_dir.to_string_lossy()
+        )
+    })?;
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| format!("System clock error: {error}"))?
+        .as_secs();
+    let output_zip_path = output_dir.join(format!(
+        "{}-{}.zip",
+        sanitize_snapshot_slug(&trimmed_url),
+        timestamp
+    ));
+
+    let output = Command::new("node")
+        .current_dir(&desktop_dir)
+        .arg(&script_path)
+        .arg(&trimmed_url)
+        .arg(&output_zip_path)
+        .output()
+        .map_err(|error| {
+            format!(
+                "Failed to run snapshot capture script. Install Node.js and run npm install in the repository. Details: {error}"
+            )
+        })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Err(if stderr.is_empty() { stdout } else { stderr });
+    }
+
+    let raw_json = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if raw_json.is_empty() {
+        return Err("Snapshot capture script returned no result.".into());
+    }
+
+    parse_snapshot_result(&raw_json, &trimmed_url, &output_zip_path)
+}
+
 #[tauri::command]
 fn choose_vault_root() -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
@@ -870,6 +1053,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             apply_ai_import_plan,
+            capture_source_snapshot,
             choose_vault_root,
             choose_wawapkg_file,
             create_dir_all,

@@ -31,7 +31,7 @@ const FORBIDDEN_HTML_PATTERNS = [
   { pattern: /\b(src|href|poster)\s*=\s*["']?javascript:/i, label: "javascript URL resource" },
 ];
 const ALLOWED_ASSET_EXTENSIONS = new Set([
-  ".csv", ".gif", ".jpeg", ".jpg", ".json", ".md", ".mp3", ".mp4", ".pdf", ".png", ".txt", ".wav", ".webm", ".webp", ".yaml", ".yml",
+  ".avif", ".bin", ".css", ".csv", ".gif", ".glb", ".gltf", ".htm", ".html", ".jpeg", ".jpg", ".js", ".json", ".md", ".mjs", ".mp3", ".mp4", ".pdf", ".png", ".svg", ".txt", ".wasm", ".wav", ".webm", ".webp", ".yaml", ".yml",
 ]);
 const SOURCE_URL_MEDIA_EXTENSIONS = new Set([".gif", ".jpeg", ".jpg", ".mp4", ".png", ".webm", ".webp"]);
 const HTML_REQUIRED_REVIEW_FILES = [
@@ -65,7 +65,16 @@ function normalizeOperation(operation = {}) {
       contentFormat: normalizeContentFormat(node.contentFormat || node.content_format || operation.contentFormat || operation.content_format),
     };
   }
-  if (operation.type === "add_edge") return { ...operation, from: operation.from || operation.source, to: operation.to || operation.target };
+  if (operation.type === "add_edge") {
+    return {
+      ...operation,
+      nestedEdgeObject: Boolean(operation.edge),
+      from: operation.from || operation.source,
+      to: operation.to || operation.target,
+      relation: operation.relation,
+      reason: operation.reason || "",
+    };
+  }
   if (operation.type === "add_block_type") {
     return { ...operation, typeName: operation.blockType || operation.block_type || operation.name || operation.id, file: operation.file || `block-types/${operation.blockType || operation.block_type || operation.name || operation.id}.yaml` };
   }
@@ -124,6 +133,17 @@ function validateAssetReferencePath(target = "") {
   return { path: normalized };
 }
 function isSourceUrlMediaExtension(target = "") { return SOURCE_URL_MEDIA_EXTENSIONS.has(extensionOf(target)); }
+function isLocalOriginalSourceAsset(target = "") {
+  const normalized = String(target || "").replaceAll("\\", "/").trim();
+  return normalized.startsWith("assets/original/") ||
+    normalized.startsWith("assets/source/") ||
+    normalized.startsWith("assets/source-assets/") ||
+    normalized.startsWith("assets/source-snapshot/");
+}
+function isLocalSourceSnapshot(target = "") {
+  const normalized = String(target || "").replaceAll("\\", "/").trim();
+  return normalized.startsWith("assets/source-snapshot/") && /\.html?$/i.test(normalized.split(/[?#]/)[0]);
+}
 
 function validatePackageAssets(currentVault, packageFiles, operations, errors, warnings) {
   const assetFiles = packageFiles.assetFiles || [];
@@ -172,8 +192,8 @@ function validatePackageAssets(currentVault, packageFiles, operations, errors, w
         if (reference.image) errors.push(`${contextName}: image reference "${target}" must use assets/ or a stable original source URL.`);
         return;
       }
-      if (contentFormat === "html" && isSourceUrlMediaExtension(target)) {
-        errors.push(`${contextName}: HTML rich notes must use original source URL media, not packaged local media "${target}". AI-generated or re-drawn images/videos are forbidden.`);
+      if (contentFormat === "html" && isSourceUrlMediaExtension(target) && !isLocalOriginalSourceAsset(target)) {
+        errors.push(`${contextName}: local media "${target}" is not allowed in HTML rich notes unless it is a copied original source asset under assets/original/, assets/source/, assets/source-assets/, or assets/source-snapshot/. AI-generated or re-drawn images/videos are forbidden.`);
         return;
       }
       const result = validateAssetReferencePath(target);
@@ -208,7 +228,8 @@ function hasSourceBlock(html = "") {
   return /<aside\b[^>]*class\s*=\s*["'][^"']*\bsource-block\b[^"']*["']/i.test(html);
 }
 function hasDirectOriginalMedia(html = "") {
-  return /<\s*(img|video|source|iframe)\b[^>]*(src|href)\s*=\s*["']https?:\/\//i.test(html);
+  return /<\s*(img|video|source|iframe)\b[^>]*(src|href)\s*=\s*["']https?:\/\//i.test(html) ||
+    /<\s*(img|video|source|iframe)\b[^>]*(src|href)\s*=\s*["']assets\/(original|source|source-assets|source-snapshot)\//i.test(html);
 }
 function hasVisibleInteractiveElement(html = "") {
   return /<\s*(canvas|svg|iframe)\b/i.test(html) || /<\s*script\b/i.test(html);
@@ -293,7 +314,8 @@ function hasDirectOriginalMediaForAsset(html = "", asset = {}) {
   const originMatch = sourceUrl.match(/^https?:\/\/[^\/]+/i);
   const origin = originMatch ? originMatch[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "https?:\\/\\/";
   const mediaPattern = new RegExp(`<\\s*(img|video|source|iframe)\\b[^>]+(?:src|poster)\\s*=\\s*["']${origin}[^"']+["']`, "i");
-  return mediaPattern.test(html);
+  return mediaPattern.test(html) ||
+    /<\s*(img|video|source|iframe)\b[^>]*(src|poster)\s*=\s*["']assets\/(original|source|source-assets|source-snapshot)\//i.test(html);
 }
 function validateSourceAssetCoverage(packageFiles, operations, errors, warnings) {
   const htmlOperations = operations.filter((operation) => operation.type === "add_node" && noteFormatForOperation(operation, packageFiles) === "html");
@@ -340,8 +362,8 @@ function validateSourceAssetCoverage(packageFiles, operations, errors, warnings)
       if (!hasOriginalEmbed && !unavailableReason) {
         warnings.push(`source asset ${id}: interactive demos need an original source iframe/media embed when possible. Source links and AI-authored canvas/svg demos are supplementary only; add unavailable_reason if original embedding is impossible.`);
       }
-      if (/source-link/.test(strategy) && /js-reproduction/.test(strategy) && !hasOriginalEmbed) {
-        warnings.push(`source asset ${id}: preservation_strategy "${strategy}" is not sufficient for source-first quality. Prefer iframe/direct-source-media, or mark embedding as unavailable with a reason.`);
+      if (/source-link/.test(strategy) && /js-reproduction/.test(strategy) && !hasOriginalEmbed && !/<\s*iframe\b[^>]+src\s*=\s*["']assets\/source-snapshot\//i.test(html)) {
+        warnings.push(`source asset ${id}: preservation_strategy "${strategy}" is not sufficient for source-first quality. Prefer iframe/direct-source-media/source-snapshot, or mark embedding as unavailable with a reason.`);
       }
       if (/source-link/.test(strategy) && !hasSupplement && !hasOriginalEmbed) {
         warnings.push(`source asset ${id}: interactive demo is only linked and has no original embed or supplementary canvas/svg representation in the note.`);
@@ -464,6 +486,12 @@ function validateAddEdge(operation, context) {
   const from = operation.from;
   const to = operation.to;
   const edgeId = `${from}-${relation}-${to}`;
+  if (operation.nestedEdgeObject) {
+    errors.push(`add_edge ${edgeId}: nested edge objects are not allowed. Use flat fields: type, from, to, relation, reason.`);
+  }
+  if (!operation.from || !operation.to || !operation.relation) {
+    errors.push(`add_edge ${edgeId}: must use flat top-level fields "from", "to", and "relation".`);
+  }
   if (!nodes.has(from)) errors.push(`add_edge ${edgeId}: from "${from}" does not exist.`);
   if (!nodes.has(to)) errors.push(`add_edge ${edgeId}: to "${to}" does not exist.`);
   if (from === to) errors.push(`add_edge ${edgeId}: from and to must be different.`);
