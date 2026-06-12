@@ -102,12 +102,13 @@ async function applySelectedPackage() {
         <h1>Package Review</h1>
       </div>
       <div class="header-actions">
-        <button class="hud-button" :disabled="loading || !selectedPackageId" @click="inspectSelectedPackage">
-          <AppIcon name="refresh" :size="12" />
+        <button class="hud-button button-with-icon" :disabled="loading || !selectedPackageId"
+          @click="inspectSelectedPackage">
+          <AppIcon name="refresh" :size="11" />
           {{ loading ? "Loading..." : "Refresh" }}
         </button>
-        <button class="hud-button" @click="$emit('close')">
-          <AppIcon name="x" :size="12" />
+        <button class="hud-button button-with-icon" @click="$emit('close')">
+          <AppIcon name="x" :size="11" />
           Close
         </button>
       </div>
@@ -203,7 +204,7 @@ async function applySelectedPackage() {
       <main class="center-column">
         <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
 
-        <label  v-if="diff?.notePreviews?.length >= 1" class="note-preview-selector">
+        <label v-if="diff?.notePreviews?.length >= 1" class="note-preview-selector">
           <span>Preview Note</span>
           <select v-model.number="selectedNoteIndex">
             <option v-for="(preview, index) in diff.notePreviews" :key="preview.nodeId" :value="index">
@@ -221,6 +222,7 @@ async function applySelectedPackage() {
 <style scoped>
 .ai-import-view {
   display: grid;
+  height: 100%;
   grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
   min-height: 0;

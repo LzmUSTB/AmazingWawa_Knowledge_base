@@ -1,4 +1,6 @@
 <script setup>
+import AppIcon from '../ui/AppIcon.vue';
+
 defineProps({
   applying: {
     type: Boolean,
@@ -24,14 +26,13 @@ defineEmits(["apply", "update:confirmedWarnings"]);
 <template>
   <section class="ai-panel apply-bar">
     <label v-if="hasWarnings" class="warning-confirm">
-      <input
-        type="checkbox"
-        :checked="confirmedWarnings"
-        @change="$emit('update:confirmedWarnings', $event.target.checked)"
-      />
+      <input type="checkbox" :checked="confirmedWarnings"
+        @change="$emit('update:confirmedWarnings', $event.target.checked)" />
       <span>Confirm warnings</span>
     </label>
-    <button class="hud-button" style="--button-color: var(--career)" :disabled="!canApply || applying" @click="$emit('apply')">
+    <button class="hud-button button-with-icon" style="--button-color: var(--career)" :disabled="!canApply || applying"
+      @click="$emit('apply')">
+      <AppIcon name="layout-save" :size="16" />
       {{ applying ? "Applying..." : "Apply Package" }}
     </button>
   </section>

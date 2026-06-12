@@ -49,17 +49,7 @@ function normalizeOperation(operation = {}) {
   const node = operation.node || operation;
   if (operation.type === "add_domain") {
     const domain = operation.domain || operation;
-    return {
-      ...operation,
-      id: domain.id,
-      title: domain.title,
-      titleLocale: domain.titleLocale || domain.title_locale || operation.titleLocale || operation.title_locale || "",
-      description: domain.description || "",
-      descriptionLocale: domain.descriptionLocale || domain.description_locale || operation.descriptionLocale || operation.description_locale || "",
-      color: domain.color || "",
-      order: domain.order,
-      aliases: domain.aliases || [],
-    };
+    return { ...operation, id: domain.id, title: domain.title, titleLocale: domain.titleLocale || domain.title_locale || operation.titleLocale || operation.title_locale || "", description: domain.description || "", descriptionLocale: domain.descriptionLocale || domain.description_locale || operation.descriptionLocale || operation.description_locale || "", color: domain.color || "", order: domain.order, aliases: domain.aliases || [] };
   }
   if (operation.type === "add_node") {
     return {
@@ -94,7 +84,7 @@ function normalizeOperation(operation = {}) {
 }
 
 function nodeMap(currentVault, createdNodes = [], createdDomains = []) {
-  const domainNodes = createdDomains.map((domain) => ({ id: domain.id, title: domain.title, domain: domain.id, type: "domain", status: "domain", summary: domain.description || "" }));
+  const domainNodes = createdDomains.map((domain) => ({ id: domain.id, title: domain.title, titleLocale: domain.titleLocale || "", domain: domain.id, type: "domain", status: "domain", summary: domain.description || "", summaryLocale: domain.descriptionLocale || "" }));
   return new Map([...(currentVault.nodes || []), ...domainNodes, ...createdNodes].map((node) => [node.id, node]));
 }
 function generatedMetaPath(operation) { return `generated/content/${operation.domain}/${operation.id}/meta.yaml`; }
@@ -272,6 +262,18 @@ function validateMarkdownBlocks(markdown, registry, errors, context) {
 function hasSourceBlock(html = "") {
   return /<aside\b[^>]*class\s*=\s*["'][^"']*\bsource-block\b[^"']*["']/i.test(html);
 }
+function hasDataSourceAssetReference(html = "") {
+  return /\bdata-source-asset\s*=\s*["'][^"']+["']/i.test(html);
+}
+function hasExternalNetworkReference(html = "") {
+  return /\b(?:src|href|poster)\s*=\s*["']https?:\/\//i.test(html);
+}
+function needsSourceBlock(html = "") {
+  return hasDataSourceAssetReference(html) ||
+    hasExternalNetworkReference(html) ||
+    hasDirectOriginalMedia(html) ||
+    hasDirectSnapshotResourceReference(html);
+}
 function hasDirectOriginalMedia(html = "") {
   return /<\s*(img|video|source|iframe)\b[^>]*(src|href)\s*=\s*["']https?:\/\//i.test(html) ||
     /<\s*(img|video|source|iframe)\b[^>]*(src|href)\s*=\s*["']assets\/(original|source|source-assets|source-snapshot)\//i.test(html);
@@ -441,14 +443,15 @@ function validateSourceAssetCoverage(packageFiles, operations, errors, warnings)
 function validateHtmlNote(html, errors, warnings, context) {
   FORBIDDEN_HTML_PATTERNS.forEach(({ pattern, label }) => { if (pattern.test(html)) errors.push(`${context}: forbidden ${label}.`); });
   const snapshotBacked = /assets\/source-snapshot\//i.test(html);
-  if (!hasSourceBlock(html)) errors.push(`${context}: missing nearby <aside class="source-block"> source attribution.`);
+  if (needsSourceBlock(html) && !hasSourceBlock(html)) {
+    warnings.push(`${context}: source/network material is referenced, but no nearby <aside class="source-block"> source attribution was found.`);
+  }
   if (hasForbiddenSnapshotLearnerText(html)) {
     errors.push(`${context}: learner-facing prose must not refer to "snapshot" or "原始 SNAPSHOT". Use the original source URL in source blocks and teach the concept directly.`);
   }
   if (hasSnapshotIframe(html)) {
     errors.push(`${context}: whole source-snapshot iframe is not allowed as final note content. Use snapshot _resources and source-ported HTML/CSS/JS interactions directly in note.html.`);
   }
-  if (!hasDirectOriginalMedia(html) && !hasDirectSnapshotResourceReference(html)) warnings.push(`${context}: HTML rich note has no direct original source media or concrete source snapshot _resources reference. Source-root links and self-created canvas reproductions alone are not enough for asset-rich sources.`);
   if (snapshotBacked && !hasDirectSnapshotResourceReference(html)) {
     warnings.push(`${context}: source snapshot is present but note.html does not directly reference assets/source-snapshot/<source-id>/_resources/. This usually means the interaction was recreated from scratch instead of using source snapshot assets.`);
   }
