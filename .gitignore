@@ -54,3 +54,6 @@ vault/assets/checkpoints/
 # Generated exports
 exports/
 public-export/
+
+# Local source snapshots
+/snapshot/

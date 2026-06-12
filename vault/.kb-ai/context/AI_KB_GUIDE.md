@@ -108,6 +108,20 @@ Use direct teaching voice. Do not write `原文中说`, `这篇文章提到`, or
 
 If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`. If no suitable existing domain fits, create a small, stable, broad domain. Do not create excessive narrow domains.
 
+## Canonical operation shapes
+
+Use the canonical flat add_edge shape to avoid ambiguous package parsing:
+
+```yaml
+- type: add_edge
+  from: source-node-id
+  to: target-node-id
+  relation: depends-on
+  reason: why this relationship is useful
+```
+
+Nested `edge:` objects are forbidden. Generated packages must use the flat form above because the application parser and validator expect top-level `from`, `to`, and `relation` fields.
+
 
 # Source-first strict revisions
 

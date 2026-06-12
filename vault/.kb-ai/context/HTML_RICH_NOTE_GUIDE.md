@@ -111,6 +111,34 @@ Priority order:
 
 Do not silently omit important original visuals.
 
+## Full-fidelity source snapshot mode
+
+For sources with many tightly integrated interactive demos, repeated iframes to the same original page are usually a poor reading experience. Prefer a source snapshot or a source demo hub.
+
+Use source snapshot mode when the original article depends on custom JavaScript/canvas/WebGL demonstrations and the source assets can be downloaded or mirrored for private local use.
+
+Package original source assets under one of these folders:
+
+```text
+generated/content/<domain>/<node-id>/assets/source-snapshot/<source-id>/index.html
+generated/content/<domain>/<node-id>/assets/source-snapshot/<source-id>/**
+generated/content/<domain>/<node-id>/assets/original/**
+generated/content/<domain>/<node-id>/assets/source-assets/**
+```
+
+Then embed a single local snapshot iframe in the note:
+
+```html
+<section class="rich-source-demo-hub" data-source-asset="cameras-and-lenses-original-page">
+  <h2>Original interactive article snapshot</h2>
+  <iframe class="rich-source-frame" src="assets/source-snapshot/cameras-and-lenses/index.html"></iframe>
+</section>
+```
+
+If a full source snapshot is not available, use at most one original-page iframe per note and group multiple demo links around it. Do not repeat the same full-page iframe for every small demo.
+
+AI-authored JS/canvas demos are allowed, but they must be marked as supplementary and should not be described as a complete restoration of the original demo unless the original interaction is actually mirrored or faithfully rebuilt.
+
 ## Interactive demo preservation
 
 If the source contains interactive demonstrations, the note must include a section for each important demo.

@@ -247,6 +247,9 @@ async function playwrightSnapshot() {
   }
 
   manifest.mode = "playwright";
+  let originalDocumentHtml = "";
+  let originalDocumentUrl = sourceUrl.href;
+
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1100 },
@@ -264,13 +267,26 @@ async function playwrightSnapshot() {
       if (!/^https?:\/\//i.test(url)) return;
       const status = response.status();
       if (status < 200 || status >= 400) return;
-      if (resources.has(url)) return;
+
       const headers = response.headers();
       const contentType = headers["content-type"] || "";
       const body = await response.body();
+
+      let isMainDocument = false;
+      try {
+        isMainDocument = request.resourceType() === "document" && request.frame() === page.mainFrame();
+      } catch {
+        isMainDocument = false;
+      }
+
+      if (isMainDocument && !originalDocumentHtml && /text\/html/i.test(contentType)) {
+        originalDocumentHtml = body.toString("utf8");
+        originalDocumentUrl = url;
+      }
+
       await saveResource(url, body, contentType, "playwright-response");
     } catch (error) {
-      // Many browser responses are intentionally not readable. Keep capture resilient.
+      // Some browser responses are intentionally unreadable. Keep capture resilient.
     }
   });
 
@@ -295,11 +311,20 @@ async function playwrightSnapshot() {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(500);
 
-  const rawHtml = await page.content();
+  const fallbackHtml = await page.content();
   await browser.close();
 
-  const rewrittenHtml = rewriteTextResource(rawHtml, sourceUrl.href);
+  const htmlSource = originalDocumentHtml || fallbackHtml;
+  const htmlBase = originalDocumentHtml ? originalDocumentUrl : sourceUrl.href;
+  const rewrittenHtml = rewriteTextResource(htmlSource, htmlBase);
   await fsp.writeFile(path.join(snapshotRoot, "index.html"), rewrittenHtml, "utf8");
+
+  if (!originalDocumentHtml) {
+    manifest.skipped.push({
+      url: sourceUrl.href,
+      reason: "main document original response was not captured; used hydrated DOM fallback, which may duplicate initialized controls",
+    });
+  }
 
   // Rewrite captured CSS files after the full resource map is available.
   for (const record of manifest.resources) {
@@ -330,7 +355,7 @@ Mode: ${manifest.mode}
 
 Open \`index.html\` inside the knowledge base iframe or a browser.
 
-This snapshot is generated for private local study. Some pages may still request network resources if their JavaScript constructs URLs dynamically.
+This snapshot is generated for private local study. Some pages may still request network resources if their JavaScript constructs URLs dynamically. The capture prefers the original document HTML over hydrated DOM to avoid duplicated initialized controls.
 `,
     "utf8",
   );
@@ -386,7 +411,7 @@ try {
   const result = {
     url: sourceUrl.href,
     zipPath: outputZipPath,
-    outputDir: snapshotRoot,
+    outputDir: path.dirname(outputZipPath),
     mode: manifest.mode,
     fileCount: manifest.fileCount,
     totalSize: stat.size,

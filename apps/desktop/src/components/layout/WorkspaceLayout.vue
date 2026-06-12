@@ -8,6 +8,7 @@ import BreadcrumbBar from "../navigation/BreadcrumbBar.vue";
 import NoteView from "../note/NoteView.vue";
 import EditRelationDialog from "../relation/EditRelationDialog.vue";
 import RelationSidebar from "../relation/RelationSidebar.vue";
+import SourceSnapshotView from "../source/SourceSnapshotView.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
 import { getScopeLayoutMode } from "../../graph/graph-layout.js";
@@ -278,6 +279,8 @@ function fitGraphView() {
           :vault-root-path="activeVaultRootPath"
           @applied="$emit('ai-import-applied', $event)"
         />
+
+        <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 
         <NoteView
           v-else

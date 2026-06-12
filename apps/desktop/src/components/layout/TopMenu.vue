@@ -1,7 +1,5 @@
 <script setup>
-import { ref } from "vue";
 import AppIcon from "../ui/AppIcon.vue";
-import { captureSourceSnapshot } from "../../data/desktop-vault-adapter.js";
 
 defineProps({
   appTitle: {
@@ -23,45 +21,6 @@ defineProps({
 });
 
 defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
-
-const snapshotCapturing = ref(false);
-
-function normalizeSnapshotUrl(value) {
-  const trimmed = String(value || "").trim();
-  if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
-async function handleCaptureSnapshot() {
-  if (snapshotCapturing.value) return;
-
-  const input = window.prompt("Capture source snapshot URL:");
-  const url = normalizeSnapshotUrl(input);
-  if (!url) return;
-
-  if (!/^https?:\/\//i.test(url)) {
-    window.alert("Snapshot URL must start with http:// or https://.");
-    return;
-  }
-
-  snapshotCapturing.value = true;
-  try {
-    const result = await captureSourceSnapshot(url);
-    const details = [
-      `Snapshot zip created: ${result.zipPath}`,
-      result.mode ? `Mode: ${result.mode}` : "",
-      Number.isFinite(result.fileCount) ? `Files: ${result.fileCount}` : "",
-      Number.isFinite(result.totalSize) ? `Size: ${(result.totalSize / 1024 / 1024).toFixed(2)} MB` : "",
-    ].filter(Boolean);
-    window.alert(details.join("\n"));
-  } catch (error) {
-    console.error("[snapshot] Failed to capture source snapshot.", error);
-    window.alert(`Failed to capture source snapshot: ${error?.message || error}`);
-  } finally {
-    snapshotCapturing.value = false;
-  }
-}
 </script>
 
 <template>
@@ -87,6 +46,10 @@ async function handleCaptureSnapshot() {
         <AppIcon name="import" />
         <span class="button-icon-label">Import</span>
       </button>
+      <button class="hud-button button-with-icon" style="--button-color: var(--shader)" @click="$emit('show-view', 'source-snapshot')">
+        <AppIcon name="export" />
+        <span class="button-icon-label">Capture</span>
+      </button>
       <button
         class="hud-button button-with-icon"
         style="--button-color: var(--language)"
@@ -95,16 +58,6 @@ async function handleCaptureSnapshot() {
       >
         <AppIcon name="export" />
         <span class="button-icon-label">Export Context</span>
-      </button>
-      <button
-        class="hud-button button-with-icon"
-        style="--button-color: var(--shader)"
-        :disabled="snapshotCapturing"
-        :title="snapshotCapturing ? 'Capturing source snapshot...' : 'Capture a web page as a local source snapshot zip.'"
-        @click="handleCaptureSnapshot"
-      >
-        <AppIcon name="export" />
-        <span class="button-icon-label">{{ snapshotCapturing ? "Capturing..." : "Capture" }}</span>
       </button>
       <button class="hud-button button-with-icon" disabled title="Git panel is not implemented yet">
         <AppIcon name="git-branch" />

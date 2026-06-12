@@ -671,19 +671,18 @@ fn sanitize_snapshot_slug(url: &str) -> String {
 }
 
 fn default_snapshot_output_dir() -> PathBuf {
-    if cfg!(target_os = "windows") {
-        if let Ok(user_profile) = std::env::var("USERPROFILE") {
-            return PathBuf::from(user_profile)
-                .join("Downloads")
-                .join("wawa-source-snapshots");
-        }
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if let Some(repo_root) = manifest_dir
+        .parent()
+        .and_then(|path| path.parent())
+        .and_then(|path| path.parent())
+    {
+        return repo_root.join("snapshot");
     }
-    if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home)
-            .join("Downloads")
-            .join("wawa-source-snapshots");
-    }
-    std::env::temp_dir().join("wawa-source-snapshots")
+
+    std::env::current_dir()
+        .unwrap_or_else(|_| std::env::temp_dir())
+        .join("snapshot")
 }
 
 fn parse_snapshot_result(raw_json: &str, fallback_url: &str, fallback_zip_path: &Path) -> Result<SourceSnapshotResult, String> {
