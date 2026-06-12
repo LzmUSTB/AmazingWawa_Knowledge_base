@@ -99,13 +99,17 @@ Do not force rich source material into many small blocks if an HTML note would b
 
 These rules override weaker or older guidance in this context export.
 
+## Learner-facing voice
+
+Never write the note as if it is commenting on a snapshot or the source document. Use direct teaching voice in the target locale. The source URL is cited for attribution, while the explanation should read like the knowledge base itself is teaching the concept.
+
 ## Snapshot-backed source preservation
 
 If a package includes `assets/source-snapshot/`, that snapshot must be treated as the highest-priority source asset library.
 
-Do not use a whole snapshot iframe as the primary note representation. The AI should use the snapshot's local assets and behavior to implement the important demos directly inside `note.html` with knowledge-base-styled HTML/CSS/JS.
+Do not use a whole snapshot iframe as the primary note representation. The AI should use the snapshot's local assets and behavior to port the important demos directly inside `note.html` with knowledge-base-styled HTML/CSS/JS.
 
-Allowed fallback: a whole-snapshot iframe may be included only as a secondary reference/debug view when the interaction cannot be isolated or faithfully reimplemented. It must be clearly labeled as fallback and must not replace the teaching explanation.
+Allowed fallback: a whole-snapshot iframe may be included only as a secondary reference/debug view when the interaction cannot be isolated or faithfully ported. It must be clearly labeled as fallback and must not replace the teaching explanation.
 
 ## Original media and interactive demos
 
@@ -122,7 +126,7 @@ Priority order when no source snapshot exists:
 Priority order when a source snapshot exists:
 
 1. Use local original assets from `assets/source-snapshot/<source-id>/_resources/`.
-2. Reimplement source interactions directly in the note using knowledge-base-styled controls and snapshot-observed behavior.
+2. Port source interactions directly in the note using knowledge-base-styled controls and snapshot-observed behavior.
 3. Use source URL/source blocks for attribution and source location.
 4. Use iframe only as fallback/reference, not as the primary final note.
 
@@ -144,7 +148,7 @@ Every required source asset or demo must have a stable id and must be marked in 
 
 ```html
 <section class="rich-js-demo" data-source-asset="pinhole-diameter-distance-demo">
-  <!-- Directly implemented controls/canvas/SVG using snapshot assets and observed behavior. -->
+  <!-- Directly ported controls/canvas/SVG using snapshot assets and observed behavior. -->
 </section>
 ```
 
@@ -161,8 +165,13 @@ source_assets:
     note_location: section 01
     snapshot_path: assets/source-snapshot/cameras-and-lenses/index.html
     snapshot_assets_used:
-      - assets/source-snapshot/cameras-and-lenses/_resources/example.png
-    preservation_strategy: snapshot-assets + direct-js-reimplementation
+      - assets/source-snapshot/cameras-and-lenses/_resources/source-specific.js
+    ported_original_controls:
+      - hole diameter
+      - sensor distance
+    ported_original_behavior:
+      - increasing hole diameter increases brightness and blur
+    preservation_strategy: source-snapshot-assets + source-ported-interaction
 ```
 
 Do not put `node-id / section xx` into `note_location` as the only machine-readable location. Use `represented_in_node` for the node id.

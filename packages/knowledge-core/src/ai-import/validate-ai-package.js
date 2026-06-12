@@ -31,7 +31,7 @@ const FORBIDDEN_HTML_PATTERNS = [
   { pattern: /\b(src|href|poster)\s*=\s*["']?javascript:/i, label: "javascript URL resource" },
 ];
 const ALLOWED_ASSET_EXTENSIONS = new Set([
-  ".avif", ".bin", ".css", ".csv", ".gif", ".glb", ".gltf", ".htm", ".html", ".jpeg", ".jpg", ".js", ".json", ".md", ".mjs", ".mp3", ".mp4", ".pdf", ".png", ".svg", ".txt", ".wasm", ".wav", ".webm", ".webp", ".yaml", ".yml",
+  ".avif", ".bin", ".css", ".csv", ".gif", ".glb", ".gltf", ".htm", ".html", ".ico", ".jpeg", ".jpg", ".js", ".json", ".md", ".mjs", ".mp3", ".mp4", ".otf", ".pdf", ".png", ".svg", ".ttf", ".txt", ".wasm", ".wav", ".webm", ".webp", ".woff", ".woff2", ".yaml", ".yml",
 ]);
 const SOURCE_URL_MEDIA_EXTENSIONS = new Set([".gif", ".jpeg", ".jpg", ".mp4", ".png", ".webm", ".webp"]);
 const HTML_REQUIRED_REVIEW_FILES = [
@@ -144,6 +144,36 @@ function isLocalSourceSnapshot(target = "") {
   const normalized = String(target || "").replaceAll("\\", "/").trim();
   return normalized.startsWith("assets/source-snapshot/") && /\.html?$/i.test(normalized.split(/[?#]/)[0]);
 }
+function isSourceSnapshotPackageAsset(packageRelativePath = "") {
+  return String(packageRelativePath || "").replaceAll("\\", "/").includes("/assets/source-snapshot/");
+}
+function isSourceSnapshotLibraryAsset(asset = {}) {
+  const type = String(asset.type || "").toLowerCase();
+  const id = String(asset.id || "").toLowerCase();
+  return type === "source-snapshot" ||
+    type === "external-page" ||
+    id.startsWith("source-snapshot") ||
+    Boolean(asset.snapshot_path || asset.snapshotPath);
+}
+function hasSnapshotIframe(html = "") {
+  return /<\s*iframe\b[^>]+src\s*=\s*["']assets\/source-snapshot\//i.test(html);
+}
+function hasDirectSnapshotResourceReference(html = "") {
+  return /assets\/source-snapshot\/[^"')\s]+\/_resources\//i.test(html);
+}
+function visibleHtmlText(html = "") {
+  return stripTags(html);
+}
+function hasForbiddenSnapshotLearnerText(html = "") {
+  const text = visibleHtmlText(html);
+  return /(原\s*snapshot|原始\s*snapshot|原始\s*SNAPSHOT|snapshot\s*参考|快照参考|根据\s*snapshot|source\s+snapshot\s+shows)/i.test(text);
+}
+function hasOriginalSourceUrlInSourceBlock(html = "", sourceUrl = "") {
+  if (!sourceUrl) return true;
+  const escaped = String(sourceUrl).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`<aside\\b[^>]*class=["'][^"']*\\bsource-block\\b[^"']*["'][\\s\\S]*?<a\\b[^>]+href=["']${escaped}["']`, "i");
+  return pattern.test(html);
+}
 
 function validatePackageAssets(currentVault, packageFiles, operations, errors, warnings) {
   const assetFiles = packageFiles.assetFiles || [];
@@ -206,7 +236,10 @@ function validatePackageAssets(currentVault, packageFiles, operations, errors, w
     });
   });
 
-  assetFiles.forEach((asset) => { if (!referencedPackagePaths.has(asset.packageRelativePath)) warnings.push(`asset ${asset.packageRelativePath}: packaged asset is not referenced by generated note content.`); });
+  assetFiles.forEach((asset) => {
+    if (isSourceSnapshotPackageAsset(asset.packageRelativePath)) return;
+    if (!referencedPackagePaths.has(asset.packageRelativePath)) warnings.push(`asset ${asset.packageRelativePath}: packaged asset is not referenced by generated note content.`);
+  });
 }
 
 function scanForbiddenFields(value, path = []) {
@@ -343,27 +376,48 @@ function validateSourceAssetCoverage(packageFiles, operations, errors, warnings)
       return;
     }
 
-    const representedIds = htmlSourceAssetIds(html);
-    if (!representedIds.has(id)) {
-      warnings.push(`source asset ${id}: required asset/demo should be marked in note.html with data-source-asset="${id}".`);
-    }
-
     const type = String(asset.type || "").toLowerCase();
     const strategy = String(asset.preservation_strategy || asset.preservationStrategy || "").toLowerCase();
     const unavailableReason = String(asset.unavailable_reason || asset.unavailableReason || asset.embedding_blocked_reason || asset.embeddingBlockedReason || "").trim();
+    const snapshotPath = String(asset.snapshot_path || asset.snapshotPath || "").trim();
+    const snapshotAssetsUsed = asArray(asset.snapshot_assets_used || asset.snapshotAssetsUsed);
+    const snapshotBackedAsset = Boolean(snapshotPath || snapshotAssetsUsed.length || /snapshot/.test(strategy));
+
+    const representedIds = htmlSourceAssetIds(html);
+    if (!isSourceSnapshotLibraryAsset(asset) && !representedIds.has(id)) {
+      warnings.push(`source asset ${id}: required asset/demo should be marked in note.html with data-source-asset="${id}".`);
+    }
+
+    if (isSourceSnapshotLibraryAsset(asset)) {
+      return;
+    }
 
     if (["image", "video", "animation"].includes(type) && !hasDirectOriginalMediaForAsset(html, asset) && !unavailableReason) {
-      warnings.push(`source asset ${id}: ${type} assets should be represented by direct original source media URL when possible. If unavailable, add unavailable_reason in source-asset-manifest.md.`);
+      warnings.push(`source asset ${id}: ${type} assets should be represented by direct original source media URL or local copied original/snapshot media when possible. If unavailable, add unavailable_reason in source-asset-manifest.md.`);
     }
 
     if (type === "interactive-demo") {
       const hasOriginalEmbed = hasDirectOriginalMediaForAsset(html, asset);
       const hasSupplement = /<\s*(canvas|svg)\b/i.test(html);
+      const noteUsesSnapshotResources = hasDirectSnapshotResourceReference(html);
+      if (snapshotBackedAsset) {
+        if (!/(source-ported|ported|original|snapshot-assets|source-snapshot-assets)/.test(strategy)) {
+          warnings.push(`source asset ${id}: snapshot-backed interactive demos should use preservation_strategy "source-snapshot-assets + source-ported-interaction".`);
+        }
+        if (/direct-js-reimplementation/.test(strategy) && !/source-ported|ported/.test(strategy)) {
+          warnings.push(`source asset ${id}: preservation_strategy "${strategy}" is ambiguous and often means an AI-created approximation. Prefer "source-snapshot-assets + source-ported-interaction" and list ported_original_controls/ported_original_behavior.`);
+        }
+        if (snapshotAssetsUsed.length && !noteUsesSnapshotResources) {
+          warnings.push(`source asset ${id}: source-asset-manifest lists snapshot_assets_used, but note.html does not reference concrete assets/source-snapshot/<source-id>/_resources/ paths. This suggests the demo was recreated from scratch instead of using snapshot assets.`);
+        }
+        return;
+      }
+
       if (!hasOriginalEmbed && !unavailableReason) {
         warnings.push(`source asset ${id}: interactive demos need an original source iframe/media embed when possible. Source links and AI-authored canvas/svg demos are supplementary only; add unavailable_reason if original embedding is impossible.`);
       }
-      if (/source-link/.test(strategy) && /js-reproduction/.test(strategy) && !hasOriginalEmbed && !/<\s*iframe\b[^>]+src\s*=\s*["']assets\/source-snapshot\//i.test(html)) {
-        warnings.push(`source asset ${id}: preservation_strategy "${strategy}" is not sufficient for source-first quality. Prefer iframe/direct-source-media/source-snapshot, or mark embedding as unavailable with a reason.`);
+      if (/source-link/.test(strategy) && /js-reproduction/.test(strategy) && !hasOriginalEmbed) {
+        warnings.push(`source asset ${id}: preservation_strategy "${strategy}" is not sufficient for source-first quality. Prefer direct original media/embed, source snapshot assets, or mark embedding as unavailable with a reason.`);
       }
       if (/source-link/.test(strategy) && !hasSupplement && !hasOriginalEmbed) {
         warnings.push(`source asset ${id}: interactive demo is only linked and has no original embed or supplementary canvas/svg representation in the note.`);
@@ -374,9 +428,19 @@ function validateSourceAssetCoverage(packageFiles, operations, errors, warnings)
 
 function validateHtmlNote(html, errors, warnings, context) {
   FORBIDDEN_HTML_PATTERNS.forEach(({ pattern, label }) => { if (pattern.test(html)) errors.push(`${context}: forbidden ${label}.`); });
+  const snapshotBacked = /assets\/source-snapshot\//i.test(html);
   if (!hasSourceBlock(html)) errors.push(`${context}: missing nearby <aside class="source-block"> source attribution.`);
+  if (hasForbiddenSnapshotLearnerText(html)) {
+    errors.push(`${context}: learner-facing prose must not refer to "snapshot" or "原始 SNAPSHOT". Use the original source URL in source blocks and teach the concept directly.`);
+  }
+  if (hasSnapshotIframe(html)) {
+    errors.push(`${context}: whole source-snapshot iframe is not allowed as final note content. Use snapshot _resources and source-ported HTML/CSS/JS interactions directly in note.html.`);
+  }
   if (!/<\s*(img|video|iframe|canvas|svg)\b/i.test(html)) warnings.push(`${context}: HTML rich note contains no visible source media or interactive demo elements.`);
-  if (!hasDirectOriginalMedia(html)) warnings.push(`${context}: HTML rich note has no direct original source media/embed (<img>, <video>, <source>, or <iframe> with https:// URL). Source-root links and canvas reproductions alone are not enough for asset-rich sources.`);
+  if (!hasDirectOriginalMedia(html) && !hasDirectSnapshotResourceReference(html)) warnings.push(`${context}: HTML rich note has no direct original source media or concrete source snapshot _resources reference. Source-root links and self-created canvas reproductions alone are not enough for asset-rich sources.`);
+  if (snapshotBacked && !hasDirectSnapshotResourceReference(html)) {
+    warnings.push(`${context}: source snapshot is present but note.html does not directly reference assets/source-snapshot/<source-id>/_resources/. This usually means the interaction was recreated from scratch instead of using source snapshot assets.`);
+  }
   if (!hasVisibleInteractiveElement(html)) warnings.push(`${context}: HTML rich note has no visible interactive element. Interactive/tutorial sources should preserve or reproduce important demos.`);
   validateReviewQuestionAnswers(html, errors, warnings, context);
 }

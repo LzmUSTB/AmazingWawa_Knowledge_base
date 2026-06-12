@@ -2,9 +2,9 @@
 
 ## Purpose
 
-A source snapshot is a local, private mirror of an original web page and its runtime assets. Use it to preserve the source's original assets and interaction behavior without repeatedly embedding external URLs.
+A source snapshot is a local, private mirror of an original web page and its runtime assets. Use it as an asset library and behavior reference for building a knowledge-base-native note.
 
-The snapshot is not automatically the final note. Treat it as a local source asset repository and behavioral reference.
+The snapshot is not the final note UI. Do not make the final note a thin iframe wrapper around the snapshot page.
 
 ## Expected snapshot structure
 
@@ -19,70 +19,73 @@ assets/source-snapshot/<source-id>/_resources/**
 
 The `_resources/` folder may contain copied original images, CSS, JavaScript, videos, fonts, wasm, JSON, and other runtime assets.
 
-## Priority order
+## Required workflow
 
-When a snapshot is available, use this priority order:
+When a source snapshot is available, the AI must do the following before writing `note.html`:
 
-1. Directly use copied original media from `assets/source-snapshot/<source-id>/_resources/`.
-2. Recreate source interactions directly inside `note.html` using HTML/CSS/JS and snapshot assets as reference.
-3. Use the original source URL only for attribution and exact-location source blocks.
-4. Use a whole-snapshot iframe only as fallback/debug reference, not as the main note experience.
-5. Use AI-authored supplementary demos only when the snapshot cannot provide enough isolated behavior.
+1. Inspect `assets/source-snapshot/<source-id>/snapshot-manifest.json` when present.
+2. Inspect `assets/source-snapshot/<source-id>/index.html` to identify original section structure, demo containers, controls, labels, canvas/SVG elements, and script/style dependencies.
+3. Inspect relevant local CSS/JS resources under `_resources/`, especially source-specific scripts such as `lenses.js`, simulation code, shader code, data files, and media assets.
+4. Extract the actual source variables, controls, update logic, and visual output behavior.
+5. Build a knowledge-base-styled note that directly ports the important interactions into `note.html` using the source snapshot assets and behavior.
 
-## Do not use snapshot as default iframe
+## Primary preservation strategy
 
-Do not make the final note a thin wrapper around:
+Use this strategy for important interactive demos:
+
+```yaml
+preservation_strategy: source-snapshot-assets + source-ported-interaction
+```
+
+This means:
+
+- the note uses local assets copied from the source snapshot where relevant,
+- the note's controls and interaction behavior are ported from the original source behavior,
+- the UI may be redesigned to fit the knowledge base style,
+- the conceptual behavior must remain faithful to the original demonstration.
+
+If a reconstruction is not based on specific snapshot-observed source behavior, it must be marked as supplementary rather than primary preservation.
+
+## Forbidden final representation
+
+Do not use this as the final representation:
 
 ```html
 <iframe src="assets/source-snapshot/<source-id>/index.html"></iframe>
 ```
 
-This is discouraged because it preserves the original page but does not produce a knowledge-base-native teaching note.
+A whole-snapshot iframe may be useful while debugging, but it is not an acceptable final note section unless the user explicitly asks for a raw snapshot viewer. For normal AI import packages, the final note should directly implement the teaching content.
 
-Instead, write a clear teaching note that:
+## Do not mention the snapshot in learner-facing prose
 
-- uses source snapshot assets directly,
-- implements the important controls directly in the note when feasible,
-- explains each control and observation in the target locale,
-- uses source blocks near claims and demos,
-- keeps the layout consistent with the knowledge base style.
+The learner-facing note must teach the concept directly. Do not write:
 
-## Reimplementing source interactions
+- `原 snapshot 中...`
+- `原始 SNAPSHOT 参考视图`
+- `根据 snapshot...`
+- `source snapshot shows...`
 
-When the original source has sliders, play/pause controls, draggable handles, canvas demos, or synchronized figures, reproduce the educational behavior directly in the note.
+Snapshot paths are implementation details. They may appear in `review/source-asset-manifest.md` and in HTML asset paths, but not as explanatory prose.
 
-A good reconstruction keeps:
-
-- the same conceptual variables,
-- the same cause-effect relationship,
-- the same observed outcome,
-- the same source asset or visual reference when available.
-
-The UI may be redesigned to fit the knowledge base style. It may use different visual framing, panels, labels, control layout, and explanatory callouts, as long as the interaction remains clear and faithful.
-
-## Required markup
-
-Mark every source-backed visual or reconstructed interaction with `data-source-asset`:
-
-```html
-<section class="rich-js-demo" data-source-asset="pinhole-diameter-distance-demo">
-  <!-- knowledge-base styled controls and canvas/svg based on snapshot behavior -->
-</section>
-```
-
-Use source blocks near the demo:
+Source blocks must cite the original URL and original source location, not the snapshot file:
 
 ```html
 <aside class="source-block">
   <strong>Source</strong>
   <a href="https://ciechanow.ski/cameras-and-lenses/" target="_blank" rel="noreferrer">Cameras and Lenses</a>
-  <span>Location: Pinhole camera / hole diameter and sensor distance controls; reconstructed using local source snapshot assets.</span>
+  <span>Location: Pinhole camera / hole diameter and sensor distance controls</span>
 </aside>
 ```
 
+## UI adaptation rule
+
+The UI may be changed to match the knowledge base: dark panels, hard edges, concise control labels, source-linked captions, and app font-size variables.
+
+The explanation must remain clear and direct. Preserve the original demo's key variables, cause-effect behavior, and observable results. Do not simplify the interaction so much that it becomes weaker than the source.
+
 ## Review files
 
-For snapshot-backed packages, `review/source-asset-manifest.md` must state:
+For snapshot-backed packages, `review/source-asset-manifest.md` must include evidence of source-porting:
 
 ```yaml
 source_assets:
@@ -95,30 +98,39 @@ source_assets:
     note_location: section 02
     snapshot_path: assets/source-snapshot/source-id/index.html
     snapshot_assets_used:
-      - assets/source-snapshot/source-id/_resources/example.png
-      - assets/source-snapshot/source-id/_resources/example.js
-    preservation_strategy: snapshot-assets + direct-js-reimplementation
-    fallback_if_any: none
+      - assets/source-snapshot/source-id/_resources/source-specific.js
+      - assets/source-snapshot/source-id/_resources/source-specific.css
+    ported_original_controls:
+      - hole diameter
+      - sensor distance
+    ported_original_behavior:
+      - increasing hole diameter increases brightness and blur
+      - increasing sensor distance changes image size and exposure distribution
+    preservation_strategy: source-snapshot-assets + source-ported-interaction
 ```
 
-If an interaction cannot be directly reimplemented, state the limitation clearly and use `unavailable_reason:`.
+If an interaction cannot be directly ported, state the limitation with `unavailable_reason:` and mark any AI-authored demo as supplementary.
 
 ## Language and style
 
-Use the target locale for explanatory text. The note UI may be adapted to the knowledge base visual style, but the explanation must remain clear, direct, and teachable.
+Use the target locale for explanations, section titles, captions, review questions, and answers. Keep precise English technical terms when useful, but explain them in the target locale. Use direct teaching voice.
 
 
 # Source-first strict revisions
 
 These rules override weaker or older guidance in this context export.
 
+## Learner-facing voice
+
+Never write the note as if it is commenting on a snapshot or the source document. Use direct teaching voice in the target locale. The source URL is cited for attribution, while the explanation should read like the knowledge base itself is teaching the concept.
+
 ## Snapshot-backed source preservation
 
 If a package includes `assets/source-snapshot/`, that snapshot must be treated as the highest-priority source asset library.
 
-Do not use a whole snapshot iframe as the primary note representation. The AI should use the snapshot's local assets and behavior to implement the important demos directly inside `note.html` with knowledge-base-styled HTML/CSS/JS.
+Do not use a whole snapshot iframe as the primary note representation. The AI should use the snapshot's local assets and behavior to port the important demos directly inside `note.html` with knowledge-base-styled HTML/CSS/JS.
 
-Allowed fallback: a whole-snapshot iframe may be included only as a secondary reference/debug view when the interaction cannot be isolated or faithfully reimplemented. It must be clearly labeled as fallback and must not replace the teaching explanation.
+Allowed fallback: a whole-snapshot iframe may be included only as a secondary reference/debug view when the interaction cannot be isolated or faithfully ported. It must be clearly labeled as fallback and must not replace the teaching explanation.
 
 ## Original media and interactive demos
 
@@ -135,7 +147,7 @@ Priority order when no source snapshot exists:
 Priority order when a source snapshot exists:
 
 1. Use local original assets from `assets/source-snapshot/<source-id>/_resources/`.
-2. Reimplement source interactions directly in the note using knowledge-base-styled controls and snapshot-observed behavior.
+2. Port source interactions directly in the note using knowledge-base-styled controls and snapshot-observed behavior.
 3. Use source URL/source blocks for attribution and source location.
 4. Use iframe only as fallback/reference, not as the primary final note.
 
@@ -157,7 +169,7 @@ Every required source asset or demo must have a stable id and must be marked in 
 
 ```html
 <section class="rich-js-demo" data-source-asset="pinhole-diameter-distance-demo">
-  <!-- Directly implemented controls/canvas/SVG using snapshot assets and observed behavior. -->
+  <!-- Directly ported controls/canvas/SVG using snapshot assets and observed behavior. -->
 </section>
 ```
 
@@ -174,8 +186,13 @@ source_assets:
     note_location: section 01
     snapshot_path: assets/source-snapshot/cameras-and-lenses/index.html
     snapshot_assets_used:
-      - assets/source-snapshot/cameras-and-lenses/_resources/example.png
-    preservation_strategy: snapshot-assets + direct-js-reimplementation
+      - assets/source-snapshot/cameras-and-lenses/_resources/source-specific.js
+    ported_original_controls:
+      - hole diameter
+      - sensor distance
+    ported_original_behavior:
+      - increasing hole diameter increases brightness and blur
+    preservation_strategy: source-snapshot-assets + source-ported-interaction
 ```
 
 Do not put `node-id / section xx` into `note_location` as the only machine-readable location. Use `represented_in_node` for the node id.
