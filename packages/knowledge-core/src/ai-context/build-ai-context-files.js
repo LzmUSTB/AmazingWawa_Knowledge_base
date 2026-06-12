@@ -41,35 +41,6 @@ const STATIC_CONTEXT_FILES = {
 }),
 };
 
-function augmentPackageAndRelationGuide() {
-  const guideName = "PACKAGE_AND_RELATION_GUIDE.md";
-  let guide = STATIC_CONTEXT_FILES[guideName];
-
-  guide = guide.replace(
-    "`meta.yaml` must include:\n\n```yaml\nid:\ntitle:\ndomain:\ntype:\nstatus:\nsummary:\ncontentFormat: markdown | html | none\naliases: []\ntags: []\nsourceIds: []\ncreatedAt:\nupdatedAt:\n```",
-    "`meta.yaml` must include an English title and should include locale fields when available:\n\n```yaml\nid:\ntitle: English title\ntitleLocale: Locale title when available\ndomain:\ntype:\nstatus:\nsummary: English one-sentence summary\nsummaryLocale: Locale one-sentence summary when available\ncontentFormat: markdown | html | none\naliases: []\ntags: []\nsourceIds: []\ncreatedAt:\nupdatedAt:\n```"
-  );
-
-  guide = guide.replace(
-    "- `meta.title` must equal `node.title`\n- `meta.domain` must equal `node.domain`",
-    "- `meta.title` must equal `node.title`\n- `meta.titleLocale` must equal `node.titleLocale` when provided\n- `meta.domain` must equal `node.domain`"
-  );
-
-  guide = guide.replace(
-    "## Canonical operation shapes\n\nUse flat `add_edge` operations only:",
-    "## Canonical operation shapes\n\nFor `add_node`, always include the English `title`; include `titleLocale` when a target-locale title is available:\n\n```yaml\n- type: add_node\n  id: pinhole-camera\n  title: Pinhole Camera\n  titleLocale: Xiao Kong Xiang Ji\n  domain: optics\n  type: concept\n  status: seed\n  summary: One sentence in English.\n  summaryLocale: One sentence in the package locale when available.\n  contentFormat: markdown\n  parentId: cameras-and-lenses\n```\n\nUse flat `add_edge` operations only:"
-  );
-
-  guide = guide.replace(
-    "If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`.\n\nIf no suitable existing domain fits, create a small, stable, broad domain. Do not create excessive narrow domains.",
-    "If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`.\n\nFor `add_domain`, always include the English `title`; include `titleLocale` when a target-locale title is available:\n\n```yaml\n- type: add_domain\n  id: optics\n  title: Optics\n  titleLocale: Guang Xue\n  description: Cameras, lenses, light transport, and imaging.\n  descriptionLocale: Domain description in the package locale when available.\n  color: \"#00b7ff\"\n  order: 10\n```\n\nIf no suitable existing domain fits, create a small, stable, broad domain. Do not create excessive narrow domains."
-  );
-
-  STATIC_CONTEXT_FILES[guideName] = guide;
-}
-
-augmentPackageAndRelationGuide();
-
 function blockRegistryMarkdown(customBlocks) {
   const nativeList = NATIVE_BLOCK_TYPES.map((type) => `- ${type}`).join("\n");
   const customList = customBlocks.length

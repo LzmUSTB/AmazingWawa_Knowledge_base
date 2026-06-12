@@ -16,3 +16,18 @@ boards:
         w: 190
         h: 80
     routes: {}
+  cameras-and-lenses-source-ported:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      cameras-and-lenses-source-ported:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      optics:
+        x: 1280
+        y: 576
+        w: 190
+        h: 80

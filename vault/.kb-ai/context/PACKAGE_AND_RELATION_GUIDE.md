@@ -48,17 +48,15 @@ generated/content/<domain>/<node-id>/note.html
 
 For `contentFormat: none`, omit both note files.
 
-`meta.yaml` must include an English title and should include locale fields when available:
+`meta.yaml` must include:
 
 ```yaml
 id:
-title: English title
-titleLocale: Locale title when available
+title:
 domain:
 type:
 status:
-summary: English one-sentence summary
-summaryLocale: Locale one-sentence summary when available
+summary:
 contentFormat: markdown | html | none
 aliases: []
 tags: []
@@ -71,29 +69,12 @@ Strict match required:
 
 - `meta.id` must equal `node.id`
 - `meta.title` must equal `node.title`
-- `meta.titleLocale` must equal `node.titleLocale` when provided
 - `meta.domain` must equal `node.domain`
 - `meta.type` must equal `node.type`
 - `meta.status` must equal `node.status`
 - `meta.contentFormat` must equal `node.contentFormat` when provided
 
 ## Canonical operation shapes
-
-For `add_node`, always include the English `title`; include `titleLocale` when a target-locale title is available:
-
-```yaml
-- type: add_node
-  id: pinhole-camera
-  title: Pinhole Camera
-  titleLocale: Xiao Kong Xiang Ji
-  domain: optics
-  type: concept
-  status: seed
-  summary: One sentence in English.
-  summaryLocale: One sentence in the package locale when available.
-  contentFormat: markdown
-  parentId: cameras-and-lenses
-```
 
 Use flat `add_edge` operations only:
 
@@ -110,19 +91,6 @@ Nested `edge:` objects are forbidden.
 ## Domain rules
 
 If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`.
-
-For `add_domain`, always include the English `title`; include `titleLocale` when a target-locale title is available:
-
-```yaml
-- type: add_domain
-  id: optics
-  title: Optics
-  titleLocale: Guang Xue
-  description: Cameras, lenses, light transport, and imaging.
-  descriptionLocale: Domain description in the package locale when available.
-  color: "#00b7ff"
-  order: 10
-```
 
 If no suitable existing domain fits, create a small, stable, broad domain. Do not create excessive narrow domains.
 

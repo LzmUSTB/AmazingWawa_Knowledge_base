@@ -103,6 +103,7 @@ async function applySelectedPackage() {
       </div>
       <div class="header-actions">
         <button class="hud-button" :disabled="loading || !selectedPackageId" @click="inspectSelectedPackage">
+          <AppIcon name="refresh" :size="12" />
           {{ loading ? "Loading..." : "Refresh" }}
         </button>
         <button class="hud-button" @click="$emit('close')">
@@ -202,7 +203,7 @@ async function applySelectedPackage() {
       <main class="center-column">
         <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
 
-        <label class="note-preview-selector">
+        <label  v-if="diff?.notePreviews?.length >= 1" class="note-preview-selector">
           <span>Preview Note</span>
           <select v-model.number="selectedNoteIndex">
             <option v-for="(preview, index) in diff.notePreviews" :key="preview.nodeId" :value="index">
