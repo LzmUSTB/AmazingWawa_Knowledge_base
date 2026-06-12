@@ -20,15 +20,24 @@ const props = defineProps({
 
 defineEmits(["open-note"]);
 
-const activeNode = computed(() => findGraphNode(props.selectedNodeId) || getGraphNodes()[0]);
+const fallbackNode = { id: "root", title: "Local Graph", domain: "root", type: "domain", summary: "" };
+const activeNode = computed(() => findGraphNode(props.selectedNodeId) || getGraphNodes()[0] || null);
 const currentScope = computed(() => getGraphScope(activeNode.value?.id || "root"));
 const nodes = computed(() => currentScope.value.nodes);
 const edges = computed(() => currentScope.value.edges);
 const selectedNode = computed(
-  () => activeNode.value || currentScope.value.nodes[0],
+  () => activeNode.value || currentScope.value.nodes[0] || fallbackNode,
 );
-const connectedIds = computed(() => getConnectedNodeIds(selectedNode.value.id, edges.value));
+const connectedIds = computed(() => selectedNode.value?.id ? getConnectedNodeIds(selectedNode.value.id, edges.value) : new Set());
 const board = computed(() => getGraphBoardSize(currentScope.value.id, "mobile"));
+
+function edgeColor(edge) {
+  return relationTheme[edge.relation]?.color || "var(--border-muted)";
+}
+
+function edgeDash(edge) {
+  return relationTheme[edge.relation]?.dash || "";
+}
 </script>
 
 <template>
@@ -61,8 +70,8 @@ const board = computed(() => getGraphBoardSize(currentScope.value.id, "mobile"))
             :key="edge.id"
             class="mobile-trace"
             :d="pointsToPath(getTracePoints(edge.id, currentScope.id, 'mobile'))"
-            :stroke="relationTheme[edge.relation].color"
-            :stroke-dasharray="relationTheme[edge.relation].dash"
+            :stroke="edgeColor(edge)"
+            :stroke-dasharray="edgeDash(edge)"
           />
         </svg>
 

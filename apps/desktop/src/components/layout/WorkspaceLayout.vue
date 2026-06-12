@@ -233,7 +233,7 @@ function fitGraphView() {
         </template>
 
         <AiImportView v-else-if="currentView === 'ai-import'" :vault-root-path="activeVaultRootPath"
-          @applied="$emit('ai-import-applied', $event)" />
+          @applied="$emit('ai-import-applied', $event)" @close="$emit('show-view', 'graph')" />
 
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 

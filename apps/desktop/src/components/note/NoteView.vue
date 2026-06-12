@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import HtmlNoteRenderer from "./HtmlNoteRenderer.vue";
 import NoteBlockRenderer from "./NoteBlockRenderer.vue";
 import NoteEditor from "./NoteEditor.vue";
@@ -21,7 +21,8 @@ const props = defineProps({
 const emit = defineEmits(["dirty-change", "find-visible-change", "save-note", "set-mode", "show-graph"]);
 
 const readSurfaceRef = ref(null);
-const node = computed(() => findGraphNode(props.noteId) || getGraphNodes()[0]);
+const fallbackNode = { id: "", title: "Untitled", domain: "root", type: "note", status: "draft", summary: "" };
+const node = computed(() => findGraphNode(props.noteId) || getGraphNodes()[0] || fallbackNode);
 const accent = computed(() => getDomainColor(node.value.domain));
 const noteRecord = computed(() => getActiveVault().notes[props.noteId] || null);
 const noteMarkdown = computed(() => noteRecord.value?.markdown || "");
@@ -37,18 +38,40 @@ const findOpen = ref(false);
 const findQuery = ref("");
 const findMatches = ref([]);
 const findCurrentIndex = ref(0);
+const handledFindOpenKey = ref(props.noteFindOpenKey);
+const htmlFindTotal = ref(0);
+const htmlFindCurrentIndex = ref(0);
+const htmlSearchMoveToken = ref(0);
+const htmlSearchMoveDirection = ref(1);
 const dirty = computed(() => draftMarkdown.value !== noteMarkdown.value);
+const findTotal = computed(() => (hasHtmlNote.value ? htmlFindTotal.value : findMatches.value.length));
+const activeFindIndex = computed(() => (hasHtmlNote.value ? htmlFindCurrentIndex.value : findCurrentIndex.value));
 
 watch(noteMarkdown, (nextMarkdown) => { if (props.mode !== "edit") draftMarkdown.value = nextMarkdown; });
 watch(() => props.noteId, () => { draftMarkdown.value = noteMarkdown.value; emit("dirty-change", false); closeFind(); });
 watch(dirty, (nextDirty) => emit("dirty-change", nextDirty), { immediate: true });
 watch(() => props.mode, (mode) => { if (mode !== "read") closeFind(); });
-watch(() => props.noteFindOpenKey, () => openFind(props.noteFindQuery));
+watch(() => props.noteFindOpenKey, () => {
+  if (props.noteFindOpenKey === handledFindOpenKey.value) return;
+  handledFindOpenKey.value = props.noteFindOpenKey;
+  openFind(props.noteFindQuery);
+});
 watch(() => props.noteFindCloseKey, () => closeFind());
 watch(() => props.noteFindQuery, (query) => { if (!findOpen.value || query === findQuery.value) return; findQuery.value = query; });
 watch(findOpen, (visible) => emit("find-visible-change", visible), { immediate: true });
-watch([findOpen, findQuery, noteMarkdown, noteHtml], () => { findCurrentIndex.value = 0; scheduleHighlight(); });
+watch([findOpen, findQuery, noteMarkdown, noteHtml], () => {
+  findCurrentIndex.value = 0;
+  htmlFindTotal.value = 0;
+  htmlFindCurrentIndex.value = 0;
+  scheduleHighlight();
+});
 onBeforeUnmount(() => removeHighlights());
+onMounted(() => {
+  if (props.noteFindOpenKey > 0 && props.noteFindQuery) {
+    handledFindOpenKey.value = props.noteFindOpenKey;
+    openFind(props.noteFindQuery);
+  }
+});
 
 function initialDraftMarkdown() {
   return `# ${node.value.title}\n\n## 一句话定义\n\n${node.value.summary || ""}\n\n## 它解决什么问题？\n\n## 核心直觉\n\n## 正式解释\n\n## 最小例子\n\n## 常见误区\n\n## 相关知识\n\n## 复习问题\n\n`;
@@ -73,7 +96,7 @@ function saveNote() {
   emit("save-note", { node: node.value, markdown: draftMarkdown.value });
 }
 function openFind(query = findQuery.value) { if (props.mode !== "read") return; findOpen.value = true; if (query !== undefined) findQuery.value = query; findCurrentIndex.value = 0; scheduleHighlight(); }
-function closeFind() { findOpen.value = false; findMatches.value = []; findCurrentIndex.value = 0; removeHighlights(); }
+function closeFind() { findOpen.value = false; findMatches.value = []; findCurrentIndex.value = 0; htmlFindTotal.value = 0; htmlFindCurrentIndex.value = 0; removeHighlights(); }
 function scheduleHighlight() { nextTick(() => applyHighlights()); }
 function removeHighlights() {
   const root = readSurfaceRef.value;
@@ -117,6 +140,7 @@ function highlightTextNode(textNode, query) {
 }
 function applyHighlights() {
   removeHighlights();
+  if (hasHtmlNote.value) return;
   if (!findOpen.value || props.mode !== "read" || !findQuery.value.trim()) { findMatches.value = []; findCurrentIndex.value = 0; return; }
   const root = readSurfaceRef.value;
   if (!root) return;
@@ -131,14 +155,26 @@ function updateCurrentMatch({ scroll = true } = {}) {
   findMatches.value.forEach((match, index) => match.classList.toggle("is-current", index === findCurrentIndex.value));
   if (scroll && findMatches.value[findCurrentIndex.value]) findMatches.value[findCurrentIndex.value].scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
 }
-function moveFind(delta) { const count = findMatches.value.length; if (!count) return; findCurrentIndex.value = (findCurrentIndex.value + delta + count) % count; updateCurrentMatch(); }
+function moveFind(delta) {
+  if (hasHtmlNote.value) {
+    if (!htmlFindTotal.value) return;
+    htmlSearchMoveDirection.value = delta;
+    htmlSearchMoveToken.value += 1;
+    return;
+  }
+  const count = findMatches.value.length; if (!count) return; findCurrentIndex.value = (findCurrentIndex.value + delta + count) % count; updateCurrentMatch();
+}
+function handleHtmlFindResults(payload) {
+  htmlFindTotal.value = Number(payload?.total || 0);
+  htmlFindCurrentIndex.value = Number(payload?.currentIndex || 0);
+}
 </script>
 
 <template>
   <section class="note-view">
     <NoteToolbar :can-save-note="canSaveNote" :dirty="dirty" :mode="mode" :saving="saving" @cancel-edit="cancelEdit" @edit="startEdit" @save="saveNote" @show-graph="$emit('show-graph')" />
-    <article class="note-content technical-grid" :style="{ '--note-color': accent }">
-      <NoteFindBar v-model:query="findQuery" :current-index="findCurrentIndex" :total="findMatches.length" :visible="findOpen && mode === 'read'" @close="closeFind" @next="moveFind(1)" @previous="moveFind(-1)" />
+    <article class="note-content technical-grid" :class="{ 'is-html-note': hasHtmlNote }" :style="{ '--note-color': accent }">
+      <NoteFindBar v-model:query="findQuery" :current-index="activeFindIndex" :total="findTotal" :visible="findOpen && mode === 'read'" @close="closeFind" @next="moveFind(1)" @previous="moveFind(-1)" />
       <div class="note-shell">
         <header class="note-header">
           <div class="note-accent"></div>
@@ -148,8 +184,19 @@ function moveFind(delta) { const count = findMatches.value.length; if (!count) r
           </div>
         </header>
         <NoteEditor v-if="mode === 'edit' && (noteFormat !== 'none' || draftMarkdown)" v-model="draftMarkdown" />
-        <div v-else ref="readSurfaceRef" class="read-surface">
-          <HtmlNoteRenderer v-if="hasHtmlNote" :html="noteHtml" :node="node" :vault-root-path="vaultRootPath" />
+        <div v-else ref="readSurfaceRef" class="read-surface" :class="{ 'is-html-note': hasHtmlNote }">
+          <HtmlNoteRenderer
+            v-if="hasHtmlNote"
+            :html="noteHtml"
+            :node="node"
+            :search-active="findOpen && mode === 'read'"
+            :search-move-direction="htmlSearchMoveDirection"
+            :search-move-token="htmlSearchMoveToken"
+            :search-query="findQuery"
+            :vault-root-path="vaultRootPath"
+            fill-viewport
+            @find-results-change="handleHtmlFindResults"
+          />
           <NoteBlockRenderer v-else-if="hasMarkdownNote" :markdown="noteMarkdown" :search-query="findOpen ? findQuery : ''" :block-registry="blockRegistry" :node="node" :vault-root-path="vaultRootPath" />
           <section v-else class="empty-note-card">
             <div class="empty-kicker">empty node</div>
@@ -166,7 +213,9 @@ function moveFind(delta) { const count = findMatches.value.length; if (!count) r
 <style scoped>
 .note-view { display: flex; flex: 1; min-width: 0; min-height: 0; overflow: hidden; flex-direction: column; }
 .note-content { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: auto; }
+.note-content.is-html-note { display: flex; flex-direction: column; overflow: hidden; }
 .note-shell { width: 100%; max-width: none; min-height: 100%; margin: 0; border-left: 1px solid var(--border-primary); border-right: 0; border-top: 0; border-bottom: 0; background: var(--background-main); }
+.note-content.is-html-note .note-shell { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 .note-header { display: grid; grid-template-columns: 5px 1fr; border-bottom: 1px solid var(--border-muted); background: var(--background-panel); }
 .note-accent { background: var(--note-color); }
 .note-header > div:last-child { padding: 28px 32px 24px; }
@@ -174,6 +223,7 @@ h1 { margin: 0; color: var(--text-primary); font-size: var(--font-size-note-titl
 .note-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .note-chips span { min-height: 24px; padding: 5px 10px; border: 1px solid var(--border-muted); border-left: 4px solid var(--note-color); color: var(--text-secondary); font-size: var(--font-size-small); font-weight: 800; text-transform: uppercase; }
 .read-surface { width: 100%; min-width: 0; padding: clamp(20px, 3vw, 42px); }
+.read-surface.is-html-note { display: flex; flex: 1; min-height: 0; overflow: hidden; padding: 0; }
 .empty-note-card { display: grid; gap: 14px; width: min(760px, 100%); margin: 0 auto; border: 1px solid var(--border-muted); border-left: 5px solid var(--note-color, var(--graphics)); background: var(--background-panel); padding: 24px; }
 .empty-kicker { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); font-weight: 900; text-transform: uppercase; }
 .empty-note-card h2 { margin: 0; color: var(--text-primary); font-size: var(--font-size-title); }

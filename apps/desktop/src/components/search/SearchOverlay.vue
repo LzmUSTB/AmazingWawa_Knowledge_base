@@ -161,7 +161,7 @@ function handleKeydown(event) {
         </header>
 
         <div v-if="mode === 'full-text' && !hasQuery" class="search-empty">
-          Type text to search note.md contents and content blocks.
+          Type text to search Markdown notes, HTML notes, and content blocks.
         </div>
 
         <div v-else-if="mode === 'full-text' && fullTextResults.length" class="result-stack">

@@ -78,16 +78,17 @@ function handleKeydown(event) {
 <style scoped>
 .note-find-bar {
   position: sticky;
-  z-index: 8;
+  z-index: 12;
   top: 12px;
-  float: right;
   display: grid;
   grid-template-columns: minmax(180px, 260px) 54px 30px 30px 30px;
   align-items: center;
   gap: 6px;
-  margin: 12px 16px -58px 0;
+  width: min(472px, calc(100% - 32px));
+  margin: 12px 16px -58px auto;
   border: 1px solid var(--border-primary);
   background: var(--background-elevated);
+  box-shadow: 0 0 0 1px rgba(237, 237, 237, 0.12);
   padding: 6px;
 }
 

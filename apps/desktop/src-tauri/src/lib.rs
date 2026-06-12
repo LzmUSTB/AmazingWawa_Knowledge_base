@@ -45,10 +45,19 @@ struct AiImportAssetFile {
     size: u64,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BinaryAssetPayload {
+    base64: String,
+    mime_type: String,
+    size: u64,
+}
+
 const WAWAPKG_MIMETYPE: &str = "application/x-wawa-kb-ai-import-package";
 const MAX_WAWAPKG_TOTAL_SIZE: u64 = 100 * 1024 * 1024;
 const MAX_WAWAPKG_FILE_SIZE: u64 = 20 * 1024 * 1024;
 const MAX_WAWAPKG_FILE_COUNT: usize = 1000;
+const MAX_NOTE_ASSET_READ_SIZE: u64 = 20 * 1024 * 1024;
 
 #[derive(Serialize)]
 struct AiImportHistory {
@@ -227,6 +236,19 @@ fn allowed_asset_extension(entry_path: &str) -> bool {
     )
 }
 
+fn allowed_note_asset_read_path(relative_path: &str) -> bool {
+    let normalized = relative_path.replace('\\', "/");
+    let trimmed = normalized.trim_end_matches('/');
+    !trimmed.is_empty()
+        && !normalized.starts_with('/')
+        && normalized.as_bytes().get(1) != Some(&b':')
+        && normalized.starts_with("content/")
+        && normalized.contains("/assets/")
+        && normalized
+            .split('/')
+            .all(|part| !part.is_empty() && part != "." && part != "..")
+}
+
 fn asset_mime_type(entry_path: &str) -> &'static str {
     match extension_of(entry_path).as_str() {
         ".avif" => "image/avif",
@@ -301,6 +323,31 @@ fn decode_base64(input: &str) -> Result<Vec<u8>, String> {
         }
     }
     Ok(output)
+}
+
+fn encode_base64(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut output = String::with_capacity(((bytes.len() + 2) / 3) * 4);
+    let mut index = 0;
+    while index < bytes.len() {
+        let b0 = bytes[index];
+        let b1 = if index + 1 < bytes.len() { bytes[index + 1] } else { 0 };
+        let b2 = if index + 2 < bytes.len() { bytes[index + 2] } else { 0 };
+        output.push(TABLE[(b0 >> 2) as usize] as char);
+        output.push(TABLE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize] as char);
+        if index + 1 < bytes.len() {
+            output.push(TABLE[(((b1 & 0b0000_1111) << 2) | (b2 >> 6)) as usize] as char);
+        } else {
+            output.push('=');
+        }
+        if index + 2 < bytes.len() {
+            output.push(TABLE[(b2 & 0b0011_1111) as usize] as char);
+        } else {
+            output.push('=');
+        }
+        index += 3;
+    }
+    output
 }
 
 #[derive(Deserialize)]
@@ -1040,6 +1087,47 @@ fn read_text_file(vault_root_path: String, relative_path: String) -> Result<Stri
 }
 
 #[tauri::command]
+fn read_binary_file_base64(
+    vault_root_path: String,
+    relative_path: String,
+) -> Result<BinaryAssetPayload, String> {
+    if !allowed_note_asset_read_path(&relative_path) {
+        return Err("Refusing to read a non-asset path".into());
+    }
+    if !allowed_asset_extension(&relative_path) {
+        return Err("Unsupported asset file type".into());
+    }
+
+    let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
+    let canonical_root = PathBuf::from(&vault_root_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    let canonical_target = target_path
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve asset path: {error}"))?;
+    if !canonical_target.starts_with(&canonical_root) {
+        return Err("Refusing to read a path outside the vault root".into());
+    }
+    if !canonical_target.is_file() {
+        return Err("Asset path is not a file".into());
+    }
+
+    let metadata = fs::metadata(&canonical_target)
+        .map_err(|error| format!("Failed to read asset metadata: {error}"))?;
+    if metadata.len() > MAX_NOTE_ASSET_READ_SIZE {
+        return Err("Asset exceeds 20 MB read limit".into());
+    }
+
+    let bytes = fs::read(&canonical_target)
+        .map_err(|error| format!("Failed to read {}: {error}", canonical_target.to_string_lossy()))?;
+    Ok(BinaryAssetPayload {
+        base64: encode_base64(&bytes),
+        mime_type: asset_mime_type(&relative_path).into(),
+        size: bytes.len() as u64,
+    })
+}
+
+#[tauri::command]
 fn create_dir_all(vault_root_path: String, relative_path: String) -> Result<(), String> {
     let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
     fs::create_dir_all(&target_path)
@@ -1057,6 +1145,7 @@ pub fn run() {
             choose_wawapkg_file,
             create_dir_all,
             read_ai_import_history,
+            read_binary_file_base64,
             read_wawapkg_file,
             read_text_file,
             read_vault_files,

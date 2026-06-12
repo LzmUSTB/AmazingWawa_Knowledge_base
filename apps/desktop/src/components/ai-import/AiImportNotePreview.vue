@@ -20,7 +20,7 @@ defineProps({
     </header>
 
     <div v-if="preview" class="note-preview-surface" :class="{ 'is-html-preview': preview.contentFormat === 'html' }">
-      <HtmlNoteRenderer v-if="preview.contentFormat === 'html'" :html="preview.html" :preview-node="preview" :asset-files="assetFiles" />
+      <HtmlNoteRenderer v-if="preview.contentFormat === 'html'" :html="preview.html" :preview-node="preview" :asset-files="assetFiles" fill-viewport />
       <NoteBlockRenderer v-else :markdown="preview.markdown" :block-registry="blockRegistry" :preview-node="preview" :asset-files="assetFiles" />
     </div>
 

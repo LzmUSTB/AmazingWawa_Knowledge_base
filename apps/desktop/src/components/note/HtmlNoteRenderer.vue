@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { convertFileSrc, isTauri } from "@tauri-apps/api/core";
+import { readBinaryFileAsDataUrl } from "../../data/desktop-vault-adapter.js";
 
 const props = defineProps({
   html: { type: String, default: "" },
@@ -8,14 +8,24 @@ const props = defineProps({
   vaultRootPath: { type: String, default: "" },
   previewNode: { type: Object, default: null },
   assetFiles: { type: Array, default: () => [] },
+  fillViewport: { type: Boolean, default: false },
+  searchActive: { type: Boolean, default: false },
+  searchQuery: { type: String, default: "" },
+  searchMoveToken: { type: Number, default: 0 },
+  searchMoveDirection: { type: Number, default: 1 },
 });
 
+const emit = defineEmits(["find-results-change"]);
 const frameRef = ref(null);
 const frameHeight = ref(720);
 const themeVars = ref("");
+const preparedHtml = ref("");
+const assetLoading = ref(false);
+const assetErrors = ref([]);
 const frameId = `html-note-${Math.random().toString(36).slice(2)}`;
 let mutationObserver = null;
 let resizeRaf = 0;
+let prepareRunId = 0;
 
 const CSS_VAR_FALLBACKS = {
   "--background-main": "#080808",
@@ -58,7 +68,7 @@ function assetField(asset, camel, snake) {
   return asset?.[camel] ?? asset?.[snake] ?? "";
 }
 
-function previewAssetHref(value = "") {
+function previewAssetDataUrl(value = "") {
   const safePath = safeAssetPath(value);
   const preview = props.previewNode;
   if (!safePath || !preview?.domain || !nodeIdFor(preview)) return "";
@@ -71,47 +81,149 @@ function previewAssetHref(value = "") {
   return `data:${mimeType};base64,${asset.base64}`;
 }
 
-function assetAbsolutePath(value = "") {
+function vaultRelativeAssetPath(value = "") {
   const safePath = safeAssetPath(value);
   const node = props.previewNode || props.node;
   const nodeId = nodeIdFor(node);
   if (!safePath || !props.vaultRootPath || !node?.domain || !nodeId) return "";
-  return `${props.vaultRootPath.replace(/[\\/]+$/, "")}/content/${node.domain}/${nodeId}/${safePath}`;
+  return `content/${node.domain}/${nodeId}/${safePath}`;
 }
 
-function assetHref(value = "") {
-  const previewHref = previewAssetHref(value);
+async function assetDataUrl(value = "") {
+  const previewHref = previewAssetDataUrl(value);
   if (previewHref) return previewHref;
 
-  const absolutePath = assetAbsolutePath(value);
-  if (!absolutePath) return "";
-  return isTauri() ? convertFileSrc(absolutePath) : absolutePath;
+  const relativePath = vaultRelativeAssetPath(value);
+  if (!relativePath) return "";
+  return readBinaryFileAsDataUrl(props.vaultRootPath, relativePath);
 }
 
 function isRemoteUrl(value = "") {
   return /^(https?:)?\/\//i.test(String(value).trim());
 }
 
-function isAllowedUrlAttribute(attrName, value = "") {
+function isLocalAnchorOrContact(value = "") {
+  return String(value).startsWith("#") || /^(mailto:|tel:)/i.test(String(value).trim());
+}
+
+function base64ToBytes(base64 = "") {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function dataUrlToText(dataUrl = "") {
+  const match = dataUrl.match(/^data:([^;,]+)?(;charset=[^;,]+)?;base64,(.*)$/i);
+  if (!match) return "";
+  const bytes = base64ToBytes(match[3]);
+  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+}
+
+async function assetText(value = "") {
+  const dataUrl = await assetDataUrl(value);
+  return dataUrl ? dataUrlToText(dataUrl) : "";
+}
+
+async function rewriteCssUrls(cssText = "") {
+  const matches = [...cssText.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)];
+  let nextCss = cssText;
+  for (const match of matches) {
+    const rawUrl = String(match[2] || "").trim();
+    if (!rawUrl || isRemoteUrl(rawUrl)) continue;
+    if (/^data:/i.test(rawUrl)) {
+      nextCss = nextCss.replace(match[0], "url(\"\")");
+      continue;
+    }
+    if (!safeAssetPath(rawUrl)) {
+      nextCss = nextCss.replace(match[0], "url(\"\")");
+      continue;
+    }
+    try {
+      const dataUrl = await assetDataUrl(rawUrl);
+      nextCss = nextCss.replace(match[0], dataUrl ? `url("${dataUrl}")` : "url(\"\")");
+    } catch (error) {
+      console.warn("[html-note] Failed to inline CSS asset.", rawUrl, error);
+      nextCss = nextCss.replace(match[0], "url(\"\")");
+    }
+  }
+  return nextCss;
+}
+
+async function allowedResourceUrl(attrName, value = "") {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  if (/^(data:|javascript:)/i.test(raw)) return "";
-  if (raw.startsWith("assets/")) return assetHref(raw);
+  if (/^javascript:/i.test(raw)) return "";
+  if (/^data:/i.test(raw)) return "";
+  if (raw.startsWith("assets/")) return assetDataUrl(raw);
   if (isRemoteUrl(raw)) return raw;
-  if (attrName === "href" && (raw.startsWith("#") || /^(mailto:|tel:)/i.test(raw))) return raw;
+  if (attrName === "href" && isLocalAnchorOrContact(raw)) return raw;
   return "";
 }
 
-function rewriteResourceAttributes(root) {
+async function inlineExternalStyles(root) {
+  const stylesheets = [...root.querySelectorAll('link[rel~="stylesheet"][href]')];
+  for (const link of stylesheets) {
+    const href = link.getAttribute("href") || "";
+    if (!safeAssetPath(href)) {
+      const allowedHref = await allowedResourceUrl("href", href);
+      if (allowedHref) link.setAttribute("href", allowedHref);
+      else link.remove();
+      continue;
+    }
+    try {
+      const style = document.createElement("style");
+      style.dataset.wawaInlinedAsset = href;
+      style.textContent = await rewriteCssUrls(await assetText(href));
+      link.replaceWith(style);
+    } catch (error) {
+      console.warn("[html-note] Failed to inline stylesheet.", href, error);
+      link.remove();
+    }
+  }
+}
+
+async function inlineExternalScripts(root) {
+  const scripts = [...root.querySelectorAll("script[src]")];
+  for (const script of scripts) {
+    const src = script.getAttribute("src") || "";
+    if (!safeAssetPath(src)) {
+      script.remove();
+      continue;
+    }
+    try {
+      const inlineScript = document.createElement("script");
+      inlineScript.dataset.wawaInlinedAsset = src;
+      inlineScript.textContent = await assetText(src);
+      script.replaceWith(inlineScript);
+    } catch (error) {
+      console.warn("[html-note] Failed to inline script.", src, error);
+      script.remove();
+    }
+  }
+}
+
+async function rewriteResourceAttributes(root) {
   const attrNames = ["src", "href", "poster"];
-  root.querySelectorAll(attrNames.map((name) => `[${name}]`).join(",")).forEach((element) => {
-    attrNames.forEach((attrName) => {
-      if (!element.hasAttribute(attrName)) return;
-      const nextValue = isAllowedUrlAttribute(attrName, element.getAttribute(attrName));
-      if (nextValue) element.setAttribute(attrName, nextValue);
-      else element.removeAttribute(attrName);
-    });
-  });
+  const elements = [...root.querySelectorAll(attrNames.map((name) => `[${name}]`).join(","))];
+  for (const element of elements) {
+    for (const attrName of attrNames) {
+      if (!element.hasAttribute(attrName)) continue;
+      if (element.tagName === "LINK" && attrName === "href" && element.relList?.contains("stylesheet")) continue;
+      if (element.tagName === "SCRIPT" && attrName === "src") continue;
+      const raw = element.getAttribute(attrName);
+      try {
+        const nextValue = await allowedResourceUrl(attrName, raw);
+        if (nextValue) element.setAttribute(attrName, nextValue);
+        else element.removeAttribute(attrName);
+      } catch (error) {
+        console.warn("[html-note] Failed to inline asset.", raw, error);
+        element.removeAttribute(attrName);
+      }
+    }
+  }
 
   root.querySelectorAll("a[href]").forEach((anchor) => {
     anchor.setAttribute("target", "_blank");
@@ -119,20 +231,54 @@ function rewriteResourceAttributes(root) {
   });
 }
 
-function normalizeHtmlFragment(rawHtml = "") {
-  const source = String(rawHtml || "").trim();
-  if (!source) return "";
-
-  const template = document.createElement("template");
-  template.innerHTML = source;
-  rewriteResourceAttributes(template.content);
-
-  const container = document.createElement("div");
-  container.appendChild(template.content.cloneNode(true));
-  return container.innerHTML;
+async function rewriteInlineStyleAttributes(root) {
+  const elements = [...root.querySelectorAll("[style]")];
+  for (const element of elements) {
+    try {
+      element.setAttribute("style", await rewriteCssUrls(element.getAttribute("style") || ""));
+    } catch (error) {
+      console.warn("[html-note] Failed to rewrite inline style asset.", error);
+      element.removeAttribute("style");
+    }
+  }
 }
 
-const noteHtml = computed(() => normalizeHtmlFragment(props.html));
+async function prepareHtml() {
+  const runId = ++prepareRunId;
+  const source = String(props.html || "").trim();
+  assetLoading.value = true;
+  assetErrors.value = [];
+  frameHeight.value = 720;
+
+  if (!source) {
+    preparedHtml.value = "";
+    assetLoading.value = false;
+    return;
+  }
+
+  try {
+    const template = document.createElement("template");
+    template.innerHTML = source;
+    await inlineExternalStyles(template.content);
+    await inlineExternalScripts(template.content);
+    await rewriteResourceAttributes(template.content);
+    await rewriteInlineStyleAttributes(template.content);
+
+    const container = document.createElement("div");
+    container.appendChild(template.content.cloneNode(true));
+    if (runId === prepareRunId) preparedHtml.value = container.innerHTML;
+  } catch (error) {
+    if (runId === prepareRunId) {
+      assetErrors.value = [String(error?.message || error)];
+      preparedHtml.value = "";
+    }
+  } finally {
+    if (runId === prepareRunId) {
+      assetLoading.value = false;
+      nextTick(scheduleThemeSync);
+    }
+  }
+}
 
 function readCssVar(name, fallback = "") {
   if (typeof window === "undefined") return fallback;
@@ -158,15 +304,28 @@ const baseCss = `
 html, body {
   margin: 0;
   padding: 0;
+  min-height: 100%;
   background: var(--background-main);
   color: var(--text-secondary);
   font-family: Inter, "Noto Sans SC", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: var(--font-size-ui);
   line-height: 1.82;
 }
+html.is-fill-viewport, html.is-fill-viewport body { height: 100%; overflow: hidden; }
 * { box-sizing: border-box; }
 a { color: var(--note-color, var(--graphics)); text-decoration: none; }
-
+a:hover { text-decoration: underline; }
+button, input, select, textarea { font: inherit; }
+.rich-note-root {
+  width: min(1120px, 100%);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-ui);
+  line-height: 1.82;
+}
+html.is-fill-viewport .rich-note-root { width: 100%; height: 100%; overflow: auto; }
 .rich-review details,
 details.rich-qa {
   border-left: 5px solid var(--note-color, var(--graphics));
@@ -193,22 +352,22 @@ details.rich-qa summary::before {
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
 }
 .rich-review details[open] summary::before,
-details.rich-qa[open] summary::before { content: "−"; }
+details.rich-qa[open] summary::before { content: "-"; }
 .rich-answer {
   margin-top: 12px;
   border-top: 1px solid var(--border-muted);
   padding-top: 12px;
 }
-
-a:hover { text-decoration: underline; }
-button, input, select, textarea { font: inherit; }
-.rich-note-root {
-  width: min(1120px, 100%);
-  margin: 0 auto;
-  padding: 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-ui);
-  line-height: 1.82;
+mark[data-wawa-html-find] {
+  background: rgba(255, 213, 0, 0.34);
+  color: inherit;
+  outline: 1px solid rgba(255, 213, 0, 0.42);
+  padding: 0 1px;
+}
+mark[data-wawa-html-find].is-current {
+  background: var(--career);
+  color: var(--background-main);
+  outline: 2px solid var(--border-primary);
 }
 .rich-note-article, article { display: grid; gap: 28px; }
 .rich-hero,
@@ -334,33 +493,222 @@ function autoResizeScript() {
 })();`;
 }
 
+function bridgeScript() {
+  return `
+(() => {
+  const frameId = ${JSON.stringify(frameId)};
+  let matches = [];
+  let currentIndex = 0;
+
+  const shouldForwardShortcut = (event) => {
+    const key = String(event.key || '');
+    const lowerKey = key.toLowerCase();
+    return ((event.ctrlKey || event.metaKey) && (lowerKey === 'f' || lowerKey === 'q')) ||
+      (event.altKey && (key === 'ArrowLeft' || key === 'ArrowRight')) ||
+      key === 'Escape';
+  };
+
+  window.addEventListener('keydown', (event) => {
+    if (!shouldForwardShortcut(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    parent.postMessage({
+      type: 'wawa-html-note-keydown',
+      frameId,
+      key: event.key,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      altKey: event.altKey,
+      shiftKey: event.shiftKey
+    }, '*');
+  }, true);
+
+  const skippedTextParent = (node) => {
+    const parent = node.parentElement;
+    return !parent ||
+      !node.nodeValue.trim() ||
+      Boolean(parent.closest('script, style, input, textarea, select, mark[data-wawa-html-find]'));
+  };
+
+  const textNodesForFind = () => {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        return skippedTextParent(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    let current = walker.nextNode();
+    while (current) {
+      nodes.push(current);
+      current = walker.nextNode();
+    }
+    return nodes;
+  };
+
+  const clearMarks = () => {
+    document.querySelectorAll('mark[data-wawa-html-find]').forEach((mark) => {
+      const parent = mark.parentNode;
+      if (!parent) return;
+      while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+      parent.removeChild(mark);
+      parent.normalize();
+    });
+    matches = [];
+    currentIndex = 0;
+  };
+
+  const report = () => {
+    parent.postMessage({
+      type: 'wawa-html-note-find-results',
+      frameId,
+      total: matches.length,
+      currentIndex: matches.length ? currentIndex : 0
+    }, '*');
+  };
+
+  const updateCurrent = (scroll = true) => {
+    matches.forEach((match, index) => match.classList.toggle('is-current', index === currentIndex));
+    if (scroll && matches[currentIndex]) {
+      matches[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+    report();
+  };
+
+  const highlightNode = (textNode, query) => {
+    const text = textNode.nodeValue || '';
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const fragment = document.createDocumentFragment();
+    let index = 0;
+    let found = false;
+    while (index < text.length) {
+      const matchIndex = lowerText.indexOf(lowerQuery, index);
+      if (matchIndex < 0) break;
+      if (matchIndex > index) fragment.appendChild(document.createTextNode(text.slice(index, matchIndex)));
+      const mark = document.createElement('mark');
+      mark.dataset.wawaHtmlFind = 'true';
+      mark.textContent = text.slice(matchIndex, matchIndex + query.length);
+      fragment.appendChild(mark);
+      index = matchIndex + query.length;
+      found = true;
+    }
+    if (!found) return;
+    if (index < text.length) fragment.appendChild(document.createTextNode(text.slice(index)));
+    textNode.parentNode.replaceChild(fragment, textNode);
+  };
+
+  const applyQuery = (query) => {
+    clearMarks();
+    const normalizedQuery = String(query || '').trim();
+    if (!normalizedQuery) {
+      report();
+      return;
+    }
+    textNodesForFind().forEach((node) => highlightNode(node, normalizedQuery));
+    matches = [...document.querySelectorAll('mark[data-wawa-html-find]')];
+    currentIndex = 0;
+    updateCurrent(true);
+  };
+
+  const move = (direction) => {
+    if (!matches.length) return report();
+    currentIndex = (currentIndex + (direction < 0 ? -1 : 1) + matches.length) % matches.length;
+    updateCurrent(true);
+  };
+
+  window.addEventListener('message', (event) => {
+    const data = event.data || {};
+    if (data.type !== 'wawa-html-note-find' || data.frameId !== frameId) return;
+    if (data.action === 'clear') {
+      clearMarks();
+      report();
+      return;
+    }
+    if (data.action === 'move') {
+      move(Number(data.direction || 1));
+      return;
+    }
+    if (data.action === 'set') {
+      applyQuery(data.query || '');
+    }
+  });
+})();`;
+}
+
 const srcdoc = computed(() => {
   const scriptOpen = "<script>";
   const scriptClose = `<${"/"}script>`;
+  const htmlClass = props.fillViewport ? ' class="is-fill-viewport"' : "";
+  const resizeScript = props.fillViewport ? "" : `${scriptOpen}${autoResizeScript()}${scriptClose}`;
+  const appBridgeScript = `${scriptOpen}${bridgeScript()}${scriptClose}`;
   return `<!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN"${htmlClass}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>${themeVars.value}\n${baseCss}</style>
 </head>
 <body>
-<main class="rich-note-root">${noteHtml.value}</main>
-${scriptOpen}${autoResizeScript()}${scriptClose}
+<main class="rich-note-root">${preparedHtml.value}</main>
+${resizeScript}
+${appBridgeScript}
 </body>
 </html>`;
 });
 
+const frameStyle = computed(() => (
+  props.fillViewport ? { height: "100%" } : { height: `${frameHeight.value}px` }
+));
+
 function handleMessage(event) {
   const data = event.data || {};
-  if (data.type !== "wawa-html-note-height" || data.frameId !== frameId) return;
-  const nextHeight = Number(data.height || 0);
-  if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
-  frameHeight.value = Math.max(480, Math.min(20000, Math.ceil(nextHeight + 4)));
+  if (data.frameId !== frameId) return;
+  if (data.type === "wawa-html-note-height") {
+    if (props.fillViewport) return;
+    const nextHeight = Number(data.height || 0);
+    if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
+    frameHeight.value = Math.max(480, Math.min(20000, Math.ceil(nextHeight + 4)));
+    return;
+  }
+  if (data.type === "wawa-html-note-find-results") {
+    emit("find-results-change", {
+      total: Number(data.total || 0),
+      currentIndex: Number(data.currentIndex || 0),
+    });
+    return;
+  }
+  if (data.type === "wawa-html-note-keydown") {
+    window.dispatchEvent(new KeyboardEvent("keydown", {
+      key: data.key,
+      ctrlKey: Boolean(data.ctrlKey),
+      metaKey: Boolean(data.metaKey),
+      altKey: Boolean(data.altKey),
+      shiftKey: Boolean(data.shiftKey),
+      bubbles: true,
+      cancelable: true,
+    }));
+  }
+}
+
+function postFindMessage(payload) {
+  frameRef.value?.contentWindow?.postMessage({ type: "wawa-html-note-find", frameId, ...payload }, "*");
+}
+
+function syncFindToFrame() {
+  if (!props.searchActive) {
+    postFindMessage({ action: "clear" });
+    return;
+  }
+  postFindMessage({ action: "set", query: props.searchQuery });
+}
+
+function handleFrameLoad() {
+  nextTick(syncFindToFrame);
 }
 
 onMounted(() => {
   syncThemeVars();
+  prepareHtml();
   window.addEventListener("message", handleMessage);
   window.addEventListener("resize", scheduleThemeSync);
   mutationObserver = new MutationObserver(scheduleThemeSync);
@@ -375,24 +723,32 @@ onBeforeUnmount(() => {
   if (resizeRaf) cancelAnimationFrame(resizeRaf);
 });
 
-watch(() => props.html, () => {
-  frameHeight.value = 720;
-  nextTick(scheduleThemeSync);
-});
+watch(
+  () => [props.html, props.vaultRootPath, props.node?.id, props.node?.domain, props.previewNode?.id, props.previewNode?.domain, props.assetFiles],
+  () => prepareHtml(),
+  { deep: true },
+);
 watch(() => props.node?.color, scheduleThemeSync);
+watch(() => [props.searchActive, props.searchQuery], syncFindToFrame);
+watch(() => props.searchMoveToken, () => {
+  if (!props.searchActive) return;
+  postFindMessage({ action: "move", direction: props.searchMoveDirection });
+});
 </script>
 
 <template>
-  <div class="html-note-renderer">
+  <div class="html-note-renderer" :class="{ 'is-fill-viewport': fillViewport }">
+    <div v-if="assetLoading && !preparedHtml" class="html-note-state">Loading assets...</div>
+    <div v-else-if="assetErrors.length" class="html-note-state is-error">{{ assetErrors[0] }}</div>
     <iframe
       ref="frameRef"
       class="html-note-frame"
       title="HTML note"
       :srcdoc="srcdoc"
-      :style="{ height: `${frameHeight}px` }"
+      :style="frameStyle"
       sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-pointer-lock allow-modals"
       allow="fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture"
-      allowfullscreen
+      @load="handleFrameLoad"
     ></iframe>
   </div>
 </template>
@@ -402,11 +758,37 @@ watch(() => props.node?.color, scheduleThemeSync);
   width: 100%;
   min-width: 0;
 }
+
+.html-note-renderer.is-fill-viewport {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
 .html-note-frame {
   display: block;
   width: 100%;
   min-height: 480px;
   border: 0;
   background: var(--background-main);
+}
+
+.html-note-renderer.is-fill-viewport .html-note-frame {
+  flex: 1;
+  min-height: 0;
+}
+
+.html-note-state {
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  padding: 12px;
+  text-transform: uppercase;
+}
+
+.html-note-state.is-error {
+  color: var(--game-dev);
 }
 </style>

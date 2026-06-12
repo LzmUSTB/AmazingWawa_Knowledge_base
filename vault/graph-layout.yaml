@@ -11,7 +11,7 @@ boards:
         w: 220
         h: 100
       cameras-and-lenses-source-ported:
-        x: 1280
+        x: 1312
         y: 864
         w: 190
         h: 80

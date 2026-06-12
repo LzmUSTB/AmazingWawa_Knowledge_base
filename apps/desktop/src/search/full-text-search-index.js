@@ -25,6 +25,44 @@ function compactText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function htmlToSearchText(html = "") {
+  const source = String(html || "").trim();
+  if (!source) return "";
+  if (typeof document === "undefined") {
+    return compactText(source.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " "));
+  }
+
+  const template = document.createElement("template");
+  template.innerHTML = source;
+  template.content.querySelectorAll("script, style, noscript").forEach((element) => element.remove());
+  const attributeText = [...template.content.querySelectorAll("[alt], [title], [aria-label]")]
+    .flatMap((element) => [element.getAttribute("alt"), element.getAttribute("title"), element.getAttribute("aria-label")])
+    .filter(Boolean)
+    .join(" ");
+  return compactText(`${template.content.textContent || ""} ${attributeText}`);
+}
+
+function splitSearchText(text, { maxLength = 1800, overlap = 160 } = {}) {
+  const compacted = compactText(text);
+  if (!compacted) return [];
+  if (compacted.length <= maxLength) return [compacted];
+
+  const chunks = [];
+  let start = 0;
+  while (start < compacted.length) {
+    let end = Math.min(compacted.length, start + maxLength);
+    if (end < compacted.length) {
+      const softBreak = compacted.lastIndexOf(" ", end);
+      if (softBreak > start + Math.floor(maxLength * 0.65)) end = softBreak;
+    }
+    chunks.push(compacted.slice(start, end).trim());
+    if (end >= compacted.length) break;
+    const nextStart = end - overlap;
+    start = nextStart > start ? nextStart : end;
+  }
+  return chunks.filter(Boolean);
+}
+
 function safeStringify(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
@@ -98,6 +136,13 @@ function contentBlockChunks(node, nodeId, block, blockIndex) {
   return [baseChunk(node, nodeId, blockIndex, 0, block.type, contentBlockSection(block), text)];
 }
 
+function htmlChunks(node, nodeId, html) {
+  const text = htmlToSearchText(html);
+  return splitSearchText(text).map((chunkText, chunkIndex) => (
+    baseChunk(node, nodeId, 0, chunkIndex, "html", chunkIndex ? `HTML note ${chunkIndex + 1}` : "HTML note", chunkText)
+  ));
+}
+
 function baseChunk(node, nodeId, blockIndex, chunkIndex, blockType, section, text) {
   return {
     id: `fulltext:${nodeId}:${blockIndex}:${chunkIndex}`,
@@ -116,10 +161,11 @@ function baseChunk(node, nodeId, blockIndex, chunkIndex, blockType, section, tex
   };
 }
 
-function chunksForNote(nodeId, markdown) {
+function chunksForNote(nodeId, note) {
   const node = findGraphNode(nodeId);
   if (!node) return [];
-  return parseNoteBlocks(markdown || "", { blockRegistry: getActiveVault().blockRegistry || {} }).flatMap((block, blockIndex) => {
+  if (note?.format === "html" || note?.html) return htmlChunks(node, nodeId, note?.html || "");
+  return parseNoteBlocks(note?.markdown || "", { blockRegistry: getActiveVault().blockRegistry || {} }).flatMap((block, blockIndex) => {
     if (block.type === "markdown") return markdownChunks(node, nodeId, block, blockIndex);
     return contentBlockChunks(node, nodeId, block, blockIndex);
   });
@@ -137,7 +183,7 @@ export function buildFullTextSearchResults(query) {
   const notes = getActiveVault().notes || {};
   const perNodeCount = new Map();
   const scored = Object.entries(notes)
-    .flatMap(([nodeId, note]) => chunksForNote(nodeId, note?.markdown || ""))
+    .flatMap(([nodeId, note]) => chunksForNote(nodeId, note || {}))
     .map((chunk) => {
       const score = scoreFullTextChunk(normalizedQuery, chunk);
       return {

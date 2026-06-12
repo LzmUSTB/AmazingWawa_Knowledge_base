@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import NoVaultView from "./components/layout/NoVaultView.vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
@@ -107,16 +107,6 @@ const recentResults = computed(() =>
     excludeIds: pinnedNodeIdSet.value,
   }),
 );
-
-if (import.meta.env.DEV) {
-  watch([currentView, graphScopeId, selectedNodeId], ([view, scope, selected], [oldView, oldScope, oldSelected]) => {
-    console.debug("[nav-state]", {
-      from: { view: oldView, scope: oldScope, selected: oldSelected },
-      to: { view, scope, selected },
-      trace: new Error().stack,
-    });
-  });
-}
 
 const uiScaleStyle = computed(() => ({
   "--ui-font-scale": uiFontScale.value,
@@ -549,12 +539,6 @@ async function saveLayout() {
       : getGraphScope(targetScopeId).selectedNodeId;
     currentDomain.value = hasDomain(previousCurrentDomain) ? previousCurrentDomain : getFallbackDomain();
     discardLayoutDraft({ confirm: false, scopeId });
-    console.debug("[save-layout:restored]", {
-      currentView: currentView.value,
-      graphScopeId: graphScopeId.value,
-      selectedNodeId: selectedNodeId.value,
-      savedScopeId: scopeId,
-    });
   } catch (error) {
     console.error("[vault] Failed to save graph-layout.yaml.", error);
     layoutError.value = String(error);
@@ -731,6 +715,18 @@ function showView(viewName) {
 
 function handleAiImportApplied(updatedVault) {
   replaceVaultWithoutNavigation(updatedVault);
+  const targetScopeId = hasGraphScope(graphScopeId.value) ? graphScopeId.value : "root";
+  const scope = getGraphScope(targetScopeId);
+  const fallbackNodeId = scope.selectedNodeId || getGraphNodes().find((node) => node.type !== "domain")?.id || "";
+  const nextSelectedNodeId = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : fallbackNodeId;
+  const nextNoteId = findGraphNode(currentNoteId.value) ? currentNoteId.value : nextSelectedNodeId;
+  graphScopeId.value = targetScopeId;
+  selectedNodeId.value = nextSelectedNodeId;
+  currentNoteId.value = nextNoteId;
+  currentDomain.value = hasDomain(currentDomain.value)
+    ? currentDomain.value
+    : findGraphNode(nextSelectedNodeId)?.domain || getFallbackDomain();
+  currentView.value = "graph";
   noteDirty.value = false;
   noteMode.value = "read";
 }
@@ -803,12 +799,6 @@ async function saveNote({ node, markdown }) {
     graphScopeId.value = targetScopeId;
     noteDirty.value = false;
     noteMode.value = "read";
-    console.debug("[save-note:restored]", {
-      currentView: currentView.value,
-      graphScopeId: graphScopeId.value,
-      currentNoteId: currentNoteId.value,
-      selectedNodeId: selectedNodeId.value,
-    });
   } catch (error) {
     console.error("[vault] Failed to save note.md.", error);
     window.alert(`Failed to save note.md: ${error}`);

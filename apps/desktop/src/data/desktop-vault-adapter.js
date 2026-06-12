@@ -102,6 +102,13 @@ export async function captureSourceSnapshot(url) {
   return invoke("capture_source_snapshot", { url: String(url).trim() });
 }
 
+export async function readBinaryFileAsDataUrl(vaultRootPath, relativePath) {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to read note assets.");
+  if (!vaultRootPath || !relativePath) return "";
+  const payload = await invoke("read_binary_file_base64", { vaultRootPath, relativePath });
+  return `data:${payload.mimeType || "application/octet-stream"};base64,${payload.base64}`;
+}
+
 export async function inspectWawaPackage(vaultRootPath, packageFilePath) {
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const packageFiles = await readWawaPackageFile(packageFilePath);

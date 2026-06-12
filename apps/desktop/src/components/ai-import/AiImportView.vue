@@ -11,7 +11,7 @@ const props = defineProps({
   vaultRootPath: { type: String, required: true },
 });
 
-const emit = defineEmits(["applied"]);
+const emit = defineEmits(["applied", "close"]);
 
 const selectedPackageId = ref("");
 const selectedPackageFilePath = ref("");
@@ -84,7 +84,7 @@ async function applySelectedPackage() {
   try {
     const updatedVault = await applyWawaPackage(props.vaultRootPath, selectedPackageFilePath.value);
     emit("applied", updatedVault);
-    await inspectSelectedPackage();
+    emit("close");
   } catch (error) {
     applyError.value = String(error?.message || error);
   } finally {
@@ -100,9 +100,12 @@ async function applySelectedPackage() {
         <div class="panel-label" style="--label-color: var(--career)">Import</div>
         <h1>Package Review</h1>
       </div>
-      <button class="hud-button" :disabled="loading || !selectedPackageId" @click="inspectSelectedPackage">
-        {{ loading ? "Loading..." : "Refresh" }}
-      </button>
+      <div class="header-actions">
+        <button class="hud-button" :disabled="loading || !selectedPackageId" @click="inspectSelectedPackage">
+          {{ loading ? "Loading..." : "Refresh" }}
+        </button>
+        <button class="hud-button" @click="$emit('close')">Close</button>
+      </div>
     </header>
 
     <div class="ai-import-grid">
@@ -242,6 +245,12 @@ async function applySelectedPackage() {
   color: var(--text-primary);
   font-size: var(--font-size-title);
   text-transform: uppercase;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .ai-import-grid {
