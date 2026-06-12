@@ -196,150 +196,72 @@ function fitGraphView() {
 </script>
 
 <template>
-  <div
-    class="desktop-prototype app-frame"
-    :class="{
-      'is-sidebar-collapsed': sidebarCollapsed,
-      'is-relation-sidebar-collapsed': relationSidebarCollapsed,
-    }"
-  >
-    <TopMenu
-      :app-title="appTitle"
-      :can-create-note="canCreateNote"
-      :can-export-context="Boolean(activeVaultRootPath)"
-      :ui-font-scale="uiFontScale"
-      @export-context="$emit('export-context')"
-      @open-dialog="$emit('open-dialog', $event)"
-      @open-vault="$emit('open-vault')"
-      @show-view="$emit('show-view', $event)"
-    />
+  <div class="desktop-prototype app-frame" :class="{
+    'is-sidebar-collapsed': sidebarCollapsed,
+    'is-relation-sidebar-collapsed': relationSidebarCollapsed,
+  }">
+    <TopMenu :app-title="appTitle" :can-create-note="canCreateNote" :can-export-context="Boolean(activeVaultRootPath)"
+      :ui-font-scale="uiFontScale" @export-context="$emit('export-context')" @open-dialog="$emit('open-dialog', $event)"
+      @open-vault="$emit('open-vault')" @show-view="$emit('show-view', $event)" />
     <div class="app-body" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
       <aside class="sidebar-region">
-        <FileTree
-          v-if="!sidebarCollapsed"
-          :active-domain="currentDomain"
-          :active-note-id="currentNoteId"
-          @open-domain="$emit('open-domain', $event)"
-          @open-note="$emit('open-note', $event)"
-          @toggle-sidebar="$emit('toggle-sidebar')"
-        />
-        <button
-          v-else
-          class="sidebar-rail-button hud-button"
-          style="--button-color: var(--graphics)"
-          @click="$emit('toggle-sidebar')"
-        >
+        <FileTree v-if="!sidebarCollapsed" :active-domain="currentDomain" :active-note-id="currentNoteId"
+          @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)"
+          @toggle-sidebar="$emit('toggle-sidebar')" />
+        <button v-else class="sidebar-rail-button" @click="$emit('toggle-sidebar')">
           Vault
         </button>
       </aside>
 
       <main class="workspace">
-        <BreadcrumbBar
-          :current-domain="currentDomain"
-          :current-note-id="currentNoteId"
-          :current-view="currentView"
-          @open-domain="$emit('open-domain', $event)"
-          :graph-scope-id="graphScopeId"
-          @show-graph="$emit('show-graph', $event)"
-        />
+        <BreadcrumbBar :current-domain="currentDomain" :current-note-id="currentNoteId" :current-view="currentView"
+          @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
+          @show-graph="$emit('show-graph', $event)" />
 
         <template v-if="currentView === 'graph'">
-          <GraphToolbar
-            :edge-count="currentScope.edges.length"
-            :can-save-layout="canSaveLayout"
-            :can-create-node="canCreateNote"
-            :layout-dirty="layoutDirty"
-            :layout-editing="isLayoutEditing"
-            :layout-mode="layoutMode"
-            :layout-save-in-progress="layoutSaveInProgress"
-            :node-count="currentScope.nodes.length"
-            @cancel-layout="$emit('cancel-layout')"
-            @edit-layout="$emit('edit-layout')"
-            @fit-view="fitGraphView"
-            @open-dialog="$emit('open-dialog', $event)"
-            @save-layout="$emit('save-layout')"
-          />
-          <GraphView
-            ref="graphViewRef"
-            :draft-board="draftLayoutBoard"
-            :draft-moved-node-ids="draftMovedNodeIds"
-            :is-layout-editing="isLayoutEditing"
-            :selected-node-id="selectedNodeId"
-            :scope-id="graphScopeId"
+          <GraphToolbar :edge-count="currentScope.edges.length" :can-save-layout="canSaveLayout"
+            :can-create-node="canCreateNote" :layout-dirty="layoutDirty" :layout-editing="isLayoutEditing"
+            :layout-mode="layoutMode" :layout-save-in-progress="layoutSaveInProgress"
+            :node-count="currentScope.nodes.length" @cancel-layout="$emit('cancel-layout')"
+            @edit-layout="$emit('edit-layout')" @fit-view="fitGraphView" @open-dialog="$emit('open-dialog', $event)"
+            @save-layout="$emit('save-layout')" />
+          <GraphView ref="graphViewRef" :draft-board="draftLayoutBoard" :draft-moved-node-ids="draftMovedNodeIds"
+            :is-layout-editing="isLayoutEditing" :selected-node-id="selectedNodeId" :scope-id="graphScopeId"
             @ensure-layout-draft="$emit('ensure-layout-draft', $event)"
-            @layout-node-dragged="$emit('layout-node-dragged', $event)"
-            @open-note="$emit('open-note', $event)"
-            @open-scope="$emit('open-scope', $event)"
-            @select-node="$emit('select-node', $event)"
-          />
+            @layout-node-dragged="$emit('layout-node-dragged', $event)" @open-note="$emit('open-note', $event)"
+            @open-scope="$emit('open-scope', $event)" @select-node="$emit('select-node', $event)" />
         </template>
 
-        <AiImportView
-          v-else-if="currentView === 'ai-import'"
-          :vault-root-path="activeVaultRootPath"
-          @applied="$emit('ai-import-applied', $event)"
-        />
+        <AiImportView v-else-if="currentView === 'ai-import'" :vault-root-path="activeVaultRootPath"
+          @applied="$emit('ai-import-applied', $event)" />
 
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 
-        <NoteView
-          v-else
-          :can-save-note="canSaveNote"
-          :mode="noteMode"
-          :note-find-close-key="noteFindCloseKey"
-          :note-find-open-key="noteFindOpenKey"
-          :note-find-query="noteFindQuery"
-          :note-id="currentNoteId"
-          :saving="noteSaving"
-          @dirty-change="$emit('set-note-dirty', $event)"
-          @find-visible-change="$emit('set-note-find-visible', $event)"
-          @save-note="$emit('save-note', $event)"
-          @set-mode="$emit('set-note-mode', $event)"
-          @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
-        />
+        <NoteView v-else :can-save-note="canSaveNote" :mode="noteMode" :note-find-close-key="noteFindCloseKey"
+          :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
+          :saving="noteSaving" @dirty-change="$emit('set-note-dirty', $event)"
+          @find-visible-change="$emit('set-note-find-visible', $event)" @save-note="$emit('save-note', $event)"
+          @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)" />
       </main>
 
-      <RelationSidebar
-        :add-link-close-key="addLinkCloseKey"
-        :add-link-error="addLinkError"
-        :add-link-open-key="addLinkOpenKey"
-        :add-link-saving="addLinkSaving"
-        :collapsed="relationSidebarCollapsed"
-        :current-note-id="currentNoteId"
-        :current-node-pinned="currentRelationNodePinned"
-        :current-view="currentView"
-        :graph-scope-id="graphScopeId"
-        :node-id="currentRelationNodeId"
-        @add-link="$emit('add-link', $event)"
-        @open-domain="$emit('open-domain', $event)"
-        @open-note="$emit('open-note', $event)"
-        @open-scope="relayOpenScope"
+      <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"
+        :add-link-open-key="addLinkOpenKey" :add-link-saving="addLinkSaving" :collapsed="relationSidebarCollapsed"
+        :current-note-id="currentNoteId" :current-node-pinned="currentRelationNodePinned" :current-view="currentView"
+        :graph-scope-id="graphScopeId" :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
+        @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
         @request-add-link="$emit('request-add-link')"
         @request-delete-relation="$emit('request-delete-relation', $event)"
         @request-edit-relation="$emit('request-edit-relation', $event)"
-        @toggle-collapse="$emit('toggle-relation-sidebar')"
-        @toggle-pin-node="$emit('toggle-pin-node')"
-      />
+        @toggle-collapse="$emit('toggle-relation-sidebar')" @toggle-pin-node="$emit('toggle-pin-node')" />
     </div>
 
-    <div v-if="activeDialog || relationEditEdgeId" class="dialog-overlay" @click.self="relationEditEdgeId ? $emit('close-relation-edit') : $emit('close-dialog')">
-      <NewNoteDialog
-        v-if="activeDialog === 'new-note'"
-        :current-domain="currentDomain"
-        :current-view="currentView"
-        :graph-scope-id="graphScopeId"
-        :selected-node-id="selectedNodeId"
-        @close="$emit('close-dialog')"
-        @create-note="$emit('create-note', $event)"
-      />
-      <EditRelationDialog
-        v-else-if="relationEditEdgeId"
-        :edge-id="relationEditEdgeId"
-        :error="relationError"
-        :saving="relationSaving"
-        @close="$emit('close-relation-edit')"
-        @save="$emit('save-relation-edit', $event)"
-      />
+    <div v-if="activeDialog || relationEditEdgeId" class="dialog-overlay"
+      @click.self="relationEditEdgeId ? $emit('close-relation-edit') : $emit('close-dialog')">
+      <NewNoteDialog v-if="activeDialog === 'new-note'" :current-domain="currentDomain" :current-view="currentView"
+        :graph-scope-id="graphScopeId" :selected-node-id="selectedNodeId" @close="$emit('close-dialog')"
+        @create-note="$emit('create-note', $event)" />
+      <EditRelationDialog v-else-if="relationEditEdgeId" :edge-id="relationEditEdgeId" :error="relationError"
+        :saving="relationSaving" @close="$emit('close-relation-edit')" @save="$emit('save-relation-edit', $event)" />
     </div>
   </div>
 </template>
@@ -404,6 +326,23 @@ function fitGraphView() {
   border-bottom: 0;
   border-left: 0;
   writing-mode: vertical-rl;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--button-color, var(--border-muted));
+  border-right-width: 4px;
+  border-radius: 0;
+  background: var(--background-main);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: var(--font-size-ui);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .dialog-overlay {

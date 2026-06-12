@@ -136,24 +136,7 @@ async function applySelectedPackage() {
             <pre>{{ contents }}</pre>
           </details>
         </section>
-      </aside>
 
-      <main class="center-column">
-        <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
-
-        <label v-if="diff?.notePreviews?.length > 1" class="note-preview-selector">
-          <span>Preview Note</span>
-          <select v-model.number="selectedNoteIndex">
-            <option v-for="(preview, index) in diff.notePreviews" :key="preview.nodeId" :value="index">
-              {{ preview.title || preview.nodeId }}
-            </option>
-          </select>
-        </label>
-
-        <AiImportNotePreview :preview="selectedNotePreview" :block-registry="blockRegistry" :asset-files="assetFiles" />
-      </main>
-
-      <aside class="right-column">
         <AiImportGraphDiff :diff="diff" />
 
         <section class="ai-panel">
@@ -215,6 +198,21 @@ async function applySelectedPackage() {
           @apply="applySelectedPackage"
         />
       </aside>
+
+      <main class="center-column">
+        <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
+
+        <label v-if="diff?.notePreviews?.length > 1" class="note-preview-selector">
+          <span>Preview Note</span>
+          <select v-model.number="selectedNoteIndex">
+            <option v-for="(preview, index) in diff.notePreviews" :key="preview.nodeId" :value="index">
+              {{ preview.title || preview.nodeId }}
+            </option>
+          </select>
+        </label>
+
+        <AiImportNotePreview :preview="selectedNotePreview" :block-registry="blockRegistry" :asset-files="assetFiles" />
+      </main>
     </div>
   </section>
 </template>
@@ -248,7 +246,8 @@ async function applySelectedPackage() {
 
 .ai-import-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   min-width: 0;
   min-height: 0;
@@ -256,18 +255,25 @@ async function applySelectedPackage() {
   padding: 12px;
 }
 
-.left-column,
-.center-column,
-.right-column {
-  display: grid;
-  align-content: start;
-  gap: 12px;
+.left-column {
+  display: flex;
   min-width: 0;
   min-height: 0;
   overflow: auto;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
 }
 
-.center-column { align-content: stretch; }
+.center-column {
+  display: grid;
+  align-content: stretch;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .import-cta p { margin: 0; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.5; }
 .applied-panel strong { color: var(--language); font-size: var(--font-size-ui); text-transform: uppercase; }
 .applied-panel small { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); text-transform: uppercase; }
@@ -287,5 +293,12 @@ async function applySelectedPackage() {
 .file-row span { min-width: 0; overflow-wrap: anywhere; color: var(--text-primary); font-size: var(--font-size-small); font-weight: 800; }
 .empty-line { margin: 0; }
 .error-banner { border: 1px solid var(--game-dev); background: var(--background-main); color: var(--game-dev); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); padding: 10px; }
-@media (max-width: 1180px) { .ai-import-grid { grid-template-columns: 260px minmax(0, 1fr); } .right-column { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+@media (max-width: 1180px) {
+  .ai-import-grid {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+}
 </style>

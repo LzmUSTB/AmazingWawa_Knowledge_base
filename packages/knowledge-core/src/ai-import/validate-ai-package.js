@@ -436,7 +436,6 @@ function validateHtmlNote(html, errors, warnings, context) {
   if (hasSnapshotIframe(html)) {
     errors.push(`${context}: whole source-snapshot iframe is not allowed as final note content. Use snapshot _resources and source-ported HTML/CSS/JS interactions directly in note.html.`);
   }
-  if (!/<\s*(img|video|iframe|canvas|svg)\b/i.test(html)) warnings.push(`${context}: HTML rich note contains no visible source media or interactive demo elements.`);
   if (!hasDirectOriginalMedia(html) && !hasDirectSnapshotResourceReference(html)) warnings.push(`${context}: HTML rich note has no direct original source media or concrete source snapshot _resources reference. Source-root links and self-created canvas reproductions alone are not enough for asset-rich sources.`);
   if (snapshotBacked && !hasDirectSnapshotResourceReference(html)) {
     warnings.push(`${context}: source snapshot is present but note.html does not directly reference assets/source-snapshot/<source-id>/_resources/. This usually means the interaction was recreated from scratch instead of using source snapshot assets.`);

@@ -1,2 +1,6 @@
 schemaVersion: 1
-edges: []
+edges:
+  - id: optics-contains-cameras-and-lenses-source-ported
+    from: optics
+    to: cameras-and-lenses-source-ported
+    relation: contains

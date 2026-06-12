@@ -1,0 +1,107 @@
+{
+  "sourceUrl": "https://ciechanow.ski/cameras-and-lenses/",
+  "capturedAt": "2026-06-11T23:53:39.285Z",
+  "mode": "playwright",
+  "resources": [
+    {
+      "url": "https://ciechanow.ski/cameras-and-lenses/",
+      "path": "_resources/aa010da995a2ae-cameras-and-lenses.html",
+      "contentType": "text/html",
+      "size": 64332,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/css/base.css",
+      "path": "_resources/3807606f0d9e91-base.css",
+      "contentType": "text/css",
+      "size": 15176,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/css/lenses.css",
+      "path": "_resources/084c3f13d958f9-lenses.css",
+      "contentType": "text/css",
+      "size": 2481,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/images/social/icons.png",
+      "path": "_resources/4e3d951e22d4d7-icons.png",
+      "contentType": "image/png",
+      "size": 4821,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/images/anchor.png",
+      "path": "_resources/5d1b3c99143c1f-anchor.png",
+      "contentType": "image/png",
+      "size": 528,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/images/sqrt.svg",
+      "path": "_resources/a37b8ada7c5248-sqrt.svg",
+      "contentType": "image/svg+xml",
+      "size": 204,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/js/base.js",
+      "path": "_resources/019e0accd5a583-base.js",
+      "contentType": "application/javascript",
+      "size": 34409,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/js/lenses.js",
+      "path": "_resources/ca34d58067e21a-lenses.js",
+      "contentType": "application/javascript",
+      "size": 290825,
+      "source": "playwright-response"
+    },
+    {
+      "url": "https://ciechanow.ski/images/play_pause.png",
+      "path": "_resources/02dd0d50dfff64-play_pause.png",
+      "contentType": "image/png",
+      "size": 3182,
+      "source": "playwright-response"
+    }
+  ],
+  "skipped": [],
+  "fileCount": 9,
+  "totalSize": 415958,
+  "omittedFromPackage": [
+    {
+      "path": "_resources/2d62a7e1e86c3c-ucco3fwrk3iltcviywy.woff2",
+      "reason": "font assets are omitted to avoid unsupported .woff2 import errors"
+    },
+    {
+      "path": "_resources/92e63ec1067b6a-zyxzkvelmyyaje8bplhncwdkr932-g7dytd-dmu1syxdkybaba.woff2",
+      "reason": "font assets are omitted to avoid unsupported .woff2 import errors"
+    },
+    {
+      "path": "_resources/2d5256eb9fc211-zyxekvelmyyaje8bplhncwdkhdteg46kmuzqcx598fqbm4jw8v78x9owihqbq5g6voi.woff2",
+      "reason": "font assets are omitted to avoid unsupported .woff2 import errors"
+    },
+    {
+      "path": "_resources/868a235a9c8b50-zyxzkvelmyyaje8bplhncwdkr932-g7dytd-dmu1syxekyy.woff2",
+      "reason": "font assets are omitted to avoid unsupported .woff2 import errors"
+    },
+    {
+      "path": "_resources/e45ac7051e9acd-js.js",
+      "reason": "analytics/tracking script is not required for educational interaction porting"
+    },
+    {
+      "path": "_resources/6e0d87d95b1940-analytics.js",
+      "reason": "analytics/tracking script is not required for educational interaction porting"
+    },
+    {
+      "path": "_resources/0d3902d6d3c82a-js.js",
+      "reason": "analytics/tracking script is not required for educational interaction porting"
+    },
+    {
+      "path": "_resources/de03972245206d-css2.css",
+      "reason": "remote font stylesheet omitted together with unsupported font files"
+    }
+  ]
+}

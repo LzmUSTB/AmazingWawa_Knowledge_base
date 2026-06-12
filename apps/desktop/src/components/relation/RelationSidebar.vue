@@ -288,7 +288,7 @@ function requestDeleteRelation(edgeId) {
 <template>
   <aside class="relation-sidebar" :class="{ 'is-collapsed': collapsed }"
     :style="{ '--relation-node-color': nodeColor }">
-    <button v-if="collapsed" class="relation-rail hud-button" @click="$emit('toggle-collapse')">
+    <button v-if="collapsed" class="relation-rail" @click="$emit('toggle-collapse')">
       Details
     </button>
 
@@ -474,6 +474,23 @@ function requestDeleteRelation(edgeId) {
   border-right: 0;
   border-bottom: 0;
   writing-mode: vertical-rl;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--button-color, var(--border-muted));
+  border-left-width: 4px;
+  border-radius: 0;
+  background: var(--background-main);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: var(--font-size-ui);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .relation-header {

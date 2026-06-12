@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>相机与透镜：从光子到成像</title>
+<link href="assets/source-snapshot/cameras-and-lenses/_resources/3807606f0d9e91-base.css" rel="stylesheet"/>
+<link href="assets/source-snapshot/cameras-and-lenses/_resources/084c3f13d958f9-lenses.css" rel="stylesheet"/>
+<style>
+:root {
+  color-scheme: light;
+  --kb-bg: var(--color-bg, #f4f5f7);
+  --kb-panel: var(--color-panel, #ffffff);
+  --kb-panel-soft: var(--color-panel-soft, #f8f8f8);
+  --kb-text: var(--color-text, #20252b);
+  --kb-muted: var(--color-text-muted, #5e6773);
+  --kb-border: var(--color-border, #d0d7df);
+  --kb-accent: var(--color-accent, #49b6ff);
+}
+html, body { margin: 0; padding: 0; background: var(--kb-bg); color: var(--kb-text); }
+body { font-family: Inter, "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: var(--font-size-md, calc(16px * var(--ui-font-scale, 1))); line-height: 1.65; }
+.rich-note-article { max-width: 1180px; margin: 0 auto; padding: 32px 20px 72px; }
+.rich-hero { border: 1px solid var(--kb-border); background: linear-gradient(180deg, rgba(73,182,255,.10), rgba(255,255,255,.025)); padding: 28px; margin-bottom: 24px; }
+.rich-kicker { margin: 0 0 8px; color: var(--kb-accent); text-transform: uppercase; letter-spacing: .12em; font-size: var(--font-size-xs, 12px); }
+.rich-hero h1 { margin: 0; color: var(--kb-text); font-size: var(--font-size-3xl, 40px); line-height: 1.1; }
+.rich-lead { max-width: 860px; color: var(--kb-muted); font-size: var(--font-size-lg, 19px); }
+.rich-section { margin: 28px 0; border: 1px solid var(--kb-border); background: var(--kb-panel); padding: 22px; }
+.rich-section-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid var(--kb-border); margin-bottom: 16px; }
+.rich-section-num { color: var(--kb-accent); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.rich-section h2 { color: var(--kb-text); margin: 0 0 10px; font-size: var(--font-size-2xl, 28px); }
+.rich-prose p { color: var(--kb-text); margin-top: 0; }
+.demo-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+.strict-source-demo { border: 1px solid var(--kb-border); background: var(--kb-panel-soft); padding: 16px; }
+.demo-head h3 { color: var(--kb-text); margin: 0 0 6px; font-size: var(--font-size-xl, 22px); }
+.demo-head p { margin: 0 0 14px; color: var(--kb-muted); }
+.demo-body { background: #f8f8f8; color: #111; border: 1px solid #d8d8d8; padding: 14px; overflow: hidden; }
+/* Source canvas background restoration + contrast tuning.
+   Light demos use the original light page tone; demos that lived inside the
+   source article's dark sections keep a dark canvas and dark control well. */
+.demo-body .drawer_container,
+.demo-body .drawer_container .canvas_container,
+.demo-body .drawer_container canvas { background-color: #f8f8f8 !important; }
+.strict-source-demo.demo-theme-dark .demo-body { background: #050608; border-color: #1b1f26; color: #e8edf4; }
+.strict-source-demo.demo-theme-dark .control-label { color: #eef2f7; }
+.strict-source-demo.demo-theme-dark .shortcut-button { background: #0d1117; border-color: #3a4556; color: #f3f6fb; }
+.strict-source-demo.demo-theme-dark .shortcut-row a { color: #f3f6fb; }
+.strict-source-demo.demo-theme-dark .demo-body .drawer_container,
+.strict-source-demo.demo-theme-dark .demo-body .drawer_container .canvas_container,
+.strict-source-demo.demo-theme-dark .demo-body .drawer_container canvas { background-color: #000 !important; }
+
+.demo-body .drawer_container { margin-left: auto; margin-right: auto; margin-bottom: 3.5em; }
+.demo-body .small_drawer { max-width: 430px; }
+.demo-body .medium_drawer { max-width: 760px; }
+.demo-body .double_drawer { max-width: 920px; }
+.control-row { display: grid; grid-template-columns: minmax(185px, 260px) 1fr; gap: 16px; align-items: center; max-width: 760px; margin: 18px auto 10px; }
+.control-label { color: #222; font-size: var(--font-size-sm, 14px); font-weight: 600; line-height: 1.35; }
+.shortcut-row { max-width: 760px; margin: 12px auto 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.shortcut-button { display: inline-block; border: 1px solid #888; padding: 3px 9px; background: #fff; text-decoration: none; color: #333; }
+.source-block { display: grid; gap: 4px; margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--kb-accent); background: rgba(73,182,255,.08); color: var(--kb-muted); font-size: var(--font-size-xs, 12px); }
+.source-block strong { color: var(--kb-text); }
+.source-block a { color: var(--kb-accent); }
+.rich-glossary { border: 1px solid var(--kb-border); background: var(--kb-panel); padding: 20px 22px; margin: 0 0 28px; }
+.rich-glossary h2 { margin: 0 0 10px; font-size: var(--font-size-xl, 22px); }
+.rich-glossary p { margin: 0 0 12px; color: var(--kb-muted); }
+.rich-glossary table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm, 14px); }
+.rich-glossary th, .rich-glossary td { border-top: 1px solid var(--kb-border); padding: 10px 8px; text-align: left; vertical-align: top; }
+.rich-glossary th { color: var(--kb-text); }
+.rich-prose .lens_black, .rich-glossary .lens_black { color: #111; font-weight: 600; }
+.rich-prose .lens_yellow { color: #9b6a08; }
+.rich-prose .lens_blue { color: #1f6ea9; }
+.rich-prose .lens_red { color: #c64531; }
+.rich-review { border: 1px solid var(--kb-border); background: var(--kb-panel); padding: 22px; margin-top: 28px; }
+.rich-review h2 { margin-top: 0; }
+.rich-qa { border: 1px solid var(--kb-border); background: #fff; margin: 12px 0; }
+.rich-qa summary { cursor: pointer; color: #1f2937 !important; font-weight: 700; list-style: none; display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #fff; }
+.rich-qa summary::-webkit-details-marker { display: none; }
+.rich-qa summary::before { content: "+"; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #374151; color: #0f172a; font-weight: 700; background: #f8fafc; flex: 0 0 24px; }
+.rich-qa[open] summary::before { content: "−"; }
+.rich-answer { color: #475569; padding: 0 16px 16px 56px; background: #fff; }
+.rich-answer p { color: #334155; margin: 0 0 8px; }
+.play_pause_button, .play_pause_button.playing { background-image: url('assets/source-snapshot/cameras-and-lenses/_resources/02dd0d50dfff64-play_pause.png') !important; }
+.hidden { display: none !important; }
+.animation-toggle { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--kb-border); background: rgba(255,255,255,.04); margin-top: 12px; }
+.animation-toggle a { color: var(--kb-accent); }
+@media (max-width: 720px) {
+  .control-row { grid-template-columns: 1fr; gap: 4px; }
+  .rich-note-article { padding: 18px 10px 48px; }
+  .rich-section { padding: 14px; }
+  .demo-body { padding: 10px; }
+}
+
+.demo-theme-dark .demo-body a { color: #9bd1ff; }
+.demo-theme-dark .source-block { background: rgba(73,182,255,.12); }
+
+
+/* Contrast fixes for KB dark/light renderers. */
+.rich-glossary,
+.rich-glossary * { color: #17202a !important; }
+.rich-glossary { background: #ffffff !important; border-color: #cbd5e1 !important; }
+.rich-glossary table { background: #ffffff !important; border-collapse: collapse !important; }
+.rich-glossary thead,
+.rich-glossary thead tr,
+.rich-glossary th { background: #e9eef5 !important; color: #0f172a !important; font-weight: 800 !important; }
+.rich-glossary td { background: #ffffff !important; color: #1f2937 !important; }
+.rich-glossary th, .rich-glossary td { border: 1px solid #cbd5e1 !important; }
+.rich-glossary strong { color: #0f172a !important; }
+.rich-glossary p { color: #334155 !important; }
+</style>
+</head>
+<body>
+<article class="rich-note-article">
+<header class="rich-hero">
+<p class="rich-kicker">Optics / Camera Imaging</p>
+<h1>相机与透镜：从光子到成像</h1>
+<p class="rich-lead">相机的本质不是“保存画面”，而是把来自三维世界的光线筛选、聚焦、采样并转换成二维像素。理解这条链路，需要同时掌握 photon、sensor、pinhole、lens、aperture、focal length、focus distance、field of view 和 aberration 之间的因果关系。</p>
+<div class="animation-toggle">
+<span id="global_animate_on">动画已启用；可以 <a class="link_button" href="#" onclick="global_animate(false);return false;">暂停所有波动动画</a>。</span>
+<span class="hidden" id="global_animate_off">动画已暂停；可以 <a class="link_button" href="#" onclick="global_animate(true);return false;">恢复所有波动动画</a>。</span>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: Full article / interactive camera and lens demonstrations</span>
+</aside>
+</header><section class="rich-glossary">
+<h2>核心术语</h2>
+<p>下面这些术语会在后续成像链路中反复出现。中文用于理解物理含义，English 用于对应常见光学、摄影和图形学资料。</p>
+<table>
+<thead><tr><th>中文</th><th>English</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>小孔相机</td><td>pinhole camera</td><td>通过极小开口限制入射方向，从而形成图像。</td></tr>
+<tr><td>孔径大小</td><td>hole size / aperture diameter</td><td>影响进光量、模糊圈大小和成像亮度。</td></tr>
+<tr><td>传感器距离</td><td>sensor distance</td><td>开口到 sensor 的距离，影响视角与像面几何。</td></tr>
+<tr><td>焦距</td><td>focal length</td><td>决定 lens 聚焦能力与 field of view。</td></tr>
+<tr><td>对焦距离</td><td>focus distance</td><td>成像最清晰的目标距离。</td></tr>
+<tr><td>视场 / 视野</td><td>field of view</td><td>相机能看到的空间范围。</td></tr>
+<tr><td>折射率</td><td>refractive index</td><td>决定光在介质中的传播速度和偏折程度。</td></tr>
+<tr><td>光圈值</td><td>f-number</td><td>由 focal length 与 aperture 共同决定，影响进光量与景深。</td></tr>
+<tr><td>散景</td><td>bokeh</td><td>离焦区域形成的模糊斑形状与质感。</td></tr>
+</tbody>
+</table>
+</section>
+<section class="rich-section" data-source-unit="opening" id="opening">
+<div class="rich-section-head">
+<span class="rich-section-num">00</span>
+<h2>从可调相机开始</h2>
+</div>
+<div class="rich-prose"><p>先从完整相机的几个可调量建立直觉：aperture 决定进入镜头的光锥大小，focal length 决定视场和物体在 sensor 上的放大程度，focus distance 决定哪一个距离上的物体最清晰。</p><p>这些变量不是彼此独立的旋钮；调节其中一个，通常会同时改变亮度、模糊、景深和构图。</p><p>后面的章节会把这些效果拆开，从光子记录开始逐步重建整个成像机制。</p></div>
+<div class="demo-grid">
+<section class="strict-source-demo" data-source-asset="lens-hero-interactive-demo">
+<div class="demo-head">
+<h3>相机参数联动（camera controls）</h3>
+<p>先把 camera 看成一个由多个参数共同控制的光学系统。改变 aperture 会影响进入相机的光量和景深；改变 focal length 会改变 field of view，也会改变物体在 sensor 上占据的面积；改变 focus distance 会移动最清晰的距离平面。这个演示用于建立整体直觉，后面会把这些变量逐一拆开。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-hero-interactive-demo" id="lens_hero"></div>
+<div class="control-row"><span class="control-label">孔径 / 进光量（aperture / light amount）</span><div class="lens_yellow" id="lens_hero_sl2"></div></div><div class="control-row"><span class="control-label">焦距 / 视场（focal length / field of view）</span><div class="lens_blue" id="lens_hero_sl1"></div></div><div class="control-row"><span class="control-label">对焦距离（focus distance）</span><div class="lens_black" id="lens_hero_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 从可调相机开始 / #lens_hero</span>
+</aside>
+</section>
+</div>
+</section>
+<section class="rich-section" data-source-unit="recording-light" id="recording-light">
+<div class="rich-section-head">
+<span class="rich-section-num">01</span>
+<h2>记录光：从 photon 到 pixel</h2>
+</div>
+<div class="rich-prose"><p>数字相机的 sensor 由许多 photodetector 组成。</p><p>每个 detector 只负责把落到自己位置上的 photon 转成电信号；收集到的 photon 越多，像素值越高。</p><p>但是，一个裸露的 sensor 并不会自动形成图像，因为每个位置会同时收到来自大量方向的光。</p><p>为了让“sensor 上的一个位置”对应“场景中的一小块区域”，必须引入几何约束，这就是 pinhole camera 的作用。</p></div>
+<div class="demo-grid">
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-detector-interactive-demo">
+<div class="demo-head">
+<h3>曝光时间与亮度（exposure and brightness）</h3>
+<p>数字图像从 photon 计数开始。每个 detector 像一个小桶，曝光时间越长，落入桶中的 photon 越多，最终像素越亮。收集太少会 underexpose，画面偏暗；收集太多会 overexpose，高亮区域饱和而丢失细节。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-detector-interactive-demo" id="lens_detector"></div>
+<div class="control-row"><span class="control-label">曝光时间（exposure time）</span><div class="long_slider" id="lens_detector_sl0"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_under_exp();return false;">设置为 underexposed</a><a class="link_button shortcut-button" href="#" onclick="lens_over_exp();return false;">设置为 overexposed</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_detector</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-rgb-filter-interactive-demo">
+<div class="demo-head">
+<h3>单点 RGB 滤光片（RGB filter）</h3>
+<p>普通 photodetector 只能测量强度，不能直接知道 photon 的 wavelength。为了得到颜色信息，需要在 detector 上方放置 color filter，让不同位置只接受特定波段。这里的重点是：颜色不是每个 sensor cell 天然知道的，而是通过滤光和后处理推断出来的。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-rgb-filter-interactive-demo" id="lens_rgb_filter"></div>
+<div class="control-row"><span class="control-label">滤光波长 / 通道（filter wavelength / channel）</span><div id="lens_rgb_filter_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_rgb_filter</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-bayer-interactive-demo">
+<div class="demo-head">
+<h3>Bayer 阵列（Bayer pattern）</h3>
+<p>Bayer pattern 使用一个 red、一个 blue 和两个 green filter 组成 2×2 单元。green 采样更多，是因为人眼对绿色附近的亮度变化更敏感，绿色通道也更接近亮度信息。真实相机通常不是每个像素完整记录 RGB，而是先记录稀疏颜色样本。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-bayer-interactive-demo" id="lens_bayer"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_bayer</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-detector-rgbg-interactive-demo">
+<div class="demo-head">
+<h3>RGBG 探测器输出（RGBG detector output）</h3>
+<p>把 Bayer pattern 平铺到整个 sensor 后，每个 detector 仍然只测量自己的颜色滤片允许通过的强度。右侧图像展示的是按滤片排列得到的彩色强度图，还不是完整的自然图像。后续需要 demosaicing 来补全每个像素缺失的颜色通道。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-detector-rgbg-interactive-demo" id="lens_detector_rgbg"></div>
+<div class="control-row"><span class="control-label">曝光时间（exposure time）</span><div class="long_slider" id="lens_detector_rgbg_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_detector_rgbg</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-detector-rgb-interactive-demo">
+<div class="demo-head">
+<h3>RGB 探测器输出（RGB detector output）</h3>
+<p>demosaicing 会利用邻近样本估计缺失的 RGB 分量，把稀疏的颜色采样重建成完整图像。这个过程解释了为什么颜色采样、空间分辨率和图像细节并不是完全等价的概念。即便 sensor 的几何分辨率固定，滤色阵列和重建算法也会影响最终图像质量。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-detector-rgb-interactive-demo" id="lens_detector_rgb"></div>
+<div class="control-row"><span class="control-label">曝光时间（exposure time）</span><div class="long_slider" id="lens_detector_rgb_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_detector_rgb</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-scene-interactive-demo">
+<div class="demo-head">
+<h3>三维场景（3D scene）</h3>
+<p>为了讨论成像，需要有一个明确的三维场景：球体、地面和天空背景共同向外反射或发出光。拖动视角可以看到，二维照片只是这个三维光场被相机选取后的一个切片。相机真正记录的不是物体本身，而是从物体表面出发并抵达 sensor 的光线。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-scene-interactive-demo" id="lens_scene"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_scene</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-bare-film-interactive-demo">
+<div class="demo-head">
+<h3>裸露传感器的问题（bare sensor）</h3>
+<p>如果把 sensor 直接暴露在场景中，每个 detector 都会同时接收来自天空、地面和物体多个方向的光。结果不是清晰投影，而是所有方向的强度混合。要成像，必须让 sensor 上的每个位置只接收一小束有几何意义的 ray。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-bare-film-interactive-demo" id="lens_bare_film"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_bare_film</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-scene-rays-interactive-demo">
+<div class="demo-head">
+<h3>场景中的光线方向（scene rays）</h3>
+<p>漫反射表面会把入射光散射到许多方向。一个场景点不是只向相机发出一条 ray，而是向外发出大量可能的光路。相机的作用是从这些光路中筛选出能形成稳定对应关系的一部分。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-scene-rays-interactive-demo" id="lens_scene_rays"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_scene_rays</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-sensor-rays-interactive-demo">
+<div class="demo-head">
+<h3>传感器接收到的光线（sensor rays）</h3>
+<p>没有 pinhole 或 lens 的限制时，sensor 上的一个点会被许多场景点同时照亮。这样一来，一个 pixel 不再对应一个确定的场景方向，图像结构就会消失。成像系统必须把“位置”和“方向”重新建立对应关系。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-sensor-rays-interactive-demo" id="lens_sensor_rays"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_sensor_rays</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-box-interactive-demo">
+<div class="demo-head">
+<h3>暗箱与小孔（camera box and pinhole）</h3>
+<p>把 sensor 放入黑色内壁的 box，并只留下一个 hole，可以大幅限制入射方向。hole size 决定允许通过的光束粗细；sensor distance 决定 hole 到成像平面的距离。这个结构就是 pinhole camera 的基本几何模型。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-box-interactive-demo" id="lens_box"></div>
+<div class="control-row"><span class="control-label">孔径大小（hole size）</span><div class="lens_black" id="lens_box_sl0"></div></div><div class="control-row"><span class="control-label">传感器距离（sensor distance）</span><div class="lens_yellow" id="lens_box_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_box</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-film-interactive-demo">
+<div class="demo-head">
+<h3>小孔成像（pinhole imaging）</h3>
+<p>pinhole camera 通过一个小孔把场景投影到 sensor 上。hole 越大，进入的 photon 越多，但来自同一点的光会扩散到更大的 sensor 区域；hole 越小，图像更锐利，但亮度下降。sensor distance 改变时，投影尺度和视场也会改变。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-film-interactive-demo" id="lens_film"></div>
+<div class="control-row"><span class="control-label">孔径大小（hole size）</span><div class="lens_black" id="lens_film_sl0"></div></div><div class="control-row"><span class="control-label">传感器距离（sensor distance）</span><div class="lens_yellow" id="lens_film_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_film</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-film-invert-interactive-demo">
+<div class="demo-head">
+<h3>图像倒置（image inversion）</h3>
+<p>图像倒置来自简单的几何交叉：场景上方的 ray 穿过 pinhole 后落到 sensor 下方，左侧的 ray 落到右侧。上下翻转和左右翻转叠加，相当于旋转 180°。实际相机会在显示或保存时把图像再旋转回来。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer move_cursor" data-source-asset="lens-film-invert-interactive-demo" id="lens_film_invert"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_film_invert</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-frustum-interactive-demo">
+<div class="demo-head">
+<h3>视锥体（view frustum）</h3>
+<p>sensor 的边界和 pinhole 共同定义一个 view frustum。只有落入这个空间范围的 ray 才会穿过 hole 并打到 sensor 上；范围之外的光即使穿过小孔，也不会被记录。sensor distance 越大，视角通常越窄。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-frustum-interactive-demo" id="lens_frustum"></div>
+<div class="control-row"><span class="control-label">传感器距离 / 观察几何（sensor distance / view geometry）</span><div class="lens_yellow" id="lens_frustum_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_frustum</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-field-interactive-demo">
+<div class="demo-head">
+<h3>视场 / 视野（field of view）</h3>
+<p>field of view 描述相机能看到的角度范围。视场变窄时，场景中的同一物体会在 sensor 上占据更大面积，看起来像被放大。注意这不是物体真的变大，而是投影几何改变了。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-field-interactive-demo" id="lens_field"></div>
+<div class="control-row"><span class="control-label">视场 / 视野（field of view）</span><div class="lens_yellow" id="lens_field_sl0"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_field_0();return false;">显示相同 sensor span</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_field</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-hole-pixel-view-interactive-demo">
+<div class="demo-head">
+<h3>单个像素的可见范围（pixel view）</h3>
+<p>sensor 中心和角落看到的 hole 并不相同：中心 pixel 几乎正对小孔，角落 pixel 以斜角观察小孔。斜角会让圆形 hole 看起来像被压扁的椭圆，同时距离也更远，因此角落接收的光更少。这个几何效应会造成 natural vignetting。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-hole-pixel-view-interactive-demo" id="lens_hole_pixel_view"></div>
+<div class="control-row"><span class="control-label">孔径大小（hole size）</span><div class="lens_blue" id="lens_hole_pixel_view_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_hole_pixel_view</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-hole-solid-angle-interactive-demo">
+<div class="demo-head">
+<h3>小孔的立体角（solid angle）</h3>
+<p>同一个场景点通过 hole 能照亮 sensor 上一片区域，这片区域的大小由 hole 的 apparent solid angle 决定。hole 越大，允许通过的光锥越宽，落到 sensor 上的 footprint 越大。亮度提高的同时，点扩散也变大。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-hole-solid-angle-interactive-demo" id="lens_hole_solid_angle"></div>
+<div class="control-row"><span class="control-label">孔径大小（hole size）</span><div class="lens_black" id="lens_hole_solid_angle_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_hole_solid_angle</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-hole-sharpness-interactive-demo">
+<div class="demo-head">
+<h3>孔径与清晰度（aperture and sharpness）</h3>
+<p>理想清晰图像希望场景中的一个点尽量只影响一个 pixel 或很小的 pixel 区域。hole 变大时，同一点的光会覆盖多个 detector，点变成圆斑，图像就模糊。hole 变小时 footprint 收缩，但进光量也同步减少。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_long_drawer medium_drawer move_cursor" data-source-asset="lens-hole-sharpness-interactive-demo" id="lens_hole_sharpness"></div>
+<div class="control-row"><span class="control-label">孔半径（hole radius）</span><div class="lens_black" id="lens_hole_sharpness_sl0"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_sharp_0();return false;">小孔：更清晰</a><a class="link_button shortcut-button" href="#" onclick="lens_sharp_1();return false;">大孔：更模糊</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_hole_sharpness</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-film-exposure-interactive-demo">
+<div class="demo-head">
+<h3>曝光与孔径 / 距离（exposure vs aperture / distance）</h3>
+<p>当 sensor sensitivity 固定时，hole size 和 sensor distance 会直接影响曝光。较小的 hole 或较远的 sensor distance 都会减少单位面积接收到的 photon，图像变暗。pinhole camera 的根本矛盾就是：清晰度需要小孔，亮度需要大孔。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-film-exposure-interactive-demo" id="lens_film_exposure"></div>
+<div class="control-row"><span class="control-label">孔径大小（hole size）</span><div class="lens_black" id="lens_film_exposure_sl0"></div></div><div class="control-row"><span class="control-label">传感器距离（sensor distance）</span><div class="lens_yellow" id="lens_film_exposure_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_film_exposure</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-focus-demo-interactive-demo">
+<div class="demo-head">
+<h3>小孔相机的对焦直觉（focus intuition）</h3>
+<p>pinhole camera 没有传统意义上的 focus mechanism，因为它不是靠 lens 会聚光线，而是靠几何筛选方向。只要 hole 足够小，不同距离的物体都能相对清晰；但这种“景深很大”是以极低亮度为代价的。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-focus-demo-interactive-demo" id="lens_focus_demo"></div>
+<div class="control-row"><span class="control-label">对焦 / 距离（focus / distance）</span><div id="lens_focus_demo_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_focus_demo</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-device-interactive-demo">
+<div class="demo-head">
+<h3>小孔相机结构（pinhole camera structure）</h3>
+<p>这个结构总结了 pinhole camera 的物理部件：黑色 box 阻止内部反射，hole 选择方向，sensor 记录投影。它能解释成像几何，却不是高效相机，因为大部分来自场景的光都被挡掉了。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-device-interactive-demo" id="lens_device"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 记录光：从 photon 到 pixel / #lens_device</span>
+</aside>
+</section>
+</div>
+</section>
+<section class="rich-section" data-source-unit="glass" id="glass">
+<div class="rich-section-head">
+<span class="rich-section-num">02</span>
+<h2>玻璃：光线为什么会偏折</h2>
+</div>
+<div class="rich-prose"><p>小孔可以筛选方向，但它牺牲了大部分光线，所以图像容易变暗。</p><p>要同时获得足够亮度和可控清晰度，需要让更大的光束进入相机，再把它们重新汇聚到 sensor 上。</p><p>透镜能够完成这件事，是因为光在空气和玻璃之间传播时会发生 refraction。</p><p>理解玻璃如何改变 ray 的方向，是理解 lens、focus 和 aberration 的基础。</p></div>
+<div class="demo-grid">
+<section class="strict-source-demo" data-source-asset="lens-glass-interactive-demo">
+<div class="demo-head">
+<h3>玻璃中的视觉偏移（visual shift in glass）</h3>
+<p>玻璃会改变光的传播方向，是因为光在玻璃中的传播速度不同于空气。把物体放在玻璃后方时，来自物体的 ray 在界面处偏折，眼睛沿直线反推 ray 时，会看到位置发生偏移。这个现象是 refraction 的可见后果。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-glass-interactive-demo" id="lens_glass"></div>
+<div class="control-row"><span class="control-label">玻璃厚度 / 视图（glass thickness / view）</span><div id="lens_glass_sl0"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_glass_0();return false;">正面观察玻璃</a><a class="link_button shortcut-button" href="#" onclick="lens_glass_1();return false;">斜向观察玻璃</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 玻璃：光线为什么会偏折 / #lens_glass</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-glass-rays-interactive-demo">
+<div class="demo-head">
+<h3>进入 / 离开玻璃时的光线偏折（ray bending）</h3>
+<p>ray 进入玻璃时向法线方向偏折，离开玻璃时再偏折一次。两次偏折的组合决定了穿过玻璃后的出射方向。平行玻璃板会让 ray 产生横向位移；非平行界面则可以改变出射方向。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-glass-rays-interactive-demo" id="lens_glass_rays"></div>
+<div class="control-row"><span class="control-label">入射角（incident angle）</span><div class="lens_red" id="lens_glass_rays_sl0"></div></div><div class="control-row"><span class="control-label">玻璃厚度（glass thickness）</span><div id="lens_glass_rays_sl1"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_glass_rays_0();return false;">显示偏折路径</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 玻璃：光线为什么会偏折 / #lens_glass_rays</span>
+</aside>
+</section>
+</div>
+</section>
+<section class="rich-section" data-source-unit="waves" id="waves">
+<div class="rich-section-head">
+<span class="rich-section-num">03</span>
+<h2>波动视角与 Snell 定律</h2>
+</div>
+<div class="rich-prose"><p>从 ray 的角度看，refraction 只是光线在界面处改变方向；从 wavefront 的角度看，它来自波在不同介质中的传播速度变化。</p><p>当波斜着进入玻璃时，先进入玻璃的一侧会先变慢，波前因此发生旋转，ray 作为波前的法线也随之偏折。</p><p>Snell 定律描述的正是这种入射角、折射角与折射率之间的关系。</p></div>
+<div class="demo-grid">
+<section class="strict-source-demo" data-source-asset="lens-sine-interactive-demo">
+<div class="demo-head">
+<h3>一维正弦波（1D sine wave）</h3>
+<p>正弦波用于建立波动直觉：amplitude 表示振动强度，phase 表示波峰波谷的位置随时间推进。虽然几何光学常用 ray 表示光路，但 refraction 的深层原因更容易从 wavefront 的连续性理解。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-sine-interactive-demo" id="lens_sine"></div>
+<div class="control-row"><span class="control-label">振幅（amplitude）</span><div class="lens_black" id="lens_sine_sl0"></div></div><div class="control-row"><span class="control-label">相位 / 时间（phase / time）</span><div id="lens_sine_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_sine</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-em-interactive-demo">
+<div class="demo-head">
+<h3>电磁波示意（electromagnetic wave）</h3>
+<p>光是一种电磁波。电场和磁场相互垂直，并沿传播方向推进。在相机光学中，我们通常不需要完整求解电磁场，但 wavelength 与介质响应的关系会影响 refraction、dispersion 和 chromatic aberration。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer move_cursor" data-source-asset="lens-em-interactive-demo" id="lens_em"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_em</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-wave-glass-interactive-demo">
+<div class="demo-head">
+<h3>垂直进入玻璃的波（normal incidence）</h3>
+<p>当波垂直进入玻璃时，传播方向不变，但在玻璃内部速度降低，wavelength 变短。波峰仍然平行于界面，所以没有方向偏折。这个案例说明：速度改变不必然导致方向改变，入射角才是关键。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container move_cursor" data-source-asset="lens-wave-glass-interactive-demo" id="lens_wave_glass"></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_wave_glass_0();return false;">从侧面看波长缩短</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_wave_glass</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-wave-glass2-interactive-demo">
+<div class="demo-head">
+<h3>斜入射波的方向改变（oblique incidence）</h3>
+<p>斜入射时，波前的一侧先进入玻璃并先减速，另一侧还在空气中继续以较快速度前进。这个速度差会让整个 wavefront 旋转。ray 始终垂直于 wavefront，因此 ray 的方向也发生改变。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container move_cursor" data-source-asset="lens-wave-glass2-interactive-demo" id="lens_wave_glass2"></div>
+<div class="control-row"><span class="control-label">入射角（incident angle）</span><div class="lens_black" id="lens_wave_glass2_sl0"></div></div><div class="control-row"><span class="control-label">折射率（refractive index）</span><div id="lens_wave_glass2_sl1"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_wave_glass_2();return false;">斜入射方向改变</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_wave_glass2</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-wave-2d-interactive-demo">
+<div class="demo-head">
+<h3>二维波前（2D wavefront）</h3>
+<p>二维 wavefront 让折射几何更直观：界面两侧的波峰必须在边界处保持连续，但介质内 wavelength 更短。为了同时满足连续性和较短 wavelength，传播方向只能改变。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-wave-2d-interactive-demo" id="lens_wave_2d"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_wave_2d</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-wave-3d-interactive-demo">
+<div class="demo-head">
+<h3>三维波前（3D wavefront）</h3>
+<p>真实光波在三维空间中传播，wavefront 是面而不是线。ray 可以看作 wavefront 的法线方向。透镜通过连续改变 ray 的方向，使来自同一物点的多条 ray 在成像面附近重新相遇。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-wave-3d-interactive-demo" id="lens_wave_3d"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_wave_3d</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-wave-rays-interactive-demo">
+<div class="demo-head">
+<h3>波前与光线的关系（wavefront and rays）</h3>
+<p>wavefront 与 rays 是同一光传播现象的两种表示。wavefront 强调相位面如何变形，ray 强调能量大致沿哪个方向传播。相机成像常用 ray，因为它能直接描述光线如何穿过 aperture、lens 并落到 sensor。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-wave-rays-interactive-demo" id="lens_wave_rays"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_wave_rays</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-snell-interactive-demo">
+<div class="demo-head">
+<h3>Snell 定律基础（Snell’s law）</h3>
+<p>Snell 定律把入射角、折射角和 refractive index 联系起来。折射率越高，光在介质中越慢；从低折射率介质进入高折射率介质时，ray 通常向法线靠近。这个规律是设计 lens shape 的数学基础。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer" data-source-asset="lens-snell-interactive-demo" id="lens_snell"></div>
+<div class="control-row"><span class="control-label">入射角（incident angle）</span><div class="lens_black" id="lens_snell_sl0"></div></div><div class="control-row"><span class="control-label">介质方向（medium orientation）</span><div class="lens_blue" id="lens_snell_sl1"></div></div><div class="control-row"><span class="control-label">折射率比（index ratio）</span><div class="lens_yellow" id="lens_snell_sl2"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_snell_0();return false;">向 normal 弯折</a><a class="link_button shortcut-button" href="#" onclick="lens_snell_1();return false;">远离 normal 弯折</a><a class="link_button shortcut-button" href="#" onclick="lens_snell_2();return false;">接近临界配置</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_snell</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-snell2-interactive-demo">
+<div class="demo-head">
+<h3>反射、折射与全内反射（reflection / refraction / total internal reflection）</h3>
+<p>当光从高折射率介质射向低折射率介质，并且入射角足够大时，可能发生 total internal reflection。此时没有折射 ray 进入第二介质，光全部反射回来。这个边界情况说明 refraction 不是任意角度都能发生。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer" data-source-asset="lens-snell2-interactive-demo" id="lens_snell2"></div>
+<div class="control-row"><span class="control-label">入射角（incident angle）</span><div class="lens_black" id="lens_snell2_sl0"></div></div><div class="control-row"><span class="control-label">介质方向（medium orientation）</span><div class="lens_blue" id="lens_snell2_sl1"></div></div><div class="control-row"><span class="control-label">折射率比（index ratio）</span><div class="lens_yellow" id="lens_snell2_sl2"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_snell_3();return false;">显示反射补偿</a><a class="link_button shortcut-button" href="#" onclick="lens_snell_4();return false;">Total internal reflection</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 波动视角与 Snell 定律 / #lens_snell2</span>
+</aside>
+</section>
+</div>
+</section>
+<section class="rich-section" data-source-unit="manipulating-rays" id="manipulating-rays">
+<div class="rich-section-head">
+<span class="rich-section-num">04</span>
+<h2>操纵光线：从折射面到 lens</h2>
+</div>
+<div class="rich-prose"><p>透镜设计的核心目标，是把来自同一个场景点、但穿过镜片不同位置的 ray 尽量送到 sensor 上的同一点。</p><p>单个折射面只能做有限的方向改变；把曲面做成合适形状，并围绕光轴旋转成 lens 后，才能形成可用的成像系统。</p><p>focal length、aperture 和 focus distance 共同决定哪些 ray 被接收、在哪里会聚，以及失焦时形成多大的 blur circle。</p></div>
+<div class="demo-grid">
+<section class="strict-source-demo" data-source-asset="lens-parallel-interactive-demo">
+<div class="demo-head">
+<h3>用折射面改变平行光线（bend parallel rays）</h3>
+<p>单个折射面可以把一组 parallel rays 偏折到不同方向。改变 surface parameter 会改变法线方向，从而改变每条 ray 的折射结果。透镜曲面的本质就是让不同高度的 ray 遇到不同法线。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-parallel-interactive-demo" id="lens_parallel"></div>
+<div class="control-row"><span class="control-label">曲面参数（surface parameter）</span><div id="lens_parallel_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_parallel</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-subdiv-interactive-demo">
+<div class="demo-head">
+<h3>用多段近似曲面（piecewise surface）</h3>
+<p>曲面可以看成很多小平面片的组合。segment count 越高，折射面的近似越平滑，ray 的偏折越接近连续曲面。这个思路也能帮助理解图形学中用离散几何近似连续形状的做法。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-subdiv-interactive-demo" id="lens_subdiv"></div>
+<div class="control-row"><span class="control-label">分段数量（segment count）</span><div id="lens_subdiv_seg0"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_subdiv_0();return false;">段数趋近连续</a><a class="link_button shortcut-button" href="#" onclick="lens_subdiv_1();return false;">侧视会聚</a><a class="link_button shortcut-button" href="#" onclick="lens_subdiv_2();return false;">俯视仍未完整</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_subdiv</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-rotational-interactive-demo">
+<div class="demo-head">
+<h3>旋转对称透镜（rotationally symmetric lens）</h3>
+<p>把二维曲线绕 optical axis 旋转，就得到旋转对称 lens。真实相机镜片通常也是围绕光轴对称的形状。这样可以让来自不同方位、但高度相同的 ray 受到一致的折射处理。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-rotational-interactive-demo" id="lens_rotational"></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_rotational</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-rotational-focal-interactive-demo">
+<div class="demo-head">
+<h3>焦距（focal length）</h3>
+<p>对于合适的 lens shape，来自远处同一点的 parallel rays 会在某个位置附近会聚。这个会聚位置与 lens 的 curvature、材料 refractive index 和厚度有关。它引出 focal point 和 focal length 的概念。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_long_drawer medium_drawer move_cursor" data-source-asset="lens-rotational-focal-interactive-demo" id="lens_rotational_focal"></div>
+<div class="control-row"><span class="control-label">光源距离（source distance）</span><div class="lens_red" id="lens_rotational_focal_sl0"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_inf();return false;">远处光源 / 平行光</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_rotational_focal</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-focal-length-interactive-demo">
+<div class="demo-head">
+<h3>焦距与透镜形状（focal length and lens shape）</h3>
+<p>focal length 是 lens 把平行入射光会聚到焦点时，焦点到 lens 的距离。较短 focal length 通常意味着更宽的 field of view；较长 focal length 会缩小视场并放大远处物体。摄影中的“广角”和“长焦”都来自这个变量。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_long_drawer medium_drawer move_cursor" data-source-asset="lens-focal-length-interactive-demo" id="lens_focal_length"></div>
+<div class="control-row"><span class="control-label">透镜半径 / 曲率（lens radius / curvature）</span><div class="lens_blue" id="lens_focal_length_sl0"></div></div><div class="control-row"><span class="control-label">光源距离（source distance）</span><div class="lens_black" id="lens_focal_length_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_focal_length</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-box-lens-interactive-demo">
+<div class="demo-head">
+<h3>把透镜放进相机（lens in camera）</h3>
+<p>把 lens 放到 camera box 的开口处后，camera 不再只依赖小孔筛选光线。lens 允许更宽的光束进入，再通过 refraction 把它们导向 sensor。这就是 lens camera 相比 pinhole camera 更亮的关键。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-box-lens-interactive-demo" id="lens_box_lens"></div>
+<div class="control-row"><span class="control-label">焦距（focal length）</span><div class="lens_blue" id="lens_box_lens_sl0"></div></div><div class="control-row"><span class="control-label">传感器距离（sensor distance）</span><div class="lens_yellow" id="lens_box_lens_sl1"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_camera_lens();return false;">从侧面看 camera lens</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_box_lens</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-basic-interactive-demo">
+<div class="demo-head">
+<h3>基本透镜相机（basic lens camera）</h3>
+<p>基本 lens camera 的成像取决于 sensor 与 lens 的相对位置。只有当来自某个距离物体的 ray 在 sensor 平面附近会聚时，该距离才清晰。sensor 放错位置时，ray 会在 sensor 前后交叉，形成 blur circle。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-basic-interactive-demo" id="lens_basic"></div>
+<div class="control-row"><span class="control-label">对焦距离（focus distance）</span><div class="lens_blue" id="lens_basic_sl0"></div></div><div class="control-row"><span class="control-label">焦距（focal length）</span><div class="lens_yellow" id="lens_basic_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_basic</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-lens-solid-angle-interactive-demo">
+<div class="demo-head">
+<h3>透镜增加立体角（lens increases solid angle）</h3>
+<p>lens 的优势是扩大可接收的 solid angle：同一个场景点可以有更多 ray 通过镜头进入相机。只要 lens 把这些 ray 重新汇聚到同一位置，就能在保持清晰的同时提高亮度。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-lens-solid-angle-interactive-demo" id="lens_lens_solid_angle"></div>
+<div class="control-row"><span class="control-label">透镜尺寸（lens size）</span><div class="lens_blue" id="lens_lens_solid_angle_sl0"></div></div><div class="control-row"><span class="control-label">对焦几何（focus geometry）</span><div class="lens_yellow" id="lens_lens_solid_angle_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_lens_solid_angle</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-field2-interactive-demo">
+<div class="demo-head">
+<h3>透镜相机的视场（field of view）</h3>
+<p>在 lens camera 中，field of view 主要由 focal length 和 sensor size 决定。focal length 变长时，视场变窄，同一物体在 sensor 上占据更大范围。这个机制和 pinhole camera 的几何视场相通，但由 lens 的聚焦性质参与决定。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-field2-interactive-demo" id="lens_field2"></div>
+<div class="control-row"><span class="control-label">焦距（focal length）</span><div class="lens_blue" id="lens_field2_sl1"></div></div><div class="control-row"><span class="control-label">视场 / 视野（field of view）</span><div class="lens_yellow" id="lens_field2_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_field2</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-focus-demo2-interactive-demo">
+<div class="demo-head">
+<h3>对焦距离（focus distance）</h3>
+<p>focus distance 表示 lens 当前能把哪个物距的 ray 会聚到 sensor 上。改变 focus distance 相当于移动 lens 或 sensor 的相对位置，使不同距离的物体落在清晰平面上。离焦物体的 ray 仍会进入相机，但不会聚成点。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-focus-demo2-interactive-demo" id="lens_focus_demo2"></div>
+<div class="control-row"><span class="control-label">对焦距离（focus distance）</span><div class="lens_yellow" id="lens_focus_demo2_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_focus_demo2</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-lens-solid-angle2-interactive-demo">
+<div class="demo-head">
+<h3>聚焦光锥（focused cone）</h3>
+<p>当 focus distance 改变时，来自不同深度的光锥在 sensor 上的截面也改变。清晰点对应最小截面；离焦点对应较大的圆斑。理解这个光锥截面，是理解景深和 bokeh 的基础。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-lens-solid-angle2-interactive-demo" id="lens_lens_solid_angle2"></div>
+<div class="control-row"><span class="control-label">光源距离（source distance）</span><div class="lens_yellow" id="lens_lens_solid_angle2_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_lens_solid_angle2</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-bokeh-interactive-demo">
+<div class="demo-head">
+<h3>散景（bokeh）</h3>
+<p>bokeh 是离焦高亮点形成的模糊斑。它不是后期任意加上的模糊，而是光锥在 sensor 平面被截出来的形状。aperture shape、aberration 和 lens design 都会影响 bokeh 的边缘和亮度分布。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-bokeh-interactive-demo" id="lens_bokeh"></div>
+<div class="control-row"><span class="control-label">对焦距离（focus distance）</span><div class="lens_yellow" id="lens_bokeh_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_bokeh</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-cone-slice-interactive-demo">
+<div class="demo-head">
+<h3>光锥切片（cone slice）</h3>
+<p>同一个离焦点发出的光经过 lens 后形成一个 cone。sensor 如果位于焦点之前或之后，就会切到这个 cone 的不同截面。截面越大，circle of confusion 越大，图像越模糊。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-cone-slice-interactive-demo" id="lens_cone_slice"></div>
+<div class="control-row"><span class="control-label">传感器位置（sensor position）</span><div class="lens_red" id="lens_cone_slice_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_cone_slice</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-cone-angle-interactive-demo">
+<div class="demo-head">
+<h3>光锥角度（cone angle）</h3>
+<p>光锥角度决定离焦时 blur circle 增大的速度。角度越大，sensor 只要稍微偏离焦点，截面就会迅速变大；角度越小，偏离焦点时截面增长较慢，景深也更深。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-cone-angle-interactive-demo" id="lens_cone_angle"></div>
+<div class="control-row"><span class="control-label">光锥角（cone angle）</span><div id="lens_cone_angle_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_cone_angle</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-cone-aperture-interactive-demo">
+<div class="demo-head">
+<h3>Aperture 对光锥的限制（aperture limits the cone）</h3>
+<p>aperture 通过挡掉外侧 ray 来缩小进入相机的光锥。这样会降低进光量，但也会减小离焦时的 blur circle。因此缩小 aperture 会让更多距离范围看起来可接受地清晰。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-cone-aperture-interactive-demo" id="lens_cone_aperture"></div>
+<div class="control-row"><span class="control-label">光圈直径（aperture diameter）</span><div class="lens_black" id="lens_cone_aperture_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_cone_aperture</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-box-aperture-interactive-demo">
+<div class="demo-head">
+<h3>相机中的光圈（aperture in camera）</h3>
+<p>可调 aperture 是 lens camera 中控制光锥直径的机械结构。它不只是控制亮度，也控制离焦模糊和 depth of field。摄影里的光圈变化，实际上是在亮度、噪声、快门速度和景深之间做取舍。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer small_drawer move_cursor" data-source-asset="lens-box-aperture-interactive-demo" id="lens_box_aperture"></div>
+<div class="control-row"><span class="control-label">光圈直径（aperture diameter）</span><div class="lens_black" id="lens_box_aperture_sl0"></div></div><div class="control-row"><span class="control-label">传感器距离（sensor distance）</span><div class="lens_yellow" id="lens_box_aperture_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_box_aperture</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-focus-demo3-interactive-demo">
+<div class="demo-head">
+<h3>光圈与对焦联动（aperture and focus）</h3>
+<p>这个演示把 aperture 与 focus 放在同一个相机模型中观察。aperture 变大时，图像更亮但景深更浅；aperture 变小时，画面变暗但更多距离保持清晰。focus distance 决定清晰中心在哪里，aperture 决定清晰范围有多宽。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container double_drawer" data-source-asset="lens-focus-demo3-interactive-demo" id="lens_focus_demo3"></div>
+<div class="control-row"><span class="control-label">光圈直径（aperture diameter）</span><div class="lens_black" id="lens_focus_demo3_sl0"></div></div><div class="control-row"><span class="control-label">对焦距离（focus distance）</span><div class="lens_yellow" id="lens_focus_demo3_sl1"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_focus_demo3</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-blades-interactive-demo">
+<div class="demo-head">
+<h3>光圈叶片（aperture blades）</h3>
+<p>真实镜头常用多片 aperture blades 组成 iris。叶片移动会改变开口大小，叶片数量和形状会改变 aperture 的几何轮廓。这个轮廓会直接投射到离焦高光的 bokeh 形状中。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer" data-source-asset="lens-blades-interactive-demo" id="lens_blades"></div>
+<div class="control-row"><span class="control-label">叶片数量 / 光圈形状（blade count / aperture shape）</span><div id="lens_blades_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_blades</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-cone-hex-interactive-demo">
+<div class="demo-head">
+<h3>多边形 aperture 与 bokeh shape</h3>
+<p>当 aperture 不是圆形而是多边形时，离焦光斑也会呈现相似的多边形。电影和摄影中常见的六边形或多边形 bokeh，本质上就是 aperture shape 在离焦光锥上的可见投影。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-cone-hex-interactive-demo" id="lens_cone_hex"></div>
+<div class="control-row"><span class="control-label">光圈叶片形状（aperture blade shape）</span><div id="lens_cone_hex_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_cone_hex</span>
+</aside>
+</section>
+<section class="strict-source-demo" data-source-asset="lens-cone-dof-interactive-demo">
+<div class="demo-head">
+<h3>Depth of field</h3>
+<p>depth of field 是“看起来足够清晰”的距离范围，而不是严格的数学焦点范围。aperture 越小、focal length 越短、放大倍率越低，通常景深越深。演示中的绿色点表示完美 focus，蓝色边界表示可接受清晰范围。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_long_drawer medium_drawer move_cursor" data-source-asset="lens-cone-dof-interactive-demo" id="lens_cone_dof"></div>
+<div class="control-row"><span class="control-label">光圈直径（aperture diameter）</span><div class="lens_black" id="lens_cone_dof_sl0"></div></div><div class="control-row"><span class="control-label">焦距（focal length）</span><div class="lens_blue" id="lens_cone_dof_sl1"></div></div><div class="control-row"><span class="control-label">对焦距离（focus distance）</span><div class="lens_red" id="lens_cone_dof_sl2"></div></div>
+<div class="shortcut-row"><a class="link_button shortcut-button" href="#" onclick="lens_dof_0();return false;">增大 aperture</a><a class="link_button shortcut-button" href="#" onclick="lens_dof_1();return false;">缩短 focal length</a></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_cone_dof</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-f-interactive-demo">
+<div class="demo-head">
+<h3>f-number</h3>
+<p>f-number 定义为 focal length f 与 entrance pupil diameter D 的比值 N = f / D。相同 f-number 下，不同焦距镜头每个像素接收的光量具有可比性。较小 f-number 表示更大 aperture，通常更亮、景深更浅。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container square_drawer" data-source-asset="lens-f-interactive-demo" id="lens_f"></div>
+<div class="control-row"><span class="control-label">光圈值预设（f-number preset）</span><div id="lens_f_seg0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 操纵光线：从折射面到 lens / #lens_f</span>
+</aside>
+</section>
+</div>
+</section>
+<section class="rich-section" data-source-unit="aberrations" id="aberrations">
+<div class="rich-section-head">
+<span class="rich-section-num">05</span>
+<h2>像差：真实 lens 为什么不完美</h2>
+</div>
+<div class="rich-prose"><p>理想透镜模型假设所有 ray 都能完美会聚，但真实玻璃和真实曲面会引入误差。</p><p>spherical aberration 来自球面镜片对不同高度 ray 的会聚差异；chromatic aberration 来自不同 wavelength 的光在同一材料中具有不同 refractive index。</p><p>真实相机镜头通常使用多个 lens element 和不同玻璃材料来折中亮度、清晰度、重量、成本与像差控制。</p></div>
+<div class="demo-grid">
+<section class="strict-source-demo" data-source-asset="lens-spherical-interactive-demo">
+<div class="demo-head">
+<h3>Spherical aberration</h3>
+<p>spherical lens 容易制造，但球面并不能让所有高度的 ray 精确会聚到同一点。靠近 lens 边缘的 ray 与靠近中心的 ray 焦点不同，就会形成 spherical aberration。aspheric lens 可以减少这种误差，但制造更复杂。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-spherical-interactive-demo" id="lens_spherical"></div>
+<div class="control-row"><span class="control-label">光线高度 / 光圈区域（ray height / aperture region）</span><div id="lens_spherical_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 像差：真实 lens 为什么不完美 / #lens_spherical</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-prism-interactive-demo">
+<div class="demo-head">
+<h3>棱镜色散（prism dispersion）</h3>
+<p>白光由不同 wavelength 的光组成，而材料的 refractive index 会随 wavelength 改变。棱镜让不同颜色的光折射角不同，于是白光被分散成彩色光带。这个 dispersion 机制也是彩虹和 chromatic aberration 的根源。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_long_drawer medium_drawer move_cursor" data-source-asset="lens-prism-interactive-demo" id="lens_prism"></div>
+<div class="control-row"><span class="control-label">视图 / 波长分布（view / wavelength spread）</span><div id="lens_prism_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 像差：真实 lens 为什么不完美 / #lens_prism</span>
+</aside>
+</section>
+<section class="strict-source-demo demo-theme-dark" data-source-asset="lens-chromatic-interactive-demo">
+<div class="demo-head">
+<h3>Chromatic aberration</h3>
+<p>在 lens 中，不同 wavelength 的光可能在不同位置会聚，形成 chromatic aberration。轴向色差会让不同颜色的焦点前后错开，横向色差会让画面边缘出现彩色偏移。真实镜头常用 achromatic doublet 或更复杂的镜片组合来减轻它。</p>
+</div>
+<div class="demo-body">
+<div class="drawer_container lens_very_long_drawer medium_drawer move_cursor" data-source-asset="lens-chromatic-interactive-demo" id="lens_chromatic"></div>
+<div class="control-row"><span class="control-label">波长 / 透镜材料（wavelength / lens material）</span><div id="lens_chromatic_sl0"></div></div>
+</div>
+<aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: 像差：真实 lens 为什么不完美 / #lens_chromatic</span>
+</aside>
+</section>
+</div>
+</section>
+<section class="rich-review">
+<h2>复习问题</h2>
+<details class="rich-qa"><summary>为什么小孔相机会形成倒立图像？</summary><div class="rich-answer"><p>来自场景上方的 ray 穿过小孔后落到 sensor 下方，来自左侧的 ray 落到右侧；上下和左右都翻转，所以图像整体倒置。</p><aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: Recording Light / lens_film_invert</span>
+</aside></div></details>
+<details class="rich-qa"><summary>为什么增大小孔会让图像更亮但更模糊？</summary><div class="rich-answer"><p>更大的 hole 接收更大的 solid angle，因此进入 sensor 的 photon 更多；但同一个场景点的光也会覆盖更多 pixel，点扩散变大，清晰度下降。</p><aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: Recording Light / lens_hole_solid_angle and lens_hole_sharpness</span>
+</aside></div></details>
+<details class="rich-qa"><summary>lens 相比 pinhole 的核心优势是什么？</summary><div class="rich-answer"><p>lens 可以接收比小孔更大的光锥，并通过 refraction 把来自同一场景点的多条 ray 重新会聚到 sensor 附近；因此能同时获得更高亮度和可控清晰度。</p><aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: Manipulating Rays / lens_lens_solid_angle and lens_basic</span>
+</aside></div></details>
+<details class="rich-qa"><summary>为什么缩小 aperture 会增加 depth of field？</summary><div class="rich-answer"><p>缩小 aperture 会收窄通过 lens 的光锥。sensor 平面离真正焦点稍微偏离时，窄光锥被切出的 blur circle 更小，所以可接受清晰的距离范围变宽。</p><aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: Manipulating Rays / lens_cone_aperture and lens_cone_dof</span>
+</aside></div></details>
+<details class="rich-qa"><summary>Chromatic aberration 的根本原因是什么？</summary><div class="rich-answer"><p>材料的折射率随 wavelength 变化，不同颜色的光经过同一 lens 后会有不同焦点或偏折路径，高对比边缘因此出现彩色偏移。</p><aside class="source-block">
+<strong>Source</strong>
+<a href="https://ciechanow.ski/cameras-and-lenses/" rel="noreferrer" target="_blank">Cameras and Lenses</a>
+<span>Location: Aberrations / lens_prism and lens_chromatic</span>
+</aside></div></details>
+</section>
+</article>
+<script src="assets/source-snapshot/cameras-and-lenses/_resources/019e0accd5a583-base.js"></script>
+<script>
+(function () {
+  const sourceDarkCanvasIds = new Set([
+    "lens_detector", "lens_rgb_filter", "lens_bayer", "lens_detector_rgbg", "lens_detector_rgb",
+    "lens_bokeh", "lens_f", "lens_prism", "lens_chromatic"
+  ]);
+
+  function applySourceCssBackgrounds() {
+    document.querySelectorAll(".drawer_container").forEach(function (drawer) {
+      const bg = sourceDarkCanvasIds.has(drawer.id) ? "#000" : "#f8f8f8";
+      drawer.style.backgroundColor = bg;
+      drawer.querySelectorAll(".canvas_container, canvas").forEach(function (el) {
+        el.style.backgroundColor = bg;
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    applySourceCssBackgrounds();
+    requestAnimationFrame(applySourceCssBackgrounds);
+    setTimeout(applySourceCssBackgrounds, 80);
+    setTimeout(applySourceCssBackgrounds, 300);
+  });
+  window.addEventListener("load", applySourceCssBackgrounds);
+  new MutationObserver(applySourceCssBackgrounds).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script><script src="assets/source-snapshot/cameras-and-lenses/_resources/ca34d58067e21a-lenses.js"></script>
+</body>
+</html>
