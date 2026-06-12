@@ -5,5 +5,5 @@ domains:
     displayTitle: 光学
     description: Cameras, lenses, light transport, refraction, focus, and image formation.
     descriptionLocale: ""
-    color: "#49B6FF"
+    color: "#b9bc20"
     order: 10

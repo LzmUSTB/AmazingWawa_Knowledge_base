@@ -303,12 +303,7 @@ function requestDeleteRelation(edgeId) {
               <option value="compares-with">compares-with</option>
             </select>
           </label>
-          <NodeFilterList
-            v-model="targetId"
-            label="Target"
-            :exclude-ids="[props.nodeId]"
-            include-domains
-          />
+          <NodeFilterList v-model="targetId" label="Target" :exclude-ids="[props.nodeId]" include-domains />
           <div class="preview-line">{{ preview || "Choose a target to preview the link." }}</div>
           <div v-if="visibleFormError" class="form-error">{{ visibleFormError }}</div>
           <div class="form-actions">
@@ -460,6 +455,7 @@ function requestDeleteRelation(edgeId) {
 .sidebar-section {
   display: grid;
   gap: 10px;
+  justify-items: start;
   border-bottom: 1px solid var(--border-muted);
   padding: 0 0 16px;
   margin-bottom: 16px;

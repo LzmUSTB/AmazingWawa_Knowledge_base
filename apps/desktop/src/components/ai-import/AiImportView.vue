@@ -6,6 +6,7 @@ import AiImportConflictPanel from "./AiImportConflictPanel.vue";
 import AiImportGraphDiff from "./AiImportGraphDiff.vue";
 import AiImportNotePreview from "./AiImportNotePreview.vue";
 import AiImportSummary from "./AiImportSummary.vue";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   vaultRootPath: { type: String, required: true },
@@ -104,7 +105,10 @@ async function applySelectedPackage() {
         <button class="hud-button" :disabled="loading || !selectedPackageId" @click="inspectSelectedPackage">
           {{ loading ? "Loading..." : "Refresh" }}
         </button>
-        <button class="hud-button" @click="$emit('close')">Close</button>
+        <button class="hud-button" @click="$emit('close')">
+          <AppIcon name="x" :size="12" />
+          Close
+        </button>
       </div>
     </header>
 
@@ -126,11 +130,8 @@ async function applySelectedPackage() {
           <small>{{ history.appliedAt || "history exists" }}</small>
         </section>
 
-        <AiImportConflictPanel
-          :errors="validation?.errors || []"
-          :warnings="validation?.warnings || []"
-          :review-items="validation?.reviewItems || []"
-        />
+        <AiImportConflictPanel :errors="validation?.errors || []" :warnings="validation?.warnings || []"
+          :review-items="validation?.reviewItems || []" />
 
         <section v-if="inspection?.packageFiles" class="ai-panel review-files">
           <div class="section-label">Package Review Files</div>
@@ -145,7 +146,8 @@ async function applySelectedPackage() {
         <section class="ai-panel">
           <div class="section-label">New Domains</div>
           <div v-if="diff?.domainsToAdd?.length" class="domain-add-list">
-            <div v-for="domain in diff.domainsToAdd" :key="domain.id" class="domain-add-row" :style="{ '--domain-color': domain.color || 'var(--graphics)' }">
+            <div v-for="domain in diff.domainsToAdd" :key="domain.id" class="domain-add-row"
+              :style="{ '--domain-color': domain.color || 'var(--graphics)' }">
               <strong>{{ domain.title }}</strong>
               <span>{{ domain.id }}</span>
               <small>{{ domain.description || domain.reason }}</small>
@@ -193,19 +195,14 @@ async function applySelectedPackage() {
           <p v-if="!diff?.filesToCreate?.length && !diff?.filesToModify?.length" class="empty-line">No file changes.</p>
         </section>
 
-        <AiImportApplyBar
-          v-model:confirmed-warnings="confirmedWarnings"
-          :applying="applying"
-          :can-apply="canApply"
-          :has-warnings="hasWarnings"
-          @apply="applySelectedPackage"
-        />
+        <AiImportApplyBar v-model:confirmed-warnings="confirmedWarnings" :applying="applying" :can-apply="canApply"
+          :has-warnings="hasWarnings" @apply="applySelectedPackage" />
       </aside>
 
       <main class="center-column">
         <div v-if="loadError || applyError" class="error-banner">{{ loadError || applyError }}</div>
 
-        <label v-if="diff?.notePreviews?.length > 1" class="note-preview-selector">
+        <label class="note-preview-selector">
           <span>Preview Note</span>
           <select v-model.number="selectedNoteIndex">
             <option v-for="(preview, index) in diff.notePreviews" :key="preview.nodeId" :value="index">
@@ -276,6 +273,7 @@ async function applySelectedPackage() {
 
 .center-column {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
   gap: 12px;
   min-width: 0;
@@ -283,25 +281,162 @@ async function applySelectedPackage() {
   overflow: hidden;
 }
 
-.import-cta p { margin: 0; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.5; }
-.applied-panel strong { color: var(--language); font-size: var(--font-size-ui); text-transform: uppercase; }
-.applied-panel small { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); text-transform: uppercase; }
-.review-files details { border: 1px solid var(--border-muted); background: var(--background-main); color: var(--text-secondary); }
-.review-files summary { cursor: pointer; color: var(--text-primary); font-size: var(--font-size-small); font-weight: 800; padding: 8px; text-transform: uppercase; }
-.review-files pre { max-height: 220px; overflow: auto; margin: 0; border-top: 1px solid var(--border-muted); color: var(--text-secondary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); line-height: 1.5; padding: 10px; white-space: pre-wrap; }
-.note-preview-selector { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid var(--border-muted); background: var(--background-panel); padding: 10px; }
-.note-preview-selector span { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: 800; text-transform: uppercase; }
-.note-preview-selector select { min-width: 0; min-height: 30px; border: 1px solid var(--border-muted); border-radius: 0; background: var(--background-main); color: var(--text-primary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); }
-.file-list, .block-type-list, .domain-add-list, .asset-add-list { display: grid; gap: 8px; }
-.block-type-row, .asset-add-row, .file-row { display: grid; gap: 4px; border: 1px solid var(--border-muted); background: var(--background-main); padding: 9px; }
-.domain-add-row { display: grid; gap: 4px; border: 1px solid var(--border-muted); border-left: 5px solid var(--domain-color, var(--graphics)); background: var(--background-main); padding: 9px; }
-.asset-add-row strong { min-width: 0; overflow-wrap: anywhere; color: var(--text-primary); font-size: var(--font-size-small); }
-.asset-add-row span, .asset-add-row small, .domain-add-row span, .domain-add-row small, .block-type-row span, .block-type-row small { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); }
-.domain-add-row strong, .block-type-row strong { color: var(--text-primary); font-size: var(--font-size-small); text-transform: uppercase; }
-.file-row strong, .empty-line { color: var(--text-muted); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); text-transform: uppercase; }
-.file-row span { min-width: 0; overflow-wrap: anywhere; color: var(--text-primary); font-size: var(--font-size-small); font-weight: 800; }
-.empty-line { margin: 0; }
-.error-banner { border: 1px solid var(--game-dev); background: var(--background-main); color: var(--game-dev); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); padding: 10px; }
+.import-cta p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+}
+
+.applied-panel strong {
+  color: var(--language);
+  font-size: var(--font-size-ui);
+  text-transform: uppercase;
+}
+
+.applied-panel small {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.review-files details {
+  border: 1px solid var(--border-muted);
+  background: var(--background-main);
+  color: var(--text-secondary);
+}
+
+.review-files summary {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  padding: 8px;
+  text-transform: uppercase;
+}
+
+.review-files pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  border-top: 1px solid var(--border-muted);
+  color: var(--text-secondary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
+.note-preview-selector {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+  padding: 10px;
+}
+
+.note-preview-selector span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.note-preview-selector select {
+  min-width: 0;
+  min-height: 30px;
+  border: 1px solid var(--border-muted);
+  border-radius: 0;
+  background: var(--background-main);
+  color: var(--text-primary);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+}
+
+.file-list,
+.block-type-list,
+.domain-add-list,
+.asset-add-list {
+  display: grid;
+  gap: 8px;
+}
+
+.block-type-row,
+.asset-add-row,
+.file-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-muted);
+  background: var(--background-main);
+  padding: 9px;
+}
+
+.domain-add-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-muted);
+  border-left: 5px solid var(--domain-color, var(--graphics));
+  background: var(--background-main);
+  padding: 9px;
+}
+
+.asset-add-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+}
+
+.asset-add-row span,
+.asset-add-row small,
+.domain-add-row span,
+.domain-add-row small,
+.block-type-row span,
+.block-type-row small {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+}
+
+.domain-add-row strong,
+.block-type-row strong {
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.file-row strong,
+.empty-line {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.file-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  font-weight: 800;
+}
+
+.empty-line {
+  margin: 0;
+}
+
+.error-banner {
+  border: 1px solid var(--game-dev);
+  background: var(--background-main);
+  color: var(--game-dev);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  padding: 10px;
+}
 
 @media (max-width: 1180px) {
   .ai-import-grid {
