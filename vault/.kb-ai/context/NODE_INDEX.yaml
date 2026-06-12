@@ -1,27 +1,8 @@
 nodes:
-  - id: test11
-    title: test
-    titleLocale: test1
-    displayTitle: test1
-    aliases: []
-    domain: optics
-    type: concept
-    status: seed
-    summary: ""
-    summaryLocale: ""
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/optics/test11/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - optics
   - id: cameras-and-lenses-source-ported
-    title: 相机与透镜：从光子到成像
-    titleLocale: ""
-    displayTitle: 相机与透镜：从光子到成像
+    title: camera and lenses
+    titleLocale: 相机与透镜
+    displayTitle: 相机与透镜
     aliases:
       - Cameras and Lenses
       - 相机与透镜
@@ -48,22 +29,3 @@ nodes:
       - refraction
       - focus
       - aperture
-  - id: test22
-    title: test2
-    titleLocale: ""
-    displayTitle: test2
-    aliases: []
-    domain: optics
-    type: concept
-    status: seed
-    summary: ""
-    summaryLocale: ""
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/optics/test22/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - optics

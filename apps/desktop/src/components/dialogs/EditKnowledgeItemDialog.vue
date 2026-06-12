@@ -31,12 +31,17 @@ const summaryLocale = ref("");
 const type = ref("concept");
 const status = ref("seed");
 
+function normalizeHexColor(value, fallback = "#EDEDED") {
+  const colorValue = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(colorValue) ? colorValue : fallback;
+}
+
 watch(entity, (nextEntity) => {
   title.value = nextEntity?.title || "";
   titleLocale.value = nextEntity?.titleLocale || "";
   description.value = nextEntity?.description || "";
   descriptionLocale.value = nextEntity?.descriptionLocale || "";
-  color.value = nextEntity?.color || "#EDEDED";
+  color.value = normalizeHexColor(nextEntity?.color);
   order.value = nextEntity?.order ?? 999;
   summary.value = nextEntity?.summary || "";
   summaryLocale.value = nextEntity?.summaryLocale || "";
@@ -56,7 +61,7 @@ function submit() {
         titleLocale: titleLocale.value.trim(),
         description: description.value.trim(),
         descriptionLocale: descriptionLocale.value.trim(),
-        color: color.value.trim() || "#EDEDED",
+        color: normalizeHexColor(color.value),
         order: Number(order.value) || 999,
       }
     : {
@@ -92,7 +97,7 @@ function submit() {
         <label><span>English description</span><textarea v-model="description"></textarea></label>
         <label><span>Locale description</span><textarea v-model="descriptionLocale"></textarea></label>
         <div class="dialog-grid">
-          <label><span>Color</span><input v-model="color" /></label>
+          <label class="color-picker-label"><span>Color</span><input v-model="color" type="color" /></label>
           <label><span>Order</span><input v-model.number="order" type="number" /></label>
         </div>
       </template>
@@ -121,6 +126,10 @@ function submit() {
 .empty-state { margin-inline: 28px; border: 1px solid var(--border-muted); background: var(--background-main); color: var(--text-secondary); padding: 16px; }
 textarea { min-height: 82px; width: 100%; border: 1px solid var(--border-muted); border-radius: 0; outline: 0; resize: vertical; background: var(--background-main); color: var(--text-primary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-ui); line-height: 1.5; padding: 12px; }
 textarea:focus { border-color: var(--border-primary); }
+.color-picker-label input[type="color"] { width: 100%; min-height: 56px; border: 1px solid var(--border-muted); border-radius: 0; background: var(--background-main); cursor: pointer; padding: 6px; }
+.color-picker-label input[type="color"]:focus { border-color: var(--border-primary); outline: 0; }
+.color-picker-label input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.color-picker-label input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
 input:disabled { opacity: 0.55; cursor: not-allowed; }
 .hud-button:disabled { cursor: not-allowed; opacity: 0.42; }
 </style>

@@ -5,7 +5,7 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: optics
-generatedAt: 2026-06-12T06:40:41.537Z
+generatedAt: 2026-06-12T07:14:39.788Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
   allowedDomains:
@@ -112,6 +112,6 @@ constraints:
     visibleInGraph: true
 counts:
   domains: 1
-  nodes: 3
-  edges: 4
+  nodes: 1
+  edges: 1
   customBlockTypes: 0

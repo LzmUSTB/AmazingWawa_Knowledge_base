@@ -131,29 +131,17 @@ function handleKeydown(event) {
     <div v-if="visible" class="search-overlay" @keydown="handleKeydown">
       <section class="search-panel" role="dialog" aria-modal="true" :aria-label="activeModeLabel">
         <header class="search-bar">
-          <input
-            ref="inputRef"
-            class="search-input"
-            :placeholder="mode === 'quick' ? 'Search structured graph index...' : 'Full-text search'"
-            :value="query"
-            @input="emit('update:query', $event.target.value)"
-          />
+          <input ref="inputRef" class="search-input"
+            :placeholder="mode === 'quick' ? 'Search structured graph index...' : 'Full-text search'" :value="query"
+            @input="emit('update:query', $event.target.value)" />
           <div class="search-mode">
-            <button
-              class="mode-button button-with-icon"
-              :class="{ 'is-active': mode === 'quick' }"
-              type="button"
-              @click="setMode('quick')"
-            >
+            <button class="mode-button button-with-icon" :class="{ 'is-active': mode === 'quick' }" type="button"
+              @click="setMode('quick')">
               <AppIcon name="search" :size="12" />
               <span class="button-icon-label">Quick Search</span>
             </button>
-            <button
-              class="mode-button button-with-icon"
-              :class="{ 'is-active': mode === 'full-text' }"
-              type="button"
-              @click="setMode('full-text')"
-            >
+            <button class="mode-button button-with-icon" :class="{ 'is-active': mode === 'full-text' }" type="button"
+              @click="setMode('full-text')">
               <AppIcon name="text-search" :size="12" />
               <span class="button-icon-label">Full-text</span>
             </button>
@@ -167,15 +155,9 @@ function handleKeydown(event) {
         <div v-else-if="mode === 'full-text' && fullTextResults.length" class="result-stack">
           <section class="result-section">
             <div class="result-group-label">FULL-TEXT</div>
-            <button
-              v-for="result in fullTextResults"
-              :key="result.id"
-              class="result-row result-row--fulltext"
-              :class="{ 'is-selected': isSelected(result) }"
-              type="button"
-              @click="executeResult(result)"
-              @mouseenter="selectedIndex = resultIndex(result)"
-            >
+            <button v-for="result in fullTextResults" :key="result.id" class="result-row result-row--fulltext"
+              :class="{ 'is-selected': isSelected(result) }" type="button" @click="executeResult(result)"
+              @mouseenter="selectedIndex = resultIndex(result)">
               <span class="result-kind">text</span>
               <span class="result-main">
                 <strong>{{ result.title }}</strong>
@@ -193,16 +175,13 @@ function handleKeydown(event) {
 
         <div v-else-if="!hasQuery" class="result-stack">
           <section class="result-section">
-            <div class="result-group-label">PINNED</div>
-            <button
-              v-for="result in pinnedResults"
-              :key="result.id"
-              class="result-row"
-              :class="{ 'is-selected': isSelected(result) }"
-              type="button"
-              @click="executeResult(result)"
-              @mouseenter="selectedIndex = resultIndex(result)"
-            >
+            <div class="result-group-label">
+              <AppIcon name="pin" :size="10" />
+              PINNED
+            </div>
+            <button v-for="result in pinnedResults" :key="result.id" class="result-row"
+              :class="{ 'is-selected': isSelected(result) }" type="button" @click="executeResult(result)"
+              @mouseenter="selectedIndex = resultIndex(result)">
               <span class="result-kind">PIN</span>
               <span class="result-main">
                 <strong>{{ result.title }}</strong>
@@ -216,17 +195,13 @@ function handleKeydown(event) {
           </section>
 
           <section class="result-section">
-            <div class="result-group-label">RECENT</div>
-            <button
-              v-for="result in recentResults"
-              :key="result.id"
-              class="result-row"
-              :class="{ 'is-selected': isSelected(result) }"
-              type="button"
-              @click="executeResult(result)"
-              @mouseenter="selectedIndex = resultIndex(result)"
-            >
-              <span class="result-kind">recent</span>
+            <div class="result-group-label">
+              <AppIcon name="recent" :size="10" />
+              RECENT
+            </div>
+            <button v-for="result in recentResults" :key="result.id" class="result-row"
+              :class="{ 'is-selected': isSelected(result) }" type="button" @click="executeResult(result)"
+              @mouseenter="selectedIndex = resultIndex(result)">
               <span class="result-main">
                 <strong>{{ result.title }}</strong>
                 <small>{{ result.subtitle }}</small>
@@ -241,15 +216,9 @@ function handleKeydown(event) {
           <template v-for="section in groupSections" :key="section.key">
             <section v-if="section.items.length" class="result-section">
               <div class="result-group-label">{{ section.label }}</div>
-              <button
-                v-for="result in section.items"
-                :key="result.id"
-                class="result-row"
-                :class="{ 'is-selected': isSelected(result) }"
-                type="button"
-                @click="executeResult(result)"
-                @mouseenter="selectedIndex = resultIndex(result)"
-              >
+              <button v-for="result in section.items" :key="result.id" class="result-row"
+                :class="{ 'is-selected': isSelected(result) }" type="button" @click="executeResult(result)"
+                @mouseenter="selectedIndex = resultIndex(result)">
                 <span class="result-kind">{{ result.kind }}</span>
                 <span class="result-main">
                   <strong>{{ result.title }}</strong>
@@ -285,7 +254,7 @@ function handleKeydown(event) {
   max-height: 76vh;
   overflow: hidden;
   border: 1px solid var(--border-primary);
-  border-left: 6px solid var(--graphics);
+  border-left: 6px solid #fff;
   background: var(--background-main);
   box-shadow: 0 0 0 1px rgba(0, 183, 255, 0.24);
 }
@@ -355,7 +324,7 @@ function handleKeydown(event) {
 .result-section {
   display: grid;
   gap: 4px;
-  padding: 10px 12px 4px;
+  padding: 10px 14px 4px 2px;
 }
 
 .result-group-label {
@@ -363,8 +332,9 @@ function handleKeydown(event) {
 }
 
 .result-row {
+  margin-left: 10px;
   display: grid;
-  grid-template-columns: 86px minmax(180px, 0.8fr) minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   min-height: 54px;
@@ -445,7 +415,7 @@ function handleKeydown(event) {
 }
 
 .shortcut-empty {
-  margin: 0;
+  margin: 0 0 0 10px;
   color: var(--text-muted);
   font-size: var(--font-size-small);
   padding: 8px 4px 10px;

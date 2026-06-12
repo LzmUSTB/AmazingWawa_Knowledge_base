@@ -27,6 +27,7 @@ import x from "../../assets/icons/x.svg?raw";
 import importIcon from "../../assets/icons/import.svg?raw";
 import exportIcon from "../../assets/icons/export.svg?raw";
 import capture from "../../assets/icons/capture.svg?raw";
+import recent from "../../assets/icons/recent.svg?raw";
 
 const icons = {
   "arrow-swap": arrowSwap,
@@ -55,6 +56,7 @@ const icons = {
   import: importIcon,
   export: exportIcon,
   capture: capture,
+  recent: recent,
 };
 
 const props = defineProps({

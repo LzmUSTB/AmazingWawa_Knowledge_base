@@ -44,6 +44,11 @@ const nodeSummaryLocale = ref("");
 const parentCandidates = computed(() => nodes.value.filter((node) => node.id === nodeDomain.value || node.domain === nodeDomain.value));
 const parentCandidateIds = computed(() => parentCandidates.value.map((node) => node.id));
 
+function normalizeHexColor(value, fallback = "#EDEDED") {
+  const color = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback;
+}
+
 function displayTitle(entity) {
   return entity?.titleLocale || entity?.title || entity?.id || "";
 }
@@ -111,7 +116,7 @@ function submit() {
       titleLocale: domainTitleLocale.value.trim(),
       description: domainDescription.value.trim(),
       descriptionLocale: domainDescriptionLocale.value.trim(),
-      color: domainColor.value.trim() || "#EDEDED",
+      color: normalizeHexColor(domainColor.value),
       order: Number(domainOrder.value) || 999,
     });
     return;
@@ -154,7 +159,7 @@ function submit() {
       <label><span>English description</span><textarea v-model="domainDescription" placeholder="Cameras, lenses, and light transport."></textarea></label>
       <label><span>Locale description</span><textarea v-model="domainDescriptionLocale" placeholder="相机、透镜、光线传播与成像。"></textarea></label>
       <div class="dialog-grid">
-        <label><span>Color</span><input v-model="domainColor" placeholder="#00B7FF" /></label>
+        <label class="color-picker-label"><span>Color</span><input v-model="domainColor" type="color" /></label>
         <label><span>Order</span><input v-model.number="domainOrder" type="number" /></label>
       </div>
     </template>
@@ -248,5 +253,9 @@ function submit() {
 code { color: var(--career); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-small); }
 textarea { min-height: 82px; width: 100%; border: 1px solid var(--border-muted); border-radius: 0; outline: 0; resize: vertical; background: var(--background-main); color: var(--text-primary); font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: var(--font-size-ui); line-height: 1.5; padding: 12px; }
 textarea:focus { border-color: var(--border-primary); }
+.color-picker-label input[type="color"] { width: 100%; min-height: 56px; border: 1px solid var(--border-muted); border-radius: 0; background: var(--background-main); cursor: pointer; padding: 6px; }
+.color-picker-label input[type="color"]:focus { border-color: var(--border-primary); outline: 0; }
+.color-picker-label input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.color-picker-label input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
 .hud-button:disabled { cursor: not-allowed; opacity: 0.42; }
 </style>
