@@ -1,1 +1,69 @@
-nodes: []
+nodes:
+  - id: test11
+    title: test
+    titleLocale: test1
+    displayTitle: test1
+    aliases: []
+    domain: optics
+    type: concept
+    status: seed
+    summary: ""
+    summaryLocale: ""
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/optics/test11/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - optics
+  - id: cameras-and-lenses-source-ported
+    title: 相机与透镜：从光子到成像
+    titleLocale: ""
+    displayTitle: 相机与透镜：从光子到成像
+    aliases:
+      - Cameras and Lenses
+      - 相机与透镜
+      - Pinhole Camera
+      - Lens Optics
+    domain: optics
+    type: topic
+    status: growing
+    summary: 中文富 HTML 笔记，系统解释从 photon 记录到 pinhole、lens、aperture、focus 和 aberration
+      的相机成像链路。
+    summaryLocale: ""
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/optics/cameras-and-lenses-source-ported/meta.yaml
+      note: content/optics/cameras-and-lenses-source-ported/note.html
+      markdown: ""
+      html: content/optics/cameras-and-lenses-source-ported/note.html
+    tags:
+      - optics
+      - camera
+      - lens
+      - pinhole-camera
+      - refraction
+      - focus
+      - aperture
+  - id: test22
+    title: test2
+    titleLocale: ""
+    displayTitle: test2
+    aliases: []
+    domain: optics
+    type: concept
+    status: seed
+    summary: ""
+    summaryLocale: ""
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/optics/test22/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - optics

@@ -52,7 +52,7 @@ defineEmits([
       style="--button-color: var(--graphics)"
       :disabled="!canCreateNode"
       :title="canCreateNode ? '' : 'Create or import a domain first.'"
-      @click="$emit('open-dialog', 'new-note')"
+      @click="$emit('open-dialog', 'new-node')"
     >
       <AppIcon name="plus-node" />
       <span class="button-icon-label">New Node</span>

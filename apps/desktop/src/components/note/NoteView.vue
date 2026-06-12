@@ -23,6 +23,7 @@ const emit = defineEmits(["dirty-change", "find-visible-change", "save-note", "s
 const readSurfaceRef = ref(null);
 const fallbackNode = { id: "", title: "Untitled", domain: "root", type: "note", status: "draft", summary: "" };
 const node = computed(() => findGraphNode(props.noteId) || getGraphNodes()[0] || fallbackNode);
+const nodeDisplayTitle = computed(() => node.value.titleLocale || node.value.title || node.value.id);
 const accent = computed(() => getDomainColor(node.value.domain));
 const noteRecord = computed(() => getActiveVault().notes[props.noteId] || null);
 const noteMarkdown = computed(() => noteRecord.value?.markdown || "");
@@ -74,7 +75,7 @@ onMounted(() => {
 });
 
 function initialDraftMarkdown() {
-  return `# ${node.value.title}\n\n## 一句话定义\n\n${node.value.summary || ""}\n\n## 它解决什么问题？\n\n## 核心直觉\n\n## 正式解释\n\n## 最小例子\n\n## 常见误区\n\n## 相关知识\n\n## 复习问题\n\n`;
+  return `# ${nodeDisplayTitle.value}\n\n## 一句话定义\n\n${node.value.summaryLocale || node.value.summary || ""}\n\n## 它解决什么问题？\n\n## 核心直觉\n\n## 正式解释\n\n## 最小例子\n\n## 常见误区\n\n## 相关知识\n\n## 复习问题\n\n`;
 }
 function startEdit() {
   if (hasHtmlNote.value) {
@@ -179,7 +180,7 @@ function handleHtmlFindResults(payload) {
         <header class="note-header">
           <div class="note-accent"></div>
           <div>
-            <h1>{{ node.title }}</h1>
+            <h1>{{ nodeDisplayTitle }}</h1>
             <div class="note-chips"><span>{{ node.domain }}</span><span>{{ node.type }}</span><span>status: {{ node.status }}</span><span v-if="hasHtmlNote">html</span><span v-else-if="!hasAnyNote">empty</span></div>
           </div>
         </header>

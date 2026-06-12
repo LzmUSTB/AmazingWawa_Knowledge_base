@@ -49,18 +49,30 @@ function normalizeOperation(operation = {}) {
   const node = operation.node || operation;
   if (operation.type === "add_domain") {
     const domain = operation.domain || operation;
-    return { ...operation, id: domain.id, title: domain.title, description: domain.description || "", color: domain.color || "", order: domain.order, aliases: domain.aliases || [] };
+    return {
+      ...operation,
+      id: domain.id,
+      title: domain.title,
+      titleLocale: domain.titleLocale || domain.title_locale || operation.titleLocale || operation.title_locale || "",
+      description: domain.description || "",
+      descriptionLocale: domain.descriptionLocale || domain.description_locale || operation.descriptionLocale || operation.description_locale || "",
+      color: domain.color || "",
+      order: domain.order,
+      aliases: domain.aliases || [],
+    };
   }
   if (operation.type === "add_node") {
     return {
       ...operation,
       id: node.id,
       title: node.title,
+      titleLocale: node.titleLocale || node.title_locale || operation.titleLocale || operation.title_locale || "",
       aliases: node.aliases || [],
       domain: node.domain,
       nodeType: node.type || operation.nodeType,
       status: node.status,
       summary: node.summary || operation.summary || "",
+      summaryLocale: node.summaryLocale || node.summary_locale || operation.summaryLocale || operation.summary_locale || "",
       parentId: operation.parentId || node.parentId,
       contentFormat: normalizeContentFormat(node.contentFormat || node.content_format || operation.contentFormat || operation.content_format),
     };
@@ -514,6 +526,7 @@ function validateAddNode(operation, context) {
     if (meta.id !== operation.id) errors.push(`add_node ${operation.id}: generated meta id does not match patch.`);
     if (meta.domain !== operation.domain) errors.push(`add_node ${operation.id}: generated meta domain does not match patch.`);
     if (meta.title !== operation.title) errors.push(`add_node ${operation.id}: generated meta title does not match patch.`);
+    if ((meta.titleLocale || operation.titleLocale) && meta.titleLocale !== operation.titleLocale) errors.push(`add_node ${operation.id}: generated meta titleLocale does not match patch.`);
     if (meta.type !== operation.nodeType) errors.push(`add_node ${operation.id}: generated meta type does not match patch.`);
     if (meta.status !== operation.status) errors.push(`add_node ${operation.id}: generated meta status does not match patch.`);
     const metaFormat = normalizeContentFormat(meta.contentFormat || meta.content_format || "");
@@ -523,7 +536,7 @@ function validateAddNode(operation, context) {
   }
   potentialDuplicateNodeWarnings(currentVault, operation, createdNodes).forEach((warning) => warnings.push(`add_node ${operation.id}: ${warning}`));
   createdIds.add(operation.id);
-  createdNodes.push({ id: operation.id, title: operation.title, aliases: operation.aliases || [], domain: operation.domain, type: operation.nodeType, status: operation.status, summary: operation.summary || "", contentFormat: format });
+  createdNodes.push({ id: operation.id, title: operation.title, titleLocale: operation.titleLocale, aliases: operation.aliases || [], domain: operation.domain, type: operation.nodeType, status: operation.status, summary: operation.summary || "", summaryLocale: operation.summaryLocale || "", contentFormat: format });
 }
 
 function validateAppendNoteSection(operation, context) {
@@ -582,7 +595,7 @@ function validateAddDomain(operation, context) {
   if (titleKey && currentDomainTitles.has(titleKey)) warnings.push(`add_domain ${operation.id}: domain title duplicates an existing domain title.`);
   if (titleKey && createdDomains.some((domain) => String(domain.title || "").trim().toLowerCase() === titleKey)) warnings.push(`add_domain ${operation.id}: domain title duplicates another package domain title.`);
   createdDomainIds.add(operation.id);
-  createdDomains.push({ id: operation.id, title: operation.title, description: operation.description || "", color: operation.color || "", order: operation.order });
+  createdDomains.push({ id: operation.id, title: operation.title, titleLocale: operation.titleLocale, description: operation.description || "", descriptionLocale: operation.descriptionLocale || "", color: operation.color || "", order: operation.order });
 }
 function validateAddBlockType(operation, context) {
   const { currentVault, packageFiles, registry, errors } = context;

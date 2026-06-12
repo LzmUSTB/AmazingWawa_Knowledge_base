@@ -1,7 +1,9 @@
 <script setup>
 import { computed, ref } from "vue";
 import AiImportView from "../ai-import/AiImportView.vue";
-import NewNoteDialog from "../dialogs/NewNoteDialog.vue";
+import AddNoteDialog from "../dialogs/AddNoteDialog.vue";
+import EditKnowledgeItemDialog from "../dialogs/EditKnowledgeItemDialog.vue";
+import NewNodeDialog from "../dialogs/NewNodeDialog.vue";
 import GraphToolbar from "../graph/GraphToolbar.vue";
 import GraphView from "../graph/GraphView.vue";
 import BreadcrumbBar from "../navigation/BreadcrumbBar.vue";
@@ -74,6 +76,14 @@ const props = defineProps({
   canCreateNote: {
     type: Boolean,
     default: true,
+  },
+  canAddNote: {
+    type: Boolean,
+    default: false,
+  },
+  entityEditTarget: {
+    type: Object,
+    default: null,
   },
   graphScopeId: {
     type: String,
@@ -160,8 +170,11 @@ const emit = defineEmits([
   "open-note",
   "open-vault",
   "open-scope",
-  "create-note",
+  "add-note",
   "cancel-layout",
+  "create-node",
+  "delete-entity",
+  "edit-entity",
   "edit-layout",
   "ensure-layout-draft",
   "layout-node-dragged",
@@ -169,6 +182,7 @@ const emit = defineEmits([
   "request-delete-relation",
   "request-edit-relation",
   "save-note",
+  "save-entity-edit",
   "save-layout",
   "save-relation-edit",
   "select-node",
@@ -200,12 +214,13 @@ function fitGraphView() {
     'is-sidebar-collapsed': sidebarCollapsed,
     'is-relation-sidebar-collapsed': relationSidebarCollapsed,
   }">
-    <TopMenu :app-title="appTitle" :can-create-note="canCreateNote" :can-export-context="Boolean(activeVaultRootPath)"
+    <TopMenu :app-title="appTitle" :can-add-note="canAddNote" :can-export-context="Boolean(activeVaultRootPath)"
       :ui-font-scale="uiFontScale" @export-context="$emit('export-context')" @open-dialog="$emit('open-dialog', $event)"
       @open-vault="$emit('open-vault')" @show-view="$emit('show-view', $event)" />
     <div class="app-body" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
       <aside class="sidebar-region">
         <FileTree v-if="!sidebarCollapsed" :active-domain="currentDomain" :active-note-id="currentNoteId"
+          @delete-entity="$emit('delete-entity', $event)" @edit-entity="$emit('edit-entity', $event)"
           @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)"
           @toggle-sidebar="$emit('toggle-sidebar')" />
         <button v-else class="sidebar-rail-button" @click="$emit('toggle-sidebar')">
@@ -257,9 +272,13 @@ function fitGraphView() {
 
     <div v-if="activeDialog || relationEditEdgeId" class="dialog-overlay"
       @click.self="relationEditEdgeId ? $emit('close-relation-edit') : $emit('close-dialog')">
-      <NewNoteDialog v-if="activeDialog === 'new-note'" :current-domain="currentDomain" :current-view="currentView"
+      <NewNodeDialog v-if="activeDialog === 'new-node'" :current-domain="currentDomain"
         :graph-scope-id="graphScopeId" :selected-node-id="selectedNodeId" @close="$emit('close-dialog')"
-        @create-note="$emit('create-note', $event)" />
+        @create-node="$emit('create-node', $event)" />
+      <AddNoteDialog v-else-if="activeDialog === 'add-note'" :selected-node-id="selectedNodeId"
+        @add-note="$emit('add-note', $event)" @close="$emit('close-dialog')" />
+      <EditKnowledgeItemDialog v-else-if="activeDialog === 'edit-entity'" :target="entityEditTarget"
+        @close="$emit('close-dialog')" @save="$emit('save-entity-edit', $event)" />
       <EditRelationDialog v-else-if="relationEditEdgeId" :edge-id="relationEditEdgeId" :error="relationError"
         :saving="relationSaving" @close="$emit('close-relation-edit')" @save="$emit('save-relation-edit', $event)" />
     </div>

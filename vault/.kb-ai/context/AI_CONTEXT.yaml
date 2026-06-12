@@ -4,11 +4,12 @@ vault:
   description: Local-first knowledge graph vault for technical learning, project
     knowledge, and review.
   language: zh-CN
-  defaultDomain: ""
-generatedAt: 2026-06-12T00:54:31.867Z
+  defaultDomain: optics
+generatedAt: 2026-06-12T06:40:41.537Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-  allowedDomains: []
+  allowedDomains:
+    - optics
   canAddDomains: true
   allowedNodeTypes:
     - topic
@@ -45,7 +46,7 @@ constraints:
   assetPolicy:
     generatedImagesAllowed: false
     mustUseOriginalSourceAssets: true
-    html: snapshot-assets-first when assets/source-snapshot exists; otherwise
+    html: source-snapshot-assets-first when assets/source-snapshot exists; otherwise
       source-url-first
     markdown: local packaged original/source assets only; no AI-generated images
     sourceBlocksRequired: true
@@ -57,6 +58,9 @@ constraints:
       - assets/source-snapshot/<source-id>/_resources/
       - assets/original/
       - assets/source-assets/
+    preserveCanvasCompositing: true
+    noGlobalCanvasPrototypeBackgroundPatch: true
+    scanGlobalCompositeOperationBeforeCanvasFix: true
   sourceSnapshot:
     useAsAssetLibrary: true
     inspectManifest: assets/source-snapshot/<source-id>/snapshot-manifest.json
@@ -66,6 +70,11 @@ constraints:
     iframeFallbackAllowedWithReason: true
     requireSnapshotAssetsUsedList: true
     preferredStrategy: source-snapshot-assets + source-ported-interaction
+    preserveCanvasAlphaCompositing: true
+    canvasBackgroundFixOrder:
+      - source DOM/context restoration
+      - container/CSS background
+      - per-demo audited bitmap fill only when safe
   htmlRichNote:
     recommendedForTutorialSources: true
     fragmentOrFullDocument: html note may contain rich HTML; renderer should isolate
@@ -83,6 +92,11 @@ constraints:
       - review/source-coverage-plan.md
       - review/source-asset-manifest.md
       - review/interactive-demo-coverage.md
+    reviewFilesAdditionalRequiredForSnapshotSources:
+      - review/source-runtime-porting-notes.md
+      - review/visual-contrast-audit.md
+      - review/learner-facing-language-audit.md
+      - review/content-sufficiency-audit.md
   localePolicy:
     priority:
       - manifest.language
@@ -97,7 +111,7 @@ constraints:
     omitNoteFiles: true
     visibleInGraph: true
 counts:
-  domains: 0
-  nodes: 0
-  edges: 0
+  domains: 1
+  nodes: 3
+  edges: 4
   customBlockTypes: 0

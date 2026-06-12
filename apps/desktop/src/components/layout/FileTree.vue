@@ -1,8 +1,10 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { getActiveVault } from "../../graph/graph-data-store.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 import AppIcon from "../ui/AppIcon.vue";
+import FileTreeNode from "./FileTreeNode.vue";
+import VaultContextMenu from "./VaultContextMenu.vue";
 
 defineProps({
   activeDomain: {
@@ -15,9 +17,41 @@ defineProps({
   },
 });
 
-defineEmits(["open-domain", "open-note", "toggle-sidebar"]);
+const emit = defineEmits(["delete-entity", "edit-entity", "open-domain", "open-note", "toggle-sidebar"]);
 
 const fileTree = computed(() => getActiveVault().fileTree);
+const menu = ref(null);
+
+function displayTitle(entity) {
+  return entity?.displayTitle || entity?.titleLocale || entity?.title || entity?.id || "";
+}
+
+function subtitle(entity) {
+  const englishTitle = entity?.title || entity?.id || "";
+  return englishTitle === displayTitle(entity) ? "" : englishTitle;
+}
+
+function tooltipTitle(entity) {
+  const secondary = subtitle(entity);
+  return secondary ? `${displayTitle(entity)} / ${secondary}` : displayTitle(entity);
+}
+
+function openContextMenu(event, target) {
+  menu.value = {
+    x: Math.min(event.clientX, window.innerWidth - 150),
+    y: Math.min(event.clientY, window.innerHeight - 84),
+    target,
+  };
+}
+
+function closeContextMenu() {
+  menu.value = null;
+}
+
+function emitMenuAction(action, target) {
+  closeContextMenu();
+  emit(action, target);
+}
 </script>
 
 <template>
@@ -38,24 +72,35 @@ const fileTree = computed(() => getActiveVault().fileTree);
     <div class="tree-list">
       <section v-for="domain in fileTree" :key="domain.id" class="tree-domain">
         <button class="domain-row" :class="{ 'is-active': domain.id === activeDomain }"
-          :style="{ '--domain-color': getDomainColor(domain.id) }" @click="$emit('open-domain', domain.id)">
+          :style="{ '--domain-color': getDomainColor(domain.id) }" @click="$emit('open-domain', domain.id)"
+          @contextmenu.prevent.stop="openContextMenu($event, { kind: 'domain', id: domain.id })">
           <span class="domain-marker"></span>
-          <span class="tree-text" :title="domain.id">
-            <span class="tree-title">{{ domain.title }}</span>
-            <span class="tree-id">{{ domain.id }}</span>
+          <span class="tree-text" :title="tooltipTitle(domain)">
+            <span class="tree-title">{{ displayTitle(domain) }}</span>
+            <span v-if="subtitle(domain)" class="tree-id">{{ subtitle(domain) }}</span>
           </span>
         </button>
 
         <div v-if="domain.id === activeDomain || domain.children.length" class="concept-list">
-          <button v-for="node in domain.children" :key="node.id" class="concept-row"
-            :class="{ 'is-active': node.id === activeNoteId }" :style="{ '--domain-color': getDomainColor(domain.id) }"
-            :title="node.id" @click="$emit('open-note', node.id)">
-            <span class="tree-title">{{ node.title }}</span>
-            <span class="tree-id">{{ node.id }}</span>
-          </button>
+          <FileTreeNode
+            v-for="node in domain.children"
+            :key="node.id"
+            :active-note-id="activeNoteId"
+            :domain-color="getDomainColor(domain.id)"
+            :node="node"
+            @context-menu="openContextMenu"
+            @open-note="$emit('open-note', $event)"
+          />
         </div>
       </section>
     </div>
+
+    <VaultContextMenu
+      :menu="menu"
+      @close="closeContextMenu"
+      @delete="emitMenuAction('delete-entity', $event)"
+      @edit="emitMenuAction('edit-entity', $event)"
+    />
   </aside>
 </template>
 
@@ -131,8 +176,7 @@ const fileTree = computed(() => getActiveVault().fileTree);
   font-weight: 800;
 }
 
-.tree-text,
-.concept-row {
+.tree-text {
   min-width: 0;
 }
 
@@ -173,22 +217,5 @@ const fileTree = computed(() => getActiveVault().fileTree);
   display: grid;
   gap: 2px;
   padding: 4px 0 4px 28px;
-}
-
-.concept-row {
-  min-height: 24px;
-  padding: 0 8px 0 14px;
-  border-left: 3px solid transparent;
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-}
-
-.concept-row:hover,
-.concept-row.is-active {
-  border-left-color: var(--domain-color);
-  outline: 1px solid var(--domain-color);
-  background: var(--background-panel);
-  color: var(--text-primary);
 }
 </style>

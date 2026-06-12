@@ -145,7 +145,11 @@ function nodeHierarchyMarkerCount(node) {
 
 function hasNodeNote(node) {
   const note = getActiveVault().notes?.[node.id];
-  return Boolean(note?.markdown?.trim());
+  return Boolean(note?.markdown?.trim() || note?.html?.trim());
+}
+
+function nodeDisplayTitle(node) {
+  return node?.titleLocale || node?.title || node?.id || "";
 }
 
 function traceMarkerStart(edge) {
@@ -398,7 +402,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
               <span v-for="index in nodeHierarchyMarkerCount(node)" :key="index" class="node-corner-marker"></span>
             </span>
 
-            <span class="node-title">{{ node.title }}</span>
+            <span class="node-title">{{ nodeDisplayTitle(node) }}</span>
             <span class="node-meta">{{ node.type }} / {{ node.domain }}</span>
           </button>
         </div>

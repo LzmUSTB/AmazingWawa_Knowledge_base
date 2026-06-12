@@ -249,6 +249,19 @@ fn allowed_note_asset_read_path(relative_path: &str) -> bool {
             .all(|part| !part.is_empty() && part != "." && part != "..")
 }
 
+fn allowed_remove_vault_path(relative_path: &str) -> bool {
+    let normalized = relative_path.replace('\\', "/");
+    let parts: Vec<&str> = normalized.trim_end_matches('/').split('/').collect();
+    parts.len() >= 2
+        && parts.len() <= 3
+        && parts[0] == "content"
+        && parts
+            .iter()
+            .all(|part| !part.is_empty() && *part != "." && *part != "..")
+        && normalized.as_bytes().get(1) != Some(&b':')
+        && !normalized.starts_with('/')
+}
+
 fn asset_mime_type(entry_path: &str) -> &'static str {
     match extension_of(entry_path).as_str() {
         ".avif" => "image/avif",
@@ -1134,6 +1147,34 @@ fn create_dir_all(vault_root_path: String, relative_path: String) -> Result<(), 
         .map_err(|error| format!("Failed to create {}: {error}", target_path.to_string_lossy()))
 }
 
+#[tauri::command]
+fn remove_vault_path(vault_root_path: String, relative_path: String) -> Result<(), String> {
+    if !allowed_remove_vault_path(&relative_path) {
+        return Err("Refusing to remove outside allowed content paths".into());
+    }
+    let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
+    if !target_path.exists() {
+        return Ok(());
+    }
+    let canonical_root = PathBuf::from(&vault_root_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    let canonical_target = target_path
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve target path: {error}"))?;
+    if !canonical_target.starts_with(&canonical_root) {
+        return Err("Refusing to remove a path outside the vault root".into());
+    }
+    if canonical_target.is_dir() {
+        fs::remove_dir_all(&canonical_target)
+            .map_err(|error| format!("Failed to remove {}: {error}", canonical_target.to_string_lossy()))?;
+    } else if canonical_target.is_file() {
+        fs::remove_file(&canonical_target)
+            .map_err(|error| format!("Failed to remove {}: {error}", canonical_target.to_string_lossy()))?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1149,6 +1190,7 @@ pub fn run() {
             read_wawapkg_file,
             read_text_file,
             read_vault_files,
+            remove_vault_path,
             resolve_default_vault_root,
             write_text_file
         ])

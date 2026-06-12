@@ -1,0 +1,15 @@
+rulePriority:
+  - AI_CONTEXT.yaml
+  - AI_KB_GUIDE.md
+  - SOURCE_TO_NOTE_GUIDE.md
+  - PACKAGE_AND_RELATION_GUIDE.md
+  - NOTE_AND_BLOCK_GUIDE.md
+  - NOTE_QUALITY_RUBRIC.md
+  - BLOCK_REGISTRY.md
+  - dynamic indexes
+conflictResolution:
+  sourceSnapshotRulesOverrideIframeRules: true
+  sourcePortedInteractionOverridesGenericJsReproduction: true
+  learnerFacingVoiceOverridesImplementationDescription: true
+  noGeneratedImagesOverridesAllFallbacks: true
+  flatEdgeShapeIsMandatory: true

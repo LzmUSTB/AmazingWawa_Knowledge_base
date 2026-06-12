@@ -1,8 +1,9 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+import NodeFilterList from "../common/NodeFilterList.vue";
 import AppIcon from "../ui/AppIcon.vue";
 import RelationContextMenu from "./RelationContextMenu.vue";
-import { findGraphNode, getActiveVault, getGraphEdges, getGraphNodes } from "../../graph/graph-data-store.js";
+import { findGraphNode } from "../../graph/graph-data-store.js";
 import {
   getDirectRelationsForNode,
   getHierarchyForNode,
@@ -71,7 +72,6 @@ const formOpen = ref(false);
 const direction = ref("out");
 const relation = ref("depends-on");
 const targetId = ref("");
-const targetSearch = ref("");
 const contextMenu = ref({ edge: null, x: 0, y: 0 });
 
 const node = computed(() => findGraphNode(props.nodeId));
@@ -79,75 +79,17 @@ const nodeColor = computed(() => getDomainColor(node.value?.domain));
 const domainSelected = computed(() => Boolean(node.value && isDomainNode(node.value.id)));
 const hierarchy = computed(() => (node.value ? getHierarchyForNode(node.value.id) : { parentEdges: [], childEdges: [] }));
 const directRelations = computed(() => (node.value ? getDirectRelationsForNode(node.value.id) : []));
-const queryText = computed(() => targetSearch.value.trim().toLowerCase());
-const targetGroups = computed(() => {
-  const nodes = getGraphNodes();
-  const domains = getActiveVault().domains || [];
-  const nodeById = new Map(nodes.map((item) => [item.id, item]));
-  const childrenByParent = new Map();
-  getGraphEdges()
-    .filter((edge) => edge.relation === "contains")
-    .forEach((edge) => {
-      childrenByParent.set(edge.source, [...(childrenByParent.get(edge.source) || []), edge.target]);
-    });
-  const visited = new Set();
-  const groups = domains.map((domain) => {
-    const domainNode = nodeById.get(domain.id);
-    const rows = buildTargetRows(domain.id, 1, new Set([domain.id]), visited, childrenByParent, nodeById);
-    const domainMatches = matchesTarget(domainNode || domain);
-
-    if (domainNode?.id) {
-      visited.add(domainNode.id);
-    }
-
-    const ungrouped = nodes
-      .filter((item) => item.domain === domain.id && item.id !== props.nodeId && !visited.has(item.id))
-      .filter(matchesTarget)
-      .map((item) => ({ node: item, depth: 1, kind: "ungrouped" }));
-
-    return {
-      domain,
-      domainNode,
-      domainSelectable: Boolean(domainNode && domainNode.id !== props.nodeId),
-      domainVisible: !queryText.value || domainMatches,
-      color: getDomainColor(domain.id),
-      rows: [...rows, ...ungrouped],
-    };
-  });
-
-  return groups.filter((group) => group.domainVisible || group.rows.length);
-});
 
 const selectedTarget = computed(() => findGraphNode(targetId.value));
 const directionLeftLabel = computed(() => {
-  if (direction.value === "out") return node.value?.title || "Current Node";
-  return selectedTarget.value?.title || "Target";
+  if (direction.value === "out") return getNodeTitleOrId(node.value?.id) || "Current Node";
+  return getNodeTitleOrId(selectedTarget.value?.id) || "Target";
 });
 const directionRightLabel = computed(() => {
-  if (direction.value === "out") return selectedTarget.value?.title || "Target";
-  return node.value?.title || "Current Node";
+  if (direction.value === "out") return getNodeTitleOrId(selectedTarget.value?.id) || "Target";
+  return getNodeTitleOrId(node.value?.id) || "Current Node";
 });
 const directionTitle = computed(() => (direction.value === "out" ? "Current node points to target" : "Target points to current node"));
-
-function matchesTarget(item) {
-  if (!item) return false;
-  const query = targetSearch.value.trim().toLowerCase();
-  if (!query) return true;
-  return `${item.title || ""} ${item.id || ""} ${item.domain || item.id || ""}`.toLowerCase().includes(query);
-}
-
-function buildTargetRows(parentId, depth, path, visited, childrenByParent, nodeById) {
-  return (childrenByParent.get(parentId) || []).flatMap((childId) => {
-    if (path.has(childId)) return [];
-    const childNode = nodeById.get(childId);
-    const childRows = buildTargetRows(childId, depth + 1, new Set([...path, childId]), visited, childrenByParent, nodeById);
-    const includeSelf = childNode && childNode.id !== props.nodeId && (matchesTarget(childNode) || childRows.length);
-    if (childNode?.id) {
-      visited.add(childNode.id);
-    }
-    return includeSelf ? [{ node: childNode, depth, kind: "node" }, ...childRows] : childRows;
-  });
-}
 
 function toggleDirection() {
   direction.value = direction.value === "out" ? "in" : "out";
@@ -159,13 +101,6 @@ function selectTarget(id) {
 
 function relationStyle(edge) {
   return { "--relation-row-color": relationTheme[edge.relation]?.color || relationColor(edge.relation) };
-}
-
-function targetDepthStyle(row, group) {
-  return {
-    "--target-domain-color": group.color,
-    "--target-indent": `${10 + row.depth * 14}px`,
-  };
 }
 
 function relationColor(relationName) {
@@ -210,7 +145,6 @@ watch(
     if (!props.nodeId) return;
     formOpen.value = true;
     targetId.value = "";
-    targetSearch.value = "";
     relation.value = "depends-on";
     direction.value = "out";
   },
@@ -237,7 +171,6 @@ watch(
 function closeForm() {
   formOpen.value = false;
   targetId.value = "";
-  targetSearch.value = "";
   relation.value = "depends-on";
   direction.value = "out";
 }
@@ -311,7 +244,7 @@ function requestDeleteRelation(edgeId) {
       <div v-else class="relation-content" @scroll="closeContextMenu">
         <section class="sidebar-section selected-node">
           <div class="section-label">Selected Node</div>
-          <h2>{{ node.title }}</h2>
+          <h2>{{ getNodeTitleOrId(node.id) }}</h2>
           <p>{{ node.id }}</p>
           <p>{{ node.type }} / {{ node.domain }}</p>
           <button class="hud-button button-with-icon pin-action"
@@ -370,29 +303,12 @@ function requestDeleteRelation(edgeId) {
               <option value="compares-with">compares-with</option>
             </select>
           </label>
-          <label>
-            <span>Target</span>
-            <input v-model="targetSearch" placeholder="Filter nodes" spellcheck="false" />
-          </label>
-          <div class="target-tree">
-            <section v-for="group in targetGroups" :key="group.domain.id" class="target-domain-group"
-              :style="{ '--target-domain-color': group.color }">
-              <button class="target-domain-row"
-                :class="{ 'is-selected': targetId === group.domainNode?.id, 'is-static': !group.domainSelectable }"
-                type="button" :disabled="!group.domainSelectable"
-                @click="group.domainSelectable && selectTarget(group.domainNode.id)">
-                <span>{{ group.domain.title || group.domain.id }}</span>
-                <small>{{ group.domain.id }}</small>
-              </button>
-              <button v-for="row in group.rows" :key="row.node.id" class="target-node-row"
-                :class="{ 'is-selected': targetId === row.node.id }" :style="targetDepthStyle(row, group)" type="button"
-                @click="selectTarget(row.node.id)">
-                <span>{{ row.node.title || row.node.id }}</span>
-                <small>{{ row.node.id }} / {{ row.node.type || "node" }}</small>
-              </button>
-            </section>
-            <p v-if="!targetGroups.length" class="empty-line">No matching target nodes</p>
-          </div>
+          <NodeFilterList
+            v-model="targetId"
+            label="Target"
+            :exclude-ids="[props.nodeId]"
+            include-domains
+          />
           <div class="preview-line">{{ preview || "Choose a target to preview the link." }}</div>
           <div v-if="visibleFormError" class="form-error">{{ visibleFormError }}</div>
           <div class="form-actions">

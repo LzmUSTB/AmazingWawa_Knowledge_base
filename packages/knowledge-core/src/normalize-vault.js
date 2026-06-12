@@ -12,9 +12,12 @@ function asArray(value) {
 
 function normalizeDomain(domain = {}) {
   return {
+    ...domain,
     id: domain.id,
     title: domain.title || domain.id,
+    titleLocale: domain.titleLocale || domain.title_locale || "",
     description: domain.description || "",
+    descriptionLocale: domain.descriptionLocale || domain.description_locale || "",
     color: domain.color || "#EDEDED",
     order: domain.order ?? 999,
   };
@@ -24,10 +27,12 @@ function normalizeDomainNode(domain) {
   return {
     id: domain.id,
     title: domain.title,
+    titleLocale: domain.titleLocale || "",
     domain: domain.id,
     type: "domain",
     status: "domain",
-    summary: domain.description || `${domain.title} domain graph.`,
+    summary: domain.descriptionLocale || domain.description || `${domain.title} domain graph.`,
+    summaryLocale: domain.descriptionLocale || "",
     color: domain.color,
   };
 }
@@ -39,10 +44,12 @@ function normalizeConceptNode(meta = {}, filePath = "") {
     ...meta,
     id,
     title: meta.title || id,
+    titleLocale: meta.titleLocale || meta.title_locale || "",
     domain: meta.domain || "",
     type: meta.type || "concept",
     status: meta.status || "seed",
     summary: meta.summary || "",
+    summaryLocale: meta.summaryLocale || meta.summary_locale || "",
     contentFormat: meta.contentFormat || meta.content_format || "auto",
     filePath,
   };
@@ -164,7 +171,7 @@ export function normalizeVault(rawFiles = {}) {
   const notes = buildNoteIndex(rawFiles.noteFiles || {}, rawFiles.noteHtmlFiles || {});
   const scopes = buildGraphScopes({ domains, nodes, edges });
   const layouts = ensureScopeBoards(normalizeLayouts(graphLayoutYaml), scopes);
-  const fileTree = buildFileTree(domains, nodes);
+  const fileTree = buildFileTree(domains, nodes, edges, notes);
 
   const normalizedVault = {
     vault: {

@@ -7,14 +7,20 @@ import MobileNoteView from "./components/mobile/MobileNoteView.vue";
 import SearchOverlay from "./components/search/SearchOverlay.vue";
 import {
   chooseVaultRoot,
+  addNoteToNode,
   createGraphLink,
-  createKnowledgeItem,
+  createDomain,
+  createKnowledgeNode,
+  deleteDomain,
+  deleteKnowledgeNode,
   exportContext,
   loadInitialVault,
   loadVaultFromPath,
   removeGraphLink,
   replaceGraphLink,
   saveGraphLayoutBoard,
+  updateDomain,
+  updateKnowledgeNodeMeta,
   writeNoteMarkdown,
 } from "./data/desktop-vault-adapter.js";
 import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
@@ -72,6 +78,7 @@ const searchQuery = ref("");
 const relationEditEdgeId = ref("");
 const relationSaving = ref(false);
 const relationError = ref("");
+const entityEditTarget = ref(null);
 const noteFindQuery = ref("");
 const noteFindOpenKey = ref(0);
 const noteFindCloseKey = ref(0);
@@ -87,6 +94,10 @@ const selectedNode = computed(
 );
 const canSaveNote = computed(() => Boolean(activeVaultRootPath.value));
 const canSaveLayout = computed(() => Boolean(activeVaultRootPath.value));
+const canAddNote = computed(() => getGraphNodes().some((node) => {
+  const note = useActiveVault().value.notes?.[node.id] || null;
+  return node.type !== "domain" && !note?.markdown && !note?.html && (node.contentFormat === "none" || node.contentFormat === "auto" || !node.contentFormat);
+}));
 const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || "Knowledge Base");
 const currentDraftLayoutBoard = computed(() => layoutDraftBoards.value[graphScopeId.value] || null);
 const currentDraftMovedNodeIds = computed(() => layoutMovedNodeIds.value[graphScopeId.value] || []);
@@ -285,6 +296,10 @@ function hasDomain(domainId) {
 function getFallbackDomain() {
   const activeVault = useActiveVault().value;
   return activeVault.vault.defaultDomain || activeVault.domains?.[0]?.id || "root";
+}
+
+function displayTitle(entity) {
+  return entity?.titleLocale || entity?.title || entity?.id || "";
 }
 
 function recordRecentNode(nodeId) {
@@ -691,11 +706,15 @@ function executeSearchResult({ result, localGraph = false, query = "" }) {
 }
 
 function openDialog(dialogName) {
-  if (dialogName === "new-note" && !hasDomains.value) {
+  if (dialogName === "new-node" && !hasDomains.value && useActiveVault().value.source !== "desktop") {
     window.alert("Create or import a domain first.");
     return;
   }
-  if (dialogName === "new-note" && !confirmDiscardDirty()) return;
+  if (dialogName === "add-note" && !canAddNote.value) {
+    window.alert("No empty node is available. Create a node first.");
+    return;
+  }
+  if ((dialogName === "new-node" || dialogName === "add-note") && !confirmDiscardDirty()) return;
   activeDialog.value = dialogName;
 }
 
@@ -807,7 +826,45 @@ async function saveNote({ node, markdown }) {
   }
 }
 
-async function createNote(payload) {
+function closeDialog() {
+  activeDialog.value = "";
+  entityEditTarget.value = null;
+}
+
+async function createNode(payload) {
+  if (!confirmDiscardDirty()) return;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before creating nodes.");
+    return;
+  }
+
+  try {
+    if (payload.kind === "domain") {
+      const updatedVault = await createDomain(activeVaultRootPath.value, payload);
+      applyVault(updatedVault, { reset: false });
+      currentDomain.value = payload.id;
+      selectedNodeId.value = payload.id;
+      graphScopeId.value = scopeForDomain(payload.id);
+      currentView.value = "graph";
+    } else {
+      const result = await createKnowledgeNode(activeVaultRootPath.value, payload);
+      applyVault(result.vault, { reset: false });
+      currentNoteId.value = result.newNodeId;
+      selectedNodeId.value = result.newNodeId;
+      currentDomain.value = payload.domain;
+      graphScopeId.value = hasGraphScope(payload.parentId) ? payload.parentId : scopeForDomain(payload.domain);
+      currentView.value = "graph";
+    }
+    noteMode.value = "read";
+    noteDirty.value = false;
+    closeDialog();
+  } catch (error) {
+    console.error("[vault] Failed to create node.", error);
+    window.alert(`Failed to create node: ${error?.message || error}`);
+  }
+}
+
+async function addNote(payload) {
   if (!confirmDiscardDirty()) return;
   if (!canSaveNote.value) {
     window.alert("Open a desktop vault folder before creating notes.");
@@ -815,18 +872,82 @@ async function createNote(payload) {
   }
 
   try {
-    const result = await createKnowledgeItem(activeVaultRootPath.value, payload);
-    applyVault(result.vault, { reset: false });
-    currentNoteId.value = result.newNodeId;
-    selectedNodeId.value = result.newNodeId;
-    currentDomain.value = payload.domain;
+    const result = await addNoteToNode(activeVaultRootPath.value, payload);
+    replaceVaultWithoutNavigation(result.vault);
+    currentNoteId.value = result.nodeId;
+    selectedNodeId.value = result.nodeId;
+    const node = findGraphNode(result.nodeId);
+    currentDomain.value = node?.domain || currentDomain.value;
+    graphScopeId.value = hasGraphScope(result.nodeId) ? result.nodeId : scopeForDomain(node?.domain || currentDomain.value);
     currentView.value = "note";
     noteMode.value = "edit";
     noteDirty.value = false;
-    activeDialog.value = "";
+    closeDialog();
   } catch (error) {
-    console.error("[vault] Failed to create note.", error);
-    window.alert(`Failed to create note: ${error}`);
+    console.error("[vault] Failed to add note.", error);
+    window.alert(`Failed to add note: ${error?.message || error}`);
+  }
+}
+
+function requestEditEntity(target) {
+  if (!confirmDiscardDirty()) return;
+  entityEditTarget.value = target;
+  activeDialog.value = "edit-entity";
+}
+
+async function saveEntityEdit(payload) {
+  if (!payload) return;
+  const previousNavigation = snapshotNavigation();
+  try {
+    const updatedVault = payload.kind === "domain"
+      ? await updateDomain(activeVaultRootPath.value, payload.id, payload)
+      : await updateKnowledgeNodeMeta(activeVaultRootPath.value, payload.id, payload);
+    replaceVaultWithoutNavigation(updatedVault);
+    restoreNavigation(previousNavigation, payload.id);
+    closeDialog();
+  } catch (error) {
+    console.error("[vault] Failed to edit entity.", error);
+    window.alert(`Failed to edit: ${error?.message || error}`);
+  }
+}
+
+function removeNodeFromShortcuts(nodeId) {
+  pinnedNodes.value = pinnedNodes.value.filter((entry) => entry.id !== nodeId);
+  recentNodes.value = recentNodes.value.filter((entry) => entry.id !== nodeId);
+  localStorage.setItem("amazingwawa.pinnedNodeIds", JSON.stringify(pinnedNodes.value));
+  localStorage.setItem("amazingwawa.recentNodeIds", JSON.stringify(recentNodes.value));
+}
+
+async function requestDeleteEntity(target) {
+  if (!target || !confirmDiscardDirty()) return;
+  const entity = target.kind === "domain"
+    ? useActiveVault().value.domains.find((domain) => domain.id === target.id)
+    : findGraphNode(target.id);
+  if (!entity) return;
+  const title = displayTitle(entity);
+  const message = target.kind === "domain"
+    ? `Delete domain "${title}"?\nOnly empty domains can be deleted.`
+    : `Delete node "${title}"?\nThis will remove its meta, note, assets, and all graph relations.`;
+  if (!window.confirm(message)) return;
+  if (!window.confirm("This delete cannot be undone. Continue?")) return;
+
+  try {
+    const updatedVault = target.kind === "domain"
+      ? await deleteDomain(activeVaultRootPath.value, target.id)
+      : await deleteKnowledgeNode(activeVaultRootPath.value, target.id);
+    replaceVaultWithoutNavigation(updatedVault);
+    removeNodeFromShortcuts(target.id);
+    const fallbackDomain = getFallbackDomain();
+    currentDomain.value = hasDomain(currentDomain.value) ? currentDomain.value : fallbackDomain;
+    graphScopeId.value = hasGraphScope(graphScopeId.value) ? graphScopeId.value : "root";
+    selectedNodeId.value = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : getGraphScope(graphScopeId.value).selectedNodeId;
+    currentNoteId.value = findGraphNode(currentNoteId.value) ? currentNoteId.value : selectedNodeId.value;
+    if (!findGraphNode(currentNoteId.value)) currentView.value = "graph";
+    noteDirty.value = false;
+    noteMode.value = "read";
+  } catch (error) {
+    console.error("[vault] Failed to delete entity.", error);
+    window.alert(String(error?.message || error));
   }
 }
 
@@ -969,15 +1090,17 @@ function toggleRelationSidebar() {
       :add-link-open-key="addLinkOpenKey"
       :add-link-saving="addLinkSaving"
       :app-title="activeVaultTitle"
+      :can-add-note="canAddNote"
       :can-save-layout="canSaveLayout"
       :can-save-note="canSaveNote"
-      :can-create-note="hasDomains"
+      :can-create-note="hasRealVault"
       :current-domain="currentDomain"
       :current-note-id="currentNoteId"
       :current-relation-node-id="currentRelationNodeId"
       :current-view="currentView"
       :draft-layout-board="currentDraftLayoutBoard"
       :draft-moved-node-ids="currentDraftMovedNodeIds"
+      :entity-edit-target="entityEditTarget"
       :graph-scope-id="graphScopeId"
       :is-layout-editing="isLayoutEditing"
       :layout-dirty="layoutDirty"
@@ -998,9 +1121,12 @@ function toggleRelationSidebar() {
       @add-link="createLink"
       @ai-import-applied="handleAiImportApplied"
       @cancel-layout="discardLayoutDraft"
-      @close-dialog="activeDialog = ''"
+      @close-dialog="closeDialog"
       @close-relation-edit="closeRelationEdit"
-      @create-note="createNote"
+      @add-note="addNote"
+      @create-node="createNode"
+      @delete-entity="requestDeleteEntity"
+      @edit-entity="requestEditEntity"
       @edit-layout="startLayoutEditing"
       @export-context="handleExportContext"
       @ensure-layout-draft="ensureLayoutDraft"
@@ -1015,6 +1141,7 @@ function toggleRelationSidebar() {
       @request-edit-relation="requestEditRelation"
       @save-layout="saveLayout"
       @save-note="saveNote"
+      @save-entity-edit="saveEntityEdit"
       @save-relation-edit="saveEditedRelation"
       @select-node="selectedNodeId = $event"
       @set-note-dirty="noteDirty = $event"

@@ -1,4 +1,4 @@
-# Note Quality Rubric
+# Note Quality Rubric and Pre-export Checklist
 
 Target score: 4 or higher.
 
@@ -13,17 +13,18 @@ Criteria:
 - mechanism,
 - examples,
 - parameters,
-- mistakes,
+- common mistakes,
 - meaningful relations,
-- review questions,
+- review questions with answers,
 - purposeful original source visuals,
-- all important interactive demos represented,
+- all important interactive demos represented or source-ported,
 - source blocks close to source-grounded explanations,
+- source snapshot assets and runtime behavior used when available,
 - AI-authored JS interactions improve understanding when used.
 
 ## 4 Good
 
-Usable and mostly complete. Clear mechanism and concrete examples. Important source assets are preserved or linked.
+Usable and mostly complete. Clear mechanism and concrete examples. Important source assets are preserved, ported, or linked.
 
 ## 3 Shallow
 
@@ -33,7 +34,7 @@ Structurally valid but too summary-like, or missing some important source visual
 
 Mostly paraphrase with little mechanism. Tutorial source is heavily compressed.
 
-A rich HTML note cannot score above 2 if it replaces high-quality original figures or interactive demos with AI-generated images.
+A rich HTML note cannot score above 2 if it replaces high-quality original figures or interactive demos with AI-generated images or generic demos.
 
 ## 1 Invalid
 
@@ -57,130 +58,66 @@ note_quality:
   revision_done: true | false
 ```
 
+## Runtime quality self-audit
 
-# Source-first strict revisions
-
-These rules override weaker or older guidance in this context export.
-
-## Learner-facing voice
-
-Never write the note as if it is commenting on a snapshot or the source document. Use direct teaching voice in the target locale. The source URL is cited for attribution, while the explanation should read like the knowledge base itself is teaching the concept.
-
-## Snapshot-backed source preservation
-
-If a package includes `assets/source-snapshot/`, that snapshot must be treated as the highest-priority source asset library.
-
-Do not use a whole snapshot iframe as the primary note representation. The AI should use the snapshot's local assets and behavior to port the important demos directly inside `note.html` with knowledge-base-styled HTML/CSS/JS.
-
-Allowed fallback: a whole-snapshot iframe may be included only as a secondary reference/debug view when the interaction cannot be isolated or faithfully ported. It must be clearly labeled as fallback and must not replace the teaching explanation.
-
-## Original media and interactive demos
-
-For asset-rich or interactive sources, source-root links are not enough. A note must try to show or reconstruct original source material directly inside the note.
-
-Priority order when no source snapshot exists:
-
-1. Direct original media URL: `<img src="https://...">`, `<video src="https://...">`, `<source src="https://...">`.
-2. Local copied original media: `<img src="assets/original/...">` or `<img src="assets/source-assets/...">`.
-3. Original interactive source embed only if no snapshot is available and direct reconstruction is not feasible.
-4. Direct source demo link with exact location label.
-5. AI-authored JS/Canvas/SVG demos only as supplementary explanation.
-
-Priority order when a source snapshot exists:
-
-1. Use local original assets from `assets/source-snapshot/<source-id>/_resources/`.
-2. Port source interactions directly in the note using knowledge-base-styled controls and snapshot-observed behavior.
-3. Use source URL/source blocks for attribution and source location.
-4. Use iframe only as fallback/reference, not as the primary final note.
-
-Forbidden as a complete preservation strategy:
+For source-rich or snapshot-backed HTML notes, also include:
 
 ```yaml
-preservation_strategy: source-link + js-reproduction
+runtime_quality:
+  original_demo_ids_present: true | false
+  original_demo_contexts_preserved: true | false
+  original_controls_or_behavior_ported: true | false
+  dark_light_canvas_contexts_verified: true | false
+  slider_overlap_checked: true | false
+  contrast_checked_for_text_and_canvas: true | false
+  learner_facing_meta_language_removed: true | false
+  module_explanations_sufficient: true | false
+  unsupported_assets_filtered: true | false
 ```
 
-Also forbidden when a snapshot exists:
+## Visual contrast checklist
 
-```yaml
-preservation_strategy: snapshot-iframe-only
-```
+Before export, inspect the actual rendered note and check:
 
-## Required source asset markers
+- main prose contrast,
+- source block contrast,
+- table header/cell contrast,
+- slider labels,
+- canvas visibility,
+- review panels,
+- code blocks,
+- captions,
+- disabled/loading states.
 
-Every required source asset or demo must have a stable id and must be marked in the HTML with `data-source-asset`:
+## Learner-facing language audit
 
-```html
-<section class="rich-js-demo" data-source-asset="pinhole-diameter-distance-demo">
-  <!-- Directly ported controls/canvas/SVG using snapshot assets and observed behavior. -->
-</section>
-```
+Remove implementation-facing prose from the final note body:
 
-For snapshot-backed demos, prefer this manifest shape:
+- no `source snapshot` explanations,
+- no `source-ported` labels in title/body,
+- no `strictly ported` claims,
+- no `按照 zh-CN`,
+- no “I used the snapshot” style statements.
 
-```yaml
-source_assets:
-  - id: pinhole-diameter-distance-demo
-    type: interactive-demo
-    source_url: https://ciechanow.ski/cameras-and-lenses/
-    source_location: Pinhole camera / hole diameter and sensor distance sliders
-    required: true
-    represented_in_node: pinhole-camera-geometry
-    note_location: section 01
-    snapshot_path: assets/source-snapshot/cameras-and-lenses/index.html
-    snapshot_assets_used:
-      - assets/source-snapshot/cameras-and-lenses/_resources/source-specific.js
-    ported_original_controls:
-      - hole diameter
-      - sensor distance
-    ported_original_behavior:
-      - increasing hole diameter increases brightness and blur
-    preservation_strategy: source-snapshot-assets + source-ported-interaction
-```
+The note should teach the concept directly in the target locale.
 
-Do not put `node-id / section xx` into `note_location` as the only machine-readable location. Use `represented_in_node` for the node id.
+## Content sufficiency audit
 
-## UI adaptation rule
+If the source explanation is terse, expand it. If the source is insufficient for a required concept, use external research only when needed, cite supplemental sources, and clearly separate supplemental explanation from source-grounded statements.
 
-The note's explanatory UI may be redesigned to match the knowledge base style: hard-edged panels, dark theme, restrained accent color, clear control labels, and app font-size variables.
+## Package reliability checklist
 
-The source interaction's meaning must remain faithful: preserve variables, cause-effect behavior, and observed outcomes. Do not hide important original controls or simplify the interaction so much that the concept becomes weaker than the source.
+Before final `.wawapkg`:
 
-## Locale rule
-
-Use the target locale for explanations, section titles, captions, review questions, and answers.
-
-Locale priority:
-
-1. `manifest.yaml.language`,
-2. `AI_CONTEXT.yaml.vault.language`,
-3. source language,
-4. `zh-CN` fallback.
-
-Keep standard technical terms in English when they are more precise, but explain them in the target locale.
-
-## Review questions with answers
-
-Review questions must not be a bare list. Each question must include an answer using `details`/`summary`:
-
-```html
-<section class="rich-review">
-  <h2>复习问题</h2>
-  <details class="rich-qa">
-    <summary>为什么小孔相机会形成倒立图像？</summary>
-    <div class="rich-answer">
-      <p>因为来自场景上方的光线穿过小孔后落到传感器下方，来自左侧的光线落到右侧，上下和左右各翻转一次，合起来相当于 180° 旋转。</p>
-      <aside class="source-block">
-        <strong>Source</strong>
-        <a href="https://ciechanow.ski/cameras-and-lenses/" target="_blank" rel="noreferrer">Cameras and Lenses</a>
-        <span>Location: Pinhole camera / ray inversion explanation</span>
-      </aside>
-    </div>
-  </details>
-</section>
-```
-
-Bare `<ol><li>question</li></ol>` review sections are not acceptable for final-quality notes.
-
-## Quality bar for Ciechanowski-style sources
-
-For sources whose clarity comes from interactive demos, the package must not pretend that a local AI-authored canvas is equivalent to the original. If a source snapshot exists, the correct high-fidelity approach is direct note implementation using snapshot assets and behavior, not repeated iframes or external links.
+- package root contains required files,
+- `mimetype` exact match,
+- `manifest.yaml` valid,
+- `patch.yaml` uses canonical operation shapes,
+- all `add_edge` operations are flat,
+- all referenced note files exist,
+- all required review files exist for visual/interactive sources,
+- no generated raster images,
+- unsupported assets filtered or allowed by importer,
+- JavaScript syntax checked,
+- important local assets referenced,
+- source asset manifest complete.

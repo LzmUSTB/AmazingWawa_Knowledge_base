@@ -14,7 +14,7 @@ defineProps({
     type: Boolean,
     default: false,
   },
-  canCreateNote: {
+  canAddNote: {
     type: Boolean,
     default: true,
   },
@@ -35,9 +35,9 @@ defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
       <button
         class="hud-button button-with-icon"
         style="--button-color: var(--graphics)"
-        :disabled="!canCreateNote"
-        :title="canCreateNote ? '' : 'Create or import a domain first.'"
-        @click="$emit('open-dialog', 'new-note')"
+        :disabled="!canAddNote"
+        :title="canAddNote ? '' : 'No empty node is available. Create a node first.'"
+        @click="$emit('open-dialog', 'add-note')"
       >
         <AppIcon name="file-plus" />
         <span class="button-icon-label">New Note</span>

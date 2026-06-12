@@ -11,6 +11,8 @@ import {
 
 const LAST_VAULT_KEY = "amazingwawa.lastVaultRootPath";
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
+const EDITABLE_DOMAIN_FIELDS = ["title", "titleLocale", "description", "descriptionLocale", "color", "order"];
+const EDITABLE_NODE_FIELDS = ["title", "titleLocale", "summary", "summaryLocale", "type", "status", "tags", "aliases"];
 
 function normalizeFromRaw(rawFiles, vaultRootPath) {
   const normalizedVault = normalizeVault({
@@ -206,21 +208,85 @@ answer:
 
 function buildMetaYaml(payload) {
   const date = todayLocalDate();
-  const createInitialNote = payload.createInitialNote !== false;
   return YAML.stringify({
     id: payload.id,
     title: payload.title,
+    titleLocale: payload.titleLocale || "",
     domain: payload.domain,
     type: payload.type,
     status: payload.status,
     summary: payload.summary || "",
-    contentFormat: createInitialNote ? "markdown" : "none",
+    summaryLocale: payload.summaryLocale || "",
+    contentFormat: payload.contentFormat || "none",
     createdAt: date,
     updatedAt: date,
     tags: [payload.domain],
     prerequisites: [],
     related: [],
   });
+}
+
+function nodeHasNote(vault, nodeId) {
+  const note = vault.notes?.[nodeId];
+  return Boolean(note?.markdown || note?.html);
+}
+
+function getNodeMetaRelativePath(node) {
+  return `content/${node.domain}/${node.id}/meta.yaml`;
+}
+
+function parseYamlObject(raw, fallback = {}) {
+  return YAML.parse(raw || "") || fallback;
+}
+
+function pickEditableFields(payload, fields) {
+  return Object.fromEntries(
+    fields
+      .filter((field) => Object.prototype.hasOwnProperty.call(payload || {}, field))
+      .map((field) => [field, payload[field]]),
+  );
+}
+
+function buildDomainsYamlWithDomain(domainsYaml, payload) {
+  const parsed = parseYamlObject(domainsYaml, {});
+  const domains = Array.isArray(parsed.domains) ? parsed.domains : [];
+  if (domains.some((domain) => domain.id === payload.id)) throw new Error(`Domain "${payload.id}" already exists.`);
+  return YAML.stringify({
+    ...parsed,
+    domains: [
+      ...domains,
+      {
+        id: payload.id,
+        title: payload.title,
+        titleLocale: payload.titleLocale || "",
+        description: payload.description || "",
+        descriptionLocale: payload.descriptionLocale || "",
+        color: payload.color || "#EDEDED",
+        order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : 999,
+      },
+    ],
+  });
+}
+
+function buildDomainsYamlWithUpdatedDomain(domainsYaml, domainId, payload) {
+  const parsed = parseYamlObject(domainsYaml, {});
+  const domains = Array.isArray(parsed.domains) ? parsed.domains : [];
+  const index = domains.findIndex((domain) => domain.id === domainId);
+  if (index < 0) throw new Error(`Domain "${domainId}" does not exist.`);
+  const nextDomains = [...domains];
+  nextDomains[index] = {
+    ...nextDomains[index],
+    ...pickEditableFields(payload, EDITABLE_DOMAIN_FIELDS),
+    id: domainId,
+    order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : nextDomains[index].order,
+  };
+  return YAML.stringify({ ...parsed, domains: nextDomains });
+}
+
+function buildDomainsYamlWithoutDomain(domainsYaml, domainId) {
+  const parsed = parseYamlObject(domainsYaml, {});
+  const domains = Array.isArray(parsed.domains) ? parsed.domains : [];
+  return YAML.stringify({ ...parsed, domains: domains.filter((domain) => domain.id !== domainId) });
 }
 
 function buildGraphYamlWithEdge(graphYaml, edge) {
@@ -308,7 +374,26 @@ function buildGraphYamlWithReplacedLink(graphYaml, oldEdgeId, payload, nodeIds) 
   return YAML.stringify({ ...graph, schemaVersion: graph.schemaVersion || 1, edges: nextEdges });
 }
 
-export async function createKnowledgeItem(vaultRootPath, payload) {
+export async function createDomain(vaultRootPath, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating domains.");
+  if (!payload.title?.trim()) throw new Error("Title is required.");
+  if (!payload.id?.trim()) throw new Error("ID is required.");
+  if (!assertKebabId(payload.id)) throw new Error("ID must be lowercase kebab-case.");
+
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  if (currentVault.domains.some((domain) => domain.id === payload.id)) throw new Error(`Domain "${payload.id}" already exists.`);
+
+  const domainsYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "domains.yaml" });
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: "domains.yaml",
+    contents: buildDomainsYamlWithDomain(domainsYaml, payload),
+  });
+  await invoke("create_dir_all", { vaultRootPath, relativePath: `content/${payload.id}` });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function createKnowledgeNode(vaultRootPath, payload) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating notes.");
   if (!payload.title?.trim()) throw new Error("Title is required.");
   if (!payload.id?.trim()) throw new Error("ID is required.");
@@ -340,23 +425,159 @@ export async function createKnowledgeItem(vaultRootPath, payload) {
   };
   const updatedGraphYaml = buildGraphYamlWithEdge(graphYaml, edge);
   const itemDir = `content/${payload.domain}/${payload.id}`;
-  const createInitialNote = payload.createInitialNote !== false;
 
   await invoke("create_dir_all", { vaultRootPath, relativePath: `${itemDir}/assets` });
   await invoke("write_text_file", {
     vaultRootPath,
     relativePath: `${itemDir}/meta.yaml`,
-    contents: buildMetaYaml(payload),
+    contents: buildMetaYaml({ ...payload, contentFormat: "none" }),
   });
-  if (createInitialNote) {
-    await invoke("write_text_file", {
-      vaultRootPath,
-      relativePath: `${itemDir}/note.md`,
-      contents: await buildInitialNoteMarkdown(vaultRootPath, payload),
-    });
-  }
   await invoke("write_text_file", { vaultRootPath, relativePath: "graph.yaml", contents: updatedGraphYaml });
-  return { vault: await loadVaultFromPath(vaultRootPath), newNodeId: payload.id, createdNote: createInitialNote };
+  return { vault: await loadVaultFromPath(vaultRootPath), newNodeId: payload.id };
+}
+
+export async function createKnowledgeItem(vaultRootPath, payload) {
+  return createKnowledgeNode(vaultRootPath, payload);
+}
+
+export async function addNoteToNode(vaultRootPath, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating notes.");
+  if (!payload?.nodeId) throw new Error("Target node is required.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const node = currentVault.nodes.find((item) => item.id === payload.nodeId && item.type !== "domain");
+  if (!node) throw new Error(`Node "${payload.nodeId}" does not exist.`);
+  if (nodeHasNote(currentVault, node.id)) throw new Error("This node already has a note.");
+
+  const notePath = getNoteRelativePath(node);
+  const htmlPath = getHtmlNoteRelativePath(node);
+  if (currentVault.notes[node.id]?.markdown || currentVault.notes[node.id]?.html) throw new Error("This node already has a note.");
+  try {
+    await invoke("read_text_file", { vaultRootPath, relativePath: notePath });
+    throw new Error("This node already has a note.");
+  } catch (error) {
+    if (String(error?.message || error) === "This node already has a note.") throw error;
+  }
+  try {
+    await invoke("read_text_file", { vaultRootPath, relativePath: htmlPath });
+    throw new Error("This node already has a note.");
+  } catch (error) {
+    if (String(error?.message || error) === "This node already has a note.") throw error;
+  }
+
+  const markdown = payload.markdown || `# ${payload.initialTitle || node.titleLocale || node.title || node.id}\n\n`;
+  const metaPath = getNodeMetaRelativePath(node);
+  const meta = parseYamlObject(await invoke("read_text_file", { vaultRootPath, relativePath: metaPath }), {});
+  const nextMeta = {
+    ...meta,
+    contentFormat: "markdown",
+    updatedAt: todayLocalDate(),
+  };
+  await invoke("write_text_file", { vaultRootPath, relativePath: notePath, contents: markdown });
+  await invoke("write_text_file", { vaultRootPath, relativePath: metaPath, contents: YAML.stringify(nextMeta) });
+  return { vault: await loadVaultFromPath(vaultRootPath), nodeId: node.id };
+}
+
+export async function updateDomain(vaultRootPath, domainId, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing domains.");
+  if (!domainId) throw new Error("Domain ID is required.");
+  const domainsYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "domains.yaml" });
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: "domains.yaml",
+    contents: buildDomainsYamlWithUpdatedDomain(domainsYaml, domainId, payload),
+  });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function updateKnowledgeNodeMeta(vaultRootPath, nodeId, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing nodes.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const node = currentVault.nodes.find((item) => item.id === nodeId && item.type !== "domain");
+  if (!node) throw new Error(`Node "${nodeId}" does not exist.`);
+  const metaPath = getNodeMetaRelativePath(node);
+  const meta = parseYamlObject(await invoke("read_text_file", { vaultRootPath, relativePath: metaPath }), {});
+  const nextMeta = {
+    ...meta,
+    ...pickEditableFields(payload, EDITABLE_NODE_FIELDS),
+    id: node.id,
+    domain: node.domain,
+    contentFormat: meta.contentFormat || meta.content_format || node.contentFormat || "none",
+    updatedAt: todayLocalDate(),
+  };
+  await invoke("write_text_file", { vaultRootPath, relativePath: metaPath, contents: YAML.stringify(nextMeta) });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+function buildGraphYamlWithoutNode(graphYaml, nodeId) {
+  const graph = parseYamlObject(graphYaml, {});
+  const edges = Array.isArray(graph.edges) ? graph.edges : [];
+  return YAML.stringify({ ...graph, schemaVersion: graph.schemaVersion || 1, edges: edges.filter((edge) => getEdgeEndpoint(edge, "from") !== nodeId && getEdgeEndpoint(edge, "to") !== nodeId) });
+}
+
+function buildLayoutYamlWithoutNode(layoutYaml, nodeId) {
+  const layout = parseYamlObject(layoutYaml, {});
+  const boards = Object.fromEntries(
+    Object.entries(layout.boards || {}).filter(([scopeId]) => scopeId !== nodeId).map(([scopeId, board]) => {
+      const nodes = { ...(board?.nodes || {}) };
+      delete nodes[nodeId];
+      const routes = Object.fromEntries(
+        Object.entries(board?.routes || {}).filter(([routeId, route]) => {
+          const edgeRef = String(route?.edge || routeId);
+          return !edgeRef.includes(nodeId);
+        }),
+      );
+      return [scopeId, { ...board, nodes, routes }];
+    }),
+  );
+  return YAML.stringify({ ...layout, schemaVersion: layout.schemaVersion || 1, boards });
+}
+
+function buildVaultYamlAfterDomainDelete(vaultYaml, domainId, remainingDomains) {
+  const vault = parseYamlObject(vaultYaml, {});
+  if (vault.defaultDomain !== domainId) return vaultYaml;
+  return YAML.stringify({ ...vault, defaultDomain: remainingDomains[0]?.id || "" });
+}
+
+export async function deleteKnowledgeNode(vaultRootPath, nodeId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting nodes.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const node = currentVault.nodes.find((item) => item.id === nodeId && item.type !== "domain");
+  if (!node) throw new Error(`Node "${nodeId}" does not exist.`);
+  const hasChild = currentVault.edges.some((edge) => edge.relation === "contains" && edge.source === nodeId);
+  if (hasChild) throw new Error("This node has child nodes. Delete or move them first.");
+
+  const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
+  const layoutYaml = await readOptionalTextFile(vaultRootPath, "graph-layout.yaml");
+  await invoke("write_text_file", { vaultRootPath, relativePath: "graph.yaml", contents: buildGraphYamlWithoutNode(graphYaml, nodeId) });
+  if (layoutYaml) {
+    await invoke("write_text_file", { vaultRootPath, relativePath: "graph-layout.yaml", contents: buildLayoutYamlWithoutNode(layoutYaml, nodeId) });
+  }
+  await invoke("remove_vault_path", { vaultRootPath, relativePath: `content/${node.domain}/${node.id}` });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function deleteDomain(vaultRootPath, domainId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting domains.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const domain = currentVault.domains.find((item) => item.id === domainId);
+  if (!domain) throw new Error(`Domain "${domainId}" does not exist.`);
+  const hasChildNodes = currentVault.nodes.some((node) => node.type !== "domain" && node.domain === domainId);
+  if (hasChildNodes) throw new Error("This domain still has child nodes. Delete or move them first.");
+
+  const domainsYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "domains.yaml" });
+  const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
+  const layoutYaml = await readOptionalTextFile(vaultRootPath, "graph-layout.yaml");
+  const vaultYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "vault.yaml" });
+  const remainingDomains = currentVault.domains.filter((item) => item.id !== domainId);
+
+  await invoke("write_text_file", { vaultRootPath, relativePath: "domains.yaml", contents: buildDomainsYamlWithoutDomain(domainsYaml, domainId) });
+  await invoke("write_text_file", { vaultRootPath, relativePath: "vault.yaml", contents: buildVaultYamlAfterDomainDelete(vaultYaml, domainId, remainingDomains) });
+  await invoke("write_text_file", { vaultRootPath, relativePath: "graph.yaml", contents: buildGraphYamlWithoutNode(graphYaml, domainId) });
+  if (layoutYaml) {
+    await invoke("write_text_file", { vaultRootPath, relativePath: "graph-layout.yaml", contents: buildLayoutYamlWithoutNode(layoutYaml, domainId) });
+  }
+  await invoke("remove_vault_path", { vaultRootPath, relativePath: `content/${domainId}` });
+  return loadVaultFromPath(vaultRootPath);
 }
 
 export async function createGraphLink(vaultRootPath, payload) {

@@ -1,1 +1,21 @@
-relations: []
+relations:
+  - id: optics-contains-cameras-and-lenses-source-ported
+    from: optics
+    to: cameras-and-lenses-source-ported
+    relation: contains
+    reason: ""
+  - id: optics-contains-test11
+    from: optics
+    to: test11
+    relation: contains
+    reason: ""
+  - id: optics-contains-test22
+    from: optics
+    to: test22
+    relation: contains
+    reason: ""
+  - id: test22-depends-on-test11
+    from: test22
+    to: test11
+    relation: depends-on
+    reason: ""

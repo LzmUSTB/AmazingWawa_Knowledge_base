@@ -38,6 +38,10 @@ function edgeColor(edge) {
 function edgeDash(edge) {
   return relationTheme[edge.relation]?.dash || "";
 }
+
+function nodeDisplayTitle(node) {
+  return node?.titleLocale || node?.title || node?.id || "";
+}
 </script>
 
 <template>
@@ -97,14 +101,14 @@ function edgeDash(edge) {
             <i class="mobile-port mobile-port--right"></i>
             <i class="mobile-port mobile-port--bottom"></i>
             <i class="mobile-port mobile-port--left"></i>
-            <span>{{ node.title }}</span>
+            <span>{{ nodeDisplayTitle(node) }}</span>
           </button>
         </div>
       </div>
     </section>
     <aside class="bottom-card">
       <div class="card-accent"></div>
-      <h2>{{ selectedNode.title }}</h2>
+      <h2>{{ nodeDisplayTitle(selectedNode) }}</h2>
       <p>{{ selectedNode.summary }}</p>
       <div>
         <button class="hud-button" style="--button-color: var(--mobile-color)" @click="$emit('open-note', selectedNode.id)">

@@ -23,9 +23,10 @@ export function getOtherNodeId(edge, nodeId) {
 export function formatRelationLabel(edge) {
   const source = findGraphNode(edge.source);
   const target = findGraphNode(edge.target);
-  return `${source?.title || edge.source} ${edge.relation} ${target?.title || edge.target}`;
+  return `${source?.titleLocale || source?.title || edge.source} ${edge.relation} ${target?.titleLocale || target?.title || edge.target}`;
 }
 
 export function getNodeTitleOrId(nodeId) {
-  return findGraphNode(nodeId)?.title || nodeId;
+  const node = findGraphNode(nodeId);
+  return node?.titleLocale || node?.title || nodeId;
 }
