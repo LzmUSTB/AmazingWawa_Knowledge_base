@@ -151,6 +151,23 @@ Locale priority:
 
 Keep precise English technical terms when they are more accurate, but explain them in the target locale.
 
+## Package validation contract
+
+These are mechanical importer/validator rules, not style preferences:
+
+- Do not include temporary validation artifacts such as `review/js-check/*.js` in final packages.
+- Runtime JavaScript must be inline in `note.html` or packaged under `generated/content/<domain>/<node-id>/assets/`.
+- Local media in HTML rich notes must use a source-marked asset root:
+  - `assets/original/...`
+  - `assets/source/...`
+  - `assets/source-assets/...`
+  - `assets/source-snapshot/...`
+- Do not use bare local media paths such as `assets/foo.png`, `assets/foo.jpg`, or `assets/foo.mp4`.
+- Every packaged asset under `generated/content/<domain>/<node-id>/assets/**` must be referenced by that node's note, unless it is source-snapshot infrastructure.
+- If an inventory item is not represented in the final note, mark it `required: false` or give an `omitted_reason`.
+
+Source blocks are conditional. Add `<aside class="source-block">...</aside>` only when the note actually cites, embeds, closely paraphrases, or derives a concrete claim/media/demo from original source material or another network resource. Do not add source blocks merely to satisfy a template.
+
 ## V2 hard failures
 
 A package is unacceptable if any of the following is true:
@@ -161,6 +178,6 @@ A package is unacceptable if any of the following is true:
 - original demo DOM ids are present but original runtime context is missing, causing incorrect canvas background, blend mode, dark/light section behavior, or slider overlap;
 - a canvas, table, source block, slider, or review panel has low contrast text/content in the actual KB rendering context;
 - source explanations are compressed into one-line captions when the source provides a fuller explanation;
-- source-grounded statements have no nearby source block;
+- source-grounded statements that explicitly cite original/source/network material have no nearby source block;
 - generated raster images are used as substitutes for source visuals;
 - package paths are invalid or unsupported assets are included in a way that the importer rejects.

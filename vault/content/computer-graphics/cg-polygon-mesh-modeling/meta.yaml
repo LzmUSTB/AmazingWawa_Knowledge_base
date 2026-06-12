@@ -1,0 +1,17 @@
+id: cg-polygon-mesh-modeling
+title: Polygon Mesh Modeling
+titleLocale: 多边形网格建模
+domain: computer-graphics
+type: topic
+status: seed
+summary: Mesh-based surface representation, topology, subdivision, LOD, smoothing,
+  parameterization, validation, and watermarking.
+summaryLocale: 基于网格的表面表示，包括拓扑、细分、LOD、平滑、参数化、检查与水印等主题。
+contentFormat: none
+aliases: []
+tags:
+- modeling
+- mesh
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

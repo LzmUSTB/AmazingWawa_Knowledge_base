@@ -1,0 +1,15 @@
+id: cg-solid-texturing
+title: Solid Texturing
+titleLocale: 实体纹理
+domain: computer-graphics
+type: concept
+status: seed
+summary: Defines texture values in 3D space rather than only on a surface parameterization.
+summaryLocale: 在三维空间中定义纹理值，而不只依赖表面参数化。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

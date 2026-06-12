@@ -1,0 +1,17 @@
+id: cg-gpu-rendering-pipeline
+title: GPU Rendering Pipeline
+titleLocale: GPU 渲染管线
+domain: computer-graphics
+type: topic
+status: seed
+summary: Programmable and fixed-function stages that convert submitted primitives
+  into framebuffer fragments.
+summaryLocale: 将提交的图元转换为帧缓冲片段的可编程与固定功能阶段。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- gpu
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

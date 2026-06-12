@@ -1,0 +1,17 @@
+id: cg-constructive-solid-geometry
+title: Constructive Solid Geometry
+titleLocale: 构造实体几何
+domain: computer-graphics
+type: concept
+status: seed
+summary: Builds solids by applying Boolean operations such as union, intersection,
+  and difference to primitive shapes.
+summaryLocale: 通过对基本体执行并、交、差等布尔运算构造复杂实体。
+contentFormat: none
+aliases:
+- CSG
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

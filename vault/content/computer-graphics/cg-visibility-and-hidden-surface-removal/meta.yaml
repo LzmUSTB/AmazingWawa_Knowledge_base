@@ -1,0 +1,16 @@
+id: cg-visibility-and-hidden-surface-removal
+title: Visibility and Hidden Surface Removal
+titleLocale: 可见性与隐藏面消除
+domain: computer-graphics
+type: topic
+status: seed
+summary: Algorithms that determine which surfaces are visible and which are occluded.
+summaryLocale: 判断哪些表面可见、哪些表面被遮挡的算法体系。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- visibility
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

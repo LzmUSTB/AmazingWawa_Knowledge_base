@@ -1,0 +1,16 @@
+id: cg-perfect-reflection
+title: Perfect Reflection
+titleLocale: 完全镜面反射
+domain: computer-graphics
+type: concept
+status: seed
+summary: Ideal mirror reflection where outgoing direction is determined exactly by
+  the incoming direction and surface normal.
+summaryLocale: 理想镜面反射，出射方向由入射方向与表面法线精确决定。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

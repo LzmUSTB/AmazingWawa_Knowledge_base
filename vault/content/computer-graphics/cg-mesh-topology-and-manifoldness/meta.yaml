@@ -1,0 +1,16 @@
+id: cg-mesh-topology-and-manifoldness
+title: Mesh Topology and Manifoldness
+titleLocale: 网格拓扑与流形性
+domain: computer-graphics
+type: concept
+status: seed
+summary: Studies vertex-edge-face connectivity, manifold constraints, holes, boundaries,
+  and topology errors that affect editing, simulation, and rendering.
+summaryLocale: 研究点-边-面连接关系、流形约束、孔洞、边界与拓扑错误，它们会影响编辑、仿真与渲染。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,17 @@
+id: cg-shading-and-material
+title: Shading and Material
+titleLocale: 着色与材质
+domain: computer-graphics
+type: topic
+status: seed
+summary: Light-material interaction models from simple diffuse/specular terms to physically
+  based BRDFs.
+summaryLocale: 从简单漫反射/镜面项到物理基础 BRDF 的光照与材质交互模型。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- material
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

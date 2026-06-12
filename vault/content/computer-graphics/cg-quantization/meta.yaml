@@ -1,0 +1,16 @@
+id: cg-quantization
+title: Quantization
+titleLocale: 量化
+domain: computer-graphics
+type: concept
+status: seed
+summary: Maps continuous or high-precision sample values into a finite set of representable
+  levels.
+summaryLocale: 将连续或高精度样本值映射到有限个可表示等级。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

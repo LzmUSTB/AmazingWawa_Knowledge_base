@@ -6,7 +6,7 @@ import AppIcon from "../ui/AppIcon.vue";
 import FileTreeNode from "./FileTreeNode.vue";
 import VaultContextMenu from "./VaultContextMenu.vue";
 
-defineProps({
+const props = defineProps({
   activeDomain: {
     type: String,
     required: true,
@@ -15,12 +15,26 @@ defineProps({
     type: String,
     required: true,
   },
+  activeNodeId: {
+    type: String,
+    default: "",
+  },
 });
 
-const emit = defineEmits(["delete-entity", "edit-entity", "open-domain", "open-note", "toggle-sidebar"]);
+const emit = defineEmits(["delete-entity", "edit-entity", "open-domain", "open-note", "show-root", "toggle-sidebar"]);
 
 const fileTree = computed(() => getActiveVault().fileTree);
 const menu = ref(null);
+
+function hasActiveDescendant(node) {
+  if (!node || !props.activeNodeId) return false;
+  if (node.id === props.activeNodeId) return true;
+  return Boolean(node.children?.some((child) => hasActiveDescendant(child)));
+}
+
+function isDomainExpanded(domain) {
+  return Boolean(props.activeNodeId && (domain.id === props.activeNodeId || hasActiveDescendant(domain)));
+}
 
 function displayTitle(entity) {
   return entity?.displayTitle || entity?.titleLocale || entity?.title || entity?.id || "";
@@ -67,11 +81,11 @@ function emitMenuAction(action, target) {
         <AppIcon name="chevron-left" :size="13" />
       </button>
     </header>
-    <button class="tree-root" @click="$emit('open-domain', activeDomain)">vault/</button>
+    <button class="tree-root" @click="$emit('show-root')">vault/</button>
 
     <div class="tree-list">
       <section v-for="domain in fileTree" :key="domain.id" class="tree-domain">
-        <button class="domain-row" :class="{ 'is-active': domain.id === activeDomain }"
+        <button class="domain-row" :class="{ 'is-active': domain.id === activeNodeId }"
           :style="{ '--domain-color': getDomainColor(domain.id) }" @click="$emit('open-domain', domain.id)"
           @contextmenu.prevent.stop="openContextMenu($event, { kind: 'domain', id: domain.id })">
           <span class="domain-marker"></span>
@@ -81,11 +95,11 @@ function emitMenuAction(action, target) {
           </span>
         </button>
 
-        <div v-if="domain.id === activeDomain || domain.children.length" class="concept-list">
+        <div v-if="isDomainExpanded(domain)" class="concept-list">
           <FileTreeNode
             v-for="node in domain.children"
             :key="node.id"
-            :active-note-id="activeNoteId"
+            :active-note-id="activeNodeId"
             :domain-color="getDomainColor(domain.id)"
             :node="node"
             @context-menu="openContextMenu"
@@ -113,6 +127,10 @@ function emitMenuAction(action, target) {
   min-height: 0;
   overflow: hidden;
   background: var(--background-main);
+}
+
+.file-tree * {
+  min-width: 0;
 }
 
 .panel-label {
@@ -157,7 +175,8 @@ function emitMenuAction(action, target) {
   flex: 1;
   min-height: 0;
   padding: 8px 10px 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .tree-domain {

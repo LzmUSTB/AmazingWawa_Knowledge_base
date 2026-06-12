@@ -1,0 +1,16 @@
+id: cg-parametric-surfaces
+title: Parametric Surfaces
+titleLocale: 参数曲面
+domain: computer-graphics
+type: concept
+status: seed
+summary: Surfaces defined by two parameters; deeper topics include Bezier surfaces,
+  B-spline surfaces, and NURBS surfaces.
+summaryLocale: 由两个参数定义的曲面；更细主题包括贝塞尔曲面、B 样条曲面与 NURBS 曲面。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

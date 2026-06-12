@@ -745,6 +745,42 @@ fn default_snapshot_output_dir() -> PathBuf {
         .join("snapshot")
 }
 
+fn open_directory(directory_path: &Path) -> Result<(), String> {
+    if !directory_path.is_dir() {
+        return Err(format!("Directory does not exist: {}", directory_path.to_string_lossy()));
+    }
+
+    let mut command = if cfg!(target_os = "windows") {
+        Command::new("explorer")
+    } else if cfg!(target_os = "macos") {
+        Command::new("open")
+    } else {
+        Command::new("xdg-open")
+    };
+
+    command
+        .arg(directory_path)
+        .spawn()
+        .map_err(|error| format!("Failed to open {}: {error}", directory_path.to_string_lossy()))?;
+    Ok(())
+}
+
+#[tauri::command]
+fn open_snapshot_output_dir() -> Result<String, String> {
+    let output_dir = default_snapshot_output_dir();
+    fs::create_dir_all(&output_dir).map_err(|error| {
+        format!(
+            "Failed to create snapshot output directory {}: {error}",
+            output_dir.to_string_lossy()
+        )
+    })?;
+    let canonical_output_dir = output_dir
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve snapshot output directory: {error}"))?;
+    open_directory(&canonical_output_dir)?;
+    Ok(canonical_output_dir.to_string_lossy().to_string())
+}
+
 fn parse_snapshot_result(raw_json: &str, fallback_url: &str, fallback_zip_path: &Path) -> Result<SourceSnapshotResult, String> {
     let value: serde_json::Value =
         serde_json::from_str(raw_json).map_err(|error| format!("Failed to parse snapshot capture result: {error}"))?;
@@ -1148,6 +1184,27 @@ fn create_dir_all(vault_root_path: String, relative_path: String) -> Result<(), 
 }
 
 #[tauri::command]
+fn open_vault_relative_dir(vault_root_path: String, relative_path: String) -> Result<String, String> {
+    if relative_path != ".kb-ai/context" {
+        return Err("Only the exported context directory can be opened from the vault.".into());
+    }
+    let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
+    fs::create_dir_all(&target_path)
+        .map_err(|error| format!("Failed to create {}: {error}", target_path.to_string_lossy()))?;
+    let canonical_root = PathBuf::from(&vault_root_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    let canonical_target = target_path
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve target path: {error}"))?;
+    if !canonical_target.starts_with(&canonical_root) {
+        return Err("Refusing to open a path outside the vault root".into());
+    }
+    open_directory(&canonical_target)?;
+    Ok(canonical_target.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn remove_vault_path(vault_root_path: String, relative_path: String) -> Result<(), String> {
     if !allowed_remove_vault_path(&relative_path) {
         return Err("Refusing to remove outside allowed content paths".into());
@@ -1191,6 +1248,8 @@ pub fn run() {
             read_text_file,
             read_vault_files,
             remove_vault_path,
+            open_snapshot_output_dir,
+            open_vault_relative_dir,
             resolve_default_vault_root,
             write_text_file
         ])

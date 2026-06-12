@@ -1,0 +1,16 @@
+id: cg-isosurface-extraction
+title: Isosurface Extraction
+titleLocale: 等值面提取
+domain: computer-graphics
+type: concept
+status: seed
+summary: Extracts polygonal surfaces from scalar fields; a deeper important method
+  is Marching Cubes.
+summaryLocale: 从标量场中提取多边形表面；更细的重要方法包括 Marching Cubes。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

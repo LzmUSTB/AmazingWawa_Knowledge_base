@@ -1,0 +1,17 @@
+id: cg-surface-model
+title: Surface Model
+titleLocale: 表面模型
+domain: computer-graphics
+type: concept
+status: seed
+summary: Represents the visible boundary of an object without necessarily encoding
+  interior volume.
+summaryLocale: 表示物体可见边界，不一定明确记录内部体积。
+contentFormat: none
+aliases:
+- geometry representation
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

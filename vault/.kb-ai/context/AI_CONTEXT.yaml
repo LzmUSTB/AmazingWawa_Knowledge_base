@@ -5,11 +5,12 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: optics
-generatedAt: 2026-06-12T08:48:43.015Z
+generatedAt: 2026-06-12T14:41:50.439Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
   allowedDomains:
     - optics
+    - computer-graphics
   canAddDomains: true
   allowedNodeTypes:
     - topic
@@ -65,10 +66,17 @@ constraints:
   assetPolicy:
     generatedImagesAllowed: false
     mustUseOriginalSourceAssets: true
+    allowedLocalMediaRoots:
+      - assets/original/
+      - assets/source/
+      - assets/source-assets/
+      - assets/source-snapshot/
+    forbidBareLocalMediaPaths: true
+    forbidUnreferencedPackagedAssets: true
     html: source-snapshot-assets-first when assets/source-snapshot exists; otherwise
       source-url-first
     markdown: local packaged original/source assets only; no AI-generated images
-    sourceBlocksRequired: true
+    sourceBlocksRequired: conditional-when-source-material-is-used
     sourceSnapshotFirst: true
     preferSnapshotAssetsOverExternalUrls: true
     doNotUseSnapshotIframeAsPrimaryRepresentation: true
@@ -107,6 +115,8 @@ constraints:
     useAppCssVariables: true
     prohibitAiGeneratedImages: true
     sourceBlockClass: source-block
+    sourceBlockPolicy: "conditional: required only when source/network material is
+      actually cited, embedded, closely paraphrased, or used as evidence"
     reviewFilesRequiredForVisualSources:
       - review/source-coverage-plan.md
       - review/source-asset-manifest.md
@@ -130,7 +140,7 @@ constraints:
     omitNoteFiles: true
     visibleInGraph: true
 counts:
-  domains: 1
-  nodes: 1
-  edges: 1
+  domains: 2
+  nodes: 174
+  edges: 174
   customBlockTypes: 0

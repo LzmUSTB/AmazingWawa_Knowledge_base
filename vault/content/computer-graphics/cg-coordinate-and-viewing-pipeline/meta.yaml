@@ -1,0 +1,17 @@
+id: cg-coordinate-and-viewing-pipeline
+title: Coordinate and Viewing Pipeline
+titleLocale: 坐标与观察管线
+domain: computer-graphics
+type: topic
+status: seed
+summary: Coordinate systems and transformations that place geometry into camera and
+  screen space.
+summaryLocale: 将几何放入相机空间与屏幕空间的坐标系统和变换流程。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- pipeline
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

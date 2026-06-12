@@ -1,0 +1,15 @@
+id: cg-rasterization
+title: Rasterization
+titleLocale: 光栅化
+domain: computer-graphics
+type: concept
+status: seed
+summary: Converts geometric primitives into fragments over the pixel grid.
+summaryLocale: 将几何图元转换为像素网格上的片段。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

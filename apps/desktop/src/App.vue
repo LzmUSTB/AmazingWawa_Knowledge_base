@@ -16,6 +16,7 @@ import {
   exportContext,
   loadInitialVault,
   loadVaultFromPath,
+  openVaultContextFolder,
   removeGraphLink,
   replaceGraphLink,
   saveGraphLayoutBoard,
@@ -105,8 +106,8 @@ const hasRealVault = computed(() => Boolean(activeVaultRootPath.value) && useAct
 const hasDomains = computed(() => Boolean(useActiveVault().value.domains?.length));
 const currentRelationNodeId = computed(() => {
   if (currentView.value === "note") return currentNoteId.value;
-  const scope = getGraphScope(graphScopeId.value);
-  return selectedNodeId.value || scope.centerNodeId || scope.selectedNodeId || "";
+  if (currentView.value !== "graph") return "";
+  return selectedNodeId.value || "";
 });
 const pinnedNodeIds = computed(() => pinnedNodes.value.map((entry) => entry.id));
 const pinnedNodeIdSet = computed(() => new Set(pinnedNodeIds.value));
@@ -170,7 +171,7 @@ function applyVault(vault, { reset = false } = {}) {
 
   if (!findGraphNode(selectedNodeId.value)) {
     graphScopeId.value = "root";
-    selectedNodeId.value = getGraphScope("root").selectedNodeId;
+    selectedNodeId.value = "";
   }
   if (!findGraphNode(currentNoteId.value)) {
     currentNoteId.value = getGraphNodes().find((node) => node.type !== "domain")?.id || selectedNodeId.value;
@@ -215,8 +216,7 @@ function pushNavigationHistory(nextEntry) {
 
 function validatedNavigationEntry(entry) {
   const scopeId = hasGraphScope(entry.scopeId) ? entry.scopeId : "root";
-  const scope = getGraphScope(scopeId);
-  const selectedId = findGraphNode(entry.selectedNodeId) ? entry.selectedNodeId : scope.selectedNodeId;
+  const selectedId = findGraphNode(entry.selectedNodeId) ? entry.selectedNodeId : "";
   const noteId = findGraphNode(entry.currentNoteId) ? entry.currentNoteId : selectedId;
   const domain = hasDomain(entry.currentDomain)
     ? entry.currentDomain
@@ -262,12 +262,11 @@ function goForward() {
 
 function restoreNavigation(snapshot, fallbackNodeId = "") {
   const targetScopeId = hasGraphScope(snapshot.scopeId) ? snapshot.scopeId : "root";
-  const fallbackScope = getGraphScope(targetScopeId);
   const nextSelectedId = findGraphNode(snapshot.selectedNodeId)
     ? snapshot.selectedNodeId
     : findGraphNode(fallbackNodeId)
       ? fallbackNodeId
-      : fallbackScope.selectedNodeId;
+      : "";
   currentView.value = snapshot.view;
   graphScopeId.value = targetScopeId;
   selectedNodeId.value = nextSelectedId;
@@ -279,10 +278,9 @@ function restoreNavigation(snapshot, fallbackNodeId = "") {
 
 function resetNavigationForVault(vault) {
   const defaultDomain = vault.vault.defaultDomain || vault.domains[0]?.id || "root";
-  const rootScope = getGraphScope("root");
   currentDomain.value = defaultDomain;
   currentNoteId.value = vault.nodes.find((node) => node.type !== "domain")?.id || defaultDomain;
-  selectedNodeId.value = rootScope.selectedNodeId || defaultDomain;
+  selectedNodeId.value = "";
   graphScopeId.value = "root";
   currentView.value = "graph";
   noteMode.value = "read";
@@ -567,7 +565,7 @@ function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) 
   if (!confirmDiscardDirty()) return false;
   const nextScopeId = scopeId || "root";
   const scope = getGraphScope(nextScopeId);
-  const nextSelectedNodeId = nextScopeId === "root" ? scope.selectedNodeId : nodeId;
+  const nextSelectedNodeId = nextScopeId === "root" ? "" : nodeId;
   pushNavigationHistory({
     view: "graph",
     scopeId: nextScopeId,
@@ -725,20 +723,19 @@ function setNoteMode(mode) {
 
 function showView(viewName) {
   if (viewName === "graph") {
-    showGraph(graphScopeId.value, selectedNodeId.value);
+    showGraph("root", "");
     return;
   }
   if (!confirmDiscardDirty()) return;
+  selectedNodeId.value = "";
   currentView.value = viewName;
 }
 
 function handleAiImportApplied(updatedVault) {
   replaceVaultWithoutNavigation(updatedVault);
   const targetScopeId = hasGraphScope(graphScopeId.value) ? graphScopeId.value : "root";
-  const scope = getGraphScope(targetScopeId);
-  const fallbackNodeId = scope.selectedNodeId || getGraphNodes().find((node) => node.type !== "domain")?.id || "";
-  const nextSelectedNodeId = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : fallbackNodeId;
-  const nextNoteId = findGraphNode(currentNoteId.value) ? currentNoteId.value : nextSelectedNodeId;
+  const nextSelectedNodeId = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : "";
+  const nextNoteId = findGraphNode(currentNoteId.value) ? currentNoteId.value : "";
   graphScopeId.value = targetScopeId;
   selectedNodeId.value = nextSelectedNodeId;
   currentNoteId.value = nextNoteId;
@@ -758,8 +755,8 @@ async function handleExportContext() {
   }
   contextExporting.value = true;
   try {
-    const location = await exportContext(activeVaultRootPath.value);
-    window.alert(`Context exported to ${location}`);
+    await exportContext(activeVaultRootPath.value);
+    await openVaultContextFolder(activeVaultRootPath.value);
   } catch (error) {
     console.error("[vault] Failed to export context.", error);
     window.alert(`Failed to export context: ${error}`);
@@ -940,7 +937,7 @@ async function requestDeleteEntity(target) {
     const fallbackDomain = getFallbackDomain();
     currentDomain.value = hasDomain(currentDomain.value) ? currentDomain.value : fallbackDomain;
     graphScopeId.value = hasGraphScope(graphScopeId.value) ? graphScopeId.value : "root";
-    selectedNodeId.value = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : getGraphScope(graphScopeId.value).selectedNodeId;
+    selectedNodeId.value = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : "";
     currentNoteId.value = findGraphNode(currentNoteId.value) ? currentNoteId.value : selectedNodeId.value;
     if (!findGraphNode(currentNoteId.value)) currentView.value = "graph";
     noteDirty.value = false;
@@ -1148,6 +1145,7 @@ function toggleRelationSidebar() {
       @set-note-find-visible="noteFindVisible = $event"
       @set-note-mode="setNoteMode"
       @show-graph="showGraph"
+      @show-root="showGraph('root', '')"
       @show-view="showView"
       @toggle-sidebar="toggleSidebar"
       @toggle-pin-node="toggleCurrentPinnedNode"

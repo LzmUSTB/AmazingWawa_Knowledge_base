@@ -1,0 +1,17 @@
+id: cg-reinforcement-learning-character-control
+title: Reinforcement Learning Character Control
+titleLocale: 强化学习角色控制
+domain: computer-graphics
+type: concept
+status: seed
+summary: Trains policies to control characters through rewards, physics, observations,
+  and actions.
+summaryLocale: 通过奖励、物理、观测与动作训练策略来控制角色。
+contentFormat: none
+aliases:
+- RL Character Control
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

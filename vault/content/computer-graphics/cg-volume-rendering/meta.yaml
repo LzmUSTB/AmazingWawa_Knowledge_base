@@ -1,0 +1,16 @@
+id: cg-volume-rendering
+title: Volume Rendering
+titleLocale: 体渲染
+domain: computer-graphics
+type: concept
+status: seed
+summary: Synthesizes images from volumetric data by integrating density, color, opacity,
+  or scattering along rays.
+summaryLocale: 沿射线积分密度、颜色、不透明度或散射，从体数据合成图像。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,16 @@
+id: cg-displacement-mapping
+title: Displacement Mapping
+titleLocale: 位移映射
+domain: computer-graphics
+type: concept
+status: seed
+summary: Actually moves surface positions according to a map, changing silhouette
+  and geometric detail when supported by sufficient tessellation or geometry.
+summaryLocale: 根据贴图真实移动表面位置，在几何足够细时可改变轮廓与几何细节。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

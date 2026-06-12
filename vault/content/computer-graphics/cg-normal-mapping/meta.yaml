@@ -1,0 +1,16 @@
+id: cg-normal-mapping
+title: Normal Mapping
+titleLocale: 法线映射
+domain: computer-graphics
+type: concept
+status: seed
+summary: Stores detailed normals in a texture, often tangent-space normals, to enrich
+  lighting without increasing mesh density.
+summaryLocale: 在纹理中存储详细法线，常为切线空间法线，以在不增加网格密度的情况下丰富光照。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

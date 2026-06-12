@@ -1,0 +1,16 @@
+id: cg-ray-tracing
+title: Ray Tracing
+titleLocale: 光线追踪
+domain: computer-graphics
+type: concept
+status: seed
+summary: Traces rays through a scene to compute visibility, reflection, refraction,
+  shadows, and sometimes full light transport.
+summaryLocale: 在场景中追踪射线以计算可见性、反射、折射、阴影，有时也用于完整光传输。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

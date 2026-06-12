@@ -1,0 +1,16 @@
+id: cg-texture-mapping
+title: Texture Mapping
+titleLocale: 纹理映射
+domain: computer-graphics
+type: concept
+status: seed
+summary: Maps 2D or procedural texture data onto surfaces through coordinates such
+  as UVs.
+summaryLocale: 通过 UV 等坐标将二维或程序化纹理数据映射到表面。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

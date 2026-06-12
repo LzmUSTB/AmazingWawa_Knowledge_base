@@ -4,3 +4,868 @@ relations:
     to: cameras-and-lenses-source-ported
     relation: contains
     reason: ""
+  - id: computer-graphics-contains-cg-modeling
+    from: computer-graphics
+    to: cg-modeling
+    relation: contains
+    reason: ""
+  - id: computer-graphics-contains-cg-rendering
+    from: computer-graphics
+    to: cg-rendering
+    relation: contains
+    reason: ""
+  - id: computer-graphics-contains-cg-animation
+    from: computer-graphics
+    to: cg-animation
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-geometry-representation
+    from: cg-modeling
+    to: cg-geometry-representation
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-solid-modeling
+    from: cg-modeling
+    to: cg-solid-modeling
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-curves-and-surfaces
+    from: cg-modeling
+    to: cg-curves-and-surfaces
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-polygon-mesh-modeling
+    from: cg-modeling
+    to: cg-polygon-mesh-modeling
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-volumetric-and-implicit-modeling
+    from: cg-modeling
+    to: cg-volumetric-and-implicit-modeling
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-point-particle-and-procedural-geometry
+    from: cg-modeling
+    to: cg-point-particle-and-procedural-geometry
+    relation: contains
+    reason: ""
+  - id: cg-modeling-contains-cg-scene-and-asset-representation
+    from: cg-modeling
+    to: cg-scene-and-asset-representation
+    relation: contains
+    reason: ""
+  - id: cg-geometry-representation-contains-cg-wireframe-model
+    from: cg-geometry-representation
+    to: cg-wireframe-model
+    relation: contains
+    reason: ""
+  - id: cg-geometry-representation-contains-cg-surface-model
+    from: cg-geometry-representation
+    to: cg-surface-model
+    relation: contains
+    reason: ""
+  - id: cg-geometry-representation-contains-cg-solid-model
+    from: cg-geometry-representation
+    to: cg-solid-model
+    relation: contains
+    reason: ""
+  - id: cg-geometry-representation-contains-cg-explicit-representation
+    from: cg-geometry-representation
+    to: cg-explicit-representation
+    relation: contains
+    reason: ""
+  - id: cg-geometry-representation-contains-cg-implicit-representation
+    from: cg-geometry-representation
+    to: cg-implicit-representation
+    relation: contains
+    reason: ""
+  - id: cg-geometry-representation-contains-cg-parametric-representation
+    from: cg-geometry-representation
+    to: cg-parametric-representation
+    relation: contains
+    reason: ""
+  - id: cg-solid-modeling-contains-cg-constructive-solid-geometry
+    from: cg-solid-modeling
+    to: cg-constructive-solid-geometry
+    relation: contains
+    reason: ""
+  - id: cg-solid-modeling-contains-cg-boundary-representation
+    from: cg-solid-modeling
+    to: cg-boundary-representation
+    relation: contains
+    reason: ""
+  - id: cg-solid-modeling-contains-cg-sweep-representation
+    from: cg-solid-modeling
+    to: cg-sweep-representation
+    relation: contains
+    reason: ""
+  - id: cg-curves-and-surfaces-contains-cg-conic-and-quadratic-curves
+    from: cg-curves-and-surfaces
+    to: cg-conic-and-quadratic-curves
+    relation: contains
+    reason: ""
+  - id: cg-curves-and-surfaces-contains-cg-parametric-curves
+    from: cg-curves-and-surfaces
+    to: cg-parametric-curves
+    relation: contains
+    reason: ""
+  - id: cg-curves-and-surfaces-contains-cg-parametric-surfaces
+    from: cg-curves-and-surfaces
+    to: cg-parametric-surfaces
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-polygon-mesh
+    from: cg-polygon-mesh-modeling
+    to: cg-polygon-mesh
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-mesh-topology-and-manifoldness
+    from: cg-polygon-mesh-modeling
+    to: cg-mesh-topology-and-manifoldness
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-subdivision-surface
+    from: cg-polygon-mesh-modeling
+    to: cg-subdivision-surface
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-level-of-detail
+    from: cg-polygon-mesh-modeling
+    to: cg-level-of-detail
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-mesh-smoothing
+    from: cg-polygon-mesh-modeling
+    to: cg-mesh-smoothing
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-mesh-parameterization
+    from: cg-polygon-mesh-modeling
+    to: cg-mesh-parameterization
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-mesh-validation
+    from: cg-polygon-mesh-modeling
+    to: cg-mesh-validation
+    relation: contains
+    reason: ""
+  - id: cg-polygon-mesh-modeling-contains-cg-digital-watermarking
+    from: cg-polygon-mesh-modeling
+    to: cg-digital-watermarking
+    relation: contains
+    reason: ""
+  - id: cg-volumetric-and-implicit-modeling-contains-cg-voxel
+    from: cg-volumetric-and-implicit-modeling
+    to: cg-voxel
+    relation: contains
+    reason: ""
+  - id: cg-volumetric-and-implicit-modeling-contains-cg-octree
+    from: cg-volumetric-and-implicit-modeling
+    to: cg-octree
+    relation: contains
+    reason: ""
+  - id: cg-volumetric-and-implicit-modeling-contains-cg-metaball
+    from: cg-volumetric-and-implicit-modeling
+    to: cg-metaball
+    relation: contains
+    reason: ""
+  - id: cg-volumetric-and-implicit-modeling-contains-cg-signed-distance-field
+    from: cg-volumetric-and-implicit-modeling
+    to: cg-signed-distance-field
+    relation: contains
+    reason: ""
+  - id: cg-volumetric-and-implicit-modeling-contains-cg-isosurface-extraction
+    from: cg-volumetric-and-implicit-modeling
+    to: cg-isosurface-extraction
+    relation: contains
+    reason: ""
+  - id: cg-point-particle-and-procedural-geometry-contains-cg-particle-system-as-geometry
+    from: cg-point-particle-and-procedural-geometry
+    to: cg-particle-system-as-geometry
+    relation: contains
+    reason: ""
+  - id: cg-point-particle-and-procedural-geometry-contains-cg-point-based-modeling
+    from: cg-point-particle-and-procedural-geometry
+    to: cg-point-based-modeling
+    relation: contains
+    reason: ""
+  - id: cg-point-particle-and-procedural-geometry-contains-cg-point-cloud
+    from: cg-point-particle-and-procedural-geometry
+    to: cg-point-cloud
+    relation: contains
+    reason: ""
+  - id: cg-point-particle-and-procedural-geometry-contains-cg-fractal-modeling
+    from: cg-point-particle-and-procedural-geometry
+    to: cg-fractal-modeling
+    relation: contains
+    reason: ""
+  - id: cg-point-particle-and-procedural-geometry-contains-cg-l-system-geometry
+    from: cg-point-particle-and-procedural-geometry
+    to: cg-l-system-geometry
+    relation: contains
+    reason: ""
+  - id: cg-scene-and-asset-representation-contains-cg-scene-graph
+    from: cg-scene-and-asset-representation
+    to: cg-scene-graph
+    relation: contains
+    reason: ""
+  - id: cg-scene-and-asset-representation-contains-cg-asset-composition
+    from: cg-scene-and-asset-representation
+    to: cg-asset-composition
+    relation: contains
+    reason: ""
+  - id: cg-scene-and-asset-representation-contains-cg-openusd
+    from: cg-scene-and-asset-representation
+    to: cg-openusd
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-digital-image-foundations
+    from: cg-rendering
+    to: cg-digital-image-foundations
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-coordinate-and-viewing-pipeline
+    from: cg-rendering
+    to: cg-coordinate-and-viewing-pipeline
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-gpu-rendering-pipeline
+    from: cg-rendering
+    to: cg-gpu-rendering-pipeline
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-visibility-and-hidden-surface-removal
+    from: cg-rendering
+    to: cg-visibility-and-hidden-surface-removal
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-shading-and-material
+    from: cg-rendering
+    to: cg-shading-and-material
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-shadows
+    from: cg-rendering
+    to: cg-shadows
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-texture-and-mapping
+    from: cg-rendering
+    to: cg-texture-and-mapping
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-ray-based-and-field-based-rendering
+    from: cg-rendering
+    to: cg-ray-based-and-field-based-rendering
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-image-based-rendering
+    from: cg-rendering
+    to: cg-image-based-rendering
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-global-illumination
+    from: cg-rendering
+    to: cg-global-illumination
+    relation: contains
+    reason: ""
+  - id: cg-rendering-contains-cg-neural-and-differentiable-rendering
+    from: cg-rendering
+    to: cg-neural-and-differentiable-rendering
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-sampling
+    from: cg-digital-image-foundations
+    to: cg-sampling
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-quantization
+    from: cg-digital-image-foundations
+    to: cg-quantization
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-nyquist-frequency
+    from: cg-digital-image-foundations
+    to: cg-nyquist-frequency
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-aliasing
+    from: cg-digital-image-foundations
+    to: cg-aliasing
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-anti-aliasing
+    from: cg-digital-image-foundations
+    to: cg-anti-aliasing
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-raster-representation
+    from: cg-digital-image-foundations
+    to: cg-raster-representation
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-vector-representation
+    from: cg-digital-image-foundations
+    to: cg-vector-representation
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-framebuffer
+    from: cg-digital-image-foundations
+    to: cg-framebuffer
+    relation: contains
+    reason: ""
+  - id: cg-digital-image-foundations-contains-cg-scanline
+    from: cg-digital-image-foundations
+    to: cg-scanline
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-coordinate-systems
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-coordinate-systems
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-modeling-transform
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-modeling-transform
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-view-transform
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-view-transform
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-projection-transform
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-projection-transform
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-viewport-transform
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-viewport-transform
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-homogeneous-coordinates
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-homogeneous-coordinates
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-mvp-matrix
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-mvp-matrix
+    relation: contains
+    reason: ""
+  - id: cg-coordinate-and-viewing-pipeline-contains-cg-clipping
+    from: cg-coordinate-and-viewing-pipeline
+    to: cg-clipping
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-vertex-specification
+    from: cg-gpu-rendering-pipeline
+    to: cg-vertex-specification
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-vertex-shader
+    from: cg-gpu-rendering-pipeline
+    to: cg-vertex-shader
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-tessellation-stage
+    from: cg-gpu-rendering-pipeline
+    to: cg-tessellation-stage
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-geometry-shader
+    from: cg-gpu-rendering-pipeline
+    to: cg-geometry-shader
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-primitive-assembly
+    from: cg-gpu-rendering-pipeline
+    to: cg-primitive-assembly
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-rasterization
+    from: cg-gpu-rendering-pipeline
+    to: cg-rasterization
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-fragment-shader
+    from: cg-gpu-rendering-pipeline
+    to: cg-fragment-shader
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-depth-test
+    from: cg-gpu-rendering-pipeline
+    to: cg-depth-test
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-stencil-test
+    from: cg-gpu-rendering-pipeline
+    to: cg-stencil-test
+    relation: contains
+    reason: ""
+  - id: cg-gpu-rendering-pipeline-contains-cg-blending
+    from: cg-gpu-rendering-pipeline
+    to: cg-blending
+    relation: contains
+    reason: ""
+  - id: cg-visibility-and-hidden-surface-removal-contains-cg-back-face-culling
+    from: cg-visibility-and-hidden-surface-removal
+    to: cg-back-face-culling
+    relation: contains
+    reason: ""
+  - id: cg-visibility-and-hidden-surface-removal-contains-cg-priority-algorithm
+    from: cg-visibility-and-hidden-surface-removal
+    to: cg-priority-algorithm
+    relation: contains
+    reason: ""
+  - id: cg-visibility-and-hidden-surface-removal-contains-cg-scanline-hidden-surface-algorithm
+    from: cg-visibility-and-hidden-surface-removal
+    to: cg-scanline-hidden-surface-algorithm
+    relation: contains
+    reason: ""
+  - id: cg-visibility-and-hidden-surface-removal-contains-cg-z-buffer
+    from: cg-visibility-and-hidden-surface-removal
+    to: cg-z-buffer
+    relation: contains
+    reason: ""
+  - id: cg-visibility-and-hidden-surface-removal-contains-cg-ray-tracing-visibility
+    from: cg-visibility-and-hidden-surface-removal
+    to: cg-ray-tracing-visibility
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-radiometry
+    from: cg-shading-and-material
+    to: cg-radiometry
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-brdf
+    from: cg-shading-and-material
+    to: cg-brdf
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-bssrdf
+    from: cg-shading-and-material
+    to: cg-bssrdf
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-ambient-term
+    from: cg-shading-and-material
+    to: cg-ambient-term
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-diffuse-reflection
+    from: cg-shading-and-material
+    to: cg-diffuse-reflection
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-specular-reflection
+    from: cg-shading-and-material
+    to: cg-specular-reflection
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-perfect-reflection
+    from: cg-shading-and-material
+    to: cg-perfect-reflection
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-transmission-and-refraction
+    from: cg-shading-and-material
+    to: cg-transmission-and-refraction
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-smooth-shading
+    from: cg-shading-and-material
+    to: cg-smooth-shading
+    relation: contains
+    reason: ""
+  - id: cg-shading-and-material-contains-cg-physically-based-rendering
+    from: cg-shading-and-material
+    to: cg-physically-based-rendering
+    relation: contains
+    reason: ""
+  - id: cg-shadows-contains-cg-umbra-and-penumbra
+    from: cg-shadows
+    to: cg-umbra-and-penumbra
+    relation: contains
+    reason: ""
+  - id: cg-shadows-contains-cg-ray-traced-shadow
+    from: cg-shadows
+    to: cg-ray-traced-shadow
+    relation: contains
+    reason: ""
+  - id: cg-shadows-contains-cg-shadow-mapping
+    from: cg-shadows
+    to: cg-shadow-mapping
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-texture-mapping
+    from: cg-texture-and-mapping
+    to: cg-texture-mapping
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-mipmap
+    from: cg-texture-and-mapping
+    to: cg-mipmap
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-texture-filtering
+    from: cg-texture-and-mapping
+    to: cg-texture-filtering
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-bump-mapping
+    from: cg-texture-and-mapping
+    to: cg-bump-mapping
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-normal-mapping
+    from: cg-texture-and-mapping
+    to: cg-normal-mapping
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-displacement-mapping
+    from: cg-texture-and-mapping
+    to: cg-displacement-mapping
+    relation: contains
+    reason: ""
+  - id: cg-texture-and-mapping-contains-cg-solid-texturing
+    from: cg-texture-and-mapping
+    to: cg-solid-texturing
+    relation: contains
+    reason: ""
+  - id: cg-ray-based-and-field-based-rendering-contains-cg-ray-tracing
+    from: cg-ray-based-and-field-based-rendering
+    to: cg-ray-tracing
+    relation: contains
+    reason: ""
+  - id: cg-ray-based-and-field-based-rendering-contains-cg-ray-marching
+    from: cg-ray-based-and-field-based-rendering
+    to: cg-ray-marching
+    relation: contains
+    reason: ""
+  - id: cg-ray-based-and-field-based-rendering-contains-cg-sdf-rendering
+    from: cg-ray-based-and-field-based-rendering
+    to: cg-sdf-rendering
+    relation: contains
+    reason: ""
+  - id: cg-ray-based-and-field-based-rendering-contains-cg-volume-rendering
+    from: cg-ray-based-and-field-based-rendering
+    to: cg-volume-rendering
+    relation: contains
+    reason: ""
+  - id: cg-ray-based-and-field-based-rendering-contains-cg-path-tracing
+    from: cg-ray-based-and-field-based-rendering
+    to: cg-path-tracing
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-texture-mapping-approach
+    from: cg-image-based-rendering
+    to: cg-texture-mapping-approach
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-image-reprojection-approach
+    from: cg-image-based-rendering
+    to: cg-image-reprojection-approach
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-panoramic-image-approach
+    from: cg-image-based-rendering
+    to: cg-panoramic-image-approach
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-view-morphing-approach
+    from: cg-image-based-rendering
+    to: cg-view-morphing-approach
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-ray-database-approach
+    from: cg-image-based-rendering
+    to: cg-ray-database-approach
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-light-field-rendering
+    from: cg-image-based-rendering
+    to: cg-light-field-rendering
+    relation: contains
+    reason: ""
+  - id: cg-image-based-rendering-contains-cg-image-based-lighting
+    from: cg-image-based-rendering
+    to: cg-image-based-lighting
+    relation: contains
+    reason: ""
+  - id: cg-global-illumination-contains-cg-rendering-equation
+    from: cg-global-illumination
+    to: cg-rendering-equation
+    relation: contains
+    reason: ""
+  - id: cg-global-illumination-contains-cg-light-transport
+    from: cg-global-illumination
+    to: cg-light-transport
+    relation: contains
+    reason: ""
+  - id: cg-global-illumination-contains-cg-radiosity
+    from: cg-global-illumination
+    to: cg-radiosity
+    relation: contains
+    reason: ""
+  - id: cg-global-illumination-contains-cg-monte-carlo-integration
+    from: cg-global-illumination
+    to: cg-monte-carlo-integration
+    relation: contains
+    reason: ""
+  - id: cg-global-illumination-contains-cg-multiple-importance-sampling
+    from: cg-global-illumination
+    to: cg-multiple-importance-sampling
+    relation: contains
+    reason: ""
+  - id: cg-neural-and-differentiable-rendering-contains-cg-neural-rendering
+    from: cg-neural-and-differentiable-rendering
+    to: cg-neural-rendering
+    relation: contains
+    reason: ""
+  - id: cg-neural-and-differentiable-rendering-contains-cg-nerf
+    from: cg-neural-and-differentiable-rendering
+    to: cg-nerf
+    relation: contains
+    reason: ""
+  - id: cg-neural-and-differentiable-rendering-contains-cg-three-d-gaussian-splatting
+    from: cg-neural-and-differentiable-rendering
+    to: cg-three-d-gaussian-splatting
+    relation: contains
+    reason: ""
+  - id: cg-neural-and-differentiable-rendering-contains-cg-differentiable-rendering
+    from: cg-neural-and-differentiable-rendering
+    to: cg-differentiable-rendering
+    relation: contains
+    reason: ""
+  - id: cg-neural-and-differentiable-rendering-contains-cg-inverse-rendering
+    from: cg-neural-and-differentiable-rendering
+    to: cg-inverse-rendering
+    relation: contains
+    reason: ""
+  - id: cg-animation-contains-cg-animation-foundations
+    from: cg-animation
+    to: cg-animation-foundations
+    relation: contains
+    reason: ""
+  - id: cg-animation-contains-cg-keyframe-animation
+    from: cg-animation
+    to: cg-keyframe-animation
+    relation: contains
+    reason: ""
+  - id: cg-animation-contains-cg-procedural-animation
+    from: cg-animation
+    to: cg-procedural-animation
+    relation: contains
+    reason: ""
+  - id: cg-animation-contains-cg-character-animation
+    from: cg-animation
+    to: cg-character-animation
+    relation: contains
+    reason: ""
+  - id: cg-animation-contains-cg-physics-based-animation
+    from: cg-animation
+    to: cg-physics-based-animation
+    relation: contains
+    reason: ""
+  - id: cg-animation-contains-cg-data-driven-and-learning-based-animation
+    from: cg-animation
+    to: cg-data-driven-and-learning-based-animation
+    relation: contains
+    reason: ""
+  - id: cg-animation-foundations-contains-cg-time-sampling
+    from: cg-animation-foundations
+    to: cg-time-sampling
+    relation: contains
+    reason: ""
+  - id: cg-animation-foundations-contains-cg-frame-and-keyframe
+    from: cg-animation-foundations
+    to: cg-frame-and-keyframe
+    relation: contains
+    reason: ""
+  - id: cg-animation-foundations-contains-cg-interpolation-curve
+    from: cg-animation-foundations
+    to: cg-interpolation-curve
+    relation: contains
+    reason: ""
+  - id: cg-animation-foundations-contains-cg-transform-animation
+    from: cg-animation-foundations
+    to: cg-transform-animation
+    relation: contains
+    reason: ""
+  - id: cg-animation-foundations-contains-cg-camera-animation
+    from: cg-animation-foundations
+    to: cg-camera-animation
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-keyframe-interpolation
+    from: cg-keyframe-animation
+    to: cg-keyframe-interpolation
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-linear-interpolation
+    from: cg-keyframe-animation
+    to: cg-linear-interpolation
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-spline-interpolation
+    from: cg-keyframe-animation
+    to: cg-spline-interpolation
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-quaternion-interpolation
+    from: cg-keyframe-animation
+    to: cg-quaternion-interpolation
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-morphing
+    from: cg-keyframe-animation
+    to: cg-morphing
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-warping
+    from: cg-keyframe-animation
+    to: cg-warping
+    relation: contains
+    reason: ""
+  - id: cg-keyframe-animation-contains-cg-free-form-deformation
+    from: cg-keyframe-animation
+    to: cg-free-form-deformation
+    relation: contains
+    reason: ""
+  - id: cg-procedural-animation-contains-cg-l-system
+    from: cg-procedural-animation
+    to: cg-l-system
+    relation: contains
+    reason: ""
+  - id: cg-procedural-animation-contains-cg-particle-animation
+    from: cg-procedural-animation
+    to: cg-particle-animation
+    relation: contains
+    reason: ""
+  - id: cg-procedural-animation-contains-cg-rule-based-motion
+    from: cg-procedural-animation
+    to: cg-rule-based-motion
+    relation: contains
+    reason: ""
+  - id: cg-procedural-animation-contains-cg-noise-driven-motion
+    from: cg-procedural-animation
+    to: cg-noise-driven-motion
+    relation: contains
+    reason: ""
+  - id: cg-procedural-animation-contains-cg-path-animation
+    from: cg-procedural-animation
+    to: cg-path-animation
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-skeleton
+    from: cg-character-animation
+    to: cg-skeleton
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-articulated-model
+    from: cg-character-animation
+    to: cg-articulated-model
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-rigging
+    from: cg-character-animation
+    to: cg-rigging
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-skinning
+    from: cg-character-animation
+    to: cg-skinning
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-forward-kinematics
+    from: cg-character-animation
+    to: cg-forward-kinematics
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-inverse-kinematics
+    from: cg-character-animation
+    to: cg-inverse-kinematics
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-motion-capture
+    from: cg-character-animation
+    to: cg-motion-capture
+    relation: contains
+    reason: ""
+  - id: cg-character-animation-contains-cg-facial-animation
+    from: cg-character-animation
+    to: cg-facial-animation
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-rigid-body-dynamics
+    from: cg-physics-based-animation
+    to: cg-rigid-body-dynamics
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-soft-body-dynamics
+    from: cg-physics-based-animation
+    to: cg-soft-body-dynamics
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-fem-deformation
+    from: cg-physics-based-animation
+    to: cg-fem-deformation
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-cloth-simulation
+    from: cg-physics-based-animation
+    to: cg-cloth-simulation
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-hair-simulation
+    from: cg-physics-based-animation
+    to: cg-hair-simulation
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-fluid-and-particle-simulation
+    from: cg-physics-based-animation
+    to: cg-fluid-and-particle-simulation
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-collision-and-constraint
+    from: cg-physics-based-animation
+    to: cg-collision-and-constraint
+    relation: contains
+    reason: ""
+  - id: cg-physics-based-animation-contains-cg-hybrid-keyframe-physics-animation
+    from: cg-physics-based-animation
+    to: cg-hybrid-keyframe-physics-animation
+    relation: contains
+    reason: ""
+  - id: cg-data-driven-and-learning-based-animation-contains-cg-animation-state-machine
+    from: cg-data-driven-and-learning-based-animation
+    to: cg-animation-state-machine
+    relation: contains
+    reason: ""
+  - id: cg-data-driven-and-learning-based-animation-contains-cg-blend-tree
+    from: cg-data-driven-and-learning-based-animation
+    to: cg-blend-tree
+    relation: contains
+    reason: ""
+  - id: cg-data-driven-and-learning-based-animation-contains-cg-motion-matching
+    from: cg-data-driven-and-learning-based-animation
+    to: cg-motion-matching
+    relation: contains
+    reason: ""
+  - id: cg-data-driven-and-learning-based-animation-contains-cg-learned-motion-synthesis
+    from: cg-data-driven-and-learning-based-animation
+    to: cg-learned-motion-synthesis
+    relation: contains
+    reason: ""
+  - id: cg-data-driven-and-learning-based-animation-contains-cg-reinforcement-learning-character-control
+    from: cg-data-driven-and-learning-based-animation
+    to: cg-reinforcement-learning-character-control
+    relation: contains
+    reason: ""
+  - id: cg-data-driven-and-learning-based-animation-contains-cg-deepmimic-style-physics-based-control
+    from: cg-data-driven-and-learning-based-animation
+    to: cg-deepmimic-style-physics-based-control
+    relation: contains
+    reason: ""

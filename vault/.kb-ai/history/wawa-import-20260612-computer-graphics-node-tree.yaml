@@ -1,0 +1,241 @@
+packageId: wawa-import-20260612-computer-graphics-node-tree
+appliedAt: 2026-06-12T13:29:05.105Z
+created:
+  - content/computer-graphics/cg-modeling/meta.yaml
+  - content/computer-graphics/cg-rendering/meta.yaml
+  - content/computer-graphics/cg-animation/meta.yaml
+  - content/computer-graphics/cg-geometry-representation/meta.yaml
+  - content/computer-graphics/cg-solid-modeling/meta.yaml
+  - content/computer-graphics/cg-curves-and-surfaces/meta.yaml
+  - content/computer-graphics/cg-polygon-mesh-modeling/meta.yaml
+  - content/computer-graphics/cg-volumetric-and-implicit-modeling/meta.yaml
+  - content/computer-graphics/cg-point-particle-and-procedural-geometry/meta.yaml
+  - content/computer-graphics/cg-scene-and-asset-representation/meta.yaml
+  - content/computer-graphics/cg-wireframe-model/meta.yaml
+  - content/computer-graphics/cg-surface-model/meta.yaml
+  - content/computer-graphics/cg-solid-model/meta.yaml
+  - content/computer-graphics/cg-explicit-representation/meta.yaml
+  - content/computer-graphics/cg-implicit-representation/meta.yaml
+  - content/computer-graphics/cg-parametric-representation/meta.yaml
+  - content/computer-graphics/cg-constructive-solid-geometry/meta.yaml
+  - content/computer-graphics/cg-boundary-representation/meta.yaml
+  - content/computer-graphics/cg-sweep-representation/meta.yaml
+  - content/computer-graphics/cg-conic-and-quadratic-curves/meta.yaml
+  - content/computer-graphics/cg-parametric-curves/meta.yaml
+  - content/computer-graphics/cg-parametric-surfaces/meta.yaml
+  - content/computer-graphics/cg-polygon-mesh/meta.yaml
+  - content/computer-graphics/cg-mesh-topology-and-manifoldness/meta.yaml
+  - content/computer-graphics/cg-subdivision-surface/meta.yaml
+  - content/computer-graphics/cg-level-of-detail/meta.yaml
+  - content/computer-graphics/cg-mesh-smoothing/meta.yaml
+  - content/computer-graphics/cg-mesh-parameterization/meta.yaml
+  - content/computer-graphics/cg-mesh-validation/meta.yaml
+  - content/computer-graphics/cg-digital-watermarking/meta.yaml
+  - content/computer-graphics/cg-voxel/meta.yaml
+  - content/computer-graphics/cg-octree/meta.yaml
+  - content/computer-graphics/cg-metaball/meta.yaml
+  - content/computer-graphics/cg-signed-distance-field/meta.yaml
+  - content/computer-graphics/cg-isosurface-extraction/meta.yaml
+  - content/computer-graphics/cg-particle-system-as-geometry/meta.yaml
+  - content/computer-graphics/cg-point-based-modeling/meta.yaml
+  - content/computer-graphics/cg-point-cloud/meta.yaml
+  - content/computer-graphics/cg-fractal-modeling/meta.yaml
+  - content/computer-graphics/cg-l-system-geometry/meta.yaml
+  - content/computer-graphics/cg-scene-graph/meta.yaml
+  - content/computer-graphics/cg-asset-composition/meta.yaml
+  - content/computer-graphics/cg-openusd/meta.yaml
+  - content/computer-graphics/cg-digital-image-foundations/meta.yaml
+  - content/computer-graphics/cg-coordinate-and-viewing-pipeline/meta.yaml
+  - content/computer-graphics/cg-gpu-rendering-pipeline/meta.yaml
+  - content/computer-graphics/cg-visibility-and-hidden-surface-removal/meta.yaml
+  - content/computer-graphics/cg-shading-and-material/meta.yaml
+  - content/computer-graphics/cg-shadows/meta.yaml
+  - content/computer-graphics/cg-texture-and-mapping/meta.yaml
+  - content/computer-graphics/cg-ray-based-and-field-based-rendering/meta.yaml
+  - content/computer-graphics/cg-image-based-rendering/meta.yaml
+  - content/computer-graphics/cg-global-illumination/meta.yaml
+  - content/computer-graphics/cg-neural-and-differentiable-rendering/meta.yaml
+  - content/computer-graphics/cg-sampling/meta.yaml
+  - content/computer-graphics/cg-quantization/meta.yaml
+  - content/computer-graphics/cg-nyquist-frequency/meta.yaml
+  - content/computer-graphics/cg-aliasing/meta.yaml
+  - content/computer-graphics/cg-anti-aliasing/meta.yaml
+  - content/computer-graphics/cg-raster-representation/meta.yaml
+  - content/computer-graphics/cg-vector-representation/meta.yaml
+  - content/computer-graphics/cg-framebuffer/meta.yaml
+  - content/computer-graphics/cg-scanline/meta.yaml
+  - content/computer-graphics/cg-coordinate-systems/meta.yaml
+  - content/computer-graphics/cg-modeling-transform/meta.yaml
+  - content/computer-graphics/cg-view-transform/meta.yaml
+  - content/computer-graphics/cg-projection-transform/meta.yaml
+  - content/computer-graphics/cg-viewport-transform/meta.yaml
+  - content/computer-graphics/cg-homogeneous-coordinates/meta.yaml
+  - content/computer-graphics/cg-mvp-matrix/meta.yaml
+  - content/computer-graphics/cg-clipping/meta.yaml
+  - content/computer-graphics/cg-vertex-specification/meta.yaml
+  - content/computer-graphics/cg-vertex-shader/meta.yaml
+  - content/computer-graphics/cg-tessellation-stage/meta.yaml
+  - content/computer-graphics/cg-geometry-shader/meta.yaml
+  - content/computer-graphics/cg-primitive-assembly/meta.yaml
+  - content/computer-graphics/cg-rasterization/meta.yaml
+  - content/computer-graphics/cg-fragment-shader/meta.yaml
+  - content/computer-graphics/cg-depth-test/meta.yaml
+  - content/computer-graphics/cg-stencil-test/meta.yaml
+  - content/computer-graphics/cg-blending/meta.yaml
+  - content/computer-graphics/cg-back-face-culling/meta.yaml
+  - content/computer-graphics/cg-priority-algorithm/meta.yaml
+  - content/computer-graphics/cg-scanline-hidden-surface-algorithm/meta.yaml
+  - content/computer-graphics/cg-z-buffer/meta.yaml
+  - content/computer-graphics/cg-ray-tracing-visibility/meta.yaml
+  - content/computer-graphics/cg-radiometry/meta.yaml
+  - content/computer-graphics/cg-brdf/meta.yaml
+  - content/computer-graphics/cg-bssrdf/meta.yaml
+  - content/computer-graphics/cg-ambient-term/meta.yaml
+  - content/computer-graphics/cg-diffuse-reflection/meta.yaml
+  - content/computer-graphics/cg-specular-reflection/meta.yaml
+  - content/computer-graphics/cg-perfect-reflection/meta.yaml
+  - content/computer-graphics/cg-transmission-and-refraction/meta.yaml
+  - content/computer-graphics/cg-smooth-shading/meta.yaml
+  - content/computer-graphics/cg-physically-based-rendering/meta.yaml
+  - content/computer-graphics/cg-umbra-and-penumbra/meta.yaml
+  - content/computer-graphics/cg-ray-traced-shadow/meta.yaml
+  - content/computer-graphics/cg-shadow-mapping/meta.yaml
+  - content/computer-graphics/cg-texture-mapping/meta.yaml
+  - content/computer-graphics/cg-mipmap/meta.yaml
+  - content/computer-graphics/cg-texture-filtering/meta.yaml
+  - content/computer-graphics/cg-bump-mapping/meta.yaml
+  - content/computer-graphics/cg-normal-mapping/meta.yaml
+  - content/computer-graphics/cg-displacement-mapping/meta.yaml
+  - content/computer-graphics/cg-solid-texturing/meta.yaml
+  - content/computer-graphics/cg-ray-tracing/meta.yaml
+  - content/computer-graphics/cg-ray-marching/meta.yaml
+  - content/computer-graphics/cg-sdf-rendering/meta.yaml
+  - content/computer-graphics/cg-volume-rendering/meta.yaml
+  - content/computer-graphics/cg-path-tracing/meta.yaml
+  - content/computer-graphics/cg-texture-mapping-approach/meta.yaml
+  - content/computer-graphics/cg-image-reprojection-approach/meta.yaml
+  - content/computer-graphics/cg-panoramic-image-approach/meta.yaml
+  - content/computer-graphics/cg-view-morphing-approach/meta.yaml
+  - content/computer-graphics/cg-ray-database-approach/meta.yaml
+  - content/computer-graphics/cg-light-field-rendering/meta.yaml
+  - content/computer-graphics/cg-image-based-lighting/meta.yaml
+  - content/computer-graphics/cg-rendering-equation/meta.yaml
+  - content/computer-graphics/cg-light-transport/meta.yaml
+  - content/computer-graphics/cg-radiosity/meta.yaml
+  - content/computer-graphics/cg-monte-carlo-integration/meta.yaml
+  - content/computer-graphics/cg-multiple-importance-sampling/meta.yaml
+  - content/computer-graphics/cg-neural-rendering/meta.yaml
+  - content/computer-graphics/cg-nerf/meta.yaml
+  - content/computer-graphics/cg-three-d-gaussian-splatting/meta.yaml
+  - content/computer-graphics/cg-differentiable-rendering/meta.yaml
+  - content/computer-graphics/cg-inverse-rendering/meta.yaml
+  - content/computer-graphics/cg-animation-foundations/meta.yaml
+  - content/computer-graphics/cg-keyframe-animation/meta.yaml
+  - content/computer-graphics/cg-procedural-animation/meta.yaml
+  - content/computer-graphics/cg-character-animation/meta.yaml
+  - content/computer-graphics/cg-physics-based-animation/meta.yaml
+  - content/computer-graphics/cg-data-driven-and-learning-based-animation/meta.yaml
+  - content/computer-graphics/cg-time-sampling/meta.yaml
+  - content/computer-graphics/cg-frame-and-keyframe/meta.yaml
+  - content/computer-graphics/cg-interpolation-curve/meta.yaml
+  - content/computer-graphics/cg-transform-animation/meta.yaml
+  - content/computer-graphics/cg-camera-animation/meta.yaml
+  - content/computer-graphics/cg-keyframe-interpolation/meta.yaml
+  - content/computer-graphics/cg-linear-interpolation/meta.yaml
+  - content/computer-graphics/cg-spline-interpolation/meta.yaml
+  - content/computer-graphics/cg-quaternion-interpolation/meta.yaml
+  - content/computer-graphics/cg-morphing/meta.yaml
+  - content/computer-graphics/cg-warping/meta.yaml
+  - content/computer-graphics/cg-free-form-deformation/meta.yaml
+  - content/computer-graphics/cg-l-system/meta.yaml
+  - content/computer-graphics/cg-particle-animation/meta.yaml
+  - content/computer-graphics/cg-rule-based-motion/meta.yaml
+  - content/computer-graphics/cg-noise-driven-motion/meta.yaml
+  - content/computer-graphics/cg-path-animation/meta.yaml
+  - content/computer-graphics/cg-skeleton/meta.yaml
+  - content/computer-graphics/cg-articulated-model/meta.yaml
+  - content/computer-graphics/cg-rigging/meta.yaml
+  - content/computer-graphics/cg-skinning/meta.yaml
+  - content/computer-graphics/cg-forward-kinematics/meta.yaml
+  - content/computer-graphics/cg-inverse-kinematics/meta.yaml
+  - content/computer-graphics/cg-motion-capture/meta.yaml
+  - content/computer-graphics/cg-facial-animation/meta.yaml
+  - content/computer-graphics/cg-rigid-body-dynamics/meta.yaml
+  - content/computer-graphics/cg-soft-body-dynamics/meta.yaml
+  - content/computer-graphics/cg-fem-deformation/meta.yaml
+  - content/computer-graphics/cg-cloth-simulation/meta.yaml
+  - content/computer-graphics/cg-hair-simulation/meta.yaml
+  - content/computer-graphics/cg-fluid-and-particle-simulation/meta.yaml
+  - content/computer-graphics/cg-collision-and-constraint/meta.yaml
+  - content/computer-graphics/cg-hybrid-keyframe-physics-animation/meta.yaml
+  - content/computer-graphics/cg-animation-state-machine/meta.yaml
+  - content/computer-graphics/cg-blend-tree/meta.yaml
+  - content/computer-graphics/cg-motion-matching/meta.yaml
+  - content/computer-graphics/cg-learned-motion-synthesis/meta.yaml
+  - content/computer-graphics/cg-reinforcement-learning-character-control/meta.yaml
+  - content/computer-graphics/cg-deepmimic-style-physics-based-control/meta.yaml
+createdDomains:
+  - computer-graphics
+modified:
+  - domains.yaml
+  - graph.yaml
+warnings:
+  - 'add_node cg-wireframe-model: Potential duplicate: alias "geometry
+    representation" matches "cg-geometry-representation".'
+  - 'add_node cg-surface-model: Potential duplicate: alias "geometry
+    representation" matches "cg-geometry-representation".'
+  - 'add_node cg-surface-model: Potential duplicate: alias "geometry
+    representation" matches "cg-wireframe-model".'
+  - 'add_node cg-solid-model: Potential duplicate: alias "geometry
+    representation" matches "cg-geometry-representation".'
+  - 'add_node cg-solid-model: Potential duplicate: "Solid Model" is similar to
+    "Solid Modeling" in computer-graphics.'
+  - 'add_node cg-solid-model: Potential duplicate: alias "geometry
+    representation" matches "cg-wireframe-model".'
+  - 'add_node cg-solid-model: Potential duplicate: alias "geometry
+    representation" matches "cg-surface-model".'
+  - 'add_node cg-explicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-geometry-representation".'
+  - 'add_node cg-explicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-wireframe-model".'
+  - 'add_node cg-explicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-surface-model".'
+  - 'add_node cg-explicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-solid-model".'
+  - 'add_node cg-implicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-geometry-representation".'
+  - 'add_node cg-implicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-wireframe-model".'
+  - 'add_node cg-implicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-surface-model".'
+  - 'add_node cg-implicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-solid-model".'
+  - 'add_node cg-implicit-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-explicit-representation".'
+  - 'add_node cg-implicit-representation: Potential duplicate: "Implicit
+    Representation" is similar to "Explicit Representation" in
+    computer-graphics.'
+  - 'add_node cg-parametric-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-geometry-representation".'
+  - 'add_node cg-parametric-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-wireframe-model".'
+  - 'add_node cg-parametric-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-surface-model".'
+  - 'add_node cg-parametric-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-solid-model".'
+  - 'add_node cg-parametric-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-explicit-representation".'
+  - 'add_node cg-parametric-representation: Potential duplicate: alias "geometry
+    representation" matches "cg-implicit-representation".'
+  - 'add_node cg-anti-aliasing: Potential duplicate: "Anti-Aliasing" is similar
+    to "Aliasing" in computer-graphics.'
+  - 'add_node cg-texture-mapping: Potential duplicate: "Texture Mapping" is
+    similar to "Texture and Mapping" in computer-graphics.'
+  - 'add_node cg-sdf-rendering: Potential duplicate: "SDF Rendering" is similar
+    to "Rendering" in computer-graphics.'
+  - 'add_node cg-spline-interpolation: Potential duplicate: "Spline
+    Interpolation" is similar to "Linear Interpolation" in computer-graphics.'
+  - 'add_node cg-l-system: Potential duplicate: alias "lindenmayer system"
+    matches "cg-l-system-geometry".'
+  - 'add_node cg-path-animation: Potential duplicate: "Path Animation" is
+    similar to "Animation" in computer-graphics.'

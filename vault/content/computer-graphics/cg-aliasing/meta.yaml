@@ -1,0 +1,16 @@
+id: cg-aliasing
+title: Aliasing
+titleLocale: 走样
+domain: computer-graphics
+type: concept
+status: seed
+summary: Artifact caused when sampled data cannot represent the original signal frequency
+  or geometry accurately.
+summaryLocale: 当采样数据无法准确表示原信号频率或几何细节时产生的伪影。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

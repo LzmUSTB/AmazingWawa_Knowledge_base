@@ -1,0 +1,17 @@
+id: cg-shadows
+title: Shadows
+titleLocale: 阴影
+domain: computer-graphics
+type: topic
+status: seed
+summary: Techniques for representing occlusion of light, including hard shadows, soft
+  shadows, and shadow maps.
+summaryLocale: 表示光线遮挡的技术，包括硬阴影、软阴影与阴影贴图。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- shadow
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,17 @@
+id: cg-point-particle-and-procedural-geometry
+title: Point, Particle, and Procedural Geometry
+titleLocale: 点、粒子与程序化几何
+domain: computer-graphics
+type: topic
+status: seed
+summary: Geometry represented or generated from points, particles, point clouds, fractals,
+  and procedural rewriting systems.
+summaryLocale: 由点、粒子、点云、分形与程序化重写系统表示或生成几何。
+contentFormat: none
+aliases: []
+tags:
+- modeling
+- procedural
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

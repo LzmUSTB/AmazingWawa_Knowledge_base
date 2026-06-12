@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from "vue";
-import { captureSourceSnapshot } from "../../data/desktop-vault-adapter.js";
+import { captureSourceSnapshot, openSnapshotFolder } from "../../data/desktop-vault-adapter.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const sourceUrl = ref("");
 const capturing = ref(false);
@@ -94,6 +95,14 @@ async function startCapture() {
   }
 }
 
+async function openSnapshotDirectory() {
+  try {
+    await openSnapshotFolder();
+  } catch (error) {
+    window.alert(`Failed to open snapshot folder: ${error?.message || error}`);
+  }
+}
+
 onBeforeUnmount(() => {
   stopProgressLoop();
 });
@@ -110,6 +119,11 @@ onBeforeUnmount(() => {
           <code>snapshot/</code> folder, which is ignored by Git.
         </p>
       </div>
+      <button class="hud-button snapshot-folder-button button-with-icon" type="button" style="--button-color: var(--shader)"
+        @click="openSnapshotDirectory">
+        <AppIcon name="folder-open" />
+        <span class="button-icon-label">Open snapshot folder</span>
+      </button>
     </div>
 
     <form class="snapshot-form" @submit.prevent="startCapture">
@@ -181,11 +195,13 @@ onBeforeUnmount(() => {
         <li>Some JavaScript-generated network URLs may still require manual fixes if the page constructs them dynamically at runtime.</li>
       </ul>
     </section>
+
   </section>
 </template>
 
 <style scoped>
 .snapshot-view {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -212,7 +228,18 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-header {
+  position: relative;
   padding: 28px;
+  padding-right: 260px;
+  min-height: 166px;
+}
+
+.snapshot-folder-button {
+  position: absolute;
+  right: 28px;
+  bottom: 22px;
+  background: var(--background-main);
+  white-space: nowrap;
 }
 
 .eyebrow {

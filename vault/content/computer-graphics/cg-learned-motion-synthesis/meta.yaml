@@ -1,0 +1,16 @@
+id: cg-learned-motion-synthesis
+title: Learned Motion Synthesis
+titleLocale: 学习式动作合成
+domain: computer-graphics
+type: concept
+status: seed
+summary: Uses machine learning models to generate, complete, or control motion from
+  data and conditions.
+summaryLocale: 使用机器学习模型根据数据与条件生成、补全或控制运动。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

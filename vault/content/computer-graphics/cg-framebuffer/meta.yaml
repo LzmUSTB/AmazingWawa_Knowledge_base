@@ -1,0 +1,16 @@
+id: cg-framebuffer
+title: Framebuffer
+titleLocale: 帧缓冲
+domain: computer-graphics
+type: concept
+status: seed
+summary: Memory that stores render outputs such as color, depth, stencil, or auxiliary
+  buffers before display or post-processing.
+summaryLocale: 存储颜色、深度、模板或辅助缓冲等渲染结果的内存区域，用于显示或后处理。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

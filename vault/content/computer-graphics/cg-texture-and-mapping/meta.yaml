@@ -1,0 +1,17 @@
+id: cg-texture-and-mapping
+title: Texture and Mapping
+titleLocale: 纹理与映射
+domain: computer-graphics
+type: topic
+status: seed
+summary: Mapping images or procedural signals to surfaces to control color, normals,
+  displacement, and material detail.
+summaryLocale: 将图像或程序化信号映射到表面，用于控制颜色、法线、位移与材质细节。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- texture
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

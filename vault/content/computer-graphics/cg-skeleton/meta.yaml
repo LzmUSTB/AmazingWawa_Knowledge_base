@@ -1,0 +1,15 @@
+id: cg-skeleton
+title: Skeleton
+titleLocale: 骨架
+domain: computer-graphics
+type: concept
+status: seed
+summary: A hierarchy of joints and bones used to control articulated motion and deformation.
+summaryLocale: 由关节和骨骼构成的层级结构，用于控制关节运动与变形。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

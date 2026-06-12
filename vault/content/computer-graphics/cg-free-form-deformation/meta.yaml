@@ -1,0 +1,17 @@
+id: cg-free-form-deformation
+title: Free-Form Deformation
+titleLocale: 自由形状变形
+domain: computer-graphics
+type: concept
+status: seed
+summary: Deforms geometry through a surrounding control lattice rather than editing
+  every vertex directly.
+summaryLocale: 通过包围物体的控制格子变形几何，而不是直接编辑每个顶点。
+contentFormat: none
+aliases:
+- FFD
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

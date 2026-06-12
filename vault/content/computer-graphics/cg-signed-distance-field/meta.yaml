@@ -1,0 +1,17 @@
+id: cg-signed-distance-field
+title: Signed Distance Field
+titleLocale: 符号距离场
+domain: computer-graphics
+type: concept
+status: seed
+summary: Stores the signed distance to the nearest surface, enabling implicit modeling,
+  collision queries, ray marching, and surface reconstruction.
+summaryLocale: 存储到最近表面的带符号距离，可用于隐式建模、碰撞查询、光线步进与表面重建。
+contentFormat: none
+aliases:
+- SDF
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

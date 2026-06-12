@@ -18,3 +18,8 @@ conflictResolution:
   nodeKnowledgeTypeGoesInNodeDotTypeOrFlatNodeType: true
   contentFormatNoneMeansNoNoteFile: true
   localeTitleRecommendedButOptional: true
+  sourceBlocksConditional: true
+  noDirectOriginalSourceMediaWarningDisabled: true
+  visibleInteractiveElementWarningKept: true
+  assetPathWhitelistMandatory: true
+  unreferencedPackagedAssetsWarn: true

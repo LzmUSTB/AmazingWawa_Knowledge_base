@@ -1,0 +1,17 @@
+id: cg-forward-kinematics
+title: Forward Kinematics
+titleLocale: 正向运动学
+domain: computer-graphics
+type: concept
+status: seed
+summary: Computes end-effector poses from a chain of joint transforms applied from
+  parent to child.
+summaryLocale: 从父到子应用关节变换，根据关节链计算末端位置与姿态。
+contentFormat: none
+aliases:
+- FK
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

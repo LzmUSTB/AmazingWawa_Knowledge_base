@@ -1,0 +1,16 @@
+id: cg-ray-traced-shadow
+title: Ray-Traced Shadow
+titleLocale: 光线追踪阴影
+domain: computer-graphics
+type: concept
+status: seed
+summary: Determines whether a point is shadowed by tracing rays from the shaded point
+  toward light sources.
+summaryLocale: 从着色点向光源发射射线判断是否被遮挡。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

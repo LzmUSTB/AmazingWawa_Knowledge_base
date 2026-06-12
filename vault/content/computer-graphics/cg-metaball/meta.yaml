@@ -1,0 +1,16 @@
+id: cg-metaball
+title: Metaball
+titleLocale: 元球
+domain: computer-graphics
+type: concept
+status: seed
+summary: Represents organic blobby shapes by blending implicit fields from multiple
+  primitives.
+summaryLocale: 通过混合多个基本体的隐式场来表示有机、团状的形状。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

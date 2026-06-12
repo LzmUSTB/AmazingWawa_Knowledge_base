@@ -1,0 +1,16 @@
+id: cg-ray-marching
+title: Ray Marching
+titleLocale: 光线步进
+domain: computer-graphics
+type: concept
+status: seed
+summary: Samples along rays incrementally, commonly for implicit surfaces, signed
+  distance fields, and volumes.
+summaryLocale: 沿射线逐步采样，常用于隐式表面、符号距离场与体积。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

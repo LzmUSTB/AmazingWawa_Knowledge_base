@@ -1,0 +1,16 @@
+id: cg-octree
+title: Octree
+titleLocale: 八叉树
+domain: computer-graphics
+type: concept
+status: seed
+summary: Hierarchically partitions 3D space into eight child cells, enabling adaptive
+  storage and queries for sparse volumes or scenes.
+summaryLocale: 将三维空间递归划分为八个子单元，适合稀疏体数据或场景的自适应存储与查询。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

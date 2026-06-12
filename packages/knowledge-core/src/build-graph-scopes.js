@@ -11,7 +11,8 @@ function pickNodes(nodeMap, ids) {
 }
 
 function titleFor(nodeMap, id) {
-  return nodeMap.get(id)?.title || id;
+  const node = nodeMap.get(id);
+  return node?.titleLocale || node?.title || id;
 }
 
 function edgeTouches(edge, nodeId) {
@@ -26,7 +27,7 @@ export function buildGraphScopes({ domains = [], nodes = [], edges = [] }) {
       id: "root",
       type: "root",
       breadcrumb: ["Global Graph"],
-      selectedNodeId: domainIds[0] || "",
+      selectedNodeId: "",
       nodes: pickNodes(nodeMap, domainIds),
       edges: edges.filter((edge) => domainIds.includes(edge.source) && domainIds.includes(edge.target)),
     },
@@ -41,7 +42,7 @@ export function buildGraphScopes({ domains = [], nodes = [], edges = [] }) {
     scopes[domain.id] = {
       id: domain.id,
       type: "domain",
-      breadcrumb: ["Global Graph", domain.title || domain.id],
+      breadcrumb: ["Global Graph", domain.titleLocale || domain.title || domain.id],
       centerNodeId: domain.id,
       selectedNodeId: domain.id,
       nodes: pickNodes(nodeMap, scopeNodeIds),
@@ -57,14 +58,16 @@ export function buildGraphScopes({ domains = [], nodes = [], edges = [] }) {
   nodes
     .filter((node) => node.type !== "domain")
     .forEach((node) => {
-      const connectedEdges = edges.filter((edge) => edgeTouches(edge, node.id));
+      const connectedEdges = edges.filter(
+        (edge) => edgeTouches(edge, node.id) && !(edge.relation === "contains" && edge.target === node.id),
+      );
       const neighborIds = connectedEdges.flatMap((edge) => [edge.source, edge.target]);
       const scopeNodeIds = unique([node.id, ...neighborIds]);
 
       scopes[node.id] = {
         id: node.id,
         type: "focus",
-        breadcrumb: ["Global Graph", titleFor(nodeMap, node.domain), node.title || node.id],
+        breadcrumb: ["Global Graph", titleFor(nodeMap, node.domain), node.titleLocale || node.title || node.id],
         centerNodeId: node.id,
         selectedNodeId: node.id,
         nodes: pickNodes(nodeMap, scopeNodeIds),

@@ -1,0 +1,16 @@
+id: cg-mesh-parameterization
+title: Mesh Parameterization
+titleLocale: 网格参数化
+domain: computer-graphics
+type: concept
+status: seed
+summary: Maps a surface to a lower-dimensional parameter domain; deeper topics include
+  UV mapping and segmentation.
+summaryLocale: 将曲面映射到低维参数域；更细主题包括 UV 映射与网格分割。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

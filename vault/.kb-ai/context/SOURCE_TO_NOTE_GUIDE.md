@@ -47,6 +47,50 @@ source_assets:
 
 Important source visuals are not optional. If they are central to explanation, mark `required: true`.
 
+## Source block usage
+
+Source blocks are not mandatory for every note.
+
+Add source blocks only for actual source use:
+
+- direct original media or source snapshot resources,
+- local copied source media,
+- source-derived claims,
+- close paraphrases,
+- external documentation, papers, articles, or references.
+
+Do not add source blocks to purely original explanatory text.
+
+## Local media path whitelist
+
+In HTML rich notes, local media references must use source-marked paths:
+
+```text
+assets/original/...
+assets/source/...
+assets/source-assets/...
+assets/source-snapshot/...
+```
+
+Do not reference media as bare `assets/foo.png`.
+
+Package the files under the same node-local root:
+
+```text
+generated/content/<domain>/<node-id>/assets/source-assets/foo.png
+```
+
+## Unused asset rule
+
+Do not package copied source images/videos that are not referenced by final note content.
+
+If a source asset is part of inventory but not represented in a note, mark it:
+
+```yaml
+required: false
+omitted_reason: Not used in the final note; retained as source inventory only.
+```
+
 ## Source asset preservation
 
 Hard rule: do not generate images. Use original source assets or source URLs.
@@ -135,7 +179,7 @@ The learner-facing note must teach the concept directly. Do not write:
 
 Snapshot paths are implementation details. They may appear in `review/source-asset-manifest.md` and HTML asset paths, but not explanatory prose.
 
-Source blocks must cite the original URL and original source location, not the snapshot file:
+When a source block is used, it must cite the original URL and original source location, not the snapshot file:
 
 ```html
 <aside class="source-block">
@@ -250,7 +294,7 @@ claims:
     confidence: high | medium | low
 ```
 
-Do not cite all claims only at the end. Add nearby source blocks.
+Do not cite source-derived claims only at the end. Add nearby source blocks when those claims actually come from the source.
 
 ## Parameters and variables
 

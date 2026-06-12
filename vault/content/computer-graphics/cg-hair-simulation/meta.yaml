@@ -1,0 +1,16 @@
+id: cg-hair-simulation
+title: Hair Simulation
+titleLocale: 毛发模拟
+domain: computer-graphics
+type: concept
+status: seed
+summary: Simulates many strands or strand groups with bending, collisions, guide hairs,
+  and grooming constraints.
+summaryLocale: 仿真大量发丝或发束，涉及弯曲、碰撞、引导发与造型约束。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

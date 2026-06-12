@@ -27,9 +27,14 @@ const props = defineProps({
 defineEmits(["open-domain", "show-graph"]);
 
 const currentNode = computed(() => findGraphNode(props.currentNoteId));
+const currentDomainNode = computed(() => findGraphNode(props.currentDomain));
 const accent = computed(() => getDomainColor(props.currentDomain));
 const scope = computed(() => getGraphScope(props.graphScopeId));
 const graphCrumbs = computed(() => scope.value.breadcrumb);
+
+function displayTitle(entity, fallback = "") {
+  return entity?.titleLocale || entity?.title || entity?.id || fallback;
+}
 </script>
 
 <template>
@@ -49,10 +54,10 @@ const graphCrumbs = computed(() => scope.value.breadcrumb);
     <template v-else>
       <button class="bread-button" @click="$emit('show-graph', 'root')">Global Graph</button>
       <span>/</span>
-      <button class="bread-button" @click="$emit('open-domain', currentDomain)">{{ currentDomain }}</button>
+      <button class="bread-button" @click="$emit('open-domain', currentDomain)">{{ displayTitle(currentDomainNode, currentDomain) }}</button>
       <template v-if="currentNode">
         <span>/</span>
-        <button class="bread-button">{{ currentNode.title }}</button>
+        <button class="bread-button">{{ displayTitle(currentNode) }}</button>
       </template>
     </template>
     <button v-if="currentView === 'note'" class="show-graph button-with-icon"

@@ -1,0 +1,17 @@
+id: cg-digital-image-foundations
+title: Digital Image Foundations
+titleLocale: 数字图像基础
+domain: computer-graphics
+type: topic
+status: seed
+summary: Sampling, quantization, aliasing, raster/vector representations, and framebuffer-level
+  image concepts.
+summaryLocale: 关于采样、量化、走样、栅格/矢量表示与帧缓冲等图像基础概念。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- image
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

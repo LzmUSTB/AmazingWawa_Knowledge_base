@@ -1,0 +1,17 @@
+id: cg-parametric-representation
+title: Parametric Representation
+titleLocale: 参数式表示
+domain: computer-graphics
+type: concept
+status: seed
+summary: Defines geometry as functions of parameters, enabling smooth curves, surfaces,
+  and controllable interpolation.
+summaryLocale: 将几何定义为参数的函数，便于表达平滑曲线、曲面与可控插值。
+contentFormat: none
+aliases:
+- geometry representation
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

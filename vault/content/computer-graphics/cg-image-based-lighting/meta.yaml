@@ -1,0 +1,17 @@
+id: cg-image-based-lighting
+title: Image-Based Lighting
+titleLocale: 基于图像的照明
+domain: computer-graphics
+type: concept
+status: seed
+summary: Uses captured environment images to light objects with realistic surrounding
+  illumination.
+summaryLocale: 使用采集的环境图像为物体提供真实感环境照明。
+contentFormat: none
+aliases:
+- IBL
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

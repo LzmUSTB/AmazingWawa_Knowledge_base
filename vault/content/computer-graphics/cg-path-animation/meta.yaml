@@ -1,0 +1,16 @@
+id: cg-path-animation
+title: Path Animation
+titleLocale: 路径动画
+domain: computer-graphics
+type: concept
+status: seed
+summary: Constrains object or camera motion to a curve or route with timing and orientation
+  controls.
+summaryLocale: 将物体或相机运动约束到曲线或路线，并控制时间与朝向。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

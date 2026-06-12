@@ -31,3 +31,118 @@ boards:
         y: 576
         w: 190
         h: 80
+  cg-animation:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      cg-animation:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      computer-graphics:
+        x: 1105
+        y: 312
+        w: 190
+        h: 80
+      cg-animation-foundations:
+        x: 1455
+        y: 481
+        w: 190
+        h: 80
+      cg-keyframe-animation:
+        x: 1542
+        y: 860
+        w: 190
+        h: 80
+      cg-procedural-animation:
+        x: 1376
+        y: 1056
+        w: 190
+        h: 80
+      cg-character-animation:
+        x: 800
+        y: 1024
+        w: 190
+        h: 80
+      cg-physics-based-animation:
+        x: 672
+        y: 864
+        w: 190
+        h: 80
+      cg-data-driven-and-learning-based-animation:
+        x: 736
+        y: 416
+        w: 190
+        h: 80
+  cg-physics-based-animation:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      cg-physics-based-animation:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      cg-animation:
+        x: 1696
+        y: 864
+        w: 190
+        h: 80
+      cg-rigid-body-dynamics:
+        x: 928
+        y: 416
+        w: 190
+        h: 80
+      cg-soft-body-dynamics:
+        x: 1546
+        y: 682
+        w: 190
+        h: 80
+      cg-fem-deformation:
+        x: 1472
+        y: 1056
+        w: 190
+        h: 80
+      cg-cloth-simulation:
+        x: 1258
+        y: 1181
+        w: 190
+        h: 80
+      cg-hair-simulation:
+        x: 952
+        y: 1181
+        w: 190
+        h: 80
+      cg-fluid-and-particle-simulation:
+        x: 736
+        y: 864
+        w: 190
+        h: 80
+      cg-collision-and-constraint:
+        x: 672
+        y: 608
+        w: 190
+        h: 80
+      cg-hybrid-keyframe-physics-animation:
+        x: 1408
+        y: 512
+        w: 190
+        h: 80
+  root:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      optics:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      computer-graphics:
+        x: 960
+        y: 608
+        w: 190
+        h: 80

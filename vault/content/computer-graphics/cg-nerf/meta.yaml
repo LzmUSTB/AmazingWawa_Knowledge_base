@@ -1,0 +1,17 @@
+id: cg-nerf
+title: NeRF
+titleLocale: NeRF
+domain: computer-graphics
+type: concept
+status: seed
+summary: Represents a scene as a neural radiance field mapping spatial position and
+  view direction to density and color.
+summaryLocale: 将场景表示为神经辐射场，把空间位置和视线方向映射到密度与颜色。
+contentFormat: none
+aliases:
+- Neural Radiance Fields
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

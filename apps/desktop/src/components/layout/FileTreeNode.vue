@@ -18,6 +18,14 @@ const subtitle = computed(() => {
   return englishTitle === displayTitle.value ? "" : englishTitle;
 });
 const tooltipTitle = computed(() => (subtitle.value ? `${displayTitle.value} / ${subtitle.value}` : displayTitle.value));
+const hasActiveDescendant = computed(() => containsActiveNode(props.node));
+const shouldShowChildren = computed(() => Boolean(props.node.children?.length && hasActiveDescendant.value));
+
+function containsActiveNode(node) {
+  if (!props.activeNoteId || !node) return false;
+  if (node.id === props.activeNoteId) return true;
+  return Boolean(node.children?.some((child) => containsActiveNode(child)));
+}
 </script>
 
 <template>
@@ -33,7 +41,7 @@ const tooltipTitle = computed(() => (subtitle.value ? `${displayTitle.value} / $
       <span class="tree-title">{{ displayTitle }}</span>
       <span v-if="subtitle" class="tree-id">{{ subtitle }}</span>
     </button>
-    <div v-if="node.children?.length" class="node-children">
+    <div v-if="shouldShowChildren" class="node-children">
       <FileTreeNode
         v-for="child in node.children"
         :key="child.id"
@@ -49,6 +57,10 @@ const tooltipTitle = computed(() => (subtitle.value ? `${displayTitle.value} / $
 </template>
 
 <style scoped>
+.tree-node {
+  min-width: 0;
+}
+
 .concept-row {
   width: 100%;
   min-height: 28px;

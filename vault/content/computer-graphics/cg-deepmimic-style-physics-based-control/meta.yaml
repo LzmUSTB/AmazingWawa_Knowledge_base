@@ -1,0 +1,17 @@
+id: cg-deepmimic-style-physics-based-control
+title: DeepMimic-Style Physics-Based Control
+titleLocale: DeepMimic 式物理角色控制
+domain: computer-graphics
+type: concept
+status: seed
+summary: Combines reference motion imitation with physics-based reinforcement learning
+  to produce robust character skills.
+summaryLocale: 将参考动作模仿与物理基础强化学习结合，生成更鲁棒的角色技能。
+contentFormat: none
+aliases:
+- DeepMimic
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

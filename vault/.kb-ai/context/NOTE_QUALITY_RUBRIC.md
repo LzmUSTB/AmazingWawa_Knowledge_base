@@ -18,7 +18,7 @@ Criteria:
 - review questions with answers,
 - purposeful original source visuals,
 - all important interactive demos represented or source-ported,
-- source blocks close to source-grounded explanations,
+- source blocks close to source-grounded explanations when source material is actually cited or embedded,
 - source snapshot assets and runtime behavior used when available,
 - AI-authored JS interactions improve understanding when used.
 
@@ -54,7 +54,7 @@ note_quality:
   source_assets_preserved: true | false
   required_demos_represented: true | false
   generated_images_used: false
-  source_blocks_near_claims: true | false
+  source_blocks_near_claims: true | false | not_applicable
   revision_done: true | false
 ```
 
@@ -110,6 +110,7 @@ If the source explanation is terse, expand it. If the source is insufficient for
 Before final `.wawapkg`:
 
 - package root contains required files,
+- no temporary validation artifacts such as `review/js-check/*.js`,
 - `mimetype` exact match,
 - `manifest.yaml` valid,
 - `patch.yaml` uses canonical operation shapes,
@@ -121,5 +122,8 @@ Before final `.wawapkg`:
 - no generated raster images,
 - unsupported assets filtered or allowed by importer,
 - JavaScript syntax checked,
+- local media uses `assets/original/`, `assets/source/`, `assets/source-assets/`, or `assets/source-snapshot/`,
+- no bare local media paths like `assets/foo.png`,
+- every non-snapshot packaged asset is referenced by final note content,
 - important local assets referenced,
 - source asset manifest complete and parseable as fenced YAML with top-level `source_assets`.

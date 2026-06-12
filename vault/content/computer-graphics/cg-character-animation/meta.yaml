@@ -1,0 +1,17 @@
+id: cg-character-animation
+title: Character Animation
+titleLocale: 角色动画
+domain: computer-graphics
+type: topic
+status: seed
+summary: Animation of articulated bodies, skeletons, rigs, skin deformation, captured
+  motion, and facial expression.
+summaryLocale: 关于关节体、骨架、绑定、蒙皮变形、动捕与表情的动画体系。
+contentFormat: none
+aliases: []
+tags:
+- animation
+- character
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

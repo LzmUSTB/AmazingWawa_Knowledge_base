@@ -1,0 +1,16 @@
+id: cg-shadow-mapping
+title: Shadow Mapping
+titleLocale: 阴影贴图
+domain: computer-graphics
+type: concept
+status: seed
+summary: Renders depth from the light view and compares receiver depth to determine
+  shadowing.
+summaryLocale: 从光源视角渲染深度，并用接收点深度比较判断阴影。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

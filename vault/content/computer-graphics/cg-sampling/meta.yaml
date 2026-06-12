@@ -1,0 +1,16 @@
+id: cg-sampling
+title: Sampling
+titleLocale: 采样
+domain: computer-graphics
+type: concept
+status: seed
+summary: Converts continuous signals into discrete samples; it is the basis of pixels,
+  textures, time frames, and numerical image processing.
+summaryLocale: 将连续信号转换为离散样本，是像素、纹理、时间帧与数值图像处理的基础。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

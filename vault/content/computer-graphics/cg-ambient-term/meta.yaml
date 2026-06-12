@@ -1,0 +1,16 @@
+id: cg-ambient-term
+title: Ambient Term
+titleLocale: 环境光项
+domain: computer-graphics
+type: concept
+status: seed
+summary: A simple approximation of indirect light often used in local illumination
+  models.
+summaryLocale: 局部光照模型中常用的间接光简化近似项。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

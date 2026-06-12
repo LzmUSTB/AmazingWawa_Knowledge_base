@@ -1,0 +1,9 @@
+schemaVersion: 1
+domains:
+  - id: optics
+    title: Optics
+    description: Cameras, lenses, light transport, refraction, focus, and image formation.
+    color: "#e3e656"
+    order: 10
+    titleLocale: 光学
+    descriptionLocale: ""

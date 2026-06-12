@@ -1,0 +1,16 @@
+id: cg-soft-body-dynamics
+title: Soft Body Dynamics
+titleLocale: 软体动力学
+domain: computer-graphics
+type: concept
+status: seed
+summary: Simulates deformable objects with internal elasticity, damping, and collision
+  response.
+summaryLocale: 仿真具有内部弹性、阻尼与碰撞响应的可变形物体。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

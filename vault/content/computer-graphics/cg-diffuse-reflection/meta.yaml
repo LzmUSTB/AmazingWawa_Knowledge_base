@@ -1,0 +1,16 @@
+id: cg-diffuse-reflection
+title: Diffuse Reflection
+titleLocale: 漫反射
+domain: computer-graphics
+type: concept
+status: seed
+summary: Scatters incoming light broadly, often modeled by Lambertian reflection in
+  simple shading.
+summaryLocale: 将入射光向多个方向散射，简单着色中常用 Lambert 漫反射建模。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

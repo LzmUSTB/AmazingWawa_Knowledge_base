@@ -1,0 +1,17 @@
+id: cg-l-system
+title: L-System
+titleLocale: L-system
+domain: computer-graphics
+type: concept
+status: seed
+summary: A rewriting-system approach for procedural growth and branching structures,
+  especially plants.
+summaryLocale: 一种用于程序化生长与分支结构的重写系统，尤其适合植物。
+contentFormat: none
+aliases:
+- Lindenmayer System
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

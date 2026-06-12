@@ -1,0 +1,16 @@
+id: cg-radiosity
+title: Radiosity
+titleLocale: 辐射度方法
+domain: computer-graphics
+type: concept
+status: seed
+summary: A global illumination method emphasizing diffuse energy exchange between
+  surfaces.
+summaryLocale: 强调表面之间漫反射能量交换的全局光照方法。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

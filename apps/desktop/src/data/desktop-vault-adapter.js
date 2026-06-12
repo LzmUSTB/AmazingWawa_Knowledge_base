@@ -93,7 +93,18 @@ export async function exportContext(vaultRootPath) {
       }),
     ),
   );
-  return ".kb-ai/context/";
+  return ".kb-ai/context";
+}
+
+export async function openVaultContextFolder(vaultRootPath) {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to open folders.");
+  if (!vaultRootPath) return;
+  await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/context" });
+}
+
+export async function openSnapshotFolder() {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to open the snapshot folder.");
+  return invoke("open_snapshot_output_dir");
 }
 
 export async function captureSourceSnapshot(url) {

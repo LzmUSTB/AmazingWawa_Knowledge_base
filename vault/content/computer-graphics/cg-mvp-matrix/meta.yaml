@@ -1,0 +1,17 @@
+id: cg-mvp-matrix
+title: MVP Matrix
+titleLocale: MVP 矩阵
+domain: computer-graphics
+type: concept
+status: seed
+summary: Combines model, view, and projection transforms into the standard object-to-clip-space
+  transform.
+summaryLocale: 将模型、视图与投影变换组合为从对象空间到裁剪空间的标准变换。
+contentFormat: none
+aliases:
+- Model-View-Projection Matrix
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

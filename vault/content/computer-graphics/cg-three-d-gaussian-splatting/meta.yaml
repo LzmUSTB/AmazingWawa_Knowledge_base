@@ -1,0 +1,17 @@
+id: cg-three-d-gaussian-splatting
+title: 3D Gaussian Splatting
+titleLocale: 三维高斯泼溅
+domain: computer-graphics
+type: concept
+status: seed
+summary: Represents scenes with optimized 3D Gaussians and renders them through visibility-aware
+  splatting for fast novel-view synthesis.
+summaryLocale: 用优化后的三维高斯表示场景，并通过考虑可见性的 splatting 快速合成新视图。
+contentFormat: none
+aliases:
+- 3DGS
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

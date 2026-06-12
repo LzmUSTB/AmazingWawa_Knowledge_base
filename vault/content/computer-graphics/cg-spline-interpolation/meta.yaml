@@ -1,0 +1,16 @@
+id: cg-spline-interpolation
+title: Spline Interpolation
+titleLocale: 样条插值
+domain: computer-graphics
+type: concept
+status: seed
+summary: Uses spline curves for smoother motion with controllable continuity, tangents,
+  and easing.
+summaryLocale: 用样条曲线生成更平滑的运动，可控制连续性、切线与缓动。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

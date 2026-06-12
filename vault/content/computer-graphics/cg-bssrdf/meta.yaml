@@ -1,0 +1,17 @@
+id: cg-bssrdf
+title: BSSRDF
+titleLocale: BSSRDF
+domain: computer-graphics
+type: concept
+status: seed
+summary: Extends surface reflection to account for light entering and exiting at different
+  surface points, important for subsurface scattering.
+summaryLocale: 将表面反射扩展到光从不同表面点进入和射出的情况，对次表面散射很重要。
+contentFormat: none
+aliases:
+- Bidirectional Scattering-Surface Reflectance Distribution Function
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

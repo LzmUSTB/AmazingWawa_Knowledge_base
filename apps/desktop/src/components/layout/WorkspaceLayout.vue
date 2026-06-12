@@ -190,6 +190,7 @@ const emit = defineEmits([
   "set-note-dirty",
   "set-note-mode",
   "show-graph",
+  "show-root",
   "show-view",
   "toggle-sidebar",
   "toggle-pin-node",
@@ -220,8 +221,10 @@ function fitGraphView() {
     <div class="app-body" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
       <aside class="sidebar-region">
         <FileTree v-if="!sidebarCollapsed" :active-domain="currentDomain" :active-note-id="currentNoteId"
+          :active-node-id="selectedNodeId"
           @delete-entity="$emit('delete-entity', $event)" @edit-entity="$emit('edit-entity', $event)"
           @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)"
+          @show-root="$emit('show-root')"
           @toggle-sidebar="$emit('toggle-sidebar')" />
         <button v-else class="sidebar-rail-button" @click="$emit('toggle-sidebar')">
           Vault

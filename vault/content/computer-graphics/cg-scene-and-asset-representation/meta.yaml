@@ -1,0 +1,17 @@
+id: cg-scene-and-asset-representation
+title: Scene and Asset Representation
+titleLocale: 场景与资产表示
+domain: computer-graphics
+type: topic
+status: seed
+summary: Higher-level organization of objects, transforms, asset composition, and
+  scene interchange.
+summaryLocale: 对象、变换、资产组合与场景交换的上层组织方式。
+contentFormat: none
+aliases: []
+tags:
+- modeling
+- scene
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

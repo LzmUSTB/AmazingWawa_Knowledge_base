@@ -1,0 +1,18 @@
+id: cg-volumetric-and-implicit-modeling
+title: Volumetric and Implicit Modeling
+titleLocale: 体积与隐式建模
+domain: computer-graphics
+type: topic
+status: seed
+summary: Shape representation through voxels, spatial trees, implicit fields, signed
+  distance functions, and isosurface extraction.
+summaryLocale: 通过体素、空间树、隐式场、符号距离函数与等值面提取来表示形状。
+contentFormat: none
+aliases: []
+tags:
+- modeling
+- volume
+- implicit
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

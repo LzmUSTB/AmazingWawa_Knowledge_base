@@ -1,0 +1,16 @@
+id: cg-light-field-rendering
+title: Light Field Rendering
+titleLocale: 光场渲染
+domain: computer-graphics
+type: concept
+status: seed
+summary: Represents radiance as a function over rays, enabling view synthesis from
+  densely sampled images.
+summaryLocale: 将辐射亮度表示为射线上的函数，从密集采样图像中合成新视图。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

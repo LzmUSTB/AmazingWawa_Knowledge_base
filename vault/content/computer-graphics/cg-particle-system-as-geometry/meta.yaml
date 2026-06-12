@@ -1,0 +1,16 @@
+id: cg-particle-system-as-geometry
+title: Particle System as Geometry
+titleLocale: 作为几何表示的粒子系统
+domain: computer-graphics
+type: concept
+status: seed
+summary: Uses many particles as a geometric representation for phenomena such as smoke,
+  fluids, crowds, or point-based surfaces.
+summaryLocale: 用大量粒子作为几何表示，可描述烟雾、流体、群体或点基曲面等现象。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

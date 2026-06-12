@@ -1,0 +1,17 @@
+id: cg-global-illumination
+title: Global Illumination
+titleLocale: 全局光照
+domain: computer-graphics
+type: topic
+status: seed
+summary: Models indirect light transport between surfaces and media beyond direct
+  local illumination.
+summaryLocale: 建模直接局部光照之外的表面与介质间间接光传输。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- global-illumination
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

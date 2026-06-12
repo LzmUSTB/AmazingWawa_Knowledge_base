@@ -23,7 +23,7 @@ htmlPolicy:
   allowJavaScript: true
   assetMode: source-snapshot-assets-first
   generatedImagesAllowed: false
-  sourceBlocksRequired: true
+  sourceBlocksRequired: conditional
 ```
 
 ## Generated node file requirements
@@ -192,6 +192,29 @@ If `DOMAIN_INDEX.yaml` is empty, start with `add_domain`.
 
 If no suitable existing domain fits, create a small, stable, broad domain. Do not create excessive narrow domains.
 
+## Source block attribution rule
+
+Do not force every HTML note to contain a source block.
+
+Use a source block only when the note actually references original/source/network material, including:
+
+- direct original images, videos, iframes, or source snapshot resources;
+- local copied source media under `assets/original/`, `assets/source/`, `assets/source-assets/`, or `assets/source-snapshot/`;
+- close paraphrases or claims derived from a source;
+- external documentation, paper, article, or reference links used as evidence.
+
+A CSS class definition, bibliography heading, or generic source list is not enough when source material is actually used; add a nearby literal element:
+
+```html
+<aside class="source-block">
+  <strong>Source</strong>
+  <a href="https://example.com/article" target="_blank" rel="noreferrer">Original article</a>
+  <span>Location: section title / figure number / demo name</span>
+</aside>
+```
+
+If a note is original explanation and does not cite or embed source/network material, do not add a source block just to satisfy a template.
+
 ## Relation semantics
 
 Relation types are frozen:
@@ -238,6 +261,55 @@ A and B are alternatives, contrasts, or related concepts that answer similar que
 Do not create edges just because two concepts appeared in the same article.
 
 Every non-contains relation should be explainable in one sentence.
+
+## Archive entry and asset path rules
+
+Temporary validation files must not be packaged:
+
+```text
+review/js-check/*.js
+review/js-check/*.mjs
+review/**/*.ts
+review/**/*.tsx
+```
+
+If JavaScript syntax check results need to be preserved, write a text report instead:
+
+```text
+review/js-syntax-check.md
+review/js-syntax-check.yaml
+```
+
+Runtime JavaScript belongs either inline in `note.html` or under node-local assets:
+
+```text
+generated/content/<domain>/<node-id>/assets/js/<file>.js
+```
+
+For HTML rich notes, local media files must use one of the source-marked roots:
+
+```text
+assets/original/<file>
+assets/source/<file>
+assets/source-assets/<file>
+assets/source-snapshot/<source-id>/<file-or-_resources-path>
+```
+
+Forbidden in HTML rich notes:
+
+```text
+assets/foo.png
+assets/foo.jpg
+assets/foo.mp4
+```
+
+Package the corresponding files under:
+
+```text
+generated/content/<domain>/<node-id>/assets/source-assets/<file>
+```
+
+Every packaged asset under `generated/content/<domain>/<node-id>/assets/**` must be referenced by that node's `note.html` or `note.md`, unless it is source-snapshot infrastructure. Do not include unused copied images. If a source asset is inventoried but not used, set `required: false` or provide `omitted_reason`.
 
 ## Source asset review files
 

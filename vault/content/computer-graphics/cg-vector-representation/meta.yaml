@@ -1,0 +1,16 @@
+id: cg-vector-representation
+title: Vector Representation
+titleLocale: 矢量表示
+domain: computer-graphics
+type: concept
+status: seed
+summary: Stores images as geometric primitives and attributes, allowing resolution-independent
+  editing and rendering.
+summaryLocale: 将图像存储为几何图元及其属性，支持分辨率无关的编辑与渲染。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

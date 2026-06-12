@@ -1,0 +1,16 @@
+id: cg-smooth-shading
+title: Smooth Shading
+titleLocale: 平滑着色
+domain: computer-graphics
+type: concept
+status: seed
+summary: Interpolates vertex normals or shading quantities to reduce faceting; deeper
+  topics include Gouraud and Phong shading.
+summaryLocale: 通过插值顶点法线或着色量减少棱面感；更细主题包括 Gouraud 着色与 Phong 着色。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

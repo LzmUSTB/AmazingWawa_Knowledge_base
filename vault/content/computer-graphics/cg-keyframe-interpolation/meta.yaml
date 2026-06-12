@@ -1,0 +1,16 @@
+id: cg-keyframe-interpolation
+title: Keyframe Interpolation
+titleLocale: 关键帧插值
+domain: computer-graphics
+type: concept
+status: seed
+summary: Computes in-between values from authored keyframes, forming continuous motion
+  from sparse controls.
+summaryLocale: 根据创作者指定的关键帧计算中间值，从稀疏控制生成连续运动。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,16 @@
+id: cg-multiple-importance-sampling
+title: Multiple Importance Sampling
+titleLocale: 多重重要性采样
+domain: computer-graphics
+type: concept
+status: seed
+summary: Combines samples from multiple strategies to reduce variance in light transport
+  estimation.
+summaryLocale: 组合多种采样策略，以降低光传输估计中的方差。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

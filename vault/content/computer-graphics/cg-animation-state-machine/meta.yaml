@@ -1,0 +1,16 @@
+id: cg-animation-state-machine
+title: Animation State Machine
+titleLocale: 动画状态机
+domain: computer-graphics
+type: concept
+status: seed
+summary: Organizes character animation into states and transitions driven by game
+  or interaction logic.
+summaryLocale: 将角色动画组织为状态与转移，并由游戏或交互逻辑驱动。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

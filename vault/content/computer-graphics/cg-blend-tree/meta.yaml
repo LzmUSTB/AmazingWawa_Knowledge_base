@@ -1,0 +1,16 @@
+id: cg-blend-tree
+title: Blend Tree
+titleLocale: 混合树
+domain: computer-graphics
+type: concept
+status: seed
+summary: Blends multiple animations according to parameters such as speed, direction,
+  or stance.
+summaryLocale: 根据速度、方向、姿态等参数混合多个动画。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

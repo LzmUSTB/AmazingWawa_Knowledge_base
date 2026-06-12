@@ -1,0 +1,16 @@
+id: cg-interpolation-curve
+title: Interpolation Curve
+titleLocale: 插值曲线
+domain: computer-graphics
+type: concept
+status: seed
+summary: Controls how values change between frames or keys, determining speed, easing,
+  and continuity.
+summaryLocale: 控制帧或关键状态之间数值如何变化，决定速度、缓入缓出与连续性。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,16 @@
+id: cg-camera-animation
+title: Camera Animation
+titleLocale: 摄像机动画
+domain: computer-graphics
+type: concept
+status: seed
+summary: Animates camera position, orientation, focal length, or path to control viewpoint
+  and cinematic motion.
+summaryLocale: 驱动相机位置、朝向、焦距或路径，以控制视角与镜头运动。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

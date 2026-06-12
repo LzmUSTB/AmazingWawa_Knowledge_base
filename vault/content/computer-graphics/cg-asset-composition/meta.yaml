@@ -1,0 +1,16 @@
+id: cg-asset-composition
+title: Asset Composition
+titleLocale: 资产组合
+domain: computer-graphics
+type: concept
+status: seed
+summary: Combines models, materials, animation, variants, and overrides into reusable
+  scene assets.
+summaryLocale: 将模型、材质、动画、变体与覆盖信息组合成可复用场景资产。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,16 @@
+id: cg-rule-based-motion
+title: Rule-Based Motion
+titleLocale: 规则驱动运动
+domain: computer-graphics
+type: concept
+status: seed
+summary: Generates motion from explicit behavioral or procedural rules rather than
+  stored keyframes.
+summaryLocale: 由显式行为规则或程序规则生成运动，而非依赖存储的关键帧。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

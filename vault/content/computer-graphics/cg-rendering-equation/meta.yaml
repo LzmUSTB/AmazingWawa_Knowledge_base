@@ -1,0 +1,16 @@
+id: cg-rendering-equation
+title: Rendering Equation
+titleLocale: 渲染方程
+domain: computer-graphics
+type: concept
+status: seed
+summary: Formalizes emitted and reflected radiance as an integral over incoming light
+  directions and surface scattering.
+summaryLocale: 将自发光与反射辐射亮度形式化为对入射方向与表面散射的积分。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

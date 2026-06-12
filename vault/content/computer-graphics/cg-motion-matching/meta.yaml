@@ -1,0 +1,16 @@
+id: cg-motion-matching
+title: Motion Matching
+titleLocale: 动作匹配
+domain: computer-graphics
+type: concept
+status: seed
+summary: Selects and stitches poses from a motion database based on current character
+  state and desired future trajectory.
+summaryLocale: 根据当前角色状态与期望未来轨迹，从动作数据库中选择并拼接姿态。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

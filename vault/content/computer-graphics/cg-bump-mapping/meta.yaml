@@ -1,0 +1,16 @@
+id: cg-bump-mapping
+title: Bump Mapping
+titleLocale: 凹凸映射
+domain: computer-graphics
+type: concept
+status: seed
+summary: Perturbs shading normals to simulate small surface detail without changing
+  actual geometry.
+summaryLocale: 扰动着色法线来模拟小尺度表面细节，但不改变真实几何。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

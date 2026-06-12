@@ -1,0 +1,16 @@
+id: cg-scanline
+title: Scanline
+titleLocale: 扫描线
+domain: computer-graphics
+type: concept
+status: seed
+summary: A row-wise image or polygon processing strategy historically used in rasterization
+  and hidden-surface algorithms.
+summaryLocale: 按图像行处理图像或多边形的策略，历史上常用于光栅化与隐藏面算法。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

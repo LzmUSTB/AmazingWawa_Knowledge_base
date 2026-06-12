@@ -1,0 +1,16 @@
+id: cg-modeling
+title: Modeling
+titleLocale: 建模
+domain: computer-graphics
+type: topic
+status: seed
+summary: The representation and construction of geometry, shapes, curves, surfaces,
+  volumes, and scene assets.
+summaryLocale: 用于表示和构造几何、形状、曲线、曲面、体积与场景资产的知识分支。
+contentFormat: none
+aliases: []
+tags:
+- modeling
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

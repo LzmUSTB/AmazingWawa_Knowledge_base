@@ -70,6 +70,18 @@ A high-quality note should include most of:
 11. source blocks near source-grounded explanations,
 12. review questions with answers.
 
+## HTML rich note selection rule
+
+Do not use `contentFormat: html` for a plain static concept note unless HTML materially improves the explanation.
+
+Prefer:
+
+- `markdown` for compact static concept notes;
+- `none` for placeholder graph nodes;
+- `html` for source-rich tutorials, interactive demonstrations, source media, substantial SVG/canvas diagrams, or complex tutorial layouts.
+
+The validator keeps a warning for HTML notes with no visible interactive element. This warning is intentional. Do not remove it by adding meaningless decorative scripts or canvases; either make the interaction educational or use Markdown instead.
+
 ## HTML rich notes
 
 Use HTML rich notes when the source material is visual, interactive, tutorial-like, or when Markdown/content blocks would reduce clarity.
@@ -129,7 +141,7 @@ Prefer hard-edged, high-contrast technical layouts, square corners, clear lines,
 
 ## Source block structure
 
-When the note explains a claim, figure, demo, formula, interaction, or implementation detail that comes from the source, add a nearby source block:
+When the note explains a claim, figure, demo, formula, interaction, or implementation detail that actually comes from a source or another network resource, add a nearby source block:
 
 ```html
 <aside class="source-block">
@@ -139,7 +151,7 @@ When the note explains a claim, figure, demo, formula, interaction, or implement
 </aside>
 ```
 
-Do not put all sources only at the end.
+Do not put all source attributions only at the end when source material is actually used. Do not add source blocks for purely original explanation.
 
 ## Review questions with answers
 

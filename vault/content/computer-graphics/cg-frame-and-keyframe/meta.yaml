@@ -1,0 +1,16 @@
+id: cg-frame-and-keyframe
+title: Frame and Keyframe
+titleLocale: 帧与关键帧
+domain: computer-graphics
+type: concept
+status: seed
+summary: A frame is a sampled time state; a keyframe is an authored important state
+  used to define motion.
+summaryLocale: 帧是某一时间的采样状态；关键帧是创作者指定的重要状态，用于定义运动。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

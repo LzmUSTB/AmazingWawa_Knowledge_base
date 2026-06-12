@@ -1,0 +1,17 @@
+id: cg-image-based-rendering
+title: Image-Based Rendering
+titleLocale: 基于图像的渲染
+domain: computer-graphics
+type: topic
+status: seed
+summary: Uses captured or precomputed images, views, or light fields as primary rendering
+  data.
+summaryLocale: 使用采集或预计算的图像、视图或光场作为主要渲染数据。
+contentFormat: none
+aliases: []
+tags:
+- rendering
+- ibr
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

@@ -1,0 +1,16 @@
+id: cg-z-buffer
+title: Z-Buffer
+titleLocale: Z 缓冲
+domain: computer-graphics
+type: concept
+status: seed
+summary: Stores nearest depth per pixel to resolve visibility efficiently during rasterization.
+summaryLocale: 为每个像素存储最近深度，在光栅化中高效解决可见性。
+contentFormat: none
+aliases:
+- Depth Buffer
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

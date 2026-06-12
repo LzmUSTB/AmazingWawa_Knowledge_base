@@ -1,0 +1,16 @@
+id: cg-explicit-representation
+title: Explicit Representation
+titleLocale: 显式表示
+domain: computer-graphics
+type: concept
+status: seed
+summary: Stores geometry directly, such as vertices, edges, faces, or sampled coordinates.
+summaryLocale: 直接存储几何元素，如顶点、边、面或采样坐标。
+contentFormat: none
+aliases:
+- geometry representation
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

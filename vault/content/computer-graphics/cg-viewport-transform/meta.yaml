@@ -1,0 +1,15 @@
+id: cg-viewport-transform
+title: Viewport Transform
+titleLocale: 视口变换
+domain: computer-graphics
+type: concept
+status: seed
+summary: Maps normalized device coordinates to pixel coordinates in a viewport.
+summaryLocale: 将标准化设备坐标映射到视口中的像素坐标。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

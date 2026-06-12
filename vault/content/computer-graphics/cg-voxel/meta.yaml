@@ -1,0 +1,16 @@
+id: cg-voxel
+title: Voxel
+titleLocale: 体素
+domain: computer-graphics
+type: concept
+status: seed
+summary: Represents space as a regular 3D grid of volume samples, useful for volumes,
+  occupancy, medical data, and discrete simulation.
+summaryLocale: 用规则三维网格中的体积样本表示空间，适合体数据、占据关系、医学数据与离散仿真。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

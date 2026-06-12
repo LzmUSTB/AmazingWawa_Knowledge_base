@@ -1,0 +1,16 @@
+id: cg-path-tracing
+title: Path Tracing
+titleLocale: 路径追踪
+domain: computer-graphics
+type: concept
+status: seed
+summary: A Monte Carlo rendering method that samples light transport paths to approximate
+  global illumination.
+summaryLocale: 通过蒙特卡洛采样光传输路径来近似全局光照的渲染方法。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

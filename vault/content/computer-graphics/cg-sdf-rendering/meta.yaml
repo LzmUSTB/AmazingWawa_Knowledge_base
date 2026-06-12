@@ -1,0 +1,17 @@
+id: cg-sdf-rendering
+title: SDF Rendering
+titleLocale: SDF 渲染
+domain: computer-graphics
+type: concept
+status: seed
+summary: Renders signed distance fields, often using sphere tracing or related ray
+  marching methods.
+summaryLocale: 渲染符号距离场，常使用 sphere tracing 或相关光线步进方法。
+contentFormat: none
+aliases:
+- Signed Distance Field Rendering
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'

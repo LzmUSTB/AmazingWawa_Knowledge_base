@@ -1,0 +1,16 @@
+id: cg-inverse-rendering
+title: Inverse Rendering
+titleLocale: 逆渲染
+domain: computer-graphics
+type: concept
+status: seed
+summary: Estimates scene properties such as geometry, material, lighting, or camera
+  from observed images.
+summaryLocale: 从观测图像估计几何、材质、光照或相机等场景属性。
+contentFormat: none
+aliases: []
+tags:
+- computer-graphics
+sourceIds: []
+createdAt: '2026-06-12T00:00:00+09:00'
+updatedAt: '2026-06-12T00:00:00+09:00'
