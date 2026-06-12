@@ -111,33 +111,40 @@ Priority order:
 
 Do not silently omit important original visuals.
 
-## Full-fidelity source snapshot mode
+## Source snapshot asset usage mode
 
-For sources with many tightly integrated interactive demos, repeated iframes to the same original page are usually a poor reading experience. Prefer a source snapshot or a source demo hub.
+For sources with many tightly integrated interactive demos, a captured source snapshot is an asset library, not the final note UI.
+
+Do not embed the whole snapshot page as the primary explanation with an iframe. The generated note should directly use the snapshot's local assets and, when feasible, reimplement the relevant interaction inside the note with knowledge-base-styled HTML/CSS/JS.
 
 Use source snapshot mode when the original article depends on custom JavaScript/canvas/WebGL demonstrations and the source assets can be downloaded or mirrored for private local use.
 
-Package original source assets under one of these folders:
+Snapshot assets may be provided under one of these folders:
 
 ```text
 generated/content/<domain>/<node-id>/assets/source-snapshot/<source-id>/index.html
-generated/content/<domain>/<node-id>/assets/source-snapshot/<source-id>/**
+generated/content/<domain>/<node-id>/assets/source-snapshot/<source-id>/_resources/**
 generated/content/<domain>/<node-id>/assets/original/**
 generated/content/<domain>/<node-id>/assets/source-assets/**
 ```
 
-Then embed a single local snapshot iframe in the note:
+Required workflow for using a snapshot:
+
+1. Inspect `assets/source-snapshot/<source-id>/snapshot-manifest.json` when present.
+2. Inspect `assets/source-snapshot/<source-id>/index.html` to understand which original controls, canvases, figures, and scripts exist.
+3. Use local copied source assets directly in the note, for example `<img src="assets/source-snapshot/<source-id>/_resources/...png">`, `<video src="assets/source-snapshot/<source-id>/_resources/...mp4">`, or JS-loaded local resources.
+4. Recreate the important interaction directly in the note's HTML/JS using the snapshot's assets and behavior as reference.
+5. Keep the note UI consistent with the knowledge base style, but keep the interaction's meaning, parameter names, and cause-effect behavior clear.
+
+Do not use this as the default final representation:
 
 ```html
-<section class="rich-source-demo-hub" data-source-asset="cameras-and-lenses-original-page">
-  <h2>Original interactive article snapshot</h2>
-  <iframe class="rich-source-frame" src="assets/source-snapshot/cameras-and-lenses/index.html"></iframe>
-</section>
+<iframe class="rich-source-frame" src="assets/source-snapshot/cameras-and-lenses/index.html"></iframe>
 ```
 
-If a full source snapshot is not available, use at most one original-page iframe per note and group multiple demo links around it. Do not repeat the same full-page iframe for every small demo.
+A whole-snapshot iframe is allowed only as a fallback/debug reference when the original interaction cannot reasonably be isolated or reimplemented. If used, it must be clearly marked as fallback and must not replace the explanatory note.
 
-AI-authored JS/canvas demos are allowed, but they must be marked as supplementary and should not be described as a complete restoration of the original demo unless the original interaction is actually mirrored or faithfully rebuilt.
+AI-authored JS/canvas demos are allowed, but for snapshot-backed sources they should be based on the snapshot's observed assets/behavior and marked as reconstructed from the source snapshot. They must not be described as a complete restoration unless the note actually reproduces the relevant controls and output behavior.
 
 ## Interactive demo preservation
 
@@ -276,17 +283,32 @@ The review must explicitly list:
 
 These rules override weaker or older guidance in this context export.
 
+## Snapshot-backed source preservation
+
+If a package includes `assets/source-snapshot/`, that snapshot must be treated as the highest-priority source asset library.
+
+Do not use a whole snapshot iframe as the primary note representation. The AI should use the snapshot's local assets and behavior to implement the important demos directly inside `note.html` with knowledge-base-styled HTML/CSS/JS.
+
+Allowed fallback: a whole-snapshot iframe may be included only as a secondary reference/debug view when the interaction cannot be isolated or faithfully reimplemented. It must be clearly labeled as fallback and must not replace the teaching explanation.
+
 ## Original media and interactive demos
 
-For asset-rich or interactive sources, source-root links are not enough. A note must try to show original source material directly inside the note.
+For asset-rich or interactive sources, source-root links are not enough. A note must try to show or reconstruct original source material directly inside the note.
 
-Priority order:
+Priority order when no source snapshot exists:
 
 1. Direct original media URL: `<img src="https://...">`, `<video src="https://...">`, `<source src="https://...">`.
-2. Original interactive source embed: `<iframe src="https://...">` with `data-source-asset="..."`.
-3. If per-demo URLs are unavailable, embed the source page or closest section URL and identify the exact source location in a nearby source block.
-4. AI-authored JS/Canvas/SVG demos may be added only as supplementary explanation. They do not replace original demos.
-5. If embedding is impossible because the source blocks framing, uses inaccessible generated resources, or exposes no stable asset URL, document this in `review/source-asset-manifest.md` using `unavailable_reason:` and provide a precise source link.
+2. Local copied original media: `<img src="assets/original/...">` or `<img src="assets/source-assets/...">`.
+3. Original interactive source embed only if no snapshot is available and direct reconstruction is not feasible.
+4. Direct source demo link with exact location label.
+5. AI-authored JS/Canvas/SVG demos only as supplementary explanation.
+
+Priority order when a source snapshot exists:
+
+1. Use local original assets from `assets/source-snapshot/<source-id>/_resources/`.
+2. Reimplement source interactions directly in the note using knowledge-base-styled controls and snapshot-observed behavior.
+3. Use source URL/source blocks for attribution and source location.
+4. Use iframe only as fallback/reference, not as the primary final note.
 
 Forbidden as a complete preservation strategy:
 
@@ -294,24 +316,23 @@ Forbidden as a complete preservation strategy:
 preservation_strategy: source-link + js-reproduction
 ```
 
-This is allowed only as a fallback when paired with `unavailable_reason:` and explicit source blocks.
+Also forbidden when a snapshot exists:
+
+```yaml
+preservation_strategy: snapshot-iframe-only
+```
 
 ## Required source asset markers
 
 Every required source asset or demo must have a stable id and must be marked in the HTML with `data-source-asset`:
 
 ```html
-<section class="rich-source-demo" data-source-asset="pinhole-diameter-distance-demo">
-  <iframe class="rich-source-frame" src="https://ciechanow.ski/cameras-and-lenses/#pinhole-camera"></iframe>
-  <aside class="source-block">
-    <strong>Source</strong>
-    <a href="https://ciechanow.ski/cameras-and-lenses/" target="_blank" rel="noreferrer">Cameras and Lenses</a>
-    <span>Location: Pinhole camera / hole diameter and sensor distance sliders</span>
-  </aside>
+<section class="rich-js-demo" data-source-asset="pinhole-diameter-distance-demo">
+  <!-- Directly implemented controls/canvas/SVG using snapshot assets and observed behavior. -->
 </section>
 ```
 
-In `review/source-asset-manifest.md`, use machine-readable note ids separately from human section labels:
+For snapshot-backed demos, prefer this manifest shape:
 
 ```yaml
 source_assets:
@@ -322,10 +343,32 @@ source_assets:
     required: true
     represented_in_node: pinhole-camera-geometry
     note_location: section 01
-    preservation_strategy: iframe + supplementary-js
+    snapshot_path: assets/source-snapshot/cameras-and-lenses/index.html
+    snapshot_assets_used:
+      - assets/source-snapshot/cameras-and-lenses/_resources/example.png
+    preservation_strategy: snapshot-assets + direct-js-reimplementation
 ```
 
 Do not put `node-id / section xx` into `note_location` as the only machine-readable location. Use `represented_in_node` for the node id.
+
+## UI adaptation rule
+
+The note's explanatory UI may be redesigned to match the knowledge base style: hard-edged panels, dark theme, restrained accent color, clear control labels, and app font-size variables.
+
+The source interaction's meaning must remain faithful: preserve variables, cause-effect behavior, and observed outcomes. Do not hide important original controls or simplify the interaction so much that the concept becomes weaker than the source.
+
+## Locale rule
+
+Use the target locale for explanations, section titles, captions, review questions, and answers.
+
+Locale priority:
+
+1. `manifest.yaml.language`,
+2. `AI_CONTEXT.yaml.vault.language`,
+3. source language,
+4. `zh-CN` fallback.
+
+Keep standard technical terms in English when they are more precise, but explain them in the target locale.
 
 ## Review questions with answers
 
@@ -352,4 +395,4 @@ Bare `<ol><li>question</li></ol>` review sections are not acceptable for final-q
 
 ## Quality bar for Ciechanowski-style sources
 
-For sources whose clarity comes from interactive demos, the package must not pretend that a local AI-authored canvas is equivalent to the original. The note should either embed the original source/demo, use original media URLs, or clearly state why a direct embed is impossible while still linking the exact source location.
+For sources whose clarity comes from interactive demos, the package must not pretend that a local AI-authored canvas is equivalent to the original. If a source snapshot exists, the correct high-fidelity approach is direct note implementation using snapshot assets and behavior, not repeated iframes or external links.

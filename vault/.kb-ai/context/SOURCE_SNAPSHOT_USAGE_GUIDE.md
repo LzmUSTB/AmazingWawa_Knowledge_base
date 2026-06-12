@@ -1,136 +1,111 @@
-# Wawa Package Schema Guide
+# Source Snapshot Usage Guide
 
-## manifest.yaml
+## Purpose
+
+A source snapshot is a local, private mirror of an original web page and its runtime assets. Use it to preserve the source's original assets and interaction behavior without repeatedly embedding external URLs.
+
+The snapshot is not automatically the final note. Treat it as a local source asset repository and behavioral reference.
+
+## Expected snapshot structure
+
+A snapshot usually contains:
+
+```text
+assets/source-snapshot/<source-id>/index.html
+assets/source-snapshot/<source-id>/snapshot-manifest.json
+assets/source-snapshot/<source-id>/README.md
+assets/source-snapshot/<source-id>/_resources/**
+```
+
+The `_resources/` folder may contain copied original images, CSS, JavaScript, videos, fonts, wasm, JSON, and other runtime assets.
+
+## Priority order
+
+When a snapshot is available, use this priority order:
+
+1. Directly use copied original media from `assets/source-snapshot/<source-id>/_resources/`.
+2. Recreate source interactions directly inside `note.html` using HTML/CSS/JS and snapshot assets as reference.
+3. Use the original source URL only for attribution and exact-location source blocks.
+4. Use a whole-snapshot iframe only as fallback/debug reference, not as the main note experience.
+5. Use AI-authored supplementary demos only when the snapshot cannot provide enough isolated behavior.
+
+## Do not use snapshot as default iframe
+
+Do not make the final note a thin wrapper around:
+
+```html
+<iframe src="assets/source-snapshot/<source-id>/index.html"></iframe>
+```
+
+This is discouraged because it preserves the original page but does not produce a knowledge-base-native teaching note.
+
+Instead, write a clear teaching note that:
+
+- uses source snapshot assets directly,
+- implements the important controls directly in the note when feasible,
+- explains each control and observation in the target locale,
+- uses source blocks near claims and demos,
+- keeps the layout consistent with the knowledge base style.
+
+## Reimplementing source interactions
+
+When the original source has sliders, play/pause controls, draggable handles, canvas demos, or synchronized figures, reproduce the educational behavior directly in the note.
+
+A good reconstruction keeps:
+
+- the same conceptual variables,
+- the same cause-effect relationship,
+- the same observed outcome,
+- the same source asset or visual reference when available.
+
+The UI may be redesigned to fit the knowledge base style. It may use different visual framing, panels, labels, control layout, and explanatory callouts, as long as the interaction remains clear and faithful.
+
+## Required markup
+
+Mark every source-backed visual or reconstructed interaction with `data-source-asset`:
+
+```html
+<section class="rich-js-demo" data-source-asset="pinhole-diameter-distance-demo">
+  <!-- knowledge-base styled controls and canvas/svg based on snapshot behavior -->
+</section>
+```
+
+Use source blocks near the demo:
+
+```html
+<aside class="source-block">
+  <strong>Source</strong>
+  <a href="https://ciechanow.ski/cameras-and-lenses/" target="_blank" rel="noreferrer">Cameras and Lenses</a>
+  <span>Location: Pinhole camera / hole diameter and sensor distance controls; reconstructed using local source snapshot assets.</span>
+</aside>
+```
+
+## Review files
+
+For snapshot-backed packages, `review/source-asset-manifest.md` must state:
 
 ```yaml
-packageFormat: wawapkg
-packageKind: import
-schemaVersion: "1.1"
-packageId: wawa-import-YYYYMMDD-topic-name
-title: Human readable title
-description: Short description
-status: seed
-language: zh-CN
-preview:
-  mode: in-app
-  generatedHtmlPreview: false
+source_assets:
+  - id: pinhole-diameter-distance-demo
+    type: interactive-demo
+    source_url: https://example.com/original
+    source_location: section / demo label
+    required: true
+    represented_in_node: node-id
+    note_location: section 02
+    snapshot_path: assets/source-snapshot/source-id/index.html
+    snapshot_assets_used:
+      - assets/source-snapshot/source-id/_resources/example.png
+      - assets/source-snapshot/source-id/_resources/example.js
+    preservation_strategy: snapshot-assets + direct-js-reimplementation
+    fallback_if_any: none
 ```
 
-For packages with JavaScript-rich HTML notes, include:
+If an interaction cannot be directly reimplemented, state the limitation clearly and use `unavailable_reason:`.
 
-```yaml
-htmlPolicy:
-  allowJavaScript: true
-  assetMode: snapshot-assets-first
-  generatedImagesAllowed: false
-  sourceBlocksRequired: true
-```
+## Language and style
 
-## patch.yaml
-
-```yaml
-operations:
-  - type: add_domain
-    domain:
-      id: optics
-      title: Optics
-      description: Cameras, lenses, light transport, and image formation.
-      color: "#00B7FF"
-      order: 10
-
-  - type: add_node
-    node:
-      id: cameras-and-lenses-rich-tutorial
-      title: Cameras and Lenses
-      domain: optics
-      type: topic
-      status: growing
-      summary: Interactive optics tutorial preserving original source visuals and demos.
-      contentFormat: html
-      aliases: []
-      tags: [camera, lens, optics]
-    parentId: optics
-```
-
-## Generated node file requirements
-
-For every `add_node`, include:
-
-```text
-generated/content/<domain>/<node-id>/meta.yaml
-```
-
-For `contentFormat: markdown`, include:
-
-```text
-generated/content/<domain>/<node-id>/note.md
-```
-
-For `contentFormat: html`, include:
-
-```text
-generated/content/<domain>/<node-id>/note.html
-```
-
-For `contentFormat: none`, omit both note files.
-
-`meta.yaml` must include:
-
-```yaml
-id:
-title:
-domain:
-type:
-status:
-summary:
-contentFormat: markdown | html | none
-aliases: []
-tags: []
-sourceIds: []
-createdAt:
-updatedAt:
-```
-
-Strict match required:
-
-- `meta.id` must equal `node.id`
-- `meta.title` must equal `node.title`
-- `meta.domain` must equal `node.domain`
-- `meta.type` must equal `node.type`
-- `meta.status` must equal `node.status`
-- `meta.contentFormat` must equal `node.contentFormat` when provided
-
-## Source asset review files
-
-Packages based on visual or interactive sources must include:
-
-```text
-review/source-coverage-plan.md
-review/source-asset-manifest.md
-review/interactive-demo-coverage.md
-```
-
-These files must list original assets, important demos, source URLs, and how each is represented.
-
-## Asset placement
-
-For local original assets:
-
-```text
-generated/content/<domain>/<node-id>/assets/<file>
-```
-
-For HTML notes, stable original `https://` URLs are allowed and preferred when the source asset should remain connected to the original page.
-
-## Edge constraints
-
-Allowed `add_edge` relations:
-
-- depends-on
-- used-in
-- compares-with
-
-Do not use `contains` in `add_edge`. `contains` is generated by `parentId`.
+Use the target locale for explanatory text. The note UI may be adapted to the knowledge base visual style, but the explanation must remain clear, direct, and teachable.
 
 
 # Source-first strict revisions

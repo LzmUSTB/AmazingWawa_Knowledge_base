@@ -47,7 +47,7 @@ defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
         <span class="button-icon-label">Import</span>
       </button>
       <button class="hud-button button-with-icon" style="--button-color: var(--shader)" @click="$emit('show-view', 'source-snapshot')">
-        <AppIcon name="export" />
+        <AppIcon name="capture" />
         <span class="button-icon-label">Capture</span>
       </button>
       <button

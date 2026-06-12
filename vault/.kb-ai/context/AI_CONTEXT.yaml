@@ -5,7 +5,7 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: ""
-generatedAt: 2026-06-11T23:55:36.863Z
+generatedAt: 2026-06-12T00:08:12.173Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
   allowedDomains: []
@@ -45,10 +45,27 @@ constraints:
   assetPolicy:
     generatedImagesAllowed: false
     mustUseOriginalSourceAssets: true
-    html: source-url-first; original images/videos/demos required when central to
-      source clarity
+    html: snapshot-assets-first when assets/source-snapshot exists; otherwise
+      source-url-first
     markdown: local packaged original/source assets only; no AI-generated images
     sourceBlocksRequired: true
+    sourceSnapshotFirst: true
+    preferSnapshotAssetsOverExternalUrls: true
+    doNotUseSnapshotIframeAsPrimaryRepresentation: true
+    snapshotAssetRoots:
+      - assets/source-snapshot/<source-id>/
+      - assets/source-snapshot/<source-id>/_resources/
+      - assets/original/
+      - assets/source-assets/
+  sourceSnapshot:
+    useAsAssetLibrary: true
+    inspectManifest: assets/source-snapshot/<source-id>/snapshot-manifest.json
+    inspectOriginalHtml: assets/source-snapshot/<source-id>/index.html
+    directNoteImplementationRequiredWhenFeasible: true
+    iframeOnlyStrategyAllowed: false
+    iframeFallbackAllowedWithReason: true
+    requireSnapshotAssetsUsedList: true
+    preferredStrategy: snapshot-assets + direct-js-reimplementation
   htmlRichNote:
     recommendedForTutorialSources: true
     fragmentOrFullDocument: html note may contain rich HTML; renderer should isolate
@@ -56,6 +73,7 @@ constraints:
     allowJavaScript: true
     allowInteractiveDemos: true
     allowIframeSourceEmbeds: true
+    preferDirectSnapshotBackedInteractionsOverIframe: true
     requireAppStyleCompatibility: true
     respondsToFontScale: true
     useAppCssVariables: true
@@ -65,6 +83,15 @@ constraints:
       - review/source-coverage-plan.md
       - review/source-asset-manifest.md
       - review/interactive-demo-coverage.md
+  localePolicy:
+    priority:
+      - manifest.language
+      - vault.language
+      - source.language
+      - zh-CN
+    explanatoryContentMustUseTargetLocale: true
+    keepPreciseEnglishTechnicalTerms: true
+    directTeachingVoice: true
   emptyNode:
     contentFormat: none
     omitNoteFiles: true
