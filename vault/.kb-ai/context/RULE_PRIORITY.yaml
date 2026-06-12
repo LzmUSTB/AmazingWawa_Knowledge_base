@@ -13,3 +13,8 @@ conflictResolution:
   learnerFacingVoiceOverridesImplementationDescription: true
   noGeneratedImagesOverridesAllFallbacks: true
   flatEdgeShapeIsMandatory: true
+  addNodeNestedNodeObjectOverridesFlatAmbiguousExamples: true
+  topLevelTypeIsOperationOnly: true
+  nodeKnowledgeTypeGoesInNodeDotTypeOrFlatNodeType: true
+  contentFormatNoneMeansNoNoteFile: true
+  localeTitleRecommendedButOptional: true

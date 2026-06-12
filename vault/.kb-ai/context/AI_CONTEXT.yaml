@@ -5,7 +5,7 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: optics
-generatedAt: 2026-06-12T08:35:52.502Z
+generatedAt: 2026-06-12T08:48:43.015Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
   allowedDomains:
@@ -39,6 +39,25 @@ constraints:
     - markdown
     - html
     - none
+  patchShape:
+    addNodePreferred: nested-node-object
+    addNode:
+      operationTypeField: type
+      operationTypeValue: add_node
+      nodeObjectField: node
+      nodeKnowledgeTypeField: node.type
+      flatCompatibilityKnowledgeTypeField: nodeType
+      forbidDuplicateTypeKeys: true
+      forbidTopLevelTypeAsKnowledgeType: true
+    addDomainPreferred: nested-domain-object
+    addEdge: flat-top-level-from-to-relation
+  localeTitle:
+    titleRequired: true
+    titleLanguage: English or canonical technical English
+    titleLocaleRecommended: true
+    titleLocaleRequired: false
+    summaryLocaleRecommended: true
+    fallbackDisplay: titleLocale || title || id
   packageFormat: wawapkg
   packageKind: import
   mimetype: application/x-wawa-kb-ai-import-package

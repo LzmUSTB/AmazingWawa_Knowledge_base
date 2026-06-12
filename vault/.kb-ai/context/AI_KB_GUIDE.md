@@ -67,6 +67,44 @@ Use `contentFormat: html` and `note.html` for tutorial/article pages, figure-hea
 
 Use `contentFormat: none` for empty placeholder nodes that should appear in the graph but intentionally have no note yet.
 
+For `contentFormat: none`, create `meta.yaml` only. Do not generate `note.md`, `note.html`, or a blank note file.
+
+
+## Empty node policy
+
+Empty nodes are allowed. Use them for graph structure, future notes, prerequisites, or concepts that should appear as relations but do not need a note yet.
+
+Rules:
+
+```yaml
+contentFormat: none
+```
+
+- Do not create a blank `note.md`.
+- Do not create a blank `note.html`.
+- Still create `generated/content/<domain>/<node-id>/meta.yaml`.
+- Still create relations with `parentId` and normal relation operations where useful.
+
+## Locale title policy
+
+Always include an English/canonical `title`.
+
+Also include `titleLocale` when a natural target-locale title is available. It is recommended but not mandatory.
+
+Likewise:
+
+- `summary` is English/canonical when possible.
+- `summaryLocale` is recommended when a target-locale explanation is available.
+
+Do not romanize Chinese as `Xiao Kong Xiang Ji`. Use real locale text:
+
+```yaml
+title: Pinhole Camera
+titleLocale: 小孔相机
+summary: Image formation through a small aperture.
+summaryLocale: 通过极小开口限制入射方向形成图像。
+```
+
 ## Learner-facing voice
 
 The final note must teach directly. It must not read like a report about implementation, source snapshots, locale compliance, or AI behavior.
@@ -117,6 +155,7 @@ Keep precise English technical terms when they are more accurate, but explain th
 
 A package is unacceptable if any of the following is true:
 
+- `patch.yaml` uses `type: add_node` as the node's knowledge type;
 - learner-facing title or prose contains implementation/meta language listed above;
 - an important original demo is replaced by a conceptually similar AI-authored demo when direct source-porting is feasible;
 - original demo DOM ids are present but original runtime context is missing, causing incorrect canvas background, blend mode, dark/light section behavior, or slider overlap;

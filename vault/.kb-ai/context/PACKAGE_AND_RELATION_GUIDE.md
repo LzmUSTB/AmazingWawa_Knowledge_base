@@ -48,15 +48,17 @@ generated/content/<domain>/<node-id>/note.html
 
 For `contentFormat: none`, omit both note files.
 
-`meta.yaml` must include:
+`meta.yaml` must include an English/canonical title and may include locale fields:
 
 ```yaml
 id:
-title:
+title: English or canonical technical title
+titleLocale: Locale title when available; recommended but not required
 domain:
 type:
 status:
-summary:
+summary: English or canonical one-sentence summary
+summaryLocale: Locale summary when available; recommended but not required
 contentFormat: markdown | html | none
 aliases: []
 tags: []
@@ -65,16 +67,112 @@ createdAt:
 updatedAt:
 ```
 
+For `contentFormat: none`, omit both `note.md` and `note.html`. Do not create blank note files.
+
 Strict match required:
 
 - `meta.id` must equal `node.id`
 - `meta.title` must equal `node.title`
+- `meta.titleLocale` must equal `node.titleLocale` when `node.titleLocale` is provided
 - `meta.domain` must equal `node.domain`
 - `meta.type` must equal `node.type`
 - `meta.status` must equal `node.status`
 - `meta.contentFormat` must equal `node.contentFormat` when provided
 
 ## Canonical operation shapes
+
+### add_node
+
+Use nested `node:` form for `add_node`. The top-level `type` is the operation type only. The knowledge node type must be placed at `node.type`.
+
+Correct:
+
+```yaml
+- type: add_node
+  node:
+    id: sampling-and-aliasing
+    title: Sampling and Aliasing
+    titleLocale: 采样与走样
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: How continuous signals become discrete samples and produce aliasing artifacts.
+    summaryLocale: 连续信号离散化后如何产生走样现象。
+    contentFormat: html
+    aliases: []
+    tags: []
+  parentId: cg-digital-graphics-basic
+```
+
+Correct empty node:
+
+```yaml
+- type: add_node
+  node:
+    id: future-rendering-topic
+    title: Future Rendering Topic
+    titleLocale: 未来的渲染主题
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Placeholder node for a future rendering topic.
+    summaryLocale: 用于未来渲染主题的占位节点。
+    contentFormat: none
+  parentId: computer-graphics
+```
+
+Forbidden:
+
+```yaml
+- id: sampling-and-aliasing
+  title: Sampling and Aliasing
+  type: add_node
+  domain: computer-graphics
+```
+
+Forbidden because it duplicates the YAML key `type` at one level:
+
+```yaml
+- type: add_node
+  id: sampling-and-aliasing
+  type: concept
+```
+
+If a flat compatibility form is required, use `nodeType` for the knowledge type and keep top-level `type: add_node` as the operation type:
+
+```yaml
+- type: add_node
+  id: sampling-and-aliasing
+  title: Sampling and Aliasing
+  titleLocale: 采样与走样
+  domain: computer-graphics
+  nodeType: concept
+  status: seed
+  summary: How continuous signals become discrete samples and produce aliasing artifacts.
+  summaryLocale: 连续信号离散化后如何产生走样现象。
+  contentFormat: html
+  parentId: cg-digital-graphics-basic
+```
+
+### add_domain
+
+Use nested `domain:` form when creating domains:
+
+```yaml
+- type: add_domain
+  domain:
+    id: computer-graphics
+    title: Computer Graphics
+    titleLocale: 计算机图形学
+    description: Digital image formation, geometry, rendering, and visual computation.
+    descriptionLocale: 数字图像形成、几何、渲染与视觉计算。
+    color: "#00b7ff"
+    order: 10
+```
+
+`titleLocale`, `summaryLocale`, and `descriptionLocale` are recommended when a natural target-locale phrase exists, but they are not mandatory. Do not invent awkward locale text just to fill the field.
+
+### add_edge
 
 Use flat `add_edge` operations only:
 
@@ -149,6 +247,25 @@ Packages based on visual or interactive sources must include:
 review/source-coverage-plan.md
 review/source-asset-manifest.md
 review/interactive-demo-coverage.md
+```
+
+`review/source-asset-manifest.md` must contain a fenced YAML block whose top-level key is `source_assets`. A human-readable bullet list alone is not sufficient.
+
+Example:
+
+```yaml
+source_assets:
+  - id: cg-1-basic-source-snapshot
+    type: source-snapshot
+    source_url: https://example.com/cg-1
+    source_location: full source snapshot
+    required: true
+    represented_in_node: cg-digital-graphics-basic
+    note_location: whole note
+    snapshot_path: assets/source-snapshot/cg-1-basic/index.html
+    snapshot_assets_used: []
+    unavailable_reason: The source has no required standalone media; explanatory canvas sections are supplementary.
+    preservation_strategy: source-link + supplementary-js-reproduction
 ```
 
 Source-rich or snapshot-backed packages should also include:

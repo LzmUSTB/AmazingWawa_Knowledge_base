@@ -113,6 +113,8 @@ Before final `.wawapkg`:
 - `mimetype` exact match,
 - `manifest.yaml` valid,
 - `patch.yaml` uses canonical operation shapes,
+- `add_node` uses nested `node:` form or flat `nodeType`; never use top-level `type: add_node` as the node knowledge type,
+- `contentFormat: none` nodes have no `note.md` or `note.html`,
 - all `add_edge` operations are flat,
 - all referenced note files exist,
 - all required review files exist for visual/interactive sources,
@@ -120,4 +122,4 @@ Before final `.wawapkg`:
 - unsupported assets filtered or allowed by importer,
 - JavaScript syntax checked,
 - important local assets referenced,
-- source asset manifest complete.
+- source asset manifest complete and parseable as fenced YAML with top-level `source_assets`.
