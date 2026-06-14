@@ -301,13 +301,27 @@ function scheduleThemeSync() {
 }
 
 const baseCss = `
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FIRACODE-REGULAR.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cascadia Mono";
+  src: url("/fonts/FIRACODE-REGULAR.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
 html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
   background: var(--background-main);
   color: var(--text-secondary);
-  font-family: Inter, "Noto Sans SC", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Fira Code", Inter, "Noto Sans SC", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: var(--font-size-ui);
   line-height: 1.82;
 }

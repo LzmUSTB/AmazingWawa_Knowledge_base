@@ -72,12 +72,8 @@ function emitMenuAction(action, target) {
   <aside class="file-tree">
     <header class="tree-header">
       <div class="panel-label">Vault Source</div>
-      <button
-        class="sidebar-toggle hud-button button-icon-only"
-        title="Hide vault sidebar"
-        aria-label="Hide vault sidebar"
-        @click="$emit('toggle-sidebar')"
-      >
+      <button class="sidebar-toggle hud-button button-icon-only" title="Hide vault sidebar"
+        aria-label="Hide vault sidebar" @click="$emit('toggle-sidebar')">
         <AppIcon name="chevron-left" :size="13" />
       </button>
     </header>
@@ -96,25 +92,15 @@ function emitMenuAction(action, target) {
         </button>
 
         <div v-if="isDomainExpanded(domain)" class="concept-list">
-          <FileTreeNode
-            v-for="node in domain.children"
-            :key="node.id"
-            :active-note-id="activeNodeId"
-            :domain-color="getDomainColor(domain.id)"
-            :node="node"
-            @context-menu="openContextMenu"
-            @open-note="$emit('open-note', $event)"
-          />
+          <FileTreeNode v-for="node in domain.children" :key="node.id" :active-note-id="activeNodeId"
+            :domain-color="getDomainColor(domain.id)" :node="node" @context-menu="openContextMenu"
+            @open-note="$emit('open-note', $event)" />
         </div>
       </section>
     </div>
 
-    <VaultContextMenu
-      :menu="menu"
-      @close="closeContextMenu"
-      @delete="emitMenuAction('delete-entity', $event)"
-      @edit="emitMenuAction('edit-entity', $event)"
-    />
+    <VaultContextMenu :menu="menu" @close="closeContextMenu" @delete="emitMenuAction('delete-entity', $event)"
+      @edit="emitMenuAction('edit-entity', $event)" />
   </aside>
 </template>
 
@@ -141,8 +127,11 @@ function emitMenuAction(action, target) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 54px;
   gap: 8px;
-  padding: 18px 10px 0 16px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--background-panel);
 }
 
 .sidebar-toggle {

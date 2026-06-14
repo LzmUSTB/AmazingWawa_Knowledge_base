@@ -41,39 +41,34 @@ boards:
         y: 750
         w: 220
         h: 100
-      computer-graphics:
-        x: 1105
-        y: 312
-        w: 190
-        h: 80
       cg-animation-foundations:
-        x: 1455
-        y: 481
+        x: 1312
+        y: 640
         w: 190
         h: 80
       cg-keyframe-animation:
-        x: 1542
-        y: 860
-        w: 190
-        h: 80
-      cg-procedural-animation:
         x: 1376
-        y: 1056
-        w: 190
-        h: 80
-      cg-character-animation:
-        x: 800
-        y: 1024
-        w: 190
-        h: 80
-      cg-physics-based-animation:
-        x: 672
         y: 864
         w: 190
         h: 80
+      cg-procedural-animation:
+        x: 1120
+        y: 928
+        w: 190
+        h: 80
+      cg-character-animation:
+        x: 832
+        y: 896
+        w: 190
+        h: 80
+      cg-physics-based-animation:
+        x: 800
+        y: 768
+        w: 190
+        h: 80
       cg-data-driven-and-learning-based-animation:
-        x: 736
-        y: 416
+        x: 896
+        y: 640
         w: 190
         h: 80
   cg-physics-based-animation:
@@ -143,6 +138,141 @@ boards:
         h: 100
       computer-graphics:
         x: 960
+        y: 640
+        w: 190
+        h: 80
+  computer-graphics:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      computer-graphics:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      cg-modeling:
+        x: 1120
+        y: 576
+        w: 190
+        h: 80
+      cg-rendering:
+        x: 1376
+        y: 672
+        w: 190
+        h: 80
+      cg-animation:
+        x: 864
+        y: 672
+        w: 190
+        h: 80
+  cg-rendering:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      cg-rendering:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      cg-digital-image-foundations:
+        x: 832
+        y: 544
+        w: 190
+        h: 80
+      cg-coordinate-and-viewing-pipeline:
+        x: 1120
+        y: 576
+        w: 190
+        h: 80
+      cg-gpu-rendering-pipeline:
+        x: 1344
+        y: 672
+        w: 190
+        h: 80
+      cg-visibility-and-hidden-surface-removal:
+        x: 1472
+        y: 768
+        w: 190
+        h: 80
+      cg-shading-and-material:
+        x: 1440
+        y: 896
+        w: 190
+        h: 80
+      cg-shadows:
+        x: 1312
+        y: 992
+        w: 190
+        h: 80
+      cg-texture-and-mapping:
+        x: 1088
+        y: 992
+        w: 190
+        h: 80
+      cg-ray-based-and-field-based-rendering:
+        x: 800
+        y: 864
+        w: 190
+        h: 80
+      cg-image-based-rendering:
+        x: 864
+        y: 992
+        w: 190
+        h: 80
+      cg-global-illumination:
+        x: 736
+        y: 768
+        w: 190
+        h: 80
+      cg-neural-and-differentiable-rendering:
+        x: 736
+        y: 640
+        w: 190
+        h: 80
+  cg-modeling:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      cg-modeling:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      cg-geometry-representation:
+        x: 1152
+        y: 576
+        w: 190
+        h: 80
+      cg-solid-modeling:
+        x: 1376
+        y: 640
+        w: 190
+        h: 80
+      cg-curves-and-surfaces:
+        x: 1408
+        y: 864
+        w: 190
+        h: 80
+      cg-polygon-mesh-modeling:
+        x: 1216
+        y: 992
+        w: 190
+        h: 80
+      cg-volumetric-and-implicit-modeling:
+        x: 960
+        y: 992
+        w: 190
+        h: 80
+      cg-point-particle-and-procedural-geometry:
+        x: 800
+        y: 800
+        w: 190
+        h: 80
+      cg-scene-and-asset-representation:
+        x: 832
         y: 608
         w: 190
         h: 80

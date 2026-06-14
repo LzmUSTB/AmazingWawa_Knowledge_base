@@ -1171,6 +1171,22 @@ function toggleRelationSidebar() {
 </template>
 
 <style>
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FIRACODE-REGULAR.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cascadia Mono";
+  src: url("/fonts/FIRACODE-REGULAR.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
 :root {
   --background-main: #090909;
   --background-panel: #111111;
@@ -1207,7 +1223,7 @@ function toggleRelationSidebar() {
   color: var(--text-primary);
   background: var(--background-main);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Fira Code", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   font-synthesis: none;
   text-rendering: geometricPrecision;
