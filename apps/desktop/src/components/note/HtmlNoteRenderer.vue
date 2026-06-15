@@ -1,6 +1,9 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import urlLinkIcon from "../../assets/icons/url-link.svg?raw";
 import { readBinaryFileAsDataUrl } from "../../data/desktop-vault-adapter.js";
+import { getDomainColor } from "../../graph/graph-theme.js";
 
 const props = defineProps({
   html: { type: String, default: "" },
@@ -104,6 +107,13 @@ function isRemoteUrl(value = "") {
 
 function isLocalAnchorOrContact(value = "") {
   return String(value).startsWith("#") || /^(mailto:|tel:)/i.test(String(value).trim());
+}
+
+function openableExternalUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
+  return "";
 }
 
 function base64ToBytes(base64 = "") {
@@ -226,8 +236,15 @@ async function rewriteResourceAttributes(root) {
   }
 
   root.querySelectorAll("a[href]").forEach((anchor) => {
+    const href = anchor.getAttribute("href") || "";
+    const externalHref = openableExternalUrl(href);
     anchor.setAttribute("target", "_blank");
     anchor.setAttribute("rel", "noreferrer");
+    if (externalHref) {
+      anchor.removeAttribute("title");
+      anchor.setAttribute("aria-label", `Open in default browser: ${externalHref}`);
+      anchor.dataset.wawaExternalUrl = externalHref;
+    }
   });
 }
 
@@ -286,9 +303,14 @@ function readCssVar(name, fallback = "") {
   return style.getPropertyValue(name).trim() || fallback;
 }
 
+function noteAccentColor() {
+  const sourceNode = props.previewNode || props.node;
+  return sourceNode?.color || getDomainColor(sourceNode?.domain) || readCssVar("--graphics", "#00b7ff");
+}
+
 function syncThemeVars() {
   const declarations = Object.entries(CSS_VAR_FALLBACKS).map(([name, fallback]) => `${name}: ${readCssVar(name, fallback)};`);
-  declarations.push(`--note-color: ${props.node?.color || readCssVar("--note-color", readCssVar("--graphics", "#00b7ff"))};`);
+  declarations.push(`--note-color: ${noteAccentColor()};`);
   themeVars.value = `:root { ${declarations.join(" ")} }`;
 }
 
@@ -329,7 +351,61 @@ html.is-fill-viewport, html.is-fill-viewport body { height: 100%; overflow: hidd
 * { box-sizing: border-box; }
 a { color: var(--note-color, var(--graphics)); text-decoration: none; }
 a:hover { text-decoration: underline; }
+a[data-wawa-external-url] { cursor: pointer; }
 button, input, select, textarea { font: inherit; }
+.wawa-external-link-tooltip {
+  position: fixed;
+  z-index: 2147483647;
+  left: 0;
+  top: 0;
+  display: none;
+  grid-template-columns: 14px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  max-width: min(520px, calc(100vw - 20px));
+  border: 1px solid var(--border-primary);
+  border-left: 4px solid var(--note-color, var(--graphics));
+  background: var(--background-main);
+  color: var(--text-primary);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, .45);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  line-height: 1;
+  padding: 8px 10px;
+  pointer-events: none;
+  text-transform: none;
+}
+.wawa-external-link-tooltip.is-visible { display: grid; }
+.wawa-external-link-tooltip-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--note-color, var(--graphics));
+  line-height: 0;
+}
+.wawa-external-link-tooltip-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.wawa-external-link-tooltip-icon svg[fill]:not([fill="none"]),
+.wawa-external-link-tooltip-icon svg [fill]:not([fill="none"]) {
+  fill: currentColor !important;
+}
+.wawa-external-link-tooltip-icon svg[stroke]:not([stroke="none"]),
+.wawa-external-link-tooltip-icon svg [stroke]:not([stroke="none"]) {
+  stroke: currentColor !important;
+}
+.wawa-external-link-tooltip-separator { color: var(--text-muted); }
+.wawa-external-link-tooltip-url {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .rich-note-root {
   width: min(1120px, 100%);
   min-height: 100%;
@@ -511,8 +587,88 @@ function bridgeScript() {
   return `
 (() => {
   const frameId = ${JSON.stringify(frameId)};
+  const linkIconSvg = ${JSON.stringify(urlLinkIcon)};
   let matches = [];
   let currentIndex = 0;
+  let linkTooltip = null;
+
+  const openableExternalUrl = (value) => {
+    const raw = String(value || '').trim();
+    if (/^\\/\\//.test(raw)) return 'https:' + raw;
+    if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
+    return '';
+  };
+
+  const ensureLinkTooltip = () => {
+    if (linkTooltip) return linkTooltip;
+    linkTooltip = document.createElement('div');
+    linkTooltip.className = 'wawa-external-link-tooltip';
+    linkTooltip.innerHTML = '<span class="wawa-external-link-tooltip-icon" aria-hidden="true"></span><span class="wawa-external-link-tooltip-separator">:</span><span class="wawa-external-link-tooltip-url"></span>';
+    linkTooltip.querySelector('.wawa-external-link-tooltip-icon').innerHTML = linkIconSvg;
+    document.body.appendChild(linkTooltip);
+    return linkTooltip;
+  };
+
+  const positionLinkTooltip = (event) => {
+    if (!linkTooltip) return;
+    const margin = 10;
+    const offset = 14;
+    const rect = linkTooltip.getBoundingClientRect();
+    let x = event.clientX + offset;
+    let y = event.clientY + offset;
+    if (x + rect.width + margin > window.innerWidth) x = Math.max(margin, event.clientX - rect.width - offset);
+    if (y + rect.height + margin > window.innerHeight) y = Math.max(margin, event.clientY - rect.height - offset);
+    linkTooltip.style.transform = 'translate(' + Math.round(x) + 'px, ' + Math.round(y) + 'px)';
+  };
+
+  const showLinkTooltip = (event, url) => {
+    const tooltip = ensureLinkTooltip();
+    tooltip.querySelector('.wawa-external-link-tooltip-url').textContent = url;
+    tooltip.classList.add('is-visible');
+    positionLinkTooltip(event);
+  };
+
+  const hideLinkTooltip = () => {
+    linkTooltip?.classList.remove('is-visible');
+  };
+
+  document.addEventListener('pointerover', (event) => {
+    const anchor = event.target?.closest?.('a[data-wawa-external-url]');
+    if (!anchor) return;
+    const url = openableExternalUrl(anchor.dataset.wawaExternalUrl || anchor.getAttribute('href') || '');
+    if (!url) return;
+    showLinkTooltip(event, url);
+  }, true);
+
+  document.addEventListener('pointermove', (event) => {
+    if (!linkTooltip?.classList.contains('is-visible')) return;
+    positionLinkTooltip(event);
+  }, true);
+
+  document.addEventListener('pointerout', (event) => {
+    const anchor = event.target?.closest?.('a[data-wawa-external-url]');
+    if (!anchor) return;
+    if (event.relatedTarget && anchor.contains(event.relatedTarget)) return;
+    hideLinkTooltip();
+  }, true);
+
+  window.addEventListener('blur', hideLinkTooltip);
+  document.addEventListener('scroll', hideLinkTooltip, true);
+
+  document.addEventListener('click', (event) => {
+    const anchor = event.target?.closest?.('a[href]');
+    if (!anchor) return;
+    const href = anchor.dataset.wawaExternalUrl || anchor.getAttribute('href') || '';
+    const externalUrl = openableExternalUrl(href);
+    if (!externalUrl) return;
+    event.preventDefault();
+    event.stopPropagation();
+    parent.postMessage({
+      type: 'wawa-html-note-open-url',
+      frameId,
+      url: externalUrl
+    }, '*');
+  }, true);
 
   const shouldForwardShortcut = (event) => {
     const key = String(event.key || '');
@@ -674,6 +830,16 @@ const frameStyle = computed(() => (
   props.fillViewport ? { height: "100%" } : { height: `${frameHeight.value}px` }
 ));
 
+async function openExternalLink(value = "") {
+  const url = openableExternalUrl(value);
+  if (!url) return;
+  try {
+    await openUrl(url);
+  } catch (error) {
+    window.alert(`Failed to open link: ${String(error?.message || error)}`);
+  }
+}
+
 function handleMessage(event) {
   const data = event.data || {};
   if (data.frameId !== frameId) return;
@@ -689,6 +855,10 @@ function handleMessage(event) {
       total: Number(data.total || 0),
       currentIndex: Number(data.currentIndex || 0),
     });
+    return;
+  }
+  if (data.type === "wawa-html-note-open-url") {
+    openExternalLink(data.url);
     return;
   }
   if (data.type === "wawa-html-note-keydown") {
@@ -742,7 +912,7 @@ watch(
   () => prepareHtml(),
   { deep: true },
 );
-watch(() => props.node?.color, scheduleThemeSync);
+watch(() => [props.node?.color, props.node?.domain, props.previewNode?.color, props.previewNode?.domain], scheduleThemeSync);
 watch(() => [props.searchActive, props.searchQuery], syncFindToFrame);
 watch(() => props.searchMoveToken, () => {
   if (!props.searchActive) return;

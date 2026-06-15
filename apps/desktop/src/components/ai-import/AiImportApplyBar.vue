@@ -18,13 +18,17 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 defineEmits(["apply", "update:confirmedWarnings"]);
 </script>
 
 <template>
-  <section class="ai-panel apply-bar">
+  <section class="apply-bar" :class="{ 'ai-panel': !embedded, 'apply-bar--embedded': embedded }">
     <label v-if="hasWarnings" class="warning-confirm">
       <input type="checkbox" :checked="confirmedWarnings"
         @change="$emit('update:confirmedWarnings', $event.target.checked)" />
@@ -41,6 +45,13 @@ defineEmits(["apply", "update:confirmedWarnings"]);
 <style scoped>
 .apply-bar {
   gap: 10px;
+}
+
+.apply-bar--embedded {
+  display: grid;
+  border-top: 1px solid var(--border-muted);
+  margin-top: 2px;
+  padding-top: 10px;
 }
 
 .warning-confirm {

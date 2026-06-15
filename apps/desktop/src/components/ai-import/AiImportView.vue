@@ -122,6 +122,9 @@ async function applySelectedPackage() {
           <button class="hud-button" style="--button-color: var(--career)" :disabled="loading" @click="importPackage">
             Import .wawapkg
           </button>
+          <AiImportApplyBar v-model:confirmed-warnings="confirmedWarnings" :applying="applying" :can-apply="canApply"
+            embedded
+            :has-warnings="hasWarnings" @apply="applySelectedPackage" />
         </section>
 
         <AiImportSummary :validation="validation" />
@@ -196,9 +199,6 @@ async function applySelectedPackage() {
           </div>
           <p v-if="!diff?.filesToCreate?.length && !diff?.filesToModify?.length" class="empty-line">No file changes.</p>
         </section>
-
-        <AiImportApplyBar v-model:confirmed-warnings="confirmedWarnings" :applying="applying" :can-apply="canApply"
-          :has-warnings="hasWarnings" @apply="applySelectedPackage" />
       </aside>
 
       <main class="center-column">

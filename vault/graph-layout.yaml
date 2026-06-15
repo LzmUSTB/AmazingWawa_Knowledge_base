@@ -134,8 +134,8 @@ boards:
       optics:
         x: 1090
         y: 750
-        w: 220
-        h: 100
+        w: 190
+        h: 80
       computer-graphics:
         x: 960
         y: 640
@@ -479,5 +479,125 @@ boards:
       linear-algebra-determinant:
         x: 1216
         y: 544
+        w: 190
+        h: 80
+  linear-algebra:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra:
+        x: 1088
+        y: 1504
+        w: 220
+        h: 100
+      linear-algebra-determinant:
+        x: 1472
+        y: 928
+        w: 190
+        h: 80
+      linear-algebra-inverse-matrix:
+        x: 1440
+        y: 1024
+        w: 190
+        h: 80
+      linear-algebra-linear-independence:
+        x: 1312
+        y: 1408
+        w: 190
+        h: 80
+      linear-algebra-rank:
+        x: 1408
+        y: 1120
+        w: 190
+        h: 80
+      linear-algebra-eigenvalues-eigenvectors:
+        x: 1344
+        y: 768
+        w: 190
+        h: 80
+      linear-algebra-diagonalization:
+        x: 1376
+        y: 672
+        w: 190
+        h: 80
+      linear-algebra-quadratic-form:
+        x: 928
+        y: 608
+        w: 190
+        h: 80
+      linear-algebra-positive-definiteness-semi-definiteness:
+        x: 896
+        y: 512
+        w: 190
+        h: 80
+      linear-algebra-vector-space:
+        x: 832
+        y: 1376
+        w: 190
+        h: 80
+      linear-algebra-basis-dimension:
+        x: 864
+        y: 1472
+        w: 190
+        h: 80
+      linear-algebra-linear-map:
+        x: 1344
+        y: 1312
+        w: 190
+        h: 80
+      linear-algebra-kernel-image:
+        x: 1376
+        y: 1216
+        w: 190
+        h: 80
+      linear-algebra-orthogonality:
+        x: 864
+        y: 1152
+        w: 190
+        h: 80
+      linear-algebra-gram-schmidt-process:
+        x: 768
+        y: 864
+        w: 190
+        h: 80
+      linear-algebra-orthogonal-diagonalization:
+        x: 1440
+        y: 480
+        w: 190
+        h: 80
+      linear-algebra-least-squares:
+        x: 736
+        y: 768
+        w: 190
+        h: 80
+      linear-algebra-jordan-normal-form-basics:
+        x: 800
+        y: 224
+        w: 190
+        h: 80
+      linear-algebra-singular-value-decomposition:
+        x: 864
+        y: 416
+        w: 190
+        h: 80
+      linear-algebra-projection-matrix:
+        x: 800
+        y: 960
+        w: 190
+        h: 80
+      linear-algebra-matrix-norm:
+        x: 832
+        y: 320
+        w: 190
+        h: 80
+      linear-algebra-orthogonal-complement:
+        x: 832
+        y: 1056
+        w: 190
+        h: 80
+      linear-algebra-matrix-powers:
+        x: 1408
+        y: 576
         w: 190
         h: 80

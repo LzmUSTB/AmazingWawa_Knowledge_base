@@ -23,6 +23,7 @@ import plusNode from "../../assets/icons/plus-node.svg?raw";
 import save from "../../assets/icons/save.svg?raw";
 import search from "../../assets/icons/search.svg?raw";
 import textSearch from "../../assets/icons/text-search.svg?raw";
+import urlLink from "../../assets/icons/url-link.svg?raw";
 import windowMaximize from "../../assets/icons/window-maximize.svg?raw";
 import windowMinimize from "../../assets/icons/window-minimize.svg?raw";
 import x from "../../assets/icons/x.svg?raw";
@@ -55,6 +56,7 @@ const icons = {
   save,
   search,
   "text-search": textSearch,
+  "url-link": urlLink,
   "window-maximize": windowMaximize,
   "window-minimize": windowMinimize,
   x,
