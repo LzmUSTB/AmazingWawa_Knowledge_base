@@ -312,6 +312,7 @@ function fitGraphView() {
 .app-body {
   display: grid;
   grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr) var(--relation-sidebar-width, 320px);
+  height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -323,6 +324,7 @@ function fitGraphView() {
 
 .sidebar-region {
   grid-column: 1;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;

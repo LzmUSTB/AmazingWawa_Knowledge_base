@@ -109,6 +109,8 @@ function emitMenuAction(action, target) {
   display: flex;
   flex-direction: column;
   width: 260px;
+  height: 100%;
+  max-height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -124,6 +126,7 @@ function emitMenuAction(action, target) {
 }
 
 .tree-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -153,6 +156,7 @@ function emitMenuAction(action, target) {
 }
 
 .tree-root {
+  flex: 0 0 auto;
   margin-top: 18px;
   padding: 0 16px;
   color: var(--text-primary);
@@ -161,11 +165,12 @@ function emitMenuAction(action, target) {
 }
 
 .tree-list {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   padding: 8px 10px 0;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .tree-domain {
@@ -178,7 +183,6 @@ function emitMenuAction(action, target) {
   gap: 10px;
   align-items: center;
   min-height: 28px;
-  padding: 0 10px 0 7px;
   color: var(--text-secondary);
   font-size: var(--font-size-ui);
   font-weight: 800;
