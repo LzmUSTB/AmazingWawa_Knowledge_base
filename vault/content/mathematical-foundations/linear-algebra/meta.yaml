@@ -4,19 +4,21 @@ titleLocale: 线性代数
 domain: mathematical-foundations
 type: topic
 status: seed
-summary: 'Priority: mixed P0-P2. Linear algebra topic grouping vector spaces, matrices,
-  eigen theory, orthogonality, quadratic forms, and matrix decompositions.'
-summaryLocale: '优先级：P0-P2 混合。线性代数主题节点，用于组织向量空间、矩阵、特征理论、正交性、二次型与矩阵分解等知识点。日本語：線形代数学；English:
-  Linear Algebra.'
-contentFormat: none
+summary: "Priority: mixed P0-P2. Linear algebra topic grouping vector spaces,
+  matrices, eigen theory, orthogonality, quadratic forms, and matrix
+  decompositions."
+summaryLocale: "优先级：P0-P2
+  混合。线性代数主题节点，用于组织向量空间、矩阵、特征理论、正交性、二次型与矩阵分解等知识点。日本語：線形代数学；English: Linear
+  Algebra."
+contentFormat: html
 aliases:
-- 線形代数学
-- linear algebra
+  - 線形代数学
+  - linear algebra
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-15

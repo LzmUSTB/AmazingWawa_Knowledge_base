@@ -67,6 +67,16 @@ export async function chooseWawaPackageFile() {
   return invoke("choose_wawapkg_file");
 }
 
+export async function chooseHtmlNoteFile() {
+  if (!isTauri()) return null;
+  return invoke("choose_html_note_file");
+}
+
+export async function chooseHtmlNoteFolder() {
+  if (!isTauri()) return null;
+  return invoke("choose_html_note_folder");
+}
+
 export async function readWawaPackageFile(packageFilePath) {
   if (!packageFilePath) throw new Error("Choose a .wawapkg file first.");
   const rawPackage = await invoke("read_wawapkg_file", { packageFilePath });
@@ -244,6 +254,106 @@ function nodeHasNote(vault, nodeId) {
 
 function getNodeMetaRelativePath(node) {
   return `content/${node.domain}/${node.id}/meta.yaml`;
+}
+
+function nodeContentRoot(node) {
+  return `content/${node.domain}/${node.id}`;
+}
+
+function noteRootRelativePath(vaultRelativePath, node) {
+  const root = `${nodeContentRoot(node)}/`;
+  return String(vaultRelativePath || "").startsWith(root)
+    ? String(vaultRelativePath).slice(root.length)
+    : String(vaultRelativePath || "");
+}
+
+function splitUrlSuffix(value = "") {
+  const raw = String(value || "");
+  const match = raw.match(/^([^?#]*)([?#].*)?$/);
+  return {
+    path: match?.[1] || "",
+    suffix: match?.[2] || "",
+  };
+}
+
+function isExternalOrSpecialUrl(value = "") {
+  return /^(https?:|mailto:|tel:|data:|blob:|javascript:|#)/i.test(String(value).trim()) ||
+    /^\/\//.test(String(value).trim());
+}
+
+function normalizeImportedRelativePath(value = "") {
+  const { path, suffix } = splitUrlSuffix(value);
+  const normalized = path.replaceAll("\\", "/").replace(/^\.\//, "");
+  if (
+    !normalized ||
+    normalized.startsWith("/") ||
+    normalized.startsWith("assets/") ||
+    /^[A-Za-z]:/.test(normalized) ||
+    normalized.split("/").some((part) => !part || part === "." || part === "..")
+  ) return "";
+  return `assets/imported-html/${normalized}${suffix}`;
+}
+
+function rewriteImportedHtmlAssetUrls(html = "") {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(String(html || ""), "text/html");
+  const attrNames = ["src", "href", "poster"];
+  document.querySelectorAll(attrNames.map((name) => `[${name}]`).join(",")).forEach((element) => {
+    attrNames.forEach((attrName) => {
+      if (!element.hasAttribute(attrName)) return;
+      const raw = element.getAttribute(attrName) || "";
+      if (isExternalOrSpecialUrl(raw)) return;
+      const rewritten = normalizeImportedRelativePath(raw);
+      if (rewritten) element.setAttribute(attrName, rewritten);
+    });
+  });
+  document.querySelectorAll("[style]").forEach((element) => {
+    element.setAttribute("style", rewriteImportedCssUrls(element.getAttribute("style") || "", "assets/imported-html/"));
+  });
+  return `<!doctype html>\n${document.documentElement.outerHTML}`;
+}
+
+function dirname(path = "") {
+  const normalized = String(path || "").replaceAll("\\", "/");
+  const index = normalized.lastIndexOf("/");
+  return index >= 0 ? normalized.slice(0, index + 1) : "";
+}
+
+function normalizePathParts(path = "") {
+  const output = [];
+  String(path || "").replaceAll("\\", "/").split("/").forEach((part) => {
+    if (!part || part === ".") return;
+    if (part === "..") output.pop();
+    else output.push(part);
+  });
+  return output.join("/");
+}
+
+function rewriteImportedCssUrls(css = "", cssBaseDir = "assets/imported-html/") {
+  return String(css || "").replace(/url\(\s*(['"]?)(.*?)\1\s*\)/gi, (match, quote, rawUrl) => {
+    const raw = String(rawUrl || "").trim();
+    if (!raw || isExternalOrSpecialUrl(raw)) return match;
+    const { path, suffix } = splitUrlSuffix(raw);
+    if (!path || path.startsWith("assets/") || path.startsWith("/") || /^[A-Za-z]:/.test(path)) return match;
+    const normalized = normalizePathParts(`${cssBaseDir}${path}`);
+    if (!normalized || !normalized.startsWith("assets/imported-html/")) return match;
+    const nextUrl = `${normalized}${suffix}`;
+    const nextQuote = quote || '"';
+    return `url(${nextQuote}${nextUrl}${nextQuote})`;
+  });
+}
+
+async function rewriteImportedCssFiles(vaultRootPath, node, copiedAssetRelativePaths = []) {
+  const cssPaths = copiedAssetRelativePaths.filter((path) => /\.css$/i.test(path));
+  await Promise.all(cssPaths.map(async (relativePath) => {
+    const css = await readOptionalTextFile(vaultRootPath, relativePath);
+    if (!css) return;
+    const noteRelative = noteRootRelativePath(relativePath, node);
+    const rewritten = rewriteImportedCssUrls(css, dirname(noteRelative));
+    if (rewritten !== css) {
+      await invoke("write_text_file", { vaultRootPath, relativePath, contents: rewritten });
+    }
+  }));
 }
 
 function parseYamlObject(raw, fallback = {}) {
@@ -484,6 +594,49 @@ export async function addNoteToNode(vaultRootPath, payload) {
     updatedAt: todayLocalDate(),
   };
   await invoke("write_text_file", { vaultRootPath, relativePath: notePath, contents: markdown });
+  await invoke("write_text_file", { vaultRootPath, relativePath: metaPath, contents: YAML.stringify(nextMeta) });
+  return { vault: await loadVaultFromPath(vaultRootPath), nodeId: node.id };
+}
+
+export async function importHtmlNoteToNode(vaultRootPath, payload) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before importing HTML notes.");
+  if (!payload?.nodeId) throw new Error("Target node is required.");
+  if (!payload?.sourcePath) throw new Error("Choose an HTML file or folder first.");
+  if (!["file", "folder"].includes(payload.sourceKind)) throw new Error("HTML import sourceKind must be file or folder.");
+
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const node = currentVault.nodes.find((item) => item.id === payload.nodeId && item.type !== "domain");
+  if (!node) throw new Error(`Node "${payload.nodeId}" does not exist.`);
+  if (nodeHasNote(currentVault, node.id)) throw new Error("This node already has a note.");
+
+  const result = await invoke("import_html_note_files", {
+    vaultRootPath,
+    nodeDomain: node.domain,
+    nodeId: node.id,
+    sourcePath: payload.sourcePath,
+    sourceKind: payload.sourceKind,
+  });
+
+  const html = await readOptionalTextFile(vaultRootPath, result.noteRelativePath);
+  const rewrittenHtml = payload.sourceKind === "folder" ? rewriteImportedHtmlAssetUrls(html) : html;
+  if (rewrittenHtml && rewrittenHtml !== html) {
+    await invoke("write_text_file", {
+      vaultRootPath,
+      relativePath: result.noteRelativePath,
+      contents: rewrittenHtml,
+    });
+  }
+  if (payload.sourceKind === "folder") {
+    await rewriteImportedCssFiles(vaultRootPath, node, result.copiedAssetRelativePaths || []);
+  }
+
+  const metaPath = getNodeMetaRelativePath(node);
+  const meta = parseYamlObject(await invoke("read_text_file", { vaultRootPath, relativePath: metaPath }), {});
+  const nextMeta = {
+    ...meta,
+    contentFormat: "html",
+    updatedAt: todayLocalDate(),
+  };
   await invoke("write_text_file", { vaultRootPath, relativePath: metaPath, contents: YAML.stringify(nextMeta) });
   return { vault: await loadVaultFromPath(vaultRootPath), nodeId: node.id };
 }

@@ -58,6 +58,9 @@ const MAX_WAWAPKG_TOTAL_SIZE: u64 = 100 * 1024 * 1024;
 const MAX_WAWAPKG_FILE_SIZE: u64 = 20 * 1024 * 1024;
 const MAX_WAWAPKG_FILE_COUNT: usize = 1000;
 const MAX_NOTE_ASSET_READ_SIZE: u64 = 20 * 1024 * 1024;
+const MAX_HTML_NOTE_IMPORT_TOTAL_SIZE: u64 = 120 * 1024 * 1024;
+const MAX_HTML_NOTE_IMPORT_FILE_SIZE: u64 = 25 * 1024 * 1024;
+const MAX_HTML_NOTE_IMPORT_FILE_COUNT: usize = 3000;
 
 #[derive(Serialize)]
 struct AiImportHistory {
@@ -102,6 +105,13 @@ struct SourceSnapshotResult {
     mode: String,
     file_count: u64,
     total_size: u64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HtmlNoteImportResult {
+    note_relative_path: String,
+    copied_asset_relative_paths: Vec<String>,
 }
 
 fn is_safe_package_id(package_id: &str) -> bool {
@@ -247,6 +257,122 @@ fn allowed_note_asset_read_path(relative_path: &str) -> bool {
         && normalized
             .split('/')
             .all(|part| !part.is_empty() && part != "." && part != "..")
+}
+
+fn is_safe_content_id(value: &str) -> bool {
+    !value.is_empty()
+        && value
+            .chars()
+            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-')
+}
+
+fn allowed_html_import_file(path: &Path) -> bool {
+    let value = path.to_string_lossy();
+    allowed_asset_extension(&value)
+}
+
+fn normalize_relative_file_path(path: &Path) -> Result<String, String> {
+    if path
+        .components()
+        .any(|component| matches!(component, Component::ParentDir | Component::Prefix(_) | Component::RootDir))
+    {
+        return Err("Unsafe imported file path".into());
+    }
+    let normalized = path.to_string_lossy().replace('\\', "/");
+    if normalized.is_empty()
+        || normalized.starts_with('/')
+        || normalized.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+    {
+        return Err("Unsafe imported file path".into());
+    }
+    Ok(normalized)
+}
+
+fn html_note_target_dir(vault_root_path: &str, node_domain: &str, node_id: &str) -> Result<PathBuf, String> {
+    if !is_safe_content_id(node_domain) || !is_safe_content_id(node_id) {
+        return Err("Invalid node id or domain for HTML note import".into());
+    }
+    safe_vault_path(vault_root_path, &format!("content/{node_domain}/{node_id}"))
+}
+
+fn assert_empty_note_target(target_dir: &Path) -> Result<(), String> {
+    if target_dir.join("note.md").exists() || target_dir.join("note.html").exists() {
+        return Err("Target node already has a note.".into());
+    }
+    if !target_dir.join("meta.yaml").is_file() {
+        return Err("Target node meta.yaml was not found.".into());
+    }
+    Ok(())
+}
+
+fn copy_import_file(source: &Path, target: &Path) -> Result<(), String> {
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Failed to create {}: {error}", parent.to_string_lossy()))?;
+    }
+    if target.exists() {
+        return Err(format!("Refusing to overwrite existing imported file: {}", target.to_string_lossy()));
+    }
+    fs::copy(source, target).map_err(|error| {
+        format!(
+            "Failed to copy {} to {}: {error}",
+            source.to_string_lossy(),
+            target.to_string_lossy()
+        )
+    })?;
+    Ok(())
+}
+
+fn find_folder_main_html(source_dir: &Path) -> Result<PathBuf, String> {
+    let note_html = source_dir.join("note.html");
+    if note_html.is_file() {
+        return Ok(note_html);
+    }
+    let index_html = source_dir.join("index.html");
+    if index_html.is_file() {
+        return Ok(index_html);
+    }
+    let index_htm = source_dir.join("index.htm");
+    if index_htm.is_file() {
+        return Ok(index_htm);
+    }
+
+    let html_files: Vec<PathBuf> = fs::read_dir(source_dir)
+        .map_err(|error| format!("Failed to read HTML note folder: {error}"))?
+        .filter_map(|entry| entry.ok().map(|item| item.path()))
+        .filter(|path| {
+            path.is_file()
+                && matches!(
+                    path.extension().and_then(|value| value.to_str()).map(|value| value.to_ascii_lowercase()),
+                    Some(extension) if extension == "html" || extension == "htm"
+                )
+        })
+        .collect();
+
+    if html_files.len() == 1 {
+        return Ok(html_files[0].clone());
+    }
+    Err("HTML folder must contain note.html, index.html, index.htm, or exactly one root HTML file.".into())
+}
+
+fn collect_import_files(source_dir: &Path, current: &Path, output: &mut Vec<PathBuf>) -> Result<(), String> {
+    for entry in fs::read_dir(current).map_err(|error| {
+        format!(
+            "Failed to read import directory {}: {error}",
+            current.to_string_lossy()
+        )
+    })? {
+        let entry = entry.map_err(|error| format!("Failed to read import directory entry: {error}"))?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_import_files(source_dir, &path, output)?;
+        } else if path.is_file() {
+            path.strip_prefix(source_dir)
+                .map_err(|error| format!("Failed to normalize import path: {error}"))?;
+            output.push(path);
+        }
+    }
+    Ok(())
 }
 
 fn allowed_remove_vault_path(relative_path: &str) -> bool {
@@ -947,6 +1073,182 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 }
 
 #[tauri::command]
+fn choose_html_note_file() -> Result<Option<String>, String> {
+    if !cfg!(target_os = "windows") {
+        return Err("File picker command is currently implemented for Windows only".into());
+    }
+    let script = r#"
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.OpenFileDialog
+$dialog.Title = 'Import HTML Note File'
+$dialog.Filter = 'HTML Files (*.html;*.htm)|*.html;*.htm'
+$dialog.Multiselect = $false
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  [Console]::Out.Write($dialog.FileName)
+}
+"#;
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-STA", "-Command", script])
+        .output()
+        .map_err(|error| format!("Failed to open HTML file picker: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let selected_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if selected_path.is_empty() {
+        Ok(None)
+    } else if selected_path.to_ascii_lowercase().ends_with(".html")
+        || selected_path.to_ascii_lowercase().ends_with(".htm")
+    {
+        Ok(Some(selected_path))
+    } else {
+        Err("Selected file must use .html or .htm extension".into())
+    }
+}
+
+#[tauri::command]
+fn choose_html_note_folder() -> Result<Option<String>, String> {
+    if !cfg!(target_os = "windows") {
+        return Err("Folder picker command is currently implemented for Windows only".into());
+    }
+    let script = r#"
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = 'Import HTML Note Folder'
+$dialog.ShowNewFolderButton = $false
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  [Console]::Out.Write($dialog.SelectedPath)
+}
+"#;
+
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-STA", "-Command", script])
+        .output()
+        .map_err(|error| format!("Failed to open HTML folder picker: {error}"))?;
+
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+
+    let selected_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if selected_path.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(selected_path))
+    }
+}
+
+#[tauri::command]
+fn import_html_note_files(
+    vault_root_path: String,
+    node_domain: String,
+    node_id: String,
+    source_path: String,
+    source_kind: String,
+) -> Result<HtmlNoteImportResult, String> {
+    let target_dir = html_note_target_dir(&vault_root_path, &node_domain, &node_id)?;
+    fs::create_dir_all(&target_dir)
+        .map_err(|error| format!("Failed to create node directory: {error}"))?;
+    assert_empty_note_target(&target_dir)?;
+
+    let canonical_root = PathBuf::from(&vault_root_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    let canonical_target_dir = target_dir
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve target node directory: {error}"))?;
+    if !canonical_target_dir.starts_with(&canonical_root) {
+        return Err("Refusing to import outside the vault root".into());
+    }
+
+    let source = PathBuf::from(&source_path);
+    let canonical_source = source
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve import source: {error}"))?;
+    let note_relative_path = format!("content/{node_domain}/{node_id}/note.html");
+    let note_target = target_dir.join("note.html");
+
+    if source_kind == "file" {
+        if !canonical_source.is_file() {
+            return Err("Selected HTML source is not a file".into());
+        }
+        if !allowed_html_import_file(&canonical_source) {
+            return Err("Selected HTML source is not an allowed HTML file".into());
+        }
+        let metadata = fs::metadata(&canonical_source)
+            .map_err(|error| format!("Failed to read source file metadata: {error}"))?;
+        if metadata.len() > MAX_HTML_NOTE_IMPORT_FILE_SIZE {
+            return Err("HTML file exceeds 25 MB import limit".into());
+        }
+        copy_import_file(&canonical_source, &note_target)?;
+        return Ok(HtmlNoteImportResult {
+            note_relative_path,
+            copied_asset_relative_paths: Vec::new(),
+        });
+    }
+
+    if source_kind != "folder" {
+        return Err("HTML note import sourceKind must be file or folder".into());
+    }
+    if !canonical_source.is_dir() {
+        return Err("Selected HTML source is not a folder".into());
+    }
+    if canonical_target_dir.starts_with(&canonical_source) {
+        return Err("Refusing to import a folder into one of its own descendants".into());
+    }
+
+    let main_html = find_folder_main_html(&canonical_source)?;
+    let mut files = Vec::new();
+    collect_import_files(&canonical_source, &canonical_source, &mut files)?;
+    if files.len() > MAX_HTML_NOTE_IMPORT_FILE_COUNT {
+        return Err("HTML folder has too many files to import".into());
+    }
+
+    let mut total_size = 0_u64;
+    let mut copied_asset_relative_paths = Vec::new();
+    for file in files {
+        let relative = file
+            .strip_prefix(&canonical_source)
+            .map_err(|error| format!("Failed to normalize import file path: {error}"))?;
+        let relative_path = normalize_relative_file_path(relative)?;
+        let metadata = fs::metadata(&file)
+            .map_err(|error| format!("Failed to read import file metadata: {error}"))?;
+        if metadata.len() > MAX_HTML_NOTE_IMPORT_FILE_SIZE {
+            return Err(format!("Imported file exceeds 25 MB limit: {relative_path}"));
+        }
+        total_size += metadata.len();
+        if total_size > MAX_HTML_NOTE_IMPORT_TOTAL_SIZE {
+            return Err("HTML folder exceeds 120 MB import limit".into());
+        }
+        if relative_path.eq_ignore_ascii_case("meta.yaml") || relative_path.eq_ignore_ascii_case("note.md") {
+            return Err(format!("HTML import folder contains unsupported root file: {relative_path}"));
+        }
+        if !allowed_html_import_file(&file) {
+            return Err(format!("Unsupported imported file type: {relative_path}"));
+        }
+
+        if file == main_html {
+            copy_import_file(&file, &note_target)?;
+            continue;
+        }
+
+        let asset_relative_path = format!("content/{node_domain}/{node_id}/assets/imported-html/{relative_path}");
+        let asset_target = safe_vault_path(&vault_root_path, &asset_relative_path)?;
+        copy_import_file(&file, &asset_target)?;
+        copied_asset_relative_paths.push(asset_relative_path);
+    }
+
+    if !note_target.exists() {
+        return Err("HTML folder import did not produce note.html".into());
+    }
+
+    Ok(HtmlNoteImportResult {
+        note_relative_path,
+        copied_asset_relative_paths,
+    })
+}
+
+#[tauri::command]
 fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
     let root = PathBuf::from(&vault_root_path);
     if !root.is_dir() {
@@ -1239,9 +1541,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             apply_ai_import_plan,
             capture_source_snapshot,
+            choose_html_note_file,
+            choose_html_note_folder,
             choose_vault_root,
             choose_wawapkg_file,
             create_dir_all,
+            import_html_note_files,
             read_ai_import_history,
             read_binary_file_base64,
             read_wawapkg_file,

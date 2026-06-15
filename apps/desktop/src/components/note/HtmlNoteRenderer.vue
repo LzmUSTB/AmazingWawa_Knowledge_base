@@ -26,6 +26,9 @@ const preparedHtml = ref("");
 const assetLoading = ref(false);
 const assetErrors = ref([]);
 const frameId = `html-note-${Math.random().toString(36).slice(2)}`;
+const APP_BASE_URL = new URL("/", window.location.href).href;
+const MATHJAX_ROOT = new URL("vendor/mathjax", APP_BASE_URL).href.replace(/\/$/, "");
+const MATHJAX_SCRIPT = `${MATHJAX_ROOT}/tex-svg.js`;
 let mutationObserver = null;
 let resizeRaf = 0;
 let prepareRunId = 0;
@@ -523,6 +526,25 @@ pre { overflow: auto; border: 1px solid var(--border-muted); background: var(--b
 .rich-figure-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 figure { margin: 0; overflow: hidden; }
 img, video, iframe, canvas, svg { display: block; max-width: 100%; background: var(--background-main); }
+mjx-container {
+  max-width: 100%;
+  color: var(--text-primary);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+mjx-container[display="true"] {
+  display: block;
+  margin: .6em 0;
+  padding: .1em 0;
+}
+mjx-container svg {
+  display: inline;
+  max-width: none;
+  background: transparent;
+}
+mjx-container[display="true"] svg {
+  max-width: 100%;
+}
 img, video { width: 100%; height: auto; border-bottom: 1px solid var(--border-muted); }
 iframe.rich-source-frame, iframe.rich-demo-frame, .rich-source-frame, .rich-demo-frame { width: 100%; min-height: 520px; border: 1px solid var(--border-muted); background: var(--background-main); }
 canvas.rich-demo-canvas, .rich-demo-canvas { width: 100%; border: 1px solid var(--border-muted); background: var(--background-main); }
@@ -580,6 +602,77 @@ function autoResizeScript() {
   setTimeout(sendHeight, 120);
   setTimeout(sendHeight, 500);
   setInterval(sendHeight, 1400);
+})();`;
+}
+
+function normalizeMathDelimitersScript() {
+  return String.raw`
+(() => {
+  const skippedTextParent = (node) => {
+    const parent = node.parentElement;
+    return !parent ||
+      !node.nodeValue ||
+      !/\\\\[\[\]\(\)]/.test(node.nodeValue) ||
+      Boolean(parent.closest('script, style, pre, code, textarea, input, select, mark[data-wawa-html-find]'));
+  };
+
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      return skippedTextParent(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const nodes = [];
+  let current = walker.nextNode();
+  while (current) {
+    nodes.push(current);
+    current = walker.nextNode();
+  }
+
+  nodes.forEach((node) => {
+    node.nodeValue = String(node.nodeValue || '').replace(/\\\\([\[\]\(\)])/g, '\\$1');
+  });
+})();`;
+}
+
+function mathJaxConfigScript() {
+  return `
+(() => {
+  window.MathJax = {
+    loader: {
+      paths: {
+        mathjax: ${JSON.stringify(MATHJAX_ROOT)}
+      }
+    },
+    options: {
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+      ignoreHtmlClass: 'tex2jax_ignore',
+      processHtmlClass: 'tex2jax_process'
+    },
+    tex: {
+      inlineMath: [['\\\\(', '\\\\)']],
+      displayMath: [['\\\\[', '\\\\]'], ['$$', '$$']],
+      processEscapes: true,
+      packages: {'[+]': ['ams', 'cases', 'mathtools', 'noerrors', 'noundefined']}
+    },
+    svg: {
+      fontCache: 'none'
+    },
+    startup: {
+      pageReady: () => window.MathJax.startup.defaultPageReady().then(() => {
+        document.documentElement.dataset.wawaMathJax = 'ready';
+        window.dispatchEvent(new Event('resize'));
+        parent.postMessage({ type: 'wawa-html-note-mathjax-ready', frameId: ${JSON.stringify(frameId)} }, '*');
+      }).catch((error) => {
+        console.warn('[html-note] MathJax failed.', error);
+        parent.postMessage({
+          type: 'wawa-html-note-mathjax-error',
+          frameId: ${JSON.stringify(frameId)},
+          message: String(error?.message || error)
+        }, '*');
+      })
+    }
+  };
 })();`;
 }
 
@@ -809,6 +902,9 @@ const srcdoc = computed(() => {
   const scriptOpen = "<script>";
   const scriptClose = `<${"/"}script>`;
   const htmlClass = props.fillViewport ? ' class="is-fill-viewport"' : "";
+  const mathNormalizeScript = `${scriptOpen}${normalizeMathDelimitersScript()}${scriptClose}`;
+  const mathConfigScript = `${scriptOpen}${mathJaxConfigScript()}${scriptClose}`;
+  const mathBundleScript = `<script id="MathJax-script" src="${MATHJAX_SCRIPT}">${scriptClose}`;
   const resizeScript = props.fillViewport ? "" : `${scriptOpen}${autoResizeScript()}${scriptClose}`;
   const appBridgeScript = `${scriptOpen}${bridgeScript()}${scriptClose}`;
   return `<!doctype html>
@@ -816,10 +912,14 @@ const srcdoc = computed(() => {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="${APP_BASE_URL}">
 <style>${themeVars.value}\n${baseCss}</style>
 </head>
 <body>
 <main class="rich-note-root">${preparedHtml.value}</main>
+${mathNormalizeScript}
+${mathConfigScript}
+${mathBundleScript}
 ${resizeScript}
 ${appBridgeScript}
 </body>

@@ -14,6 +14,7 @@ import {
   deleteDomain,
   deleteKnowledgeNode,
   exportContext,
+  importHtmlNoteToNode,
   loadInitialVault,
   loadVaultFromPath,
   openVaultContextFolder,
@@ -869,7 +870,10 @@ async function addNote(payload) {
   }
 
   try {
-    const result = await addNoteToNode(activeVaultRootPath.value, payload);
+    const htmlImport = payload?.contentFormat === "html";
+    const result = htmlImport
+      ? await importHtmlNoteToNode(activeVaultRootPath.value, payload)
+      : await addNoteToNode(activeVaultRootPath.value, payload);
     replaceVaultWithoutNavigation(result.vault);
     currentNoteId.value = result.nodeId;
     selectedNodeId.value = result.nodeId;
@@ -877,7 +881,7 @@ async function addNote(payload) {
     currentDomain.value = node?.domain || currentDomain.value;
     graphScopeId.value = hasGraphScope(result.nodeId) ? result.nodeId : scopeForDomain(node?.domain || currentDomain.value);
     currentView.value = "note";
-    noteMode.value = "edit";
+    noteMode.value = htmlImport ? "read" : "edit";
     noteDirty.value = false;
     closeDialog();
   } catch (error) {
