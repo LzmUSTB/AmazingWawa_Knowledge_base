@@ -13,6 +13,7 @@ import {
   createKnowledgeNode,
   deleteDomain,
   deleteKnowledgeNode,
+  deleteNoteFromNode,
   exportContext,
   importHtmlNoteToNode,
   loadInitialVault,
@@ -952,6 +953,35 @@ async function requestDeleteEntity(target) {
   }
 }
 
+async function requestDeleteNote(nodeId) {
+  if (!nodeId || !confirmDiscardDirty()) return;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before deleting notes.");
+    return;
+  }
+  const node = findGraphNode(nodeId);
+  if (!node || node.type === "domain") return;
+  const title = displayTitle(node);
+  const confirmed = window.confirm(
+    `Delete note for "${title}"?\n\nThis removes note.md / note.html and note assets, but keeps the node and graph relations.`,
+  );
+  if (!confirmed) return;
+
+  try {
+    const result = await deleteNoteFromNode(activeVaultRootPath.value, nodeId);
+    replaceVaultWithoutNavigation(result.vault);
+    currentNoteId.value = result.nodeId;
+    selectedNodeId.value = result.nodeId;
+    currentDomain.value = findGraphNode(result.nodeId)?.domain || node.domain || currentDomain.value;
+    currentView.value = "note";
+    noteDirty.value = false;
+    noteMode.value = "read";
+  } catch (error) {
+    console.error("[vault] Failed to delete note.", error);
+    window.alert(`Failed to delete note: ${error?.message || error}`);
+  }
+}
+
 function requestAddLink() {
   if (!confirmDiscardDirty()) return;
   addLinkError.value = "";
@@ -1127,6 +1157,7 @@ function toggleRelationSidebar() {
       @add-note="addNote"
       @create-node="createNode"
       @delete-entity="requestDeleteEntity"
+      @delete-note="requestDeleteNote"
       @edit-entity="requestEditEntity"
       @edit-layout="startLayoutEditing"
       @export-context="handleExportContext"

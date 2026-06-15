@@ -174,6 +174,7 @@ const emit = defineEmits([
   "cancel-layout",
   "create-node",
   "delete-entity",
+  "delete-note",
   "edit-entity",
   "edit-layout",
   "ensure-layout-draft",
@@ -258,6 +259,7 @@ function fitGraphView() {
         <NoteView v-else :can-save-note="canSaveNote" :mode="noteMode" :note-find-close-key="noteFindCloseKey"
           :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
           :saving="noteSaving" @dirty-change="$emit('set-note-dirty', $event)"
+          @delete-note="$emit('delete-note', $event)"
           @find-visible-change="$emit('set-note-find-visible', $event)" @save-note="$emit('save-note', $event)"
           @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)" />
       </main>
@@ -265,9 +267,10 @@ function fitGraphView() {
       <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"
         :add-link-open-key="addLinkOpenKey" :add-link-saving="addLinkSaving" :collapsed="relationSidebarCollapsed"
         :current-note-id="currentNoteId" :current-node-pinned="currentRelationNodePinned" :current-view="currentView"
-        :graph-scope-id="graphScopeId" :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
+        :can-save-note="canSaveNote" :graph-scope-id="graphScopeId" :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
         @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
         @request-add-link="$emit('request-add-link')"
+        @request-delete-note="$emit('delete-note', $event)"
         @request-delete-relation="$emit('request-delete-relation', $event)"
         @request-edit-relation="$emit('request-edit-relation', $event)"
         @toggle-collapse="$emit('toggle-relation-sidebar')" @toggle-pin-node="$emit('toggle-pin-node')" />

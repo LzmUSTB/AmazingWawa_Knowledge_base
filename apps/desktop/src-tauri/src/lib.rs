@@ -1249,6 +1249,44 @@ fn import_html_note_files(
 }
 
 #[tauri::command]
+fn remove_node_note_files(
+    vault_root_path: String,
+    node_domain: String,
+    node_id: String,
+) -> Result<(), String> {
+    let target_dir = html_note_target_dir(&vault_root_path, &node_domain, &node_id)?;
+    if !target_dir.join("meta.yaml").is_file() {
+        return Err("Target node meta.yaml was not found.".into());
+    }
+
+    let canonical_root = PathBuf::from(&vault_root_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    let canonical_target_dir = target_dir
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve target node directory: {error}"))?;
+    if !canonical_target_dir.starts_with(&canonical_root) {
+        return Err("Refusing to remove note files outside the vault root".into());
+    }
+
+    for file_name in ["note.md", "note.html"] {
+        let note_path = canonical_target_dir.join(file_name);
+        if note_path.is_file() {
+            fs::remove_file(&note_path)
+                .map_err(|error| format!("Failed to remove {}: {error}", note_path.to_string_lossy()))?;
+        }
+    }
+
+    let assets_path = canonical_target_dir.join("assets");
+    if assets_path.is_dir() {
+        fs::remove_dir_all(&assets_path)
+            .map_err(|error| format!("Failed to remove {}: {error}", assets_path.to_string_lossy()))?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
     let root = PathBuf::from(&vault_root_path);
     if !root.is_dir() {
@@ -1552,6 +1590,7 @@ pub fn run() {
             read_wawapkg_file,
             read_text_file,
             read_vault_files,
+            remove_node_note_files,
             remove_vault_path,
             open_snapshot_output_dir,
             open_vault_relative_dir,

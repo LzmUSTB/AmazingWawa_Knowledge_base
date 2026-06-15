@@ -641,6 +641,31 @@ export async function importHtmlNoteToNode(vaultRootPath, payload) {
   return { vault: await loadVaultFromPath(vaultRootPath), nodeId: node.id };
 }
 
+export async function deleteNoteFromNode(vaultRootPath, nodeId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting notes.");
+  if (!nodeId) throw new Error("Target node is required.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const node = currentVault.nodes.find((item) => item.id === nodeId && item.type !== "domain");
+  if (!node) throw new Error(`Node "${nodeId}" does not exist.`);
+  if (!nodeHasNote(currentVault, node.id)) throw new Error("This node does not have a note.");
+
+  await invoke("remove_node_note_files", {
+    vaultRootPath,
+    nodeDomain: node.domain,
+    nodeId: node.id,
+  });
+
+  const metaPath = getNodeMetaRelativePath(node);
+  const meta = parseYamlObject(await invoke("read_text_file", { vaultRootPath, relativePath: metaPath }), {});
+  const nextMeta = {
+    ...meta,
+    contentFormat: "none",
+    updatedAt: todayLocalDate(),
+  };
+  await invoke("write_text_file", { vaultRootPath, relativePath: metaPath, contents: YAML.stringify(nextMeta) });
+  return { vault: await loadVaultFromPath(vaultRootPath), nodeId: node.id };
+}
+
 export async function updateDomain(vaultRootPath, domainId, payload) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing domains.");
   if (!domainId) throw new Error("Domain ID is required.");

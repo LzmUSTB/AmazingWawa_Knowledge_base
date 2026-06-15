@@ -18,7 +18,7 @@ const props = defineProps({
   noteFindQuery: { type: String, default: "" },
 });
 
-const emit = defineEmits(["dirty-change", "find-visible-change", "save-note", "set-mode", "show-graph"]);
+const emit = defineEmits(["delete-note", "dirty-change", "find-visible-change", "save-note", "set-mode", "show-graph"]);
 
 const readSurfaceRef = ref(null);
 const fallbackNode = { id: "", title: "Untitled", domain: "root", type: "note", status: "draft", summary: "" };
@@ -173,7 +173,18 @@ function handleHtmlFindResults(payload) {
 
 <template>
   <section class="note-view">
-    <NoteToolbar :can-save-note="canSaveNote" :dirty="dirty" :mode="mode" :saving="saving" @cancel-edit="cancelEdit" @edit="startEdit" @save="saveNote" @show-graph="$emit('show-graph')" />
+    <NoteToolbar
+      :can-delete-note="canSaveNote && hasAnyNote"
+      :can-save-note="canSaveNote"
+      :dirty="dirty"
+      :mode="mode"
+      :saving="saving"
+      @cancel-edit="cancelEdit"
+      @delete-note="$emit('delete-note', node.id)"
+      @edit="startEdit"
+      @save="saveNote"
+      @show-graph="$emit('show-graph')"
+    />
     <article class="note-content technical-grid" :class="{ 'is-html-note': hasHtmlNote }" :style="{ '--note-color': accent }">
       <NoteFindBar v-model:query="findQuery" :current-index="activeFindIndex" :total="findTotal" :visible="findOpen && mode === 'read'" @close="closeFind" @next="moveFind(1)" @previous="moveFind(-1)" />
       <div class="note-shell">

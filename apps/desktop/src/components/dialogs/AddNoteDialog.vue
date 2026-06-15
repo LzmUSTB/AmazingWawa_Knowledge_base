@@ -36,6 +36,7 @@ const selectedNodeId = ref("");
 const selectedNode = computed(() => findGraphNode(selectedNodeId.value));
 const initialTitle = ref("");
 const htmlSourcePath = ref("");
+const choosingHtmlSource = ref(false);
 const markdown = computed(() => `# ${initialTitle.value || displayTitle(selectedNode.value)}\n\n`);
 const formValid = computed(() => (
   Boolean(selectedNode.value && candidates.value.some((node) => node.id === selectedNode.value.id)) &&
@@ -58,10 +59,16 @@ watch(noteMode, () => {
 });
 
 async function chooseHtmlSource(kind) {
-  const selectedPath = kind === "folder" ? await chooseHtmlNoteFolder() : await chooseHtmlNoteFile();
-  if (!selectedPath) return;
-  htmlSourcePath.value = selectedPath;
+  if (choosingHtmlSource.value) return;
   noteMode.value = kind === "folder" ? "html-folder" : "html-file";
+  htmlSourcePath.value = "";
+  choosingHtmlSource.value = true;
+  try {
+    const selectedPath = kind === "folder" ? await chooseHtmlNoteFolder() : await chooseHtmlNoteFile();
+    if (selectedPath) htmlSourcePath.value = selectedPath;
+  } finally {
+    choosingHtmlSource.value = false;
+  }
 }
 
 function submit() {
@@ -101,10 +108,10 @@ function submit() {
         <button :class="{ 'is-active': noteMode === 'markdown' }" type="button" @click="noteMode = 'markdown'">
           Markdown
         </button>
-        <button :class="{ 'is-active': noteMode === 'html-file' }" type="button" @click="chooseHtmlSource('file')">
+        <button :class="{ 'is-active': noteMode === 'html-file' }" :disabled="choosingHtmlSource" type="button" @click="chooseHtmlSource('file')">
           HTML File
         </button>
-        <button :class="{ 'is-active': noteMode === 'html-folder' }" type="button" @click="chooseHtmlSource('folder')">
+        <button :class="{ 'is-active': noteMode === 'html-folder' }" :disabled="choosingHtmlSource" type="button" @click="chooseHtmlSource('folder')">
           HTML Folder
         </button>
       </div>
@@ -116,7 +123,7 @@ function submit() {
       <section v-else class="html-source-panel">
         <div class="section-label">HTML Source</div>
         <strong>{{ noteMode === "html-folder" ? "Folder import" : "File import" }}</strong>
-        <small>{{ htmlSourcePath || "Choose an HTML file or folder." }}</small>
+        <small>{{ choosingHtmlSource ? "Choosing source..." : (htmlSourcePath || "Choose an HTML file or folder.") }}</small>
       </section>
     </template>
 
@@ -170,6 +177,10 @@ pre { max-height: 180px; overflow: auto; border: 1px solid var(--border-muted); 
 .mode-switch button.is-active {
   border-color: var(--border-primary);
   color: var(--text-primary);
+}
+.mode-switch button:disabled {
+  cursor: wait;
+  opacity: .55;
 }
 .html-source-panel {
   display: grid;

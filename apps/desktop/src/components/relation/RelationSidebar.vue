@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import NodeFilterList from "../common/NodeFilterList.vue";
 import AppIcon from "../ui/AppIcon.vue";
 import RelationContextMenu from "./RelationContextMenu.vue";
-import { findGraphNode } from "../../graph/graph-data-store.js";
+import { findGraphNode, getActiveVault } from "../../graph/graph-data-store.js";
 import {
   getDirectRelationsForNode,
   getHierarchyForNode,
@@ -27,6 +27,10 @@ const props = defineProps({
     default: 0,
   },
   addLinkSaving: {
+    type: Boolean,
+    default: false,
+  },
+  canSaveNote: {
     type: Boolean,
     default: false,
   },
@@ -62,6 +66,7 @@ const emit = defineEmits([
   "open-note",
   "open-scope",
   "request-add-link",
+  "request-delete-note",
   "request-delete-relation",
   "request-edit-relation",
   "toggle-collapse",
@@ -77,6 +82,11 @@ const contextMenu = ref({ edge: null, x: 0, y: 0 });
 const node = computed(() => findGraphNode(props.nodeId));
 const nodeColor = computed(() => getDomainColor(node.value?.domain));
 const domainSelected = computed(() => Boolean(node.value && isDomainNode(node.value.id)));
+const nodeHasNote = computed(() => {
+  if (!node.value || domainSelected.value) return false;
+  const note = getActiveVault().notes?.[node.value.id] || null;
+  return Boolean(note?.markdown || note?.html);
+});
 const hierarchy = computed(() => (node.value ? getHierarchyForNode(node.value.id) : { parentEdges: [], childEdges: [] }));
 const directRelations = computed(() => (node.value ? getDirectRelationsForNode(node.value.id) : []));
 
@@ -216,6 +226,11 @@ function requestDeleteRelation(edgeId) {
   closeContextMenu();
   emit("request-delete-relation", edgeId);
 }
+
+function requestDeleteNote() {
+  closeContextMenu();
+  emit("request-delete-note", node.value?.id || "");
+}
 </script>
 
 <template>
@@ -272,6 +287,11 @@ function requestDeleteRelation(edgeId) {
                 @click="$emit('open-scope', node.id, node.id)">
                 <AppIcon name="graph" />
                 <span class="button-icon-label">Show Local Graph</span>
+              </button>
+              <button v-if="canSaveNote && nodeHasNote" class="hud-button button-with-icon"
+                style="--button-color: var(--game-dev)" @click="requestDeleteNote">
+                <AppIcon name="delete" />
+                <span class="button-icon-label">Delete Note</span>
               </button>
             </template>
             <button class="hud-button button-with-icon" style="--button-color: var(--career)"

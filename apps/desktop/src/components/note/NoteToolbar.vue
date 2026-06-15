@@ -6,6 +6,10 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  canDeleteNote: {
+    type: Boolean,
+    default: false,
+  },
   dirty: {
     type: Boolean,
     default: false,
@@ -20,7 +24,7 @@ defineProps({
   },
 });
 
-defineEmits(["cancel-edit", "edit", "save", "show-graph"]);
+defineEmits(["cancel-edit", "delete-note", "edit", "save", "show-graph"]);
 </script>
 
 <template>
@@ -39,6 +43,10 @@ defineEmits(["cancel-edit", "edit", "save", "show-graph"]);
       <button class="hud-button button-with-icon" style="--button-color: var(--graphics)" @click="$emit('edit')">
         <AppIcon name="edit" />
         <span class="button-icon-label">Edit</span>
+      </button>
+      <button v-if="canDeleteNote" class="hud-button button-with-icon" style="--button-color: var(--game-dev)" @click="$emit('delete-note')">
+        <AppIcon name="delete" />
+        <span class="button-icon-label">Delete Note</span>
       </button>
       <button class="hud-button button-with-icon" style="--button-color: var(--simulation)" @click="$emit('show-graph')">
         <AppIcon name="graph" />

@@ -4,20 +4,20 @@ titleLocale: 线性无关
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P0. A property of vectors where no vector can be represented as
-  a linear combination of the others.'
-summaryLocale: '优先级：P0。中文：线性无关；日本語：一次独立；English: Linear Independence。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P0. A property of vectors where no vector can be represented
+  as a linear combination of the others."
+summaryLocale: "优先级：P0。中文：线性无关；日本語：一次独立；English: Linear Independence。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 一次独立
-- linearly independent
-- linear dependence
+  - 一次独立
+  - linearly independent
+  - linear dependence
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p0
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p0
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-15
