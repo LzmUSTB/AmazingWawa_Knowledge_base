@@ -1,0 +1,23 @@
+id: linear-algebra-gram-schmidt-process
+title: Gram-Schmidt Process
+titleLocale: Gram-Schmidt 正交化
+domain: mathematical-foundations
+type: concept
+status: seed
+summary: 'Priority: P1. A procedure that converts linearly independent vectors into
+  an orthogonal or orthonormal basis spanning the same subspace.'
+summaryLocale: '优先级：P1。中文：Gram-Schmidt 正交化；日本語：グラム・シュミット；English: Gram-Schmidt Process。该节点当前仅建立结构，后续再生成中文主体笔记。'
+contentFormat: none
+aliases:
+- グラム・シュミット
+- Gram-Schmidt orthogonalization
+- orthonormalization
+tags:
+- tokyo-science-cs-exam
+- mathematics
+- linear-algebra
+- p1
+sourceIds:
+- tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: '2026-06-15T00:00:00+09:00'
+updatedAt: '2026-06-15T00:00:00+09:00'

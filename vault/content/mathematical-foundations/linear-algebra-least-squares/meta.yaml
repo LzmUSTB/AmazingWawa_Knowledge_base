@@ -1,0 +1,23 @@
+id: linear-algebra-least-squares
+title: Least Squares
+titleLocale: 最小二乘法
+domain: mathematical-foundations
+type: concept
+status: seed
+summary: 'Priority: P1. A method for finding the best approximate solution by minimizing
+  squared residual error, usually via projections or normal equations.'
+summaryLocale: '优先级：P1。中文：最小二乘法；日本語：最小二乗法；English: Least Squares。该节点当前仅建立结构，后续再生成中文主体笔记。'
+contentFormat: none
+aliases:
+- 最小二乗法
+- least-squares method
+- linear least squares
+tags:
+- tokyo-science-cs-exam
+- mathematics
+- linear-algebra
+- p1
+sourceIds:
+- tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: '2026-06-15T00:00:00+09:00'
+updatedAt: '2026-06-15T00:00:00+09:00'

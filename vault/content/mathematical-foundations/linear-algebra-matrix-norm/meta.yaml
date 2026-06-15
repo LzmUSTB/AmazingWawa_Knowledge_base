@@ -1,0 +1,23 @@
+id: linear-algebra-matrix-norm
+title: Matrix Norm
+titleLocale: 矩阵范数
+domain: mathematical-foundations
+type: concept
+status: seed
+summary: 'Priority: P2. A numerical measure of matrix size or induced amplification,
+  used in approximation, stability, and error analysis.'
+summaryLocale: '优先级：P2。中文：矩阵范数；日本語：行列ノルム；English: Matrix Norm。该节点当前仅建立结构，后续再生成中文主体笔记。'
+contentFormat: none
+aliases:
+- 行列ノルム
+- matrix norm
+- operator norm
+tags:
+- tokyo-science-cs-exam
+- mathematics
+- linear-algebra
+- p2
+sourceIds:
+- tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: '2026-06-15T00:00:00+09:00'
+updatedAt: '2026-06-15T00:00:00+09:00'

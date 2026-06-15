@@ -1,0 +1,23 @@
+id: linear-algebra-orthogonal-diagonalization
+title: Orthogonal Diagonalization
+titleLocale: 正交对角化
+domain: mathematical-foundations
+type: concept
+status: seed
+summary: 'Priority: P1. Diagonalization by an orthogonal matrix, especially for real
+  symmetric matrices via an orthonormal eigenbasis.'
+summaryLocale: '优先级：P1。中文：正交对角化；日本語：直交対角化；English: Orthogonal Diagonalization。该节点当前仅建立结构，后续再生成中文主体笔记。'
+contentFormat: none
+aliases:
+- 直交対角化
+- spectral theorem
+- orthogonally diagonalizable
+tags:
+- tokyo-science-cs-exam
+- mathematics
+- linear-algebra
+- p1
+sourceIds:
+- tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: '2026-06-15T00:00:00+09:00'
+updatedAt: '2026-06-15T00:00:00+09:00'

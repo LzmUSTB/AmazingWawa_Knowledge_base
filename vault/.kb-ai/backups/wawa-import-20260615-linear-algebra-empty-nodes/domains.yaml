@@ -15,11 +15,3 @@ domains:
     descriptionLocale: 研究数字几何、图像生成、渲染、动画与视觉计算的知识领域。
     color: "#00b7ff"
     order: 20
-  - id: mathematical-foundations
-    title: Mathematical Foundations
-    titleLocale: 数学基础
-    description: Core mathematical concepts for computer science entrance
-      examination preparation and later technical study.
-    descriptionLocale: 面向信息工学入试与后续技术学习的数学基础知识域。
-    color: "#4f9cff"
-    order: 20

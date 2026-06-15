@@ -1,0 +1,32 @@
+packageId: wawa-import-20260615-linear-algebra-empty-nodes
+appliedAt: 2026-06-15T06:00:57.972Z
+created:
+  - content/mathematical-foundations/linear-algebra/meta.yaml
+  - content/mathematical-foundations/linear-algebra-determinant/meta.yaml
+  - content/mathematical-foundations/linear-algebra-inverse-matrix/meta.yaml
+  - content/mathematical-foundations/linear-algebra-linear-independence/meta.yaml
+  - content/mathematical-foundations/linear-algebra-rank/meta.yaml
+  - content/mathematical-foundations/linear-algebra-eigenvalues-eigenvectors/meta.yaml
+  - content/mathematical-foundations/linear-algebra-diagonalization/meta.yaml
+  - content/mathematical-foundations/linear-algebra-quadratic-form/meta.yaml
+  - content/mathematical-foundations/linear-algebra-positive-definiteness-semi-definiteness/meta.yaml
+  - content/mathematical-foundations/linear-algebra-vector-space/meta.yaml
+  - content/mathematical-foundations/linear-algebra-basis-dimension/meta.yaml
+  - content/mathematical-foundations/linear-algebra-linear-map/meta.yaml
+  - content/mathematical-foundations/linear-algebra-kernel-image/meta.yaml
+  - content/mathematical-foundations/linear-algebra-orthogonality/meta.yaml
+  - content/mathematical-foundations/linear-algebra-gram-schmidt-process/meta.yaml
+  - content/mathematical-foundations/linear-algebra-orthogonal-diagonalization/meta.yaml
+  - content/mathematical-foundations/linear-algebra-least-squares/meta.yaml
+  - content/mathematical-foundations/linear-algebra-jordan-normal-form-basics/meta.yaml
+  - content/mathematical-foundations/linear-algebra-singular-value-decomposition/meta.yaml
+  - content/mathematical-foundations/linear-algebra-projection-matrix/meta.yaml
+  - content/mathematical-foundations/linear-algebra-matrix-norm/meta.yaml
+  - content/mathematical-foundations/linear-algebra-orthogonal-complement/meta.yaml
+  - content/mathematical-foundations/linear-algebra-matrix-powers/meta.yaml
+createdDomains:
+  - mathematical-foundations
+modified:
+  - domains.yaml
+  - graph.yaml
+warnings: []

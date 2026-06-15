@@ -1,0 +1,23 @@
+id: linear-algebra-linear-map
+title: Linear Map
+titleLocale: 线性映射
+domain: mathematical-foundations
+type: concept
+status: seed
+summary: 'Priority: P1. A structure-preserving map satisfying additivity and scalar
+  homogeneity, often represented by matrices.'
+summaryLocale: '优先级：P1。中文：线性映射；日本語：線形写像；English: Linear Map。该节点当前仅建立结构，后续再生成中文主体笔记。'
+contentFormat: none
+aliases:
+- 線形写像
+- linear transformation
+- linear operator
+tags:
+- tokyo-science-cs-exam
+- mathematics
+- linear-algebra
+- p1
+sourceIds:
+- tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: '2026-06-15T00:00:00+09:00'
+updatedAt: '2026-06-15T00:00:00+09:00'

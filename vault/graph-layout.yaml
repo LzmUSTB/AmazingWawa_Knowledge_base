@@ -141,6 +141,11 @@ boards:
         y: 640
         w: 190
         h: 80
+      mathematical-foundations:
+        x: 864
+        y: 768
+        w: 190
+        h: 80
   computer-graphics:
     width: 2400
     height: 1600
@@ -274,5 +279,205 @@ boards:
       cg-scene-and-asset-representation:
         x: 832
         y: 608
+        w: 190
+        h: 80
+  mathematical-foundations:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      mathematical-foundations:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra:
+        x: 800
+        y: 704
+        w: 190
+        h: 80
+  linear-algebra-projection-matrix:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-projection-matrix:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-orthogonality:
+        x: 960
+        y: 576
+        w: 190
+        h: 80
+      linear-algebra-orthogonal-complement:
+        x: 1408
+        y: 832
+        w: 190
+        h: 80
+      linear-algebra-least-squares:
+        x: 768
+        y: 864
+        w: 190
+        h: 80
+  linear-algebra-diagonalization:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-diagonalization:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-eigenvalues-eigenvectors:
+        x: 832
+        y: 640
+        w: 190
+        h: 80
+      linear-algebra-matrix-powers:
+        x: 1408
+        y: 736
+        w: 190
+        h: 80
+      linear-algebra-jordan-normal-form-basics:
+        x: 1152
+        y: 960
+        w: 190
+        h: 80
+      linear-algebra-orthogonal-diagonalization:
+        x: 832
+        y: 832
+        w: 190
+        h: 80
+  linear-algebra-quadratic-form:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-quadratic-form:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-eigenvalues-eigenvectors:
+        x: 1280
+        y: 640
+        w: 190
+        h: 80
+      linear-algebra-positive-definiteness-semi-definiteness:
+        x: 960
+        y: 608
+        w: 190
+        h: 80
+  linear-algebra-kernel-image:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-kernel-image:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-linear-map:
+        x: 768
+        y: 672
+        w: 190
+        h: 80
+  linear-algebra-basis-dimension:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-basis-dimension:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-vector-space:
+        x: 1408
+        y: 736
+        w: 190
+        h: 80
+      linear-algebra-linear-independence:
+        x: 832
+        y: 800
+        w: 190
+        h: 80
+  linear-algebra-vector-space:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-vector-space:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-basis-dimension:
+        x: 1056
+        y: 544
+        w: 190
+        h: 80
+      linear-algebra-linear-independence:
+        x: 1440
+        y: 640
+        w: 190
+        h: 80
+      linear-algebra-linear-map:
+        x: 1184
+        y: 896
+        w: 190
+        h: 80
+      linear-algebra-orthogonality:
+        x: 864
+        y: 896
+        w: 190
+        h: 80
+      linear-algebra-matrix-norm:
+        x: 832
+        y: 640
+        w: 190
+        h: 80
+  linear-algebra-determinant:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-determinant:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-inverse-matrix:
+        x: 704
+        y: 736
+        w: 190
+        h: 80
+      linear-algebra-eigenvalues-eigenvectors:
+        x: 928
+        y: 544
+        w: 190
+        h: 80
+  linear-algebra-inverse-matrix:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-inverse-matrix:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-rank:
+        x: 800
+        y: 736
+        w: 190
+        h: 80
+      linear-algebra-determinant:
+        x: 1216
+        y: 544
         w: 190
         h: 80

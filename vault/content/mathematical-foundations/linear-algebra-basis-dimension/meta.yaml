@@ -1,0 +1,23 @@
+id: linear-algebra-basis-dimension
+title: Basis and Dimension
+titleLocale: 基与维数
+domain: mathematical-foundations
+type: concept
+status: seed
+summary: 'Priority: P1. A basis is a minimal spanning and linearly independent set;
+  dimension counts the number of basis vectors.'
+summaryLocale: '优先级：P1。中文：基与维数；日本語：基底と次元；English: Basis and Dimension。该节点当前仅建立结构，后续再生成中文主体笔记。'
+contentFormat: none
+aliases:
+- 基底と次元
+- basis
+- dimension
+tags:
+- tokyo-science-cs-exam
+- mathematics
+- linear-algebra
+- p1
+sourceIds:
+- tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: '2026-06-15T00:00:00+09:00'
+updatedAt: '2026-06-15T00:00:00+09:00'
