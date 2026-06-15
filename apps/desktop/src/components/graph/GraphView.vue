@@ -104,11 +104,112 @@ function getResolvedTracePoints(edge) {
   return generateOrthogonalRoute(sourceBox, targetBox, { routeIndex });
 }
 
-function getVisualTracePoints(edge) {
-  return getResolvedTracePoints(edge);
+const COMPARE_TRACE_TRIM = 10;
+const TRACE_NODE_GAP = 0;
+const TRACE_ARROW_GAP = 0;
+
+function expandedBox(box, margin) {
+  return {
+    x: box.x - margin,
+    y: box.y - margin,
+    width: box.width + margin * 2,
+    height: box.height + margin * 2,
+  };
 }
 
-const COMPARE_TRACE_TRIM = 10;
+function pointInsideBox(point, box) {
+  return (
+    point[0] >= box.x &&
+    point[0] <= box.x + box.width &&
+    point[1] >= box.y &&
+    point[1] <= box.y + box.height
+  );
+}
+
+function lerpPoint(from, to, ratio) {
+  return [
+    from[0] + (to[0] - from[0]) * ratio,
+    from[1] + (to[1] - from[1]) * ratio,
+  ];
+}
+
+function findBoxExitPoint(from, to, box) {
+  let low = 0;
+  let high = 1;
+
+  for (let index = 0; index < 18; index += 1) {
+    const middle = (low + high) / 2;
+    if (pointInsideBox(lerpPoint(from, to, middle), box)) {
+      low = middle;
+    } else {
+      high = middle;
+    }
+  }
+
+  return lerpPoint(from, to, high).map((value) => Number(value.toFixed(2)));
+}
+
+function trimStartFromBox(points, box, margin) {
+  if (!box || !points || points.length < 2) return points;
+  const clippingBox = expandedBox(box, margin);
+  if (!pointInsideBox(points[0], clippingBox)) return points;
+
+  for (let index = 1; index < points.length; index += 1) {
+    if (!pointInsideBox(points[index], clippingBox)) {
+      return [
+        findBoxExitPoint(points[index - 1], points[index], clippingBox),
+        ...points.slice(index),
+      ];
+    }
+  }
+
+  return [movePointToward(points[0], points[1], margin), ...points.slice(1)];
+}
+
+function trimEndFromBox(points, box, margin) {
+  if (!box || !points || points.length < 2) return points;
+  const clippingBox = expandedBox(box, margin);
+  const lastIndex = points.length - 1;
+  if (!pointInsideBox(points[lastIndex], clippingBox)) return points;
+
+  for (let index = lastIndex - 1; index >= 0; index -= 1) {
+    if (!pointInsideBox(points[index], clippingBox)) {
+      return [
+        ...points.slice(0, index + 1),
+        findBoxExitPoint(points[index + 1], points[index], clippingBox),
+      ];
+    }
+  }
+
+  return [...points.slice(0, lastIndex), movePointToward(points[lastIndex], points[lastIndex - 1], margin)];
+}
+
+function removeAdjacentDuplicatePoints(points) {
+  return points.filter((point, index) => {
+    if (index === 0) return true;
+    const previous = points[index - 1];
+    return point[0] !== previous[0] || point[1] !== previous[1];
+  });
+}
+
+function endpointGap(edge, endpoint) {
+  const direction = relationTheme[edge.relation]?.direction;
+  if (endpoint === "source" && direction === "both") return TRACE_ARROW_GAP;
+  if (endpoint === "target" && (direction === "forward" || direction === "both")) return TRACE_ARROW_GAP;
+  return TRACE_NODE_GAP;
+}
+
+function getVisualTracePoints(edge) {
+  const points = getResolvedTracePoints(edge);
+  if (!points?.length) return points;
+
+  const sourceBox = getResolvedNodeLayout(edge.source);
+  const targetBox = getResolvedNodeLayout(edge.target);
+  const trimmedStart = trimStartFromBox(points, sourceBox, endpointGap(edge, "source"));
+  const trimmedEnd = trimEndFromBox(trimmedStart, targetBox, endpointGap(edge, "target"));
+
+  return removeAdjacentDuplicatePoints(trimmedEnd);
+}
 
 function movePointToward(from, to, amount) {
   const dx = to[0] - from[0];

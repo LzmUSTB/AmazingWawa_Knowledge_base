@@ -60,11 +60,6 @@ function displayTitle(entity, fallback = "") {
         <button class="bread-button">{{ displayTitle(currentNode) }}</button>
       </template>
     </template>
-    <button v-if="currentView === 'note'" class="show-graph button-with-icon"
-      @click="$emit('show-graph', currentNoteId, currentNoteId)">
-      <AppIcon name="graph" />
-      <span class="button-icon-label">Show in Graph</span>
-    </button>
   </div>
 </template>
 

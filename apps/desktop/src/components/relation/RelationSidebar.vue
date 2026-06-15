@@ -270,7 +270,7 @@ function requestDeleteRelation(edgeId) {
               </button>
               <button class="hud-button button-with-icon" style="--button-color: var(--relation-node-color)"
                 @click="$emit('open-scope', node.id, node.id)">
-                <AppIcon name="focus" />
+                <AppIcon name="graph" />
                 <span class="button-icon-label">Show Local Graph</span>
               </button>
             </template>
@@ -336,18 +336,18 @@ function requestDeleteRelation(edgeId) {
           <button v-for="edge in directRelations" :key="edge.id" class="relation-row relation-row--direct"
             :style="relationStyle(edge)" @click="openNodeGraph(getOtherNodeId(edge, node.id))"
             @contextmenu="openContextMenu($event, edge)">
-            <span class="relation-endpoint relation-endpoint--source">
+            <span class="relation-endpoint relation-endpoint--source" :title="getNodeTitleOrId(edge.source)">
               <strong>{{ getNodeTitleOrId(edge.source) }}</strong>
               <small>source</small>
             </span>
-            <span class="relation-middle" :class="relationMiddleClass(edge)">
+            <span class="relation-middle" :class="relationMiddleClass(edge)" :title="relationLabel(edge)">
               <strong>{{ relationLabel(edge) }}</strong>
               <span class="relation-trace" aria-hidden="true">
                 <span class="relation-arrow relation-arrow--left"></span>
                 <span class="relation-arrow relation-arrow--right"></span>
               </span>
             </span>
-            <span class="relation-endpoint relation-endpoint--target">
+            <span class="relation-endpoint relation-endpoint--target" :title="getNodeTitleOrId(edge.target)">
               <strong>{{ getNodeTitleOrId(edge.target) }}</strong>
               <small>target</small>
             </span>
@@ -690,7 +690,7 @@ select:focus {
 
 .relation-row--direct {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 2fr);
   gap: 8px;
   align-items: stretch;
   border-left-color: var(--border-muted);
@@ -701,12 +701,16 @@ select:focus {
   min-width: 0;
   display: grid;
   align-content: center;
+  justify-items: center;
   gap: 5px;
   min-height: 54px;
+  text-align: center;
 }
 
 .relation-endpoint strong,
 .relation-middle strong {
+  display: block;
+  max-width: 100%;
   overflow: hidden;
   font-size: var(--font-size-small);
   font-weight: 900;
@@ -731,11 +735,15 @@ select:focus {
 
 .relation-row small,
 .relation-endpoint small {
+  max-width: 100%;
+  overflow: hidden;
   color: var(--text-muted);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: var(--font-size-small);
   font-weight: 700;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .relation-trace {

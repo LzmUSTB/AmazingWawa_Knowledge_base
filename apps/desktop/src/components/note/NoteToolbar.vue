@@ -60,7 +60,7 @@ defineEmits(["cancel-edit", "edit", "save", "show-graph"]);
   min-height: 54px;
   min-width: 0;
   overflow-x: auto;
-  padding: 0 18px;
+  padding: 10px 18px;
   border-bottom: 1px solid var(--border-muted);
   background: var(--background-panel);
 }
