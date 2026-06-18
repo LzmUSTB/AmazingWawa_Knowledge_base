@@ -532,13 +532,13 @@ boards:
         w: 190
         h: 80
       linear-algebra-vector-space:
-        x: 832
-        y: 1376
+        x: 864
+        y: 1472
         w: 190
         h: 80
       linear-algebra-basis-dimension:
-        x: 864
-        y: 1472
+        x: 832
+        y: 1376
         w: 190
         h: 80
       linear-algebra-linear-map:

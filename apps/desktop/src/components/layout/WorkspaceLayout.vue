@@ -235,6 +235,7 @@ function fitGraphView() {
       <main class="workspace">
         <BreadcrumbBar :current-domain="currentDomain" :current-note-id="currentNoteId" :current-view="currentView"
           @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
+          @open-scope="relayOpenScope"
           @show-graph="$emit('show-graph', $event)" />
 
         <template v-if="currentView === 'graph'">

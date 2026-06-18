@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linear Map / 线性映射 / 線形写像</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)'], ['$', '$']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #14161d;
+      --panel-2: #1c1f29;
+      --text: #f3f5f7;
+      --muted: #b7bdc9;
+      --line: #343847;
+      --accent: #9cff3a;
+      --accent-2: #46c7ff;
+      --accent-3: #ff4fd8;
+      --warn: #ffd166;
+      --bad: #ff6b6b;
+      --good: #6dff9e;
+      --code: #101219;
+      --shadow: rgba(0,0,0,.35);
+      --radius: 0px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(70,199,255,.13), transparent 28%),
+        radial-gradient(circle at 86% 4%, rgba(156,255,58,.11), transparent 24%),
+        radial-gradient(circle at 68% 64%, rgba(255,79,216,.07), transparent 31%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.72;
+    }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+    header.hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(20,22,29,.97), rgba(20,22,29,.68));
+      box-shadow: 0 24px 70px var(--shadow);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    header.hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(90deg, rgba(0,0,0,.3), rgba(0,0,0,1));
+      pointer-events: none;
+    }
+    .hero > * { position: relative; }
+    .kicker {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-size: 13px;
+      border: 1px solid rgba(156,255,58,.5);
+      padding: 4px 10px;
+      background: rgba(156,255,58,.08);
+    }
+    h1 { font-size: clamp(32px, 5vw, 58px); line-height: 1.08; margin: 22px 0 16px; letter-spacing: -.04em; }
+    .subtitle { font-size: 19px; max-width: 900px; color: var(--muted); margin: 0; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+    .meta-card { border: 1px solid var(--line); background: rgba(11,12,16,.65); padding: 14px 16px; }
+    .meta-card strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .meta-card span { display: block; margin-top: 3px; font-weight: 750; }
+    nav.toc { margin: 22px 0 34px; border: 1px solid var(--line); background: rgba(20,22,29,.82); padding: 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    nav.toc a { border: 1px solid var(--line); padding: 10px 12px; color: var(--text); background: rgba(255,255,255,.03); font-weight: 650; font-size: 14px; }
+    nav.toc a:hover { border-color: var(--accent-2); background: rgba(70,199,255,.08); text-decoration: none; }
+    section { margin: 26px 0; border: 1px solid var(--line); background: rgba(20,22,29,.88); box-shadow: 0 16px 46px rgba(0,0,0,.18); }
+    .section-inner { padding: 30px; }
+    h2 { margin: 0 0 14px; font-size: clamp(24px, 3vw, 36px); line-height: 1.18; letter-spacing: -.02em; }
+    h3 { margin: 28px 0 10px; font-size: 22px; }
+    h4 { margin: 22px 0 8px; font-size: 17px; color: var(--accent); }
+    p { margin: 12px 0; }
+    .lead { color: var(--muted); font-size: 17px; }
+    .highlight { color: var(--accent); font-weight: 800; }
+    .blue { color: var(--accent-2); font-weight: 800; }
+    .pink { color: var(--accent-3); font-weight: 800; }
+    .warn { color: var(--warn); font-weight: 800; }
+    .good { color: var(--good); font-weight: 800; }
+    .bad { color: var(--bad); font-weight: 800; }
+    .callout { border: 1px solid rgba(70,199,255,.45); background: rgba(70,199,255,.08); padding: 15px 17px; margin: 18px 0; }
+    .callout strong { color: var(--accent-2); }
+    .callout.warn-box { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.08); }
+    .callout.good-box { border-color: rgba(109,255,158,.45); background: rgba(109,255,158,.07); }
+    .callout.bad-box { border-color: rgba(255,107,107,.45); background: rgba(255,107,107,.075); }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 16px; }
+    .formula-box { border: 1px solid rgba(156,255,58,.42); background: rgba(156,255,58,.065); padding: 16px; margin: 16px 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; overflow: hidden; }
+    th, td { border: 1px solid var(--line); padding: 11px 12px; text-align: left; vertical-align: top; }
+    th { color: var(--accent); background: rgba(156,255,58,.08); }
+    td { background: rgba(255,255,255,.025); }
+    ul, ol { padding-left: 1.4em; }
+    li { margin: 6px 0; }
+    .workspace { border: 1px solid var(--line); background: rgba(11,12,16,.76); padding: 16px; margin: 18px 0; }
+    .canvas-wrap { border: 1px solid rgba(255,255,255,.08); background: #090a0f; position: relative; }
+    canvas { display: block; width: 100%; height: 390px; }
+    .state-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .state-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 9px 12px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 0;
+    }
+    .state-btn:hover { border-color: var(--accent-2); background: rgba(70,199,255,.09); }
+    .state-btn.active { border-color: var(--accent); color: #071006; background: var(--accent); }
+    .state-note { margin-top: 10px; color: var(--muted); font-size: 14px; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .readout div { border: 1px solid var(--line); padding: 10px; background: rgba(255,255,255,.03); }
+    .readout strong { display: block; color: var(--muted); font-size: 12px; }
+    .readout span { display: block; color: var(--text); font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .control-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .control-row.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .control { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px; }
+    .control label { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; font-weight: 800; }
+    .control output { color: var(--accent); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+    .timeline-row { display: grid; grid-template-columns: 160px minmax(0, 1fr) 160px; gap: 12px; align-items: center; margin-top: 14px; }
+    .timeline-label { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 10px; color: var(--muted); font-weight: 800; font-size: 13px; text-align: center; }
+    .math-note { font-size: 15px; color: var(--muted); }
+    details { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px 14px; margin: 10px 0; }
+    summary { cursor: pointer; color: var(--accent-2); font-weight: 800; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background: rgba(255,255,255,.06); padding: 2px 5px; border: 1px solid rgba(255,255,255,.09); }
+    .mjx-svg { outline: none; }
+    @media (max-width: 920px) {
+      .meta-grid, nav.toc, .grid-2, .grid-3, .readout, .control-row, .control-row.four, .timeline-row { grid-template-columns: 1fr; }
+      header.hero, .section-inner { padding: 22px; }
+      canvas { height: 340px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="kicker">Linear Algebra Core</div>
+      <h1>Linear Map<br>线性映射 / 線形写像</h1>
+      <p class="subtitle">
+        线性映射把“向量空间”之间的关系变成可以研究的对象。它不是任意函数，而是必须保持加法和数乘结构的变换。
+      </p>
+      <div class="meta-grid">
+        <div class="meta-card"><strong>前置概念</strong><span>向量空间、线性组合、基与维数</span></div>
+        <div class="meta-card"><strong>核心问题</strong><span>什么样的变换不破坏线性结构</span></div>
+        <div class="meta-card"><strong>连接节点</strong><span>矩阵、核与像、秩、逆矩阵</span></div>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <a href="#terms">术语与基本对象</a>
+      <a href="#definition">线性的判定</a>
+      <a href="#matrix">矩阵表示</a>
+      <a href="#columns">基向量的去向</a>
+      <a href="#change">空间如何被映射</a>
+      <a href="#examples">典型与非典型</a>
+      <a href="#links">通向核与像</a>
+      <a href="#summary">整理与检查</a>
+    </nav>
+
+    <section id="terms">
+      <div class="section-inner">
+        <h2>从“函数”到“结构保持的函数”</h2>
+        <p class="lead">
+          高中数学中，函数通常写成 \(f(x)\)，输入一个数，输出一个数。线性代数中的映射更一般：输入可以是向量、矩阵、多项式，输出也可以是另一个向量空间中的对象。
+        </p>
+
+        <table>
+          <thead>
+            <tr><th>中文</th><th>日本語</th><th>English</th><th>含义</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>映射</td><td>写像</td><td>Map / Mapping</td><td>把一个集合中的对象按规则送到另一个集合。</td></tr>
+            <tr><td>线性映射</td><td>線形写像</td><td>Linear Map</td><td>保持向量加法和数乘结构的映射。</td></tr>
+            <tr><td>定义域</td><td>定義域</td><td>Domain</td><td>输入对象所在的空间，通常记作 \(V\)。</td></tr>
+            <tr><td>到达域</td><td>終域</td><td>Codomain</td><td>输出对象被规定所在的空间，通常记作 \(W\)。</td></tr>
+            <tr><td>像</td><td>像</td><td>Image</td><td>实际能够输出到的部分，记作 \(\operatorname{Im}(T)\)。</td></tr>
+            <tr><td>核</td><td>核</td><td>Kernel</td><td>被映射成零向量的输入集合，记作 \(\ker(T)\)。</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>注意：</strong>
+          定义域和到达域不一定相同。一个线性映射可以是 \(T:\mathbb{R}^2\to\mathbb{R}^2\)，也可以是 \(T:\mathbb{R}^3\to\mathbb{R}^2\)，甚至可以是“把多项式变成它的导数”。
+        </div>
+      </div>
+    </section>
+
+    <section id="definition">
+      <div class="section-inner">
+        <h2>线性映射的两个条件</h2>
+        <p>
+          设 \(V,W\) 是两个向量空间，\(T:V\to W\) 是一个映射。如果对任意 \(\mathbf{u},\mathbf{v}\in V\) 和任意标量 \(c\in\mathbb{R}\)，都满足下面两条规则，那么 \(T\) 就是线性映射：
+        </p>
+
+        <div class="formula-box">
+          \[
+          T(\mathbf{u}+\mathbf{v})=T(\mathbf{u})+T(\mathbf{v})
+          \]
+          \[
+          T(c\mathbf{u})=cT(\mathbf{u})
+          \]
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>保持加法</h3>
+            <p>
+              先把两个输入加起来再映射，应该和先分别映射再相加得到同一个结果。
+            </p>
+            <p class="math-note">
+              这保证了“平行四边形结构”不会被破坏。
+            </p>
+          </div>
+          <div class="card">
+            <h3>保持数乘</h3>
+            <p>
+              先把输入放大 \(c\) 倍再映射，应该和先映射再放大 \(c\) 倍得到同一个结果。
+            </p>
+            <p class="math-note">
+              这保证了“同一直线上的倍数关系”不会被破坏。
+            </p>
+          </div>
+        </div>
+
+        <p>
+          下面比较三种规则。重点不是代入某一个点，而是观察它们是否同时保持加法和数乘。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="lawCanvas"></canvas></div>
+          <div class="state-row" id="lawButtons">
+            <button class="state-btn active" data-case="matrix">矩阵变换：满足线性</button>
+            <button class="state-btn" data-case="affine">平移规则：不满足线性</button>
+            <button class="state-btn" data-case="square">平方规则：不满足线性</button>
+          </div>
+          <div class="readout">
+            <div><strong>规则</strong><span id="lawRule">T(x,y)=(x+y, y)</span></div>
+            <div><strong>加法检查</strong><span id="lawAdd">成立</span></div>
+            <div><strong>数乘检查</strong><span id="lawScale">成立</span></div>
+            <div><strong>结论</strong><span id="lawConclusion">线性映射</span></div>
+          </div>
+        </div>
+
+        <div class="callout warn-box">
+          <strong>最常见误区：</strong>
+          形式看起来“简单”的规则不一定线性。比如 \(T(x,y)=(x+1,y)\) 只是平移，它不把零向量送到零向量，所以不是线性映射。
+        </div>
+      </div>
+    </section>
+
+    <section id="matrix">
+      <div class="section-inner">
+        <h2>矩阵是有限维线性映射的表示</h2>
+        <p>
+          在 \(\mathbb{R}^2\) 中，一个常见的线性映射可以写成：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=
+          \begin{bmatrix}
+          a & b\\
+          c & d
+          \end{bmatrix},\qquad
+          \mathbf{x}=\begin{bmatrix}x\\y\end{bmatrix}
+          \]
+          \[
+          T(\mathbf{x})=A\mathbf{x}=
+          \begin{bmatrix}
+          ax+by\\
+          cx+dy
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          改变矩阵中的四个数，就等于改变空间的拉伸、压缩、倾斜、旋转或压扁方式。这里适合连续调节，因为每个参数都会连续影响整张网格的形状。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="matrixCanvas"></canvas></div>
+          <div class="control-row four">
+            <div class="control">
+              <label><span>\(a\)</span><output id="aOut">1.00</output></label>
+              <input id="aRange" type="range" min="-2" max="2" step="0.05" value="1">
+            </div>
+            <div class="control">
+              <label><span>\(b\)</span><output id="bOut">0.00</output></label>
+              <input id="bRange" type="range" min="-2" max="2" step="0.05" value="0">
+            </div>
+            <div class="control">
+              <label><span>\(c\)</span><output id="cOut">0.00</output></label>
+              <input id="cRange" type="range" min="-2" max="2" step="0.05" value="0">
+            </div>
+            <div class="control">
+              <label><span>\(d\)</span><output id="dOut">1.00</output></label>
+              <input id="dRange" type="range" min="-2" max="2" step="0.05" value="1">
+            </div>
+          </div>
+          <div class="readout">
+            <div><strong>矩阵</strong><span id="matrixRead">[[1.00, 0.00], [0.00, 1.00]]</span></div>
+            <div><strong>\(A\mathbf{e}_1\)</strong><span id="e1Read">(1.00, 0.00)</span></div>
+            <div><strong>\(A\mathbf{e}_2\)</strong><span id="e2Read">(0.00, 1.00)</span></div>
+            <div><strong>\(\det A\)</strong><span id="detRead">1.00</span></div>
+          </div>
+        </div>
+
+        <p>
+          如果 \(\det A\neq 0\)，二维面积没有被压成零，映射通常保留二维信息；如果 \(\det A=0\)，平面会被压到一条线或一个点上。之后学习“秩”和“逆矩阵”时，这个观察会变成严格结论。
+        </p>
+      </div>
+    </section>
+
+    <section id="columns">
+      <div class="section-inner">
+        <h2>只要知道基向量去了哪里，就知道整个映射</h2>
+        <p>
+          在标准基下，二维向量可以写成：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \mathbf{x}=\begin{bmatrix}x\\y\end{bmatrix}
+          =x\mathbf{e}_1+y\mathbf{e}_2,
+          \qquad
+          \mathbf{e}_1=\begin{bmatrix}1\\0\end{bmatrix},\quad
+          \mathbf{e}_2=\begin{bmatrix}0\\1\end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          因为 \(T\) 是线性的，所以：
+        </p>
+
+        <div class="formula-box">
+          \[
+          T(\mathbf{x})
+          =T(x\mathbf{e}_1+y\mathbf{e}_2)
+          =xT(\mathbf{e}_1)+yT(\mathbf{e}_2)
+          \]
+        </div>
+
+        <p>
+          这句话非常重要：一个线性映射对所有向量的作用，由它对基向量的作用完全决定。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="presetCanvas"></canvas></div>
+          <div class="state-row" id="presetButtons">
+            <button class="state-btn active" data-preset="identity">恒等</button>
+            <button class="state-btn" data-preset="scale">非等比缩放</button>
+            <button class="state-btn" data-preset="shear">剪切</button>
+            <button class="state-btn" data-preset="rotate">旋转</button>
+            <button class="state-btn" data-preset="project">投影到 x 轴</button>
+            <button class="state-btn" data-preset="collapse">压到一条斜线</button>
+            <button class="state-btn" data-preset="zero">零映射</button>
+          </div>
+          <div class="state-note" id="presetNote">
+            恒等映射把每个向量送回它自己。两个基向量的位置不变，整张网格也不变。
+          </div>
+        </div>
+
+        <div class="callout good-box">
+          <strong>如何读矩阵的列：</strong>
+          对 \(A=\begin{bmatrix}a&b\\c&d\end{bmatrix}\)，第一列 \(\begin{bmatrix}a\\c\end{bmatrix}\) 就是 \(A\mathbf{e}_1\)，第二列 \(\begin{bmatrix}b\\d\end{bmatrix}\) 就是 \(A\mathbf{e}_2\)。
+        </div>
+      </div>
+    </section>
+
+    <section id="change">
+      <div class="section-inner">
+        <h2>从原空间到目标空间</h2>
+        <p>
+          线性映射可以把空间拉伸，也可以把高维空间压低维。下面的时间轴表示从“还没有施加变换”逐渐过渡到“完全施加变换”的过程。这里不是让参数自由变化，而是让你看清楚一个空间被推向另一个形态的过程。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="timelineCanvas"></canvas></div>
+          <div class="timeline-row">
+            <div class="timeline-label">原空间 \(\mathbb{R}^2\)</div>
+            <div class="control">
+              <label><span>变换进度 \(t\)</span><output id="timeOut">0.00</output></label>
+              <input id="timeRange" type="range" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="timeline-label">被压到一维像空间</div>
+          </div>
+          <div class="state-note" id="timelineNote">
+            当 \(t=0\) 时，网格还是原来的二维平面；当 \(t=1\) 时，所有点都落到 x 轴上。
+          </div>
+        </div>
+
+        <p>
+          这个例子对应的目标线性映射是：
+        </p>
+
+        <div class="formula-box">
+          \[
+          P(x,y)=(x,0),\qquad
+          P=
+          \begin{bmatrix}
+          1&0\\
+          0&0
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          它仍然是线性的，但它丢失了 \(y\) 方向的信息。因此，线性映射不一定可逆。能不能逆回去，将由后续的“核”“像”“秩”“逆矩阵”一起判断。
+        </p>
+      </div>
+    </section>
+
+    <section id="examples">
+      <div class="section-inner">
+        <h2>线性映射不只存在于坐标平面</h2>
+        <p>
+          矩阵图像很直观，但线性映射的本质不是“画网格”，而是保持线性组合。因此，在很多抽象空间中也有线性映射。
+        </p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>二维向量到二维向量</h3>
+            <p>
+              \[
+              T(x,y)=(2x+y,\,x-y)
+              \]
+            </p>
+            <p class="math-note">
+              可以写成矩阵乘法，是最典型的线性映射。
+            </p>
+          </div>
+          <div class="card">
+            <h3>二维向量到一个数</h3>
+            <p>
+              \[
+              T(x,y)=3x-2y
+              \]
+            </p>
+            <p class="math-note">
+              输出在 \(\mathbb{R}\) 中，也叫线性泛函的一种基本例子。
+            </p>
+          </div>
+          <div class="card">
+            <h3>多项式到多项式</h3>
+            <p>
+              \[
+              D(p)=p'
+              \]
+            </p>
+            <p class="math-note">
+              求导满足 \((p+q)'=p'+q'\) 和 \((cp)'=cp'\)，因此是线性映射。
+            </p>
+          </div>
+        </div>
+
+        <h3>几类容易误判的规则</h3>
+        <table>
+          <thead>
+            <tr><th>规则</th><th>是否线性</th><th>原因</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(T(x,y)=(2x+y,x-y)\)</td><td><span class="good">是</span></td><td>可以写成矩阵乘法，保持加法和数乘。</td></tr>
+            <tr><td>\(T(x,y)=(x+1,y)\)</td><td><span class="bad">否</span></td><td>\(T(0,0)=(1,0)\neq(0,0)\)，不保持零向量。</td></tr>
+            <tr><td>\(T(x,y)=(x^2,y)\)</td><td><span class="bad">否</span></td><td>平方破坏加法，例如 \((x_1+x_2)^2\neq x_1^2+x_2^2\)。</td></tr>
+            <tr><td>\(T(x,y)=\| (x,y) \|\)</td><td><span class="bad">否</span></td><td>长度总是非负，无法保持负数倍。</td></tr>
+            <tr><td>\(T(p)=p'\)</td><td><span class="good">是</span></td><td>求导保持多项式的加法和常数倍。</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>快速必要条件：</strong>
+          如果 \(T\) 是线性映射，那么一定有 \(T(\mathbf{0})=\mathbf{0}\)。但反过来不成立：满足 \(T(\mathbf{0})=\mathbf{0}\) 还不一定线性。
+        </div>
+      </div>
+    </section>
+
+    <section id="links">
+      <div class="section-inner">
+        <h2>通向核、像与秩</h2>
+        <p>
+          一旦把矩阵理解成线性映射，后续几个概念就会变得自然：
+        </p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>核：哪些输入被压成零</h3>
+            <p>
+              \[
+              \ker(T)=\{\mathbf{x}\in V\mid T(\mathbf{x})=\mathbf{0}\}
+              \]
+            </p>
+            <p>
+              如果有很多非零向量被压成零，说明这个映射丢失了信息。
+            </p>
+          </div>
+          <div class="card">
+            <h3>像：实际能到达哪里</h3>
+            <p>
+              \[
+              \operatorname{Im}(T)=\{T(\mathbf{x})\mid \mathbf{x}\in V\}
+              \]
+            </p>
+            <p>
+              到达域可能很大，但实际输出可能只落在其中一部分。
+            </p>
+          </div>
+          <div class="card">
+            <h3>秩：像空间的维数</h3>
+            <p>
+              \[
+              \operatorname{rank}(T)=\dim(\operatorname{Im}(T))
+              \]
+            </p>
+            <p>
+              秩衡量一个线性映射最终保留了多少维有效输出。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout good-box">
+          <strong>学习路线上的位置：</strong>
+          线性映射是矩阵、核与像、秩、逆矩阵之间的桥。之后看到 \(A\mathbf{x}=\mathbf{b}\)，应该同时把它理解成“方程组”和“寻找哪个输入会被映射到 \(\mathbf{b}\)”。
+        </div>
+      </div>
+    </section>
+
+    <section id="summary">
+      <div class="section-inner">
+        <h2>整理与检查</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>必须掌握的核心句</h3>
+            <ul>
+              <li>线性映射是保持加法和数乘的映射。</li>
+              <li>有限维空间中，选定基之后，线性映射可以用矩阵表示。</li>
+              <li>矩阵的列向量就是标准基向量经过映射后的结果。</li>
+              <li>线性映射可以压低维，因此不一定可逆。</li>
+              <li>核、像、秩都是从“线性映射如何处理空间”中自然产生的概念。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>自检问题</h3>
+            <ol>
+              <li>为什么 \(T(x,y)=(x+1,y)\) 不是线性映射？</li>
+              <li>如果 \(A\mathbf{e}_1\) 和 \(A\mathbf{e}_2\) 共线，说明平面被怎样改变了？</li>
+              <li>为什么只知道基向量的去向，就能决定整个线性映射？</li>
+              <li>对于 \(P(x,y)=(x,0)\)，哪些向量会被送到零向量？</li>
+              <li>矩阵和线性映射是什么关系？它们是否完全等同？</li>
+            </ol>
+          </div>
+        </div>
+
+        <details>
+          <summary>展开一个关键推导：为什么矩阵乘法一定给出线性映射？</summary>
+          <p>
+            对矩阵 \(A\)，令 \(T(\mathbf{x})=A\mathbf{x}\)。由于矩阵乘法满足分配律和数乘结合律：
+          </p>
+          <div class="formula-box">
+            \[
+            T(\mathbf{u}+\mathbf{v})=A(\mathbf{u}+\mathbf{v})=A\mathbf{u}+A\mathbf{v}=T(\mathbf{u})+T(\mathbf{v})
+            \]
+            \[
+            T(c\mathbf{u})=A(c\mathbf{u})=cA\mathbf{u}=cT(\mathbf{u})
+            \]
+          </div>
+          <p>
+            所以任何矩阵乘法都天然定义了一个线性映射。
+          </p>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const COLORS = {
+      text: '#f3f5f7', muted: '#b7bdc9', line: '#343847', grid: 'rgba(255,255,255,.12)',
+      accent: '#9cff3a', blue: '#46c7ff', pink: '#ff4fd8', warn: '#ffd166', bad: '#ff6b6b', good: '#6dff9e'
+    };
+
+    function setupCanvas(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function clear(ctx, w, h) {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#090a0f';
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function coord(w, h, scale = 50) {
+      return {
+        ox: w / 2,
+        oy: h / 2,
+        s: scale,
+        p(v) { return [this.ox + v[0] * this.s, this.oy - v[1] * this.s]; }
+      };
+    }
+
+    function apply(A, v) {
+      return [A[0][0] * v[0] + A[0][1] * v[1], A[1][0] * v[0] + A[1][1] * v[1]];
+    }
+
+    function add(u, v) { return [u[0] + v[0], u[1] + v[1]]; }
+    function scaleVec(c, u) { return [c * u[0], c * u[1]]; }
+    function fmt(n) { return (Math.abs(n) < 1e-9 ? 0 : n).toFixed(2); }
+    function det(A) { return A[0][0] * A[1][1] - A[0][1] * A[1][0]; }
+
+    function drawAxes(ctx, C, w, h) {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,.25)';
+      ctx.beginPath();
+      ctx.moveTo(0, C.oy); ctx.lineTo(w, C.oy);
+      ctx.moveTo(C.ox, 0); ctx.lineTo(C.ox, h);
+      ctx.stroke();
+      ctx.fillStyle = COLORS.muted;
+      ctx.font = '12px ui-monospace, monospace';
+      ctx.fillText('x', w - 18, C.oy - 8);
+      ctx.fillText('y', C.ox + 8, 16);
+    }
+
+    function drawGrid(ctx, C, A, alpha = 1, extent = 4) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 1;
+      for (let k = -extent; k <= extent; k++) {
+        ctx.strokeStyle = k === 0 ? 'rgba(255,255,255,.32)' : 'rgba(70,199,255,.18)';
+        ctx.beginPath();
+        for (let t = -extent; t <= extent; t += 0.05) {
+          const v = apply(A, [t, k]);
+          const [x, y] = C.p(v);
+          if (t === -extent) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = k === 0 ? 'rgba(255,255,255,.32)' : 'rgba(156,255,58,.18)';
+        ctx.beginPath();
+        for (let t = -extent; t <= extent; t += 0.05) {
+          const v = apply(A, [k, t]);
+          const [x, y] = C.p(v);
+          if (t === -extent) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawArrow(ctx, C, v, color, label, width = 3) {
+      const [x0, y0] = C.p([0, 0]);
+      const [x1, y1] = C.p(v);
+      const ang = Math.atan2(y1 - y0, x1 - x0);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 - 10 * Math.cos(ang - Math.PI / 7), y1 - 10 * Math.sin(ang - Math.PI / 7));
+      ctx.lineTo(x1 - 10 * Math.cos(ang + Math.PI / 7), y1 - 10 * Math.sin(ang + Math.PI / 7));
+      ctx.closePath();
+      ctx.fill();
+      if (label) {
+        ctx.font = 'bold 13px ui-sans-serif, system-ui';
+        ctx.fillText(label, x1 + 7, y1 - 7);
+      }
+    }
+
+    function drawTextBox(ctx, x, y, lines, color = COLORS.text) {
+      ctx.fillStyle = 'rgba(20,22,29,.82)';
+      ctx.strokeStyle = COLORS.line;
+      const width = 270;
+      const height = 26 + lines.length * 20;
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeRect(x, y, width, height);
+      ctx.fillStyle = color;
+      ctx.font = '13px ui-sans-serif, system-ui';
+      lines.forEach((line, i) => ctx.fillText(line, x + 12, y + 24 + i * 20));
+    }
+
+    // Law canvas
+    let lawCase = 'matrix';
+    const lawData = {
+      matrix: {
+        rule: 'T(x,y)=(x+y, y)', add: '成立', scale: '成立', conclusion: '线性映射', color: COLORS.good,
+        transform(v) { return [v[0] + v[1], v[1]]; }, note: '矩阵变换保持线性组合：网格线仍然保持直线和平行结构。'
+      },
+      affine: {
+        rule: 'T(x,y)=(x+1, y)', add: '不成立', scale: '不成立', conclusion: '非线性；更准确说是仿射平移', color: COLORS.warn,
+        transform(v) { return [v[0] + 1, v[1]]; }, note: '平移没有把零向量送到零向量，因此不是线性映射。'
+      },
+      square: {
+        rule: 'T(x,y)=(x², y)', add: '不成立', scale: '不成立', conclusion: '非线性映射', color: COLORS.bad,
+        transform(v) { return [v[0] * v[0], v[1]]; }, note: '平方会弯曲网格线，破坏加法结构。'
+      }
+    };
+
+    function drawLaw() {
+      const canvas = document.getElementById('lawCanvas');
+      const { ctx, w, h } = setupCanvas(canvas);
+      clear(ctx, w, h);
+      const C1 = coord(w, h, 42); C1.ox = w * 0.28;
+      const C2 = coord(w, h, 42); C2.ox = w * 0.72;
+      drawAxes(ctx, C1, w, h);
+      drawAxes(ctx, C2, w, h);
+
+      ctx.fillStyle = COLORS.muted; ctx.font = 'bold 14px ui-sans-serif, system-ui';
+      ctx.fillText('输入空间', C1.ox - 35, 25);
+      ctx.fillText('输出形态', C2.ox - 35, 25);
+
+      drawGrid(ctx, C1, [[1,0],[0,1]], .75, 3);
+
+      const data = lawData[lawCase];
+      ctx.lineWidth = 1;
+      for (let k = -3; k <= 3; k++) {
+        ctx.strokeStyle = 'rgba(70,199,255,.20)';
+        ctx.beginPath();
+        for (let t = -3; t <= 3; t += 0.04) {
+          const v = data.transform([t, k]);
+          const [x, y] = C2.p(v);
+          if (t === -3) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(156,255,58,.20)';
+        ctx.beginPath();
+        for (let t = -3; t <= 3; t += 0.04) {
+          const v = data.transform([k, t]);
+          const [x, y] = C2.p(v);
+          if (t === -3) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      const u = [1.4, 0.9], v = [-0.7, 1.1];
+      drawArrow(ctx, C1, u, COLORS.blue, 'u');
+      drawArrow(ctx, C1, v, COLORS.pink, 'v');
+      drawArrow(ctx, C1, add(u, v), COLORS.accent, 'u+v', 2);
+      drawArrow(ctx, C2, data.transform(u), COLORS.blue, 'T(u)');
+      drawArrow(ctx, C2, data.transform(v), COLORS.pink, 'T(v)');
+      drawArrow(ctx, C2, data.transform(add(u, v)), COLORS.accent, 'T(u+v)', 2);
+      drawTextBox(ctx, 18, h - 82, [data.note], data.color);
+    }
+
+    function updateLaw() {
+      const d = lawData[lawCase];
+      document.getElementById('lawRule').textContent = d.rule;
+      document.getElementById('lawAdd').textContent = d.add;
+      document.getElementById('lawScale').textContent = d.scale;
+      document.getElementById('lawConclusion').textContent = d.conclusion;
+      drawLaw();
+    }
+
+    // Matrix sliders
+    function getMatrixFromSliders() {
+      return [
+        [parseFloat(document.getElementById('aRange').value), parseFloat(document.getElementById('bRange').value)],
+        [parseFloat(document.getElementById('cRange').value), parseFloat(document.getElementById('dRange').value)]
+      ];
+    }
+
+    function drawMatrix() {
+      const canvas = document.getElementById('matrixCanvas');
+      const { ctx, w, h } = setupCanvas(canvas);
+      clear(ctx, w, h);
+      const C = coord(w, h, 52);
+      drawAxes(ctx, C, w, h);
+      const A = getMatrixFromSliders();
+      drawGrid(ctx, C, [[1,0],[0,1]], .16, 4);
+      drawGrid(ctx, C, A, .95, 4);
+      drawArrow(ctx, C, apply(A, [1,0]), COLORS.blue, 'Ae₁');
+      drawArrow(ctx, C, apply(A, [0,1]), COLORS.accent, 'Ae₂');
+      drawArrow(ctx, C, apply(A, [1.2,1.1]), COLORS.pink, 'Ax', 2);
+
+      const vals = ['a','b','c','d'].map(id => parseFloat(document.getElementById(id+'Range').value));
+      ['a','b','c','d'].forEach((id, i) => document.getElementById(id+'Out').textContent = fmt(vals[i]));
+      document.getElementById('matrixRead').textContent = `[[${fmt(vals[0])}, ${fmt(vals[1])}], [${fmt(vals[2])}, ${fmt(vals[3])}]]`;
+      document.getElementById('e1Read').textContent = `(${fmt(vals[0])}, ${fmt(vals[2])})`;
+      document.getElementById('e2Read').textContent = `(${fmt(vals[1])}, ${fmt(vals[3])})`;
+      document.getElementById('detRead').textContent = fmt(det(A));
+    }
+
+    // Presets
+    const presets = {
+      identity: {
+        A: [[1,0],[0,1]],
+        note: '恒等映射把每个向量送回它自己。两个基向量的位置不变，整张网格也不变。'
+      },
+      scale: {
+        A: [[1.7,0],[0,0.65]],
+        note: '非等比缩放会让不同方向的长度改变比例不同，但仍保持线性结构。'
+      },
+      shear: {
+        A: [[1,0.8],[0,1]],
+        note: '剪切会把正方形网格推成平行四边形。直线仍是直线，平行关系仍保留。'
+      },
+      rotate: {
+        A: [[0.866,-0.5],[0.5,0.866]],
+        note: '旋转会改变方向，但不会改变长度和夹角。它是线性映射的一种。'
+      },
+      project: {
+        A: [[1,0],[0,0]],
+        note: '投影到 x 轴会丢掉 y 方向信息。整个平面被压成一条线。'
+      },
+      collapse: {
+        A: [[1,1],[0.7,0.7]],
+        note: '两列共线时，二维平面会被压到一条斜线上。输出只剩一维变化。'
+      },
+      zero: {
+        A: [[0,0],[0,0]],
+        note: '零映射把所有输入都送到零向量。它是线性的，但丢失全部信息。'
+      }
+    };
+    let presetKey = 'identity';
+    function drawPreset() {
+      const canvas = document.getElementById('presetCanvas');
+      const { ctx, w, h } = setupCanvas(canvas);
+      clear(ctx, w, h);
+      const C = coord(w, h, 50);
+      drawAxes(ctx, C, w, h);
+      const A = presets[presetKey].A;
+      drawGrid(ctx, C, [[1,0],[0,1]], .15, 4);
+      drawGrid(ctx, C, A, .95, 4);
+      drawArrow(ctx, C, apply(A, [1,0]), COLORS.blue, 'T(e₁)');
+      drawArrow(ctx, C, apply(A, [0,1]), COLORS.accent, 'T(e₂)');
+      drawTextBox(ctx, 18, 18, [
+        `A = [[${fmt(A[0][0])}, ${fmt(A[0][1])}], [${fmt(A[1][0])}, ${fmt(A[1][1])}]]`,
+        `det(A) = ${fmt(det(A))}`
+      ], Math.abs(det(A)) < 0.001 ? COLORS.warn : COLORS.text);
+      document.getElementById('presetNote').textContent = presets[presetKey].note;
+    }
+
+    // Timeline
+    function drawTimeline() {
+      const canvas = document.getElementById('timelineCanvas');
+      const { ctx, w, h } = setupCanvas(canvas);
+      clear(ctx, w, h);
+      const C = coord(w, h, 54);
+      drawAxes(ctx, C, w, h);
+      const t = parseFloat(document.getElementById('timeRange').value);
+      const A = [[1,0],[0,1 - t]];
+      drawGrid(ctx, C, [[1,0],[0,1]], .12, 4);
+      drawGrid(ctx, C, A, .95, 4);
+      drawArrow(ctx, C, apply(A, [1,0]), COLORS.blue, 'P_t(e₁)');
+      drawArrow(ctx, C, apply(A, [0,1]), COLORS.accent, 'P_t(e₂)');
+      document.getElementById('timeOut').textContent = fmt(t);
+      let note = '当 t=0 时，网格还是原来的二维平面；当 t=1 时，所有点都落到 x 轴上。';
+      if (t > 0.05 && t < 0.95) note = '随着 t 增大，y 方向逐渐被压缩。二维信息正在连续丢失。';
+      if (t >= 0.95) note = '此时 y 方向完全消失。不同的输入可能得到同一个输出，因此不可逆。';
+      document.getElementById('timelineNote').textContent = note;
+    }
+
+    function bind() {
+      document.querySelectorAll('#lawButtons .state-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#lawButtons .state-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          lawCase = btn.dataset.case;
+          updateLaw();
+        });
+      });
+      ['a','b','c','d'].forEach(id => document.getElementById(id+'Range').addEventListener('input', drawMatrix));
+      document.querySelectorAll('#presetButtons .state-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#presetButtons .state-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          presetKey = btn.dataset.preset;
+          drawPreset();
+        });
+      });
+      document.getElementById('timeRange').addEventListener('input', drawTimeline);
+      window.addEventListener('resize', () => {
+        updateLaw(); drawMatrix(); drawPreset(); drawTimeline();
+      });
+      updateLaw(); drawMatrix(); drawPreset(); drawTimeline();
+    }
+
+    window.addEventListener('DOMContentLoaded', bind);
+  </script>
+</body>
+</html>

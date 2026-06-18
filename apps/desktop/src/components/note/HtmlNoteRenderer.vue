@@ -37,6 +37,7 @@ const CSS_VAR_FALLBACKS = {
   "--background-main": "#080808",
   "--background-panel": "#111111",
   "--background-soft": "#161616",
+  "--background-elevated": "#181818",
   "--border-primary": "#e6e6e6",
   "--border-muted": "#333333",
   "--text-primary": "#f2f2f2",
@@ -352,6 +353,52 @@ html, body {
 }
 html.is-fill-viewport, html.is-fill-viewport body { height: 100%; overflow: hidden; }
 * { box-sizing: border-box; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-muted) var(--background-main);
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background-main);
+  border-left: 1px solid rgba(237, 237, 237, 0.16);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--background-elevated);
+  border: 1px solid var(--border-muted);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-muted);
+  border-color: var(--border-primary);
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--text-secondary);
+  border-color: var(--border-primary);
+}
+::-webkit-scrollbar-corner {
+  background: var(--background-main);
+}
+html.is-fill-viewport .rich-note-root::-webkit-scrollbar,
+pre::-webkit-scrollbar,
+mjx-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html.is-fill-viewport .rich-note-root::-webkit-scrollbar-thumb,
+pre::-webkit-scrollbar-thumb,
+mjx-container::-webkit-scrollbar-thumb {
+  background: #181818;
+  border: 1px solid #555555;
+}
+html.is-fill-viewport .rich-note-root::-webkit-scrollbar-thumb:hover,
+pre::-webkit-scrollbar-thumb:hover,
+mjx-container::-webkit-scrollbar-thumb:hover {
+  background: #2a2a2a;
+  border-color: var(--border-primary);
+}
 a { color: var(--note-color, var(--graphics)); text-decoration: none; }
 a:hover { text-decoration: underline; }
 a[data-wawa-external-url] { cursor: pointer; }
