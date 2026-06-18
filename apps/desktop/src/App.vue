@@ -91,6 +91,7 @@ const recentNodes = ref(loadRecentNodes());
 const backStack = ref([]);
 const forwardStack = ref([]);
 const historySuppressed = ref(false);
+let globalWheelListenerActive = false;
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -140,8 +141,9 @@ const uiScaleStyle = computed(() => ({
 }));
 
 onMounted(async () => {
-  window.addEventListener("wheel", handleGlobalWheel, { passive: false });
   window.addEventListener("keydown", handleGlobalKeydown);
+  window.addEventListener("keyup", handleGlobalKeyup);
+  window.addEventListener("blur", removeGlobalWheelListener);
   try {
     const vault = await loadInitialVault();
     applyVault(vault, { reset: true });
@@ -157,8 +159,10 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("wheel", handleGlobalWheel);
+  removeGlobalWheelListener();
   window.removeEventListener("keydown", handleGlobalKeydown);
+  window.removeEventListener("keyup", handleGlobalKeyup);
+  window.removeEventListener("blur", removeGlobalWheelListener);
 });
 
 function applyVault(vault, { reset = false } = {}) {
@@ -338,13 +342,29 @@ function setUiFontScale(value) {
   localStorage.setItem(UI_FONT_SCALE_KEY, uiFontScale.value.toFixed(2));
 }
 
+function addGlobalWheelListener() {
+  if (globalWheelListenerActive) return;
+  window.addEventListener("wheel", handleGlobalWheel, { passive: false });
+  globalWheelListenerActive = true;
+}
+
+function removeGlobalWheelListener() {
+  if (!globalWheelListenerActive) return;
+  window.removeEventListener("wheel", handleGlobalWheel);
+  globalWheelListenerActive = false;
+}
+
 function handleGlobalWheel(event) {
-  if (!event.ctrlKey) return;
+  if (!event.ctrlKey) {
+    removeGlobalWheelListener();
+    return;
+  }
   event.preventDefault();
   setUiFontScale(uiFontScale.value + (event.deltaY < 0 ? 0.05 : -0.05));
 }
 
 function handleGlobalKeydown(event) {
+  if (event.ctrlKey) addGlobalWheelListener();
   if (searchOverlayVisible.value && event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
     event.preventDefault();
     return;
@@ -398,6 +418,10 @@ function handleGlobalKeydown(event) {
   if (event.key !== "Escape" || activeDialog.value || (!isLayoutEditing.value && !layoutDirty.value)) return;
   event.preventDefault();
   discardLayoutDraft();
+}
+
+function handleGlobalKeyup(event) {
+  if (!event.ctrlKey) removeGlobalWheelListener();
 }
 
 function clearLayoutDrafts() {

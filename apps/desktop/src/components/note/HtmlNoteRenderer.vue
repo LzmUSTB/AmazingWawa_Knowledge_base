@@ -28,7 +28,8 @@ const assetErrors = ref([]);
 const frameId = `html-note-${Math.random().toString(36).slice(2)}`;
 const APP_BASE_URL = new URL("/", window.location.href).href;
 const MATHJAX_ROOT = new URL("vendor/mathjax", APP_BASE_URL).href.replace(/\/$/, "");
-const MATHJAX_SCRIPT = `${MATHJAX_ROOT}/tex-svg.js`;
+const MATHJAX_SCRIPT = `${MATHJAX_ROOT}/tex-svg-full.js`;
+const MATHJAX_TEX_PACKAGES = ["ams", "cases", "mathtools", "noerrors", "noundefined"];
 let mutationObserver = null;
 let resizeRaf = 0;
 let prepareRunId = 0;
@@ -219,6 +220,12 @@ async function inlineExternalScripts(root) {
   }
 }
 
+function removeEmbeddedMathJaxConfigScripts(root) {
+  root.querySelectorAll("script:not([src])").forEach((script) => {
+    if (/\b(?:window\.)?MathJax\s*=/.test(script.textContent || "")) script.remove();
+  });
+}
+
 async function rewriteResourceAttributes(root) {
   const attrNames = ["src", "href", "poster"];
   const elements = [...root.querySelectorAll(attrNames.map((name) => `[${name}]`).join(","))];
@@ -242,9 +249,15 @@ async function rewriteResourceAttributes(root) {
   root.querySelectorAll("a[href]").forEach((anchor) => {
     const href = anchor.getAttribute("href") || "";
     const externalHref = openableExternalUrl(href);
-    anchor.setAttribute("target", "_blank");
-    anchor.setAttribute("rel", "noreferrer");
+    if (String(href).trim().startsWith("#")) {
+      anchor.removeAttribute("target");
+      anchor.removeAttribute("rel");
+      anchor.dataset.wawaLocalAnchor = href;
+      return;
+    }
     if (externalHref) {
+      anchor.setAttribute("target", "_blank");
+      anchor.setAttribute("rel", "noreferrer");
       anchor.removeAttribute("title");
       anchor.setAttribute("aria-label", `Open in default browser: ${externalHref}`);
       anchor.dataset.wawaExternalUrl = externalHref;
@@ -282,6 +295,7 @@ async function prepareHtml() {
     template.innerHTML = source;
     await inlineExternalStyles(template.content);
     await inlineExternalScripts(template.content);
+    removeEmbeddedMathJaxConfigScripts(template.content);
     await rewriteResourceAttributes(template.content);
     await rewriteInlineStyleAttributes(template.content);
 
@@ -682,16 +696,69 @@ function normalizeMathDelimitersScript() {
 })();`;
 }
 
+function mathJaxSandboxShimScript() {
+  return `
+(() => {
+  const createStorageShim = () => {
+    const values = new Map();
+    return {
+      get length() { return values.size; },
+      key(index) { return Array.from(values.keys())[Number(index)] || null; },
+      getItem(key) {
+        key = String(key);
+        return values.has(key) ? values.get(key) : null;
+      },
+      setItem(key, value) { values.set(String(key), String(value)); },
+      removeItem(key) { values.delete(String(key)); },
+      clear() { values.clear(); }
+    };
+  };
+
+  ['localStorage', 'sessionStorage'].forEach((name) => {
+    try {
+      void window[name];
+    } catch (error) {
+      try {
+        Object.defineProperty(window, name, {
+          value: createStorageShim(),
+          configurable: true
+        });
+      } catch (defineError) {}
+    }
+  });
+
+  const queuedTypesets = [];
+  window.__wawaMathJaxTypesetQueue = queuedTypesets;
+  window.__wawaQueueMathJaxTypeset = (elements = null) => {
+    queuedTypesets.push(elements);
+    return Promise.resolve();
+  };
+  window.MathJax = {
+    typeset() {},
+    typesetPromise: window.__wawaQueueMathJaxTypeset
+  };
+})();`;
+}
+
 function mathJaxConfigScript() {
   return `
 (() => {
+  const mathJaxRoot = ${JSON.stringify(MATHJAX_ROOT)};
+  const queuedTypesets = window.__wawaMathJaxTypesetQueue || [];
   window.MathJax = {
     loader: {
       paths: {
-        mathjax: ${JSON.stringify(MATHJAX_ROOT)}
-      }
+        mathjax: mathJaxRoot,
+        tex: mathJaxRoot + '/input/tex/extensions'
+      },
+      versionWarnings: false
     },
     options: {
+      enableMenu: false,
+      enableAssistiveMml: false,
+      renderActions: {
+        assistiveMml: []
+      },
       skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
       ignoreHtmlClass: 'tex2jax_ignore',
       processHtmlClass: 'tex2jax_process'
@@ -700,13 +767,20 @@ function mathJaxConfigScript() {
       inlineMath: [['\\\\(', '\\\\)']],
       displayMath: [['\\\\[', '\\\\]'], ['$$', '$$']],
       processEscapes: true,
-      packages: {'[+]': ['ams', 'cases', 'mathtools', 'noerrors', 'noundefined']}
+      packages: {'[+]': ${JSON.stringify(MATHJAX_TEX_PACKAGES)}}
     },
     svg: {
       fontCache: 'none'
     },
     startup: {
       pageReady: () => window.MathJax.startup.defaultPageReady().then(() => {
+        const pending = queuedTypesets.splice(0);
+        return Promise.all(pending.map((elements) => (
+          window.MathJax.typesetPromise(elements || undefined).catch((error) => {
+            console.warn('[html-note] Deferred MathJax typeset failed.', error);
+          })
+        )));
+      }).then(() => {
         document.documentElement.dataset.wawaMathJax = 'ready';
         window.dispatchEvent(new Event('resize'));
         parent.postMessage({ type: 'wawa-html-note-mathjax-ready', frameId: ${JSON.stringify(frameId)} }, '*');
@@ -737,6 +811,34 @@ function bridgeScript() {
     if (/^\\/\\//.test(raw)) return 'https:' + raw;
     if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
     return '';
+  };
+
+  const decodeHash = (hash) => {
+    const raw = String(hash || '').trim();
+    if (!raw.startsWith('#')) return '';
+    try {
+      return decodeURIComponent(raw.slice(1));
+    } catch (error) {
+      return raw.slice(1);
+    }
+  };
+
+  const cssEscape = (value) => {
+    if (window.CSS?.escape) return window.CSS.escape(value);
+    return String(value).replace(/["\\\\]/g, '\\\\$&');
+  };
+
+  const scrollToLocalAnchor = (hash) => {
+    const id = decodeHash(hash);
+    const target = id
+      ? document.getElementById(id) || document.querySelector('[name="' + cssEscape(id) + '"]')
+      : document.documentElement;
+    if (!target) return false;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+    try {
+      history.replaceState(null, '', '#' + encodeURIComponent(id));
+    } catch (error) {}
+    return true;
   };
 
   const ensureLinkTooltip = () => {
@@ -799,6 +901,13 @@ function bridgeScript() {
     const anchor = event.target?.closest?.('a[href]');
     if (!anchor) return;
     const href = anchor.dataset.wawaExternalUrl || anchor.getAttribute('href') || '';
+    const localAnchor = anchor.dataset.wawaLocalAnchor || (String(anchor.getAttribute('href') || '').trim().startsWith('#') ? anchor.getAttribute('href') : '');
+    if (localAnchor) {
+      event.preventDefault();
+      event.stopPropagation();
+      scrollToLocalAnchor(localAnchor);
+      return;
+    }
     const externalUrl = openableExternalUrl(href);
     if (!externalUrl) return;
     event.preventDefault();
@@ -949,6 +1058,7 @@ const srcdoc = computed(() => {
   const scriptOpen = "<script>";
   const scriptClose = `<${"/"}script>`;
   const htmlClass = props.fillViewport ? ' class="is-fill-viewport"' : "";
+  const mathSandboxShimScript = `${scriptOpen}${mathJaxSandboxShimScript()}${scriptClose}`;
   const mathNormalizeScript = `${scriptOpen}${normalizeMathDelimitersScript()}${scriptClose}`;
   const mathConfigScript = `${scriptOpen}${mathJaxConfigScript()}${scriptClose}`;
   const mathBundleScript = `<script id="MathJax-script" src="${MATHJAX_SCRIPT}">${scriptClose}`;
@@ -963,6 +1073,7 @@ const srcdoc = computed(() => {
 <style>${themeVars.value}\n${baseCss}</style>
 </head>
 <body>
+${mathSandboxShimScript}
 <main class="rich-note-root">${preparedHtml.value}</main>
 ${mathNormalizeScript}
 ${mathConfigScript}

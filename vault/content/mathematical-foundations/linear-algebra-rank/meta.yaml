@@ -4,20 +4,20 @@ titleLocale: 秩
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P0. The dimension of the span of columns or rows, measuring how
-  many independent directions a matrix preserves.'
-summaryLocale: '优先级：P0。中文：秩；日本語：階数；English: Rank。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P0. The dimension of the span of columns or rows, measuring
+  how many independent directions a matrix preserves."
+summaryLocale: "优先级：P0。中文：秩；日本語：階数；English: Rank。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 階数
-- matrix rank
-- rank of a matrix
+  - 階数
+  - matrix rank
+  - rank of a matrix
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p0
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p0
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-18

@@ -4,22 +4,22 @@ titleLocale: 核与像
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P1. The kernel contains inputs mapped to zero; the image contains
-  all reachable outputs of a linear map.'
-summaryLocale: '优先级：P1。中文：核与像；日本語：核と像；English: Kernel and Image。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P1. The kernel contains inputs mapped to zero; the image
+  contains all reachable outputs of a linear map."
+summaryLocale: "优先级：P1。中文：核与像；日本語：核と像；English: Kernel and Image。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 核と像
-- null space
-- range
-- image
-- kernel
+  - 核と像
+  - null space
+  - range
+  - image
+  - kernel
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p1
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p1
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-18

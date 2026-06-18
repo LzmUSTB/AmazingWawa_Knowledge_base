@@ -251,6 +251,97 @@
           </div>
         </div>
 
+        <h3>看到具体现式时，如何快速判断它是不是线性映射</h3>
+        <p>
+          比如看到 \(T(x,y)=(2x+y,\,x-y)\) 这样的式子时，最实用的判断思路有两层：
+          <span class="highlight">先看它能不能写成矩阵乘法</span>；如果你想更扎实一些，再用定义把“保持加法”和“保持数乘”各验一次。
+        </p>
+
+        <div class="formula-box">
+          \[
+          T(x,y)=
+          \begin{bmatrix}
+          2 & 1\\
+          1 & -1
+          \end{bmatrix}
+          \begin{bmatrix}
+          x\\
+          y
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          2x+y\\
+          x-y
+          \end{bmatrix}
+          \]
+        </div>
+
+        <div class="callout good-box">
+          <strong>快速结论：</strong>
+          只要一个映射的每个分量都是 \(x,y\) 的 <span class="good">一次齐次表达式</span>，也就是只含 \(ax+by\) 这样的形式，
+          <span class="good">没有常数项、没有平方、没有 \(xy\) 乘积</span>，通常就可以写成矩阵乘法，因此它就是线性映射。
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>方法 A：先写成矩阵乘法</h3>
+            <p>
+              观察两个输出分量：\(2x+y\) 和 \(x-y\)。它们都只是 \(x\) 与 \(y\) 的线性组合，因此可以直接写成 \(A\mathbf{x}\) 的形式。
+            </p>
+            <p>
+              一旦你成功写成 \(T(\mathbf{x})=A\mathbf{x}\)，就已经几乎可以立刻判断：<span class="good">这是线性映射</span>。
+            </p>
+          </div>
+          <div class="card">
+            <h3>方法 B：按定义快速验算</h3>
+            <p>
+              设 \(\mathbf{u}=(x_1,y_1)\)、\(\mathbf{v}=(x_2,y_2)\)、标量 \(c\in\mathbb{R}\)。只要分别证明“加法保持”和“数乘保持”，就完成了。
+            </p>
+          </div>
+        </div>
+
+        <details open>
+          <summary>展开一步步推导</summary>
+          <div class="formula-box">
+            \[
+            \mathbf{u}+\mathbf{v}=(x_1+x_2,\,y_1+y_2)
+            \]
+            \[
+            T(\mathbf{u}+\mathbf{v})=\bigl(2(x_1+x_2)+(y_1+y_2),\,(x_1+x_2)-(y_1+y_2)\bigr)
+            \]
+            \[
+            =\bigl((2x_1+y_1)+(2x_2+y_2),\,(x_1-y_1)+(x_2-y_2)\bigr)
+            \]
+            \[
+            =T(\mathbf{u})+T(\mathbf{v})
+            \]
+          </div>
+          <div class="formula-box">
+            \[
+            c\mathbf{u}=(cx_1,\,cy_1)
+            \]
+            \[
+            T(c\mathbf{u})=(2cx_1+cy_1,\,cx_1-cy_1)
+            \]
+            \[
+            =c(2x_1+y_1,\,x_1-y_1)
+            \]
+            \[
+            =cT(\mathbf{u})
+            \]
+          </div>
+          <div class="callout">
+            <strong>结论：</strong>
+            \(T(\mathbf{u}+\mathbf{v})=T(\mathbf{u})+T(\mathbf{v})\) 且 \(T(c\mathbf{u})=cT(\mathbf{u})\)，
+            所以 \(T(x,y)=(2x+y,\,x-y)\) 是线性映射。
+          </div>
+        </details>
+
+        <div class="callout warn-box">
+          <strong>顺手做一个反面对比：</strong>
+          如果是 \(T(x,y)=(2x+y+1,\,x-y)\)，虽然看起来只多了一个 \(+1\)，但这个常数项会让 \(T(0,0)\neq(0,0)\)，因此它不再是线性映射，而是仿射变换。
+        </div>
+
         <p>
           下面比较三种规则。重点不是代入某一个点，而是观察它们是否同时保持加法和数乘。
         </p>

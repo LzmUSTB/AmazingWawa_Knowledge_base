@@ -387,7 +387,6 @@ function stopPanning(event) {
 
 function handleWheel(event) {
   if (event.ctrlKey) return;
-  event.preventDefault();
   if (!viewportRef.value) return;
   const factor = event.deltaY > 0 ? 1 / 1.12 : 1.12;
   const nextZoom = clamp(
@@ -430,7 +429,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 <template>
   <section class="graph-view technical-grid">
     <div ref="viewportRef" class="graph-viewport" :class="{ 'is-panning': isPanning }" @pointercancel="stopPanning"
-      @pointerdown="handlePointerDown" @pointermove="handlePointerMove" @pointerup="stopPanning" @wheel="handleWheel">
+      @pointerdown="handlePointerDown" @pointermove="handlePointerMove" @pointerup="stopPanning" @wheel.passive="handleWheel">
       <div v-if="!currentScope.nodes.length" class="graph-empty-state">
         <h2>No domains yet.</h2>
         <p>Import a .wawapkg package or create a domain.</p>
