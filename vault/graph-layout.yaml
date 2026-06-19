@@ -552,12 +552,12 @@ boards:
         w: 190
         h: 80
       linear-algebra-orthogonality:
-        x: 864
+        x: 832
         y: 1152
         w: 190
         h: 80
       linear-algebra-gram-schmidt-process:
-        x: 768
+        x: 736
         y: 864
         w: 190
         h: 80
@@ -567,7 +567,7 @@ boards:
         w: 190
         h: 80
       linear-algebra-least-squares:
-        x: 736
+        x: 704
         y: 768
         w: 190
         h: 80
@@ -582,7 +582,7 @@ boards:
         w: 190
         h: 80
       linear-algebra-projection-matrix:
-        x: 800
+        x: 768
         y: 960
         w: 190
         h: 80
@@ -592,12 +592,37 @@ boards:
         w: 190
         h: 80
       linear-algebra-orthogonal-complement:
-        x: 832
+        x: 800
         y: 1056
         w: 190
         h: 80
       linear-algebra-matrix-powers:
         x: 1408
         y: 576
+        w: 190
+        h: 80
+  linear-algebra-rank:
+    width: 2400
+    height: 1600
+    grid: 32
+    nodes:
+      linear-algebra-rank:
+        x: 1090
+        y: 750
+        w: 220
+        h: 100
+      linear-algebra-linear-map:
+        x: 896
+        y: 640
+        w: 190
+        h: 80
+      linear-algebra-linear-independence:
+        x: 1408
+        y: 832
+        w: 190
+        h: 80
+      linear-algebra-inverse-matrix:
+        x: 832
+        y: 832
         w: 190
         h: 80

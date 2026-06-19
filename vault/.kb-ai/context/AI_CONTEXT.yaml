@@ -5,12 +5,13 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: optics
-generatedAt: 2026-06-12T14:41:50.439Z
+generatedAt: 2026-06-19T07:13:43.803Z
 constraints:
   idPattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
   allowedDomains:
     - optics
     - computer-graphics
+    - mathematical-foundations
   canAddDomains: true
   allowedNodeTypes:
     - topic
@@ -140,7 +141,7 @@ constraints:
     omitNoteFiles: true
     visibleInGraph: true
 counts:
-  domains: 2
-  nodes: 174
-  edges: 174
+  domains: 3
+  nodes: 197
+  edges: 229
   customBlockTypes: 0

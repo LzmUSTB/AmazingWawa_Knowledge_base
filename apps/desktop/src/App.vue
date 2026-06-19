@@ -69,6 +69,7 @@ const layoutMovedNodeIds = ref({});
 const activeLayoutScopeId = ref("");
 const layoutSaveInProgress = ref(false);
 const layoutError = ref("");
+const contextExportError = ref("");
 const contextExporting = ref(false);
 const uiFontScale = ref(Number.isFinite(savedUiFontScale) ? clampUiFontScale(savedUiFontScale) : 1);
 const sidebarCollapsed = ref(
@@ -753,6 +754,7 @@ function showView(viewName) {
     return;
   }
   if (!confirmDiscardDirty()) return;
+  if (viewName === "context-export") contextExportError.value = "";
   selectedNodeId.value = "";
   currentView.value = viewName;
 }
@@ -776,16 +778,17 @@ function handleAiImportApplied(updatedVault) {
 async function handleExportContext() {
   if (contextExporting.value) return;
   if (!activeVaultRootPath.value) {
-    window.alert("Open a desktop vault folder before exporting context.");
+    contextExportError.value = "Open a desktop vault folder before exporting context.";
     return;
   }
   contextExporting.value = true;
+  contextExportError.value = "";
   try {
     await exportContext(activeVaultRootPath.value);
     await openVaultContextFolder(activeVaultRootPath.value);
   } catch (error) {
     console.error("[vault] Failed to export context.", error);
-    window.alert(`Failed to export context: ${error}`);
+    contextExportError.value = `Failed to export context: ${String(error?.message || error)}`;
   } finally {
     contextExporting.value = false;
   }
@@ -1149,6 +1152,8 @@ function toggleRelationSidebar() {
       :can-save-layout="canSaveLayout"
       :can-save-note="canSaveNote"
       :can-create-note="hasRealVault"
+      :context-export-error="contextExportError"
+      :context-exporting="contextExporting"
       :current-domain="currentDomain"
       :current-note-id="currentNoteId"
       :current-relation-node-id="currentRelationNodeId"

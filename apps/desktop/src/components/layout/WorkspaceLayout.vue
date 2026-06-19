@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import AiImportView from "../ai-import/AiImportView.vue";
+import ContextExportView from "../context/ContextExportView.vue";
 import AddNoteDialog from "../dialogs/AddNoteDialog.vue";
 import EditKnowledgeItemDialog from "../dialogs/EditKnowledgeItemDialog.vue";
 import NewNodeDialog from "../dialogs/NewNodeDialog.vue";
@@ -78,6 +79,14 @@ const props = defineProps({
     default: true,
   },
   canAddNote: {
+    type: Boolean,
+    default: false,
+  },
+  contextExportError: {
+    type: String,
+    default: "",
+  },
+  contextExporting: {
     type: Boolean,
     default: false,
   },
@@ -217,7 +226,7 @@ function fitGraphView() {
     'is-relation-sidebar-collapsed': relationSidebarCollapsed,
   }">
     <TopMenu :app-title="appTitle" :can-add-note="canAddNote" :can-export-context="Boolean(activeVaultRootPath)"
-      :ui-font-scale="uiFontScale" @export-context="$emit('export-context')" @open-dialog="$emit('open-dialog', $event)"
+      :ui-font-scale="uiFontScale" @export-context="$emit('show-view', 'context-export')" @open-dialog="$emit('open-dialog', $event)"
       @open-vault="$emit('open-vault')" @show-view="$emit('show-view', $event)" />
     <div class="app-body" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
       <aside class="sidebar-region">
@@ -254,6 +263,9 @@ function fitGraphView() {
 
         <AiImportView v-else-if="currentView === 'ai-import'" :vault-root-path="activeVaultRootPath"
           @applied="$emit('ai-import-applied', $event)" @close="$emit('show-view', 'graph')" />
+
+        <ContextExportView v-else-if="currentView === 'context-export'" :error="contextExportError"
+          :exporting="contextExporting" @close="$emit('show-view', 'graph')" @export="$emit('export-context')" />
 
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 

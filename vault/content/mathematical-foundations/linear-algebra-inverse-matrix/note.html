@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inverse Matrix / 逆矩阵 / 逆行列</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)'], ['$', '$']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #14161d;
+      --panel-2: #1c1f29;
+      --text: #f3f5f7;
+      --muted: #b7bdc9;
+      --line: #343847;
+      --accent: #9cff3a;
+      --accent-2: #46c7ff;
+      --accent-3: #ff4fd8;
+      --warn: #ffd166;
+      --bad: #ff6b6b;
+      --good: #6dff9e;
+      --shadow: rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(70,199,255,.13), transparent 28%),
+        radial-gradient(circle at 86% 4%, rgba(156,255,58,.11), transparent 24%),
+        radial-gradient(circle at 68% 64%, rgba(255,79,216,.07), transparent 31%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.72;
+    }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+    header.hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(20,22,29,.97), rgba(20,22,29,.68));
+      box-shadow: 0 24px 70px var(--shadow);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    header.hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(90deg, rgba(0,0,0,.3), rgba(0,0,0,1));
+      pointer-events: none;
+    }
+    .hero > * { position: relative; }
+    .kicker {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-size: 13px;
+      border: 1px solid rgba(156,255,58,.5);
+      padding: 4px 10px;
+      background: rgba(156,255,58,.08);
+    }
+    h1 { font-size: clamp(32px, 5vw, 58px); line-height: 1.08; margin: 22px 0 16px; letter-spacing: -.04em; }
+    .subtitle { font-size: 19px; max-width: 900px; color: var(--muted); margin: 0; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+    .meta-card { border: 1px solid var(--line); background: rgba(11,12,16,.65); padding: 14px 16px; }
+    .meta-card strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .meta-card span { display: block; margin-top: 3px; font-weight: 750; }
+    nav.toc { margin: 22px 0 34px; border: 1px solid var(--line); background: rgba(20,22,29,.82); padding: 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    nav.toc a { border: 1px solid var(--line); padding: 10px 12px; color: var(--text); background: rgba(255,255,255,.03); font-weight: 650; font-size: 14px; }
+    nav.toc a:hover { border-color: var(--accent-2); background: rgba(70,199,255,.08); text-decoration: none; }
+    section { margin: 26px 0; border: 1px solid var(--line); background: rgba(20,22,29,.88); box-shadow: 0 16px 46px rgba(0,0,0,.18); }
+    .section-inner { padding: 30px; }
+    h2 { margin: 0 0 14px; font-size: clamp(24px, 3vw, 36px); line-height: 1.18; letter-spacing: -.02em; }
+    h3 { margin: 28px 0 10px; font-size: 22px; }
+    h4 { margin: 22px 0 8px; font-size: 17px; color: var(--accent); }
+    p { margin: 12px 0; }
+    .lead { color: var(--muted); font-size: 17px; }
+    .highlight { color: var(--accent); font-weight: 800; }
+    .blue { color: var(--accent-2); font-weight: 800; }
+    .pink { color: var(--accent-3); font-weight: 800; }
+    .warn { color: var(--warn); font-weight: 800; }
+    .good { color: var(--good); font-weight: 800; }
+    .bad { color: var(--bad); font-weight: 800; }
+    .callout { border: 1px solid rgba(70,199,255,.45); background: rgba(70,199,255,.08); padding: 15px 17px; margin: 18px 0; }
+    .callout strong { color: var(--accent-2); }
+    .callout.warn-box { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.08); }
+    .callout.good-box { border-color: rgba(109,255,158,.45); background: rgba(109,255,158,.07); }
+    .callout.bad-box { border-color: rgba(255,107,107,.45); background: rgba(255,107,107,.075); }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 16px; }
+    .formula-box { border: 1px solid rgba(156,255,58,.42); background: rgba(156,255,58,.065); padding: 16px; margin: 16px 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; overflow: hidden; }
+    th, td { border: 1px solid var(--line); padding: 11px 12px; text-align: left; vertical-align: top; }
+    th { color: var(--accent); background: rgba(156,255,58,.08); }
+    td { background: rgba(255,255,255,.025); }
+    ul, ol { padding-left: 1.4em; }
+    li { margin: 6px 0; }
+    .workspace { border: 1px solid var(--line); background: rgba(11,12,16,.76); padding: 16px; margin: 18px 0; }
+    .canvas-wrap { border: 1px solid rgba(255,255,255,.08); background: #090a0f; position: relative; }
+    canvas { display: block; width: 100%; height: 420px; }
+    .state-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .state-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 9px 12px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 0;
+    }
+    .state-btn:hover { border-color: var(--accent-2); background: rgba(70,199,255,.09); }
+    .state-btn.active { border-color: var(--accent); color: #071006; background: var(--accent); }
+    .state-note { margin-top: 10px; color: var(--muted); font-size: 14px; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .readout.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .readout div { border: 1px solid var(--line); padding: 10px; background: rgba(255,255,255,.03); }
+    .readout strong { display: block; color: var(--muted); font-size: 12px; }
+    .readout span { display: block; color: var(--text); font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .control-row { display: grid; grid-template-columns: 160px minmax(0, 1fr) 160px; gap: 12px; align-items: center; margin-top: 14px; }
+    .control-row.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .control { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px; }
+    .control label { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; font-weight: 800; }
+    .control output { color: var(--accent); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+    .timeline-label { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 10px; color: var(--muted); font-weight: 800; font-size: 13px; text-align: center; }
+    .math-note { font-size: 15px; color: var(--muted); }
+    details { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px 14px; margin: 10px 0; }
+    summary { cursor: pointer; color: var(--accent-2); font-weight: 800; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background: rgba(255,255,255,.06); padding: 2px 5px; border: 1px solid rgba(255,255,255,.09); }
+    .step-box { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+    .step-list { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px; }
+    .step-content { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 16px; min-height: 250px; }
+    .mjx-svg { outline: none; }
+    @media (max-width: 920px) {
+      .meta-grid, nav.toc, .grid-2, .grid-3, .readout, .readout.three, .control-row, .control-row.four, .step-box { grid-template-columns: 1fr; }
+      header.hero, .section-inner { padding: 22px; }
+      canvas { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="kicker">Linear Algebra Core</div>
+      <h1>Inverse Matrix<br>逆矩阵 / 逆行列</h1>
+      <p class="subtitle">
+        逆矩阵描述一个线性变换能否被完整撤销。它不是普通的“除以矩阵”，而是一个能够把 \(A\) 的作用反向还原的矩阵。
+      </p>
+      <div class="meta-grid">
+        <div class="meta-card"><strong>前置概念</strong><span>矩阵乘法、线性映射、秩、核与像</span></div>
+        <div class="meta-card"><strong>核心问题</strong><span>一个线性变换能不能完整倒回来</span></div>
+        <div class="meta-card"><strong>连接节点</strong><span>行列式、线性方程组、对角化</span></div>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <a href="#terms">前置术语</a>
+      <a href="#definition">定义</a>
+      <a href="#geometry">几何直觉</a>
+      <a href="#conditions">存在条件</a>
+      <a href="#formula">二阶公式</a>
+      <a href="#elimination">高斯消元求逆</a>
+      <a href="#equations">解方程组</a>
+      <a href="#summary">整理与检查</a>
+    </nav>
+
+    <section id="terms">
+      <div class="section-inner">
+        <h2>先明确几个前置术语</h2>
+        <p class="lead">
+          逆矩阵依赖几个基础概念：方阵、恒等矩阵、矩阵乘法顺序。它们共同描述一个线性变换能否被完整撤销。
+        </p>
+
+        <table>
+          <thead>
+            <tr><th>中文</th><th>日本語</th><th>English</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>方阵</td>
+              <td>正方行列</td>
+              <td>Square Matrix</td>
+              <td>行数和列数相同的矩阵，例如 \(2\times2\)、\(3\times3\)。只有方阵才可能拥有通常意义下的逆矩阵。</td>
+            </tr>
+            <tr>
+              <td>恒等矩阵</td>
+              <td>単位行列</td>
+              <td>Identity Matrix</td>
+              <td>记作 \(I\)。它对任何向量都“不做改变”，类似数字乘法中的 1。</td>
+            </tr>
+            <tr>
+              <td>逆矩阵</td>
+              <td>逆行列</td>
+              <td>Inverse Matrix</td>
+              <td>如果 \(A^{-1}A=AA^{-1}=I\)，则 \(A^{-1}\) 是 \(A\) 的逆矩阵。</td>
+            </tr>
+            <tr>
+              <td>可逆</td>
+              <td>可逆</td>
+              <td>Invertible / Nonsingular</td>
+              <td>存在逆矩阵。几何上表示线性变换没有把不同输入压成同一个输出。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>恒等矩阵为什么像数字 1</h3>
+        <p>
+          二维恒等矩阵是：
+        </p>
+
+        <div class="formula-box">
+          \[
+          I_2=
+          \begin{bmatrix}
+          1&0\\
+          0&1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          它乘以任意向量都不会改变这个向量：
+        </p>
+
+        <div class="formula-box">
+          \[
+          I_2
+          \begin{bmatrix}
+          x\\y
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          x\\y
+          \end{bmatrix}
+          \]
+        </div>
+
+        <div class="callout">
+          <strong>直觉：</strong>
+          如果一个矩阵 \(A\) 表示“做一个变换”，那么 \(A^{-1}\) 表示“把这个变换撤销”。撤销后应该回到原状，所以组合结果是恒等矩阵 \(I\)。
+        </div>
+      </div>
+    </section>
+
+    <section id="definition">
+      <div class="section-inner">
+        <h2>逆矩阵的定义</h2>
+        <p>
+          设 \(A\) 是一个 \(n\times n\) 方阵。如果存在另一个 \(n\times n\) 矩阵 \(B\)，使得：
+        </p>
+
+        <div class="formula-box">
+          \[
+          AB=BA=I_n
+          \]
+        </div>
+
+        <p>
+          那么 \(B\) 就叫做 \(A\) 的逆矩阵，记作：
+        </p>
+
+        <div class="formula-box">
+          \[
+          B=A^{-1}
+          \]
+        </div>
+
+        <p>
+          因此定义可以写成：
+        </p>
+
+        <div class="formula-box">
+          \[
+          AA^{-1}=A^{-1}A=I_n
+          \]
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>为什么要同时要求左右两边</h3>
+            <p>
+              数字乘法中 \(ab=ba\)，但矩阵乘法一般不满足交换律。也就是说 \(AB\) 和 \(BA\) 可能不同，所以定义里要写清楚两边都等于 \(I_n\)。
+            </p>
+          </div>
+          <div class="card">
+            <h3>为什么必须是方阵</h3>
+            <p>
+              如果矩阵把二维向量变成三维向量，输入空间和输出空间维数不同，就不可能用同一个意义上的矩阵把所有变化完整双向撤销。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout warn-box">
+          <strong>避免误解：</strong>
+          \(A^{-1}\) 不是 \(\frac{1}{A}\)。矩阵没有普通数字意义上的除法。写 \(A^{-1}\mathbf{b}\) 的意思是“对 \(\mathbf{b}\) 施加 \(A\) 的反向变换”。
+        </div>
+      </div>
+    </section>
+
+    <section id="geometry">
+      <div class="section-inner">
+        <h2>几何直觉：先变形，再撤销</h2>
+        <p>
+          下面选择不同矩阵，观察它们是否能被完整撤销。重点是比较特殊情况，因此使用按钮切换。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="caseCanvas"></canvas></div>
+          <div class="state-row" id="caseButtons">
+            <button class="state-btn active" data-case="scale">可逆：缩放</button>
+            <button class="state-btn" data-case="shear">可逆：剪切</button>
+            <button class="state-btn" data-case="projection">不可逆：投影</button>
+            <button class="state-btn" data-case="zero">不可逆：零映射</button>
+          </div>
+          <div class="readout">
+            <div><strong>矩阵 \(A\)</strong><span id="caseMatrix"></span></div>
+            <div><strong>秩</strong><span id="caseRank"></span></div>
+            <div><strong>核</strong><span id="caseKernel"></span></div>
+            <div><strong>是否可逆</strong><span id="caseInvertible"></span></div>
+          </div>
+          <p class="state-note" id="caseNote"></p>
+        </div>
+
+        <div class="callout">
+          <strong>读图方法：</strong>
+          绿色网格是 \(A\) 作用后的结果。只要平面仍然是二维的，理论上就能撤销；如果平面被压成一条线或一个点，原来的某些信息已经消失，不能完整撤销。
+        </div>
+      </div>
+    </section>
+
+    <section id="conditions">
+      <div class="section-inner">
+        <h2>什么时候逆矩阵存在</h2>
+        <p>
+          对 \(n\times n\) 方阵 \(A\)，下面这些说法是等价的。现在先把它们作为判断可逆性的核心清单。
+        </p>
+
+        <table>
+          <thead>
+            <tr><th>条件</th><th>含义</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(A\) 可逆</td>
+              <td>存在 \(A^{-1}\)，使得 \(AA^{-1}=A^{-1}A=I_n\)。</td>
+            </tr>
+            <tr>
+              <td>\(\operatorname{rank}(A)=n\)</td>
+              <td>满秩，说明 \(n\) 个独立方向都被保留下来。</td>
+            </tr>
+            <tr>
+              <td>\(\ker(A)=\{\mathbf{0}\}\)</td>
+              <td>没有非零向量被压成零，说明没有方向被完全丢失。</td>
+            </tr>
+            <tr>
+              <td>\(\operatorname{Im}(A)=\mathbb{R}^n\)</td>
+              <td>输出能覆盖整个目标空间。</td>
+            </tr>
+            <tr>
+              <td>\(A\mathbf{x}=\mathbf{b}\) 对任意 \(\mathbf{b}\) 有唯一解</td>
+              <td>每个目标都能到达，而且只由一个输入到达。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout good-box">
+          <strong>最重要的直觉：</strong>
+          可逆 = 没有丢失信息。只要有一整条非零方向被压成零，就无法知道原输入到底是哪一个，因此不能逆。
+        </div>
+
+        <p>
+          下面用时间轴观察“先应用 \(A\)，再应用 \(A^{-1}\)”的撤销过程。这里不是比较特殊情况，而是看从原空间到变形空间再回到原空间的连续过程，所以使用时间轴。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="undoCanvas"></canvas></div>
+          <div class="control-row">
+            <div class="timeline-label">原空间</div>
+            <input id="undoRange" type="range" min="0" max="1" step="0.01" value="0">
+            <div class="timeline-label">应用逆矩阵后回到原空间</div>
+          </div>
+          <div class="readout three">
+            <div><strong>阶段</strong><span id="undoStage">原空间</span></div>
+            <div><strong>当前作用</strong><span id="undoAction">\(I\)</span></div>
+            <div><strong>结论</strong><span id="undoConclusion">还未变换</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="formula">
+      <div class="section-inner">
+        <h2>二阶矩阵的逆矩阵公式</h2>
+        <p>
+          对 \(2\times2\) 矩阵：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=
+          \begin{bmatrix}
+          a&b\\
+          c&d
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          如果 \(ad-bc\neq0\)，则：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A^{-1}
+          =
+          \frac{1}{ad-bc}
+          \begin{bmatrix}
+          d&-b\\
+          -c&a
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          这里的 \(ad-bc\) 是判断二维变换有没有被压扁的关键量。它会在后续的“行列式”中系统解释。这里暂时只需要知道：如果 \(ad-bc=0\)，公式无法使用，矩阵不可逆。
+        </p>
+
+        <h3>例子</h3>
+        <div class="formula-box">
+          \[
+          A=
+          \begin{bmatrix}
+          2&1\\
+          1&1
+          \end{bmatrix}
+          \]
+          \[
+          ad-bc=2\cdot1-1\cdot1=1
+          \]
+          \[
+          A^{-1}
+          =
+          \begin{bmatrix}
+          1&-1\\
+          -1&2
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          检查：
+        </p>
+
+        <div class="formula-box">
+          \[
+          AA^{-1}
+          =
+          \begin{bmatrix}
+          2&1\\
+          1&1
+          \end{bmatrix}
+          \begin{bmatrix}
+          1&-1\\
+          -1&2
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          1&0\\
+          0&1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <div class="callout warn-box">
+          <strong>使用限制：</strong>
+          二阶公式只适用于 \(2\times2\) 矩阵。更高阶矩阵一般用高斯消元求逆，而不是背公式。
+        </div>
+      </div>
+    </section>
+
+    <section id="elimination">
+      <div class="section-inner">
+        <h2>用高斯消元求逆矩阵</h2>
+        <p>
+          求逆矩阵时常使用记号 \([A\mid I]\)。它和增广矩阵类似，只是右边不放 \(\mathbf{b}\)，而是放恒等矩阵 \(I\)。
+        </p>
+
+        <div class="formula-box">
+          \[
+          [A\mid I]
+          \]
+        </div>
+
+        <p>
+          目标是通过行变换把左边的 \(A\) 化成 \(I\)。如果成功，右边就会变成 \(A^{-1}\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          [A\mid I]\longrightarrow[I\mid A^{-1}]
+          \]
+        </div>
+
+        <div class="callout">
+          <strong>为什么这样做：</strong>
+          行变换相当于对左边不断施加可逆操作。当这些操作把 \(A\) 变成 \(I\) 时，同一批操作作用到右边的 \(I\) 上，就记录下了把 \(A\) 撤销的矩阵。
+        </div>
+
+        <h3>标准例子</h3>
+        <p>
+          求：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=
+          \begin{bmatrix}
+          2&1\\
+          1&1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          写成 \([A\mid I]\)：
+        </p>
+
+        <div class="workspace">
+          <div class="step-box">
+            <div class="step-list">
+              <div class="state-row" id="stepButtons">
+                <button class="state-btn active" data-step="0">0. 写出 \([A\mid I]\)</button>
+                <button class="state-btn" data-step="1">1. 交换行</button>
+                <button class="state-btn" data-step="2">2. 消去第一列</button>
+                <button class="state-btn" data-step="3">3. 消去第二列</button>
+                <button class="state-btn" data-step="4">4. 读出逆矩阵</button>
+              </div>
+            </div>
+            <div class="step-content">
+              <h3 id="stepTitle">0. 写出 \([A\mid I]\)</h3>
+              <div class="formula-box" id="stepFormula">
+                \[
+                \left[
+                \begin{array}{cc|cc}
+                2&1&1&0\\
+                1&1&0&1
+                \end{array}
+                \right]
+                \]
+              </div>
+              <p id="stepText">
+                左边是要被化成恒等矩阵的 \(A\)，右边放恒等矩阵 \(I\)。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3>完整推导</h3>
+        <div class="formula-box">
+          \[
+          \left[
+          \begin{array}{cc|cc}
+          2&1&1&0\\
+          1&1&0&1
+          \end{array}
+          \right]
+          \xrightarrow{R_1\leftrightarrow R_2}
+          \left[
+          \begin{array}{cc|cc}
+          1&1&0&1\\
+          2&1&1&0
+          \end{array}
+          \right]
+          \]
+          \[
+          \xrightarrow{R_2\leftarrow R_2-2R_1}
+          \left[
+          \begin{array}{cc|cc}
+          1&1&0&1\\
+          0&-1&1&-2
+          \end{array}
+          \right]
+          \]
+          \[
+          \xrightarrow{R_2\leftarrow -R_2}
+          \left[
+          \begin{array}{cc|cc}
+          1&1&0&1\\
+          0&1&-1&2
+          \end{array}
+          \right]
+          \]
+          \[
+          \xrightarrow{R_1\leftarrow R_1-R_2}
+          \left[
+          \begin{array}{cc|cc}
+          1&0&1&-1\\
+          0&1&-1&2
+          \end{array}
+          \right]
+          =
+          [I\mid A^{-1}]
+          \]
+        </div>
+
+        <p>
+          所以：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A^{-1}=
+          \begin{bmatrix}
+          1&-1\\
+          -1&2
+          \end{bmatrix}
+          \]
+        </div>
+      </div>
+    </section>
+
+    <section id="equations">
+      <div class="section-inner">
+        <h2>逆矩阵如何解线性方程组</h2>
+        <p>
+          如果 \(A\) 可逆，那么方程：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A\mathbf{x}=\mathbf{b}
+          \]
+        </div>
+
+        <p>
+          可以两边左乘 \(A^{-1}\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A^{-1}A\mathbf{x}=A^{-1}\mathbf{b}
+          \]
+          \[
+          I\mathbf{x}=A^{-1}\mathbf{b}
+          \]
+          \[
+          \mathbf{x}=A^{-1}\mathbf{b}
+          \]
+        </div>
+
+        <div class="callout warn-box">
+          <strong>注意顺序：</strong>
+          这里必须是左乘 \(A^{-1}\)，因为 \(A\) 在 \(\mathbf{x}\) 左边。矩阵乘法不能随意交换顺序。
+        </div>
+
+        <h3>例子</h3>
+        <p>
+          解：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \begin{bmatrix}
+          2&1\\
+          1&1
+          \end{bmatrix}
+          \begin{bmatrix}
+          x\\y
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          5\\3
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          已知：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A^{-1}=
+          \begin{bmatrix}
+          1&-1\\
+          -1&2
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          所以：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \begin{bmatrix}
+          x\\y
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          1&-1\\
+          -1&2
+          \end{bmatrix}
+          \begin{bmatrix}
+          5\\3
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          2\\1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          代回原方程检查：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \begin{bmatrix}
+          2&1\\
+          1&1
+          \end{bmatrix}
+          \begin{bmatrix}
+          2\\1
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          5\\3
+          \end{bmatrix}
+          \]
+        </div>
+      </div>
+    </section>
+
+    <section id="summary">
+      <div class="section-inner">
+        <h2>整理与检查</h2>
+
+        <table>
+          <thead>
+            <tr><th>说法</th><th>含义</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(AA^{-1}=A^{-1}A=I\)</td><td>逆矩阵能完整撤销 \(A\) 的作用。</td></tr>
+            <tr><td>\(\operatorname{rank}(A)=n\)</td><td>方阵满秩，因此没有方向被丢失。</td></tr>
+            <tr><td>\(\ker(A)=\{\mathbf{0}\}\)</td><td>没有非零输入被压成零。</td></tr>
+            <tr><td>\([A\mid I]\to[I\mid A^{-1}]\)</td><td>用高斯消元求逆矩阵。</td></tr>
+            <tr><td>\(\mathbf{x}=A^{-1}\mathbf{b}\)</td><td>当 \(A\) 可逆时，线性方程组有唯一解。</td></tr>
+          </tbody>
+        </table>
+
+        <h3>自检问题</h3>
+        <ol>
+          <li>为什么被压成一条线的二维矩阵没有逆矩阵？</li>
+          <li>为什么 \(A^{-1}\) 不是普通意义上的 \(\frac{1}{A}\)？</li>
+          <li>为什么求逆时要把 \([A\mid I]\) 化成 \([I\mid A^{-1}]\)？</li>
+          <li>如果 \(\ker(A)\) 中存在非零向量，为什么 \(A\) 不可能可逆？</li>
+          <li>为什么 \(A\mathbf{x}=\mathbf{b}\) 在 \(A\) 可逆时一定有唯一解？</li>
+        </ol>
+
+        <div class="callout">
+          <strong>下一步：</strong>
+          行列式会把“空间是否被压扁”转化为一个具体数值，并给出判断可逆性的另一个入口。
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function setupCanvas(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function applyA(A, p) {
+      return [A[0][0] * p[0] + A[0][1] * p[1], A[1][0] * p[0] + A[1][1] * p[1]];
+    }
+
+    function det2(A) {
+      return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    }
+
+    function inverse2(A) {
+      const d = det2(A);
+      if (Math.abs(d) < 1e-8) return null;
+      return [[A[1][1] / d, -A[0][1] / d], [-A[1][0] / d, A[0][0] / d]];
+    }
+
+    function rank2(A) {
+      const e = 1e-7;
+      if (Math.abs(A[0][0]) < e && Math.abs(A[0][1]) < e && Math.abs(A[1][0]) < e && Math.abs(A[1][1]) < e) return 0;
+      if (Math.abs(det2(A)) > e) return 2;
+      return 1;
+    }
+
+    function kernelVector(A) {
+      const e = 1e-7;
+      const [a, b] = A[0];
+      const [c, d] = A[1];
+      if (Math.abs(a) + Math.abs(b) > e) return [-b, a];
+      return [-d, c];
+    }
+
+    function imageVector(A) {
+      const c1 = [A[0][0], A[1][0]];
+      const c2 = [A[0][1], A[1][1]];
+      const n1 = Math.hypot(c1[0], c1[1]);
+      const n2 = Math.hypot(c2[0], c2[1]);
+      return n1 >= n2 ? c1 : c2;
+    }
+
+    function lerpMatrix(A, B, t) {
+      return [
+        [A[0][0] * (1 - t) + B[0][0] * t, A[0][1] * (1 - t) + B[0][1] * t],
+        [A[1][0] * (1 - t) + B[1][0] * t, A[1][1] * (1 - t) + B[1][1] * t]
+      ];
+    }
+
+    function multiply2(A, B) {
+      return [
+        [A[0][0] * B[0][0] + A[0][1] * B[1][0], A[0][0] * B[0][1] + A[0][1] * B[1][1]],
+        [A[1][0] * B[0][0] + A[1][1] * B[1][0], A[1][0] * B[0][1] + A[1][1] * B[1][1]]
+      ];
+    }
+
+    function drawPanel(ctx, cx, cy, scale, title) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = 'rgba(255,255,255,.08)';
+      ctx.lineWidth = 1;
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-3.2 * scale, i * scale);
+        ctx.lineTo(3.2 * scale, i * scale);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(i * scale, -3.2 * scale);
+        ctx.lineTo(i * scale, 3.2 * scale);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.38)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-3.35 * scale, 0);
+      ctx.lineTo(3.35 * scale, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -3.35 * scale);
+      ctx.lineTo(0, 3.35 * scale);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.72)';
+      ctx.font = '700 13px ui-sans-serif, system-ui';
+      ctx.fillText(title, -3.25 * scale, -3.45 * scale);
+      ctx.restore();
+    }
+
+    function drawMappedGrid(ctx, cx, cy, scale, A, color = 'rgba(109,255,158,.36)') {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.35;
+      for (let k = -3; k <= 3; k++) {
+        ctx.beginPath();
+        for (let i = -90; i <= 90; i++) {
+          const x = i / 30;
+          const p = applyA(A, [x, k]);
+          const px = p[0] * scale;
+          const py = -p[1] * scale;
+          if (i === -90) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = -90; i <= 90; i++) {
+          const y = i / 30;
+          const p = applyA(A, [k, y]);
+          const px = p[0] * scale;
+          const py = -p[1] * scale;
+          if (i === -90) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function lineThrough(ctx, cx, cy, scale, v, color, width = 4) {
+      const n = Math.hypot(v[0], v[1]) || 1;
+      const ux = v[0] / n, uy = v[1] / n;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(-ux * 3.4 * scale, uy * 3.4 * scale);
+      ctx.lineTo(ux * 3.4 * scale, -uy * 3.4 * scale);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function dot(ctx, cx, cy, scale, p, color, r = 5) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(p[0] * scale, -p[1] * scale, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function typesetDynamicMath(elements) {
+      const els = elements.filter(Boolean);
+      if (!els.length) return;
+      const run = () => {
+        if (window.MathJax && MathJax.typesetPromise) {
+          if (MathJax.typesetClear) MathJax.typesetClear(els);
+          MathJax.typesetPromise(els).catch(() => {});
+        } else {
+          window.setTimeout(run, 80);
+        }
+      };
+      if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+        MathJax.startup.promise.then(run);
+      } else {
+        run();
+      }
+    }
+
+    const cases = {
+      scale: {
+        A: [[1.4, 0], [0, 0.7]],
+        matrix: String.raw`\(\begin{bmatrix}1.4&0\\0&0.7\end{bmatrix}\)`,
+        rank: String.raw`\(2\)`,
+        kernel: String.raw`\(\{\mathbf{0}\}\)`,
+        invertible: '是',
+        note: '缩放没有把任何方向压成零。只要缩放倍数都不是 0，就能用反向缩放撤销。'
+      },
+      shear: {
+        A: [[1, 1.1], [0, 1]],
+        matrix: String.raw`\(\begin{bmatrix}1&1.1\\0&1\end{bmatrix}\)`,
+        rank: String.raw`\(2\)`,
+        kernel: String.raw`\(\{\mathbf{0}\}\)`,
+        invertible: '是',
+        note: '剪切会改变网格形状，但仍然保留二维信息，因此可以被撤销。'
+      },
+      projection: {
+        A: [[1, 0], [0, 0]],
+        matrix: String.raw`\(\begin{bmatrix}1&0\\0&0\end{bmatrix}\)`,
+        rank: String.raw`\(1\)`,
+        kernel: String.raw`\(\operatorname{span}\{(0,1)\}\)`,
+        invertible: '否',
+        note: '投影把所有 y 轴方向的信息压成零。不同输入会得到同一个输出，所以无法撤销。'
+      },
+      zero: {
+        A: [[0, 0], [0, 0]],
+        matrix: String.raw`\(\begin{bmatrix}0&0\\0&0\end{bmatrix}\)`,
+        rank: String.raw`\(0\)`,
+        kernel: String.raw`\(\mathbb{R}^2\)`,
+        invertible: '否',
+        note: '零映射把所有输入都送到原点，信息完全丢失，不可能存在逆矩阵。'
+      }
+    };
+
+    let currentCase = 'scale';
+
+    function updateCaseText() {
+      const data = cases[currentCase];
+      document.getElementById('caseMatrix').innerHTML = data.matrix;
+      document.getElementById('caseRank').innerHTML = data.rank;
+      document.getElementById('caseKernel').innerHTML = data.kernel;
+      document.getElementById('caseInvertible').textContent = data.invertible;
+      document.getElementById('caseInvertible').className = data.invertible === '是' ? 'good' : 'bad';
+      document.getElementById('caseNote').textContent = data.note;
+      typesetDynamicMath([
+        document.getElementById('caseMatrix'),
+        document.getElementById('caseRank'),
+        document.getElementById('caseKernel')
+      ]);
+    }
+
+    function drawCase() {
+      const canvas = document.getElementById('caseCanvas');
+      if (!canvas) return;
+      const { ctx, w, h } = setupCanvas(canvas);
+      ctx.clearRect(0, 0, w, h);
+      const scale = Math.min(w / 16, h / 9);
+      const left = [w * 0.28, h * 0.55];
+      const right = [w * 0.74, h * 0.55];
+      const A = cases[currentCase].A;
+      const r = rank2(A);
+
+      drawPanel(ctx, left[0], left[1], scale, '原空间');
+      drawPanel(ctx, right[0], right[1], scale, '作用 A 后');
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(70,199,255,.34)';
+      ctx.lineWidth = 1.5;
+      for (let k = -3; k <= 3; k++) {
+        ctx.beginPath();
+        ctx.moveTo(left[0] + (-3) * scale, left[1] - k * scale);
+        ctx.lineTo(left[0] + (3) * scale, left[1] - k * scale);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(left[0] + k * scale, left[1] - (-3) * scale);
+        ctx.lineTo(left[0] + k * scale, left[1] - (3) * scale);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      drawMappedGrid(ctx, right[0], right[1], scale, A);
+
+      if (r === 2) {
+        ctx.fillStyle = 'rgba(109,255,158,.10)';
+        ctx.fillRect(right[0] - 3.1 * scale, right[1] - 3.1 * scale, 6.2 * scale, 6.2 * scale);
+        dot(ctx, left[0], left[1], scale, [0, 0], 'rgba(255,79,216,.95)', 7);
+      } else if (r === 1) {
+        lineThrough(ctx, right[0], right[1], scale, imageVector(A), 'rgba(109,255,158,.95)', 5);
+        lineThrough(ctx, left[0], left[1], scale, kernelVector(A), 'rgba(255,79,216,.95)', 5);
+      } else {
+        ctx.save();
+        ctx.translate(left[0], left[1]);
+        ctx.fillStyle = 'rgba(255,79,216,.12)';
+        ctx.fillRect(-3.2 * scale, -3.2 * scale, 6.4 * scale, 6.4 * scale);
+        ctx.restore();
+        dot(ctx, right[0], right[1], scale, [0, 0], 'rgba(109,255,158,.95)', 9);
+      }
+    }
+
+    function drawUndo() {
+      const canvas = document.getElementById('undoCanvas');
+      if (!canvas) return;
+      const { ctx, w, h } = setupCanvas(canvas);
+      ctx.clearRect(0, 0, w, h);
+      const t = parseFloat(document.getElementById('undoRange').value);
+      const scale = Math.min(w / 12, h / 8);
+      const center = [w * 0.5, h * 0.56];
+
+      const I = [[1, 0], [0, 1]];
+      const A = [[1, 1.1], [0, 1]];
+      const invA = inverse2(A);
+
+      let M;
+      let stage;
+      let action;
+      let conclusion;
+
+      if (t < 0.5) {
+        const localT = t / 0.5;
+        M = lerpMatrix(I, A, localT);
+        stage = '从原空间变到 A 作用后的空间';
+        action = String.raw`\((1-s)I+sA\)`;
+        conclusion = '正在变形';
+      } else {
+        const localT = (t - 0.5) / 0.5;
+        const combined = multiply2(invA, A);
+        M = lerpMatrix(A, combined, localT);
+        stage = '应用逆矩阵撤销 A';
+        action = String.raw`\(A^{-1}A=I\)`;
+        conclusion = localT > 0.98 ? '回到原空间' : '正在撤销';
+      }
+
+      drawPanel(ctx, center[0], center[1], scale, stage);
+      drawMappedGrid(ctx, center[0], center[1], scale, M, 'rgba(109,255,158,.45)');
+
+      document.getElementById('undoStage').textContent = stage;
+      document.getElementById('undoAction').innerHTML = action;
+      document.getElementById('undoConclusion').textContent = conclusion;
+      typesetDynamicMath([document.getElementById('undoAction')]);
+    }
+
+    const stepData = [
+      {
+        title: '0. 写出 \\([A\\mid I]\\)',
+        formula: String.raw`\[
+\left[
+\begin{array}{cc|cc}
+2&1&1&0\\
+1&1&0&1
+\end{array}
+\right]
+\]`,
+        text: '左边是要被化成恒等矩阵的 A，右边放恒等矩阵 I。'
+      },
+      {
+        title: '1. 交换行',
+        formula: String.raw`\[
+R_1\leftrightarrow R_2
+\]
+\[
+\left[
+\begin{array}{cc|cc}
+1&1&0&1\\
+2&1&1&0
+\end{array}
+\right]
+\]`,
+        text: '把第一列中已经是 1 的行放到上面，方便作为主元。'
+      },
+      {
+        title: '2. 消去第一列',
+        formula: String.raw`\[
+R_2\leftarrow R_2-2R_1
+\]
+\[
+\left[
+\begin{array}{cc|cc}
+1&1&0&1\\
+0&-1&1&-2
+\end{array}
+\right]
+\]
+\[
+R_2\leftarrow -R_2
+\]
+\[
+\left[
+\begin{array}{cc|cc}
+1&1&0&1\\
+0&1&-1&2
+\end{array}
+\right]
+\]`,
+        text: '第一列已经化成主元列，第二行第二列也整理成 1。'
+      },
+      {
+        title: '3. 消去第二列',
+        formula: String.raw`\[
+R_1\leftarrow R_1-R_2
+\]
+\[
+\left[
+\begin{array}{cc|cc}
+1&0&1&-1\\
+0&1&-1&2
+\end{array}
+\right]
+\]`,
+        text: '左边已经变成恒等矩阵 I。'
+      },
+      {
+        title: '4. 读出逆矩阵',
+        formula: String.raw`\[
+[A\mid I]\longrightarrow[I\mid A^{-1}]
+\]
+\[
+A^{-1}=
+\begin{bmatrix}
+1&-1\\
+-1&2
+\end{bmatrix}
+\]`,
+        text: '右边矩阵就是 A 的逆矩阵。'
+      }
+    ];
+
+    function updateStep(index) {
+      const data = stepData[index];
+      const title = document.getElementById('stepTitle');
+      const formula = document.getElementById('stepFormula');
+      const text = document.getElementById('stepText');
+      title.textContent = data.title;
+      formula.innerHTML = data.formula;
+      text.textContent = data.text;
+      typesetDynamicMath([formula, title]);
+    }
+
+    document.querySelectorAll('#caseButtons .state-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#caseButtons .state-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCase = btn.dataset.case;
+        updateCaseText();
+        drawCase();
+      });
+    });
+
+    document.querySelectorAll('#stepButtons .state-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#stepButtons .state-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateStep(parseInt(btn.dataset.step, 10));
+      });
+    });
+
+    document.getElementById('undoRange').addEventListener('input', drawUndo);
+
+    window.addEventListener('resize', () => {
+      drawCase();
+      drawUndo();
+    });
+
+    updateCaseText();
+    drawCase();
+    drawUndo();
+    updateStep(0);
+  </script>
+</body>
+</html>

@@ -179,7 +179,7 @@
       <a href="#cases">几何情况</a>
       <a href="#drop">秩如何下降</a>
       <a href="#compute">计算方法</a>
-      <a href="#equations">方程组视角</a>
+      <a href="#equations">增广矩阵判定</a>
       <a href="#links">连接其他概念</a>
       <a href="#summary">整理与检查</a>
     </nav>
@@ -407,45 +407,308 @@
 
     <section id="equations">
       <div class="section-inner">
-        <h2>线性方程组视角：秩决定有效约束数量</h2>
+        <h2>线性方程组、增广矩阵与有解判定</h2>
         <p>
-          线性方程组
+          线性方程组可以统一写成：
+        </p>
+
+        <div class="formula-box">
           \[
           A\mathbf{x}=\mathbf{b}
           \]
-          是否有解，取决于 \(\mathbf{b}\) 是否落在 \(\operatorname{Im}(A)\) 里。
+        </div>
+
+        <table>
+          <thead>
+            <tr><th>符号</th><th>含义</th><th>例子</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(A\)</td>
+              <td>系数矩阵，保存方程左边未知数的系数。</td>
+              <td>\(\begin{bmatrix}1&2\\3&4\end{bmatrix}\)</td>
+            </tr>
+            <tr>
+              <td>\(\mathbf{x}\)</td>
+              <td>未知向量，保存要求解的未知数。</td>
+              <td>\(\begin{bmatrix}x\\y\end{bmatrix}\)</td>
+            </tr>
+            <tr>
+              <td>\(\mathbf{b}\)</td>
+              <td>右端向量，保存方程右边的目标值。</td>
+              <td>\(\begin{bmatrix}5\\6\end{bmatrix}\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>增广矩阵是什么</h3>
+        <p>
+          为了把“左边系数”和“右边目标值”一起做行变换，我们把 \(A\) 和 \(\mathbf{b}\) 并排写成：
         </p>
 
-        <div class="grid-2">
-          <div class="card">
-            <h3>\(\mathbf{b}\in\operatorname{Im}(A)\)</h3>
-            <p>
-              目标向量可以由列向量线性组合出来，因此方程组有解。
-            </p>
-          </div>
-          <div class="card">
-            <h3>\(\mathbf{b}\notin\operatorname{Im}(A)\)</h3>
-            <p>
-              目标向量不在可达输出范围内，因此方程组无解。
-            </p>
-          </div>
+        <div class="formula-box">
+          \[
+          [A\mid\mathbf{b}]
+          \]
         </div>
 
         <p>
-          对增广矩阵有一个常用判定：
+          这个矩阵叫 <span class="highlight">增广矩阵</span> / <span class="highlight">拡大係数行列</span> / <span class="highlight">Augmented Matrix</span>。
+          竖线左边是系数矩阵，右边是方程组的右端向量。竖线只是视觉分隔符，不参与运算。
+        </p>
+
+        <div class="callout">
+          <strong>关键点：</strong>
+          增广矩阵不是新的线性映射。它是解方程组时使用的记录表，用来同时追踪系数矩阵 \(A\) 和目标向量 \(\mathbf{b}\) 在行变换下的变化。
+        </div>
+
+        <h3>标准判定流程</h3>
+        <p>
+          要判断 \(A\mathbf{x}=\mathbf{b}\) 是否有解，可以按以下流程：
+        </p>
+
+        <ol>
+          <li>写出增广矩阵 \([A\mid\mathbf{b}]\)。</li>
+          <li>对增广矩阵做高斯消元，把左边尽量化成阶梯形。</li>
+          <li>观察是否出现形如 \([0\;0\;\cdots\;0\mid c]\) 且 \(c\neq0\) 的行。</li>
+          <li>如果出现这种行，方程组无解，因为它代表矛盾方程 \(0=c\)。</li>
+          <li>如果没有这种行，则方程组有解。</li>
+        </ol>
+
+        <div class="formula-box">
+          \[
+          [0\;0\;\cdots\;0\mid c],\quad c\neq0
+          \quad\Longleftrightarrow\quad
+          0=c
+          \]
+        </div>
+
+        <p>
+          用秩来表达同一件事，就是：
         </p>
 
         <div class="formula-box">
           \[
           A\mathbf{x}=\mathbf{b}\text{ 有解}
           \quad\Longleftrightarrow\quad
-          \operatorname{rank}(A)=\operatorname{rank}([A\mid \mathbf{b}])
+          \operatorname{rank}(A)=\operatorname{rank}([A\mid\mathbf{b}])
           \]
         </div>
 
         <p>
-          直觉上，加入 \(\mathbf{b}\) 后如果秩变大，说明 \(\mathbf{b}\) 带来了一个原来列空间没有的新方向，所以它不是原矩阵能生成的输出。
+          如果 \(\operatorname{rank}([A\mid\mathbf{b}])\) 比 \(\operatorname{rank}(A)\) 大，说明右端向量 \(\mathbf{b}\) 提供了一个原本不在 \(A\) 的列空间里的新方向，因此原方程组无法达到这个目标。
         </p>
+
+        <h3>稍复杂的例子：四个方程、四个未知数</h3>
+        <p>
+          考虑方程组：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \begin{cases}
+          x+2y-z+u=1\\
+          2x+5y+u=4\\
+          -x-y+2z-u=0\\
+          2x+6y+z+u=6
+          \end{cases}
+          \]
+        </div>
+
+        <p>
+          写成增广矩阵：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \left[
+          \begin{array}{rrrr|r}
+          1&2&-1&1&1\\
+          2&5&0&1&4\\
+          -1&-1&2&-1&0\\
+          2&6&1&1&6
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          下面按高斯消元的标准过程逐步观察。这里使用按钮切换，因为重点是看每一步行变换如何制造或消除约束，而不是连续调节参数。
+        </p>
+
+        <div class="workspace">
+          <div class="step-box">
+            <div class="step-list">
+              <div class="state-row" id="augStepButtons">
+                <button class="state-btn active" data-augstep="0">0. 原增广矩阵</button>
+                <button class="state-btn" data-augstep="1">1. 消去第一列</button>
+                <button class="state-btn" data-augstep="2">2. 消去第二列</button>
+                <button class="state-btn" data-augstep="3">3. 得到矛盾行</button>
+                <button class="state-btn" data-augstep="4">4. 读出秩并判断</button>
+              </div>
+            </div>
+            <div class="step-content">
+              <h3 id="augStepTitle">原增广矩阵</h3>
+              <div class="formula-box" id="augStepFormula">
+                \[
+                \left[
+                \begin{array}{rrrr|r}
+                1&2&-1&1&1\\
+                2&5&0&1&4\\
+                -1&-1&2&-1&0\\
+                2&6&1&1&6
+                \end{array}
+                \right]
+                \]
+              </div>
+              <p id="augStepText">
+                第一列第一行的 1 可以作为第一个主元，用它消去下面三行第一列的元素。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3>完整数学推导</h3>
+        <p>
+          从原增广矩阵开始：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \left[
+          \begin{array}{rrrr|r}
+          1&2&-1&1&1\\
+          2&5&0&1&4\\
+          -1&-1&2&-1&0\\
+          2&6&1&1&6
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          用第一行消去第一列：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_2\leftarrow R_2-2R_1,\quad
+          R_3\leftarrow R_3+R_1,\quad
+          R_4\leftarrow R_4-2R_1
+          \]
+          \[
+          \left[
+          \begin{array}{rrrr|r}
+          1&2&-1&1&1\\
+          0&1&2&-1&2\\
+          0&1&1&0&1\\
+          0&2&3&-1&4
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          用第二行消去第二列：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_3\leftarrow R_3-R_2,\quad
+          R_4\leftarrow R_4-2R_2
+          \]
+          \[
+          \left[
+          \begin{array}{rrrr|r}
+          1&2&-1&1&1\\
+          0&1&2&-1&2\\
+          0&0&-1&1&-1\\
+          0&0&-1&1&0
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          第三行和第四行左边相同，但右边不同。继续相减：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_4\leftarrow R_4-R_3
+          \]
+          \[
+          \left[
+          \begin{array}{rrrr|r}
+          1&2&-1&1&1\\
+          0&1&2&-1&2\\
+          0&0&-1&1&-1\\
+          0&0&0&0&1
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          最后一行表示：
+        </p>
+
+        <div class="formula-box">
+          \[
+          0x+0y+0z+0u=1
+          \quad\Longleftrightarrow\quad
+          0=1
+          \]
+        </div>
+
+        <p>
+          这是不可能成立的矛盾，所以原方程组 <span class="bad">无解</span>。
+        </p>
+
+        <h3>用秩重新解释这个结论</h3>
+        <p>
+          如果只看左边的系数矩阵 \(A\)，上面的消元过程在左边最多产生三个主元：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \operatorname{rank}(A)=3
+          \]
+        </div>
+
+        <p>
+          但在增广矩阵 \([A\mid\mathbf{b}]\) 中，最后一列出现了额外主元：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \operatorname{rank}([A\mid\mathbf{b}])=4
+          \]
+        </div>
+
+        <p>
+          因此：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \operatorname{rank}(A)\neq\operatorname{rank}([A\mid\mathbf{b}])
+          \quad\Longrightarrow\quad
+          A\mathbf{x}=\mathbf{b}\text{ 无解}
+          \]
+        </div>
+
+        <div class="callout warn-box">
+          <strong>直觉：</strong>
+          左边的系数矩阵只能生成一个 3 维以内的可达空间，但右端向量 \(\mathbf{b}\) 要求到达一个超出这个可达空间的目标，所以无论怎么选 \(x,y,z,u\)，都无法满足全部方程。
+        </div>
+
+        <details>
+          <summary>如果最后一行是 \([0\;0\;0\;0\mid0]\)，会怎样？</summary>
+          <p>
+            那就不是矛盾，而是恒等式 \(0=0\)。这种行不增加秩，也不阻止方程组有解。此时还要看是否存在自由变量；如果有自由变量，就会有无穷多解。
+          </p>
+        </details>
       </div>
     </section>
 
@@ -922,6 +1185,106 @@ R_2\leftarrow R_2-2R_1
       typesetDynamicMath([formula]);
     }
 
+
+    const augStepData = [
+      {
+        title: '0. 原增广矩阵',
+        formula: String.raw`\[
+\left[
+\begin{array}{rrrr|r}
+1&2&-1&1&1\\
+2&5&0&1&4\\
+-1&-1&2&-1&0\\
+2&6&1&1&6
+\end{array}
+\right]
+\]`,
+        text: '第一列第一行的 1 可以作为第一个主元，用它消去下面三行第一列的元素。'
+      },
+      {
+        title: '1. 消去第一列',
+        formula: String.raw`\[
+R_2\leftarrow R_2-2R_1,\quad
+R_3\leftarrow R_3+R_1,\quad
+R_4\leftarrow R_4-2R_1
+\]
+\[
+\left[
+\begin{array}{rrrr|r}
+1&2&-1&1&1\\
+0&1&2&-1&2\\
+0&1&1&0&1\\
+0&2&3&-1&4
+\end{array}
+\right]
+\]`,
+        text: '第一列已经只剩主元行非零。接下来用第二行的 1 作为第二个主元。'
+      },
+      {
+        title: '2. 消去第二列',
+        formula: String.raw`\[
+R_3\leftarrow R_3-R_2,\quad
+R_4\leftarrow R_4-2R_2
+\]
+\[
+\left[
+\begin{array}{rrrr|r}
+1&2&-1&1&1\\
+0&1&2&-1&2\\
+0&0&-1&1&-1\\
+0&0&-1&1&0
+\end{array}
+\right]
+\]`,
+        text: '第三行和第四行的左边现在完全相同，但右边不同。这通常意味着会出现矛盾。'
+      },
+      {
+        title: '3. 得到矛盾行',
+        formula: String.raw`\[
+R_4\leftarrow R_4-R_3
+\]
+\[
+\left[
+\begin{array}{rrrr|r}
+1&2&-1&1&1\\
+0&1&2&-1&2\\
+0&0&-1&1&-1\\
+0&0&0&0&1
+\end{array}
+\right]
+\]
+\[
+0x+0y+0z+0u=1
+\]`,
+        text: '最后一行代表 0=1，这是不可能成立的矛盾，因此方程组无解。'
+      },
+      {
+        title: '4. 读出秩并判断',
+        formula: String.raw`\[
+\operatorname{rank}(A)=3,\qquad
+\operatorname{rank}([A\mid\mathbf{b}])=4
+\]
+\[
+\operatorname{rank}(A)\neq \operatorname{rank}([A\mid\mathbf{b}])
+\quad\Longrightarrow\quad
+A\mathbf{x}=\mathbf{b}\text{ 无解}
+\]`,
+        text: '增广矩阵比系数矩阵多出一个来自右端列的主元，说明目标向量不在原列空间中。'
+      }
+    ];
+
+    function updateAugStep(index) {
+      const data = augStepData[index];
+      const title = document.getElementById('augStepTitle');
+      const formula = document.getElementById('augStepFormula');
+      const text = document.getElementById('augStepText');
+      if (!title || !formula || !text) return;
+      title.textContent = data.title;
+      formula.innerHTML = data.formula;
+      text.textContent = data.text;
+      typesetDynamicMath([formula]);
+    }
+
     document.querySelectorAll('#caseButtons .state-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#caseButtons .state-btn').forEach(b => b.classList.remove('active'));
@@ -940,6 +1303,14 @@ R_2\leftarrow R_2-2R_1
       });
     });
 
+    document.querySelectorAll('#augStepButtons .state-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#augStepButtons .state-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateAugStep(parseInt(btn.dataset.augstep, 10));
+      });
+    });
+
     document.getElementById('tRange').addEventListener('input', drawDrop);
 
     window.addEventListener('resize', () => {
@@ -951,6 +1322,7 @@ R_2\leftarrow R_2-2R_1
     drawCase();
     drawDrop();
     updateStep(0);
+    updateAugStep(0);
   </script>
 </body>
 </html>

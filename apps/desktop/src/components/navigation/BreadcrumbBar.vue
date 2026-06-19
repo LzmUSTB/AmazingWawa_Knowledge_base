@@ -81,7 +81,20 @@ const graphCenterNodeId = computed(() => {
 
 const crumbItems = computed(() => {
   const items = [{ id: "root", kind: "root", label: "Global Graph" }];
-  const targetId = props.currentView === "graph" ? graphCenterNodeId.value : props.currentNoteId;
+  if (props.currentView === "ai-import") {
+    items.push({ id: "ai-import", kind: "view", label: "Import" });
+    return items;
+  }
+  if (props.currentView === "context-export") {
+    items.push({ id: "context-export", kind: "view", label: "Export Context" });
+    return items;
+  }
+  if (props.currentView === "source-snapshot") {
+    items.push({ id: "source-snapshot", kind: "view", label: "Capture" });
+    return items;
+  }
+
+  const targetId = props.currentView === "graph" ? graphCenterNodeId.value : props.currentView === "note" ? props.currentNoteId : "";
   if (!targetId) return items;
   containsPathIds(targetId).forEach((id) => items.push(crumbForId(id)));
   return items;
@@ -96,6 +109,7 @@ function openCrumb(crumb) {
     emit("open-domain", crumb.id);
     return;
   }
+  if (crumb.kind === "view") return;
   if (hasGraphScope(crumb.id)) {
     emit("open-scope", crumb.id, crumb.id);
   }

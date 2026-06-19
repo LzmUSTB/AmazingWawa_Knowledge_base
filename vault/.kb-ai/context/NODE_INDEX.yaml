@@ -1,240 +1,136 @@
 nodes:
-  - id: cg-aliasing
-    title: Aliasing
-    titleLocale: 走样
-    displayTitle: 走样
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Artifact caused when sampled data cannot represent the original signal
-      frequency or geometry accurately.
-    summaryLocale: 当采样数据无法准确表示原信号频率或几何细节时产生的伪影。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-aliasing/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-scanline-hidden-surface-algorithm
-    title: Scanline Hidden-Surface Algorithm
-    titleLocale: 扫描线隐藏面算法
-    displayTitle: 扫描线隐藏面算法
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Determines visible surfaces while processing the image row by row.
-    summaryLocale: 在逐行处理图像时判断可见表面。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-scanline-hidden-surface-algorithm/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-character-animation
-    title: Character Animation
-    titleLocale: 角色动画
-    displayTitle: 角色动画
+  - id: cg-data-driven-and-learning-based-animation
+    title: Data-Driven and Learning-Based Animation
+    titleLocale: 数据驱动与学习动画
+    displayTitle: 数据驱动与学习动画
     aliases: []
     domain: computer-graphics
     type: topic
     status: seed
-    summary: Animation of articulated bodies, skeletons, rigs, skin deformation,
-      captured motion, and facial expression.
-    summaryLocale: 关于关节体、骨架、绑定、蒙皮变形、动捕与表情的动画体系。
+    summary: Modern animation systems using motion databases, state machines,
+      matching, neural synthesis, and reinforcement learning.
+    summaryLocale: 使用动作数据库、状态机、动作匹配、神经合成与强化学习的现代动画系统。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-character-animation/meta.yaml
+      meta: content/computer-graphics/cg-data-driven-and-learning-based-animation/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - animation
-      - character
-  - id: cg-rasterization
-    title: Rasterization
-    titleLocale: 光栅化
-    displayTitle: 光栅化
+      - data-driven
+  - id: cg-vector-representation
+    title: Vector Representation
+    titleLocale: 矢量表示
+    displayTitle: 矢量表示
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Converts geometric primitives into fragments over the pixel grid.
-    summaryLocale: 将几何图元转换为像素网格上的片段。
+    summary: Stores images as geometric primitives and attributes, allowing
+      resolution-independent editing and rendering.
+    summaryLocale: 将图像存储为几何图元及其属性，支持分辨率无关的编辑与渲染。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-rasterization/meta.yaml
+      meta: content/computer-graphics/cg-vector-representation/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-coordinate-and-viewing-pipeline
-    title: Coordinate and Viewing Pipeline
-    titleLocale: 坐标与观察管线
-    displayTitle: 坐标与观察管线
-    aliases: []
-    domain: computer-graphics
-    type: topic
+  - id: linear-algebra-singular-value-decomposition
+    title: Singular Value Decomposition
+    titleLocale: 奇异值分解
+    displayTitle: 奇异值分解
+    aliases:
+      - 特異値分解
+      - SVD
+      - singular value decomposition
+    domain: mathematical-foundations
+    type: concept
     status: seed
-    summary: Coordinate systems and transformations that place geometry into camera
-      and screen space.
-    summaryLocale: 将几何放入相机空间与屏幕空间的坐标系统和变换流程。
+    summary: "Priority: P2. A factorization A = UΣV^T that decomposes a matrix into
+      orthogonal directions and singular values."
+    summaryLocale: "优先级：P2。中文：奇异值分解；日本語：特異値分解；English: Singular Value
+      Decomposition。该节点当前仅建立结构，后续再生成中文主体笔记。"
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-coordinate-and-viewing-pipeline/meta.yaml
+      meta: content/mathematical-foundations/linear-algebra-singular-value-decomposition/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
-      - rendering
-      - pipeline
-  - id: cg-diffuse-reflection
-    title: Diffuse Reflection
-    titleLocale: 漫反射
-    displayTitle: 漫反射
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p2
+  - id: linear-algebra-positive-definiteness-semi-definiteness
+    title: Positive Definiteness and Semidefiniteness
+    titleLocale: 正定与半正定
+    displayTitle: 正定与半正定
+    aliases:
+      - 正定値・半正定値
+      - positive definite
+      - positive semidefinite
+      - PSD
+      - PD
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. A classification of quadratic forms or symmetric
+      matrices by whether x^T A x is positive or nonnegative."
+    summaryLocale: "优先级：P0。中文：正定与半正定；日本語：正定値・半正定値；English: Positive Definiteness and
+      Semidefiniteness。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-positive-definiteness-semi-definiteness/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-fluid-and-particle-simulation
+    title: Fluid and Particle Simulation
+    titleLocale: 流体与粒子模拟
+    displayTitle: 流体与粒子模拟
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Scatters incoming light broadly, often modeled by Lambertian reflection
-      in simple shading.
-    summaryLocale: 将入射光向多个方向散射，简单着色中常用 Lambert 漫反射建模。
+    summary: Simulates water, smoke, granular media, or particle effects using grid,
+      particle, or hybrid methods.
+    summaryLocale: 用网格、粒子或混合方法仿真水、烟、颗粒介质或粒子特效。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-diffuse-reflection/meta.yaml
+      meta: content/computer-graphics/cg-fluid-and-particle-simulation/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-scene-and-asset-representation
-    title: Scene and Asset Representation
-    titleLocale: 场景与资产表示
-    displayTitle: 场景与资产表示
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Higher-level organization of objects, transforms, asset composition,
-      and scene interchange.
-    summaryLocale: 对象、变换、资产组合与场景交换的上层组织方式。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-scene-and-asset-representation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - modeling
-      - scene
-  - id: cg-time-sampling
-    title: Time Sampling
-    titleLocale: 时间采样
-    displayTitle: 时间采样
+  - id: cg-shadow-mapping
+    title: Shadow Mapping
+    titleLocale: 阴影贴图
+    displayTitle: 阴影贴图
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents continuous motion as discrete frames or simulation steps,
-      introducing temporal resolution and possible temporal aliasing.
-    summaryLocale: 将连续运动表示为离散帧或仿真步，引入时间分辨率与可能的时间走样问题。
+    summary: Renders depth from the light view and compares receiver depth to
+      determine shadowing.
+    summaryLocale: 从光源视角渲染深度，并用接收点深度比较判断阴影。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-time-sampling/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-fractal-modeling
-    title: Fractal Modeling
-    titleLocale: 分形建模
-    displayTitle: 分形建模
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Generates self-similar or recursive geometric structures, useful for
-      natural forms such as terrain, plants, and clouds.
-    summaryLocale: 生成自相似或递归几何结构，适合地形、植物、云等自然形态。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-fractal-modeling/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-motion-matching
-    title: Motion Matching
-    titleLocale: 动作匹配
-    displayTitle: 动作匹配
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Selects and stitches poses from a motion database based on current
-      character state and desired future trajectory.
-    summaryLocale: 根据当前角色状态与期望未来轨迹，从动作数据库中选择并拼接姿态。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-motion-matching/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-rule-based-motion
-    title: Rule-Based Motion
-    titleLocale: 规则驱动运动
-    displayTitle: 规则驱动运动
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Generates motion from explicit behavioral or procedural rules rather
-      than stored keyframes.
-    summaryLocale: 由显式行为规则或程序规则生成运动，而非依赖存储的关键帧。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-rule-based-motion/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-differentiable-rendering
-    title: Differentiable Rendering
-    titleLocale: 可微渲染
-    displayTitle: 可微渲染
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Makes rendering operations differentiable so scene parameters can be
-      optimized from image-space losses.
-    summaryLocale: 让渲染操作可求梯度，使场景参数能通过图像空间损失反向优化。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-differentiable-rendering/meta.yaml
+      meta: content/computer-graphics/cg-shadow-mapping/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -260,41 +156,521 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-voxel
-    title: Voxel
-    titleLocale: 体素
-    displayTitle: 体素
+  - id: cg-rule-based-motion
+    title: Rule-Based Motion
+    titleLocale: 规则驱动运动
+    displayTitle: 规则驱动运动
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents space as a regular 3D grid of volume samples, useful for
-      volumes, occupancy, medical data, and discrete simulation.
-    summaryLocale: 用规则三维网格中的体积样本表示空间，适合体数据、占据关系、医学数据与离散仿真。
+    summary: Generates motion from explicit behavioral or procedural rules rather
+      than stored keyframes.
+    summaryLocale: 由显式行为规则或程序规则生成运动，而非依赖存储的关键帧。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-voxel/meta.yaml
+      meta: content/computer-graphics/cg-rule-based-motion/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-ray-traced-shadow
-    title: Ray-Traced Shadow
-    titleLocale: 光线追踪阴影
-    displayTitle: 光线追踪阴影
+  - id: cg-solid-texturing
+    title: Solid Texturing
+    titleLocale: 实体纹理
+    displayTitle: 实体纹理
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Determines whether a point is shadowed by tracing rays from the shaded
-      point toward light sources.
-    summaryLocale: 从着色点向光源发射射线判断是否被遮挡。
+    summary: Defines texture values in 3D space rather than only on a surface
+      parameterization.
+    summaryLocale: 在三维空间中定义纹理值，而不只依赖表面参数化。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-ray-traced-shadow/meta.yaml
+      meta: content/computer-graphics/cg-solid-texturing/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-view-transform
+    title: View Transform
+    titleLocale: 视图变换
+    displayTitle: 视图变换
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Moves world-space geometry into camera or eye space according to the
+      virtual camera pose.
+    summaryLocale: 根据虚拟相机位姿将世界空间几何转换到相机或眼空间。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-view-transform/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-global-illumination
+    title: Global Illumination
+    titleLocale: 全局光照
+    displayTitle: 全局光照
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Models indirect light transport between surfaces and media beyond
+      direct local illumination.
+    summaryLocale: 建模直接局部光照之外的表面与介质间间接光传输。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-global-illumination/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - global-illumination
+  - id: linear-algebra-determinant
+    title: Determinant
+    titleLocale: 行列式
+    displayTitle: 行列式
+    aliases:
+      - 行列式
+      - det
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. A scalar value associated with a square matrix, used to
+      judge invertibility, volume scaling, orientation, and eigenvalue-related
+      calculations."
+    summaryLocale: "优先级：P0。中文：行列式；日本語：行列式；English: Determinant。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-determinant/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: linear-algebra-inverse-matrix
+    title: Inverse Matrix
+    titleLocale: 逆矩阵
+    displayTitle: 逆矩阵
+    aliases:
+      - 逆行列
+      - matrix inverse
+      - A inverse
+      - A^{-1}
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. The matrix that reverses a square matrix transformation
+      when it exists; closely tied to determinant, rank, and linear systems."
+    summaryLocale: "优先级：P0。中文：逆矩阵；日本語：逆行列；English: Inverse Matrix。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-inverse-matrix/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-inverse-matrix/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-inverse-matrix/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-learned-motion-synthesis
+    title: Learned Motion Synthesis
+    titleLocale: 学习式动作合成
+    displayTitle: 学习式动作合成
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses machine learning models to generate, complete, or control motion
+      from data and conditions.
+    summaryLocale: 使用机器学习模型根据数据与条件生成、补全或控制运动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-learned-motion-synthesis/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-point-cloud
+    title: Point Cloud
+    titleLocale: 点云
+    displayTitle: 点云
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A set of sampled 3D points, often from scanning or reconstruction, used
+      for geometry acquisition and processing.
+    summaryLocale: 由三维采样点组成，常来自扫描或重建，用于几何采集与处理。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-point-cloud/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-homogeneous-coordinates
+    title: Homogeneous Coordinates
+    titleLocale: 齐次坐标
+    displayTitle: 齐次坐标
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Adds an extra coordinate to represent translation, projection, and
+      perspective division using matrix operations.
+    summaryLocale: 增加一个额外坐标，使平移、投影与透视除法可以用矩阵运算统一表达。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-homogeneous-coordinates/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-gpu-rendering-pipeline
+    title: GPU Rendering Pipeline
+    titleLocale: GPU 渲染管线
+    displayTitle: GPU 渲染管线
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Programmable and fixed-function stages that convert submitted
+      primitives into framebuffer fragments.
+    summaryLocale: 将提交的图元转换为帧缓冲片段的可编程与固定功能阶段。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-gpu-rendering-pipeline/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - gpu
+  - id: cg-rigging
+    title: Rigging
+    titleLocale: 绑定
+    displayTitle: 绑定
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Creates animator-friendly controls, constraints, bones, and deformation
+      setups for a character or object.
+    summaryLocale: 为角色或物体建立便于动画师控制的控制器、约束、骨骼与变形设置。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-rigging/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-framebuffer
+    title: Framebuffer
+    titleLocale: 帧缓冲
+    displayTitle: 帧缓冲
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Memory that stores render outputs such as color, depth, stencil, or
+      auxiliary buffers before display or post-processing.
+    summaryLocale: 存储颜色、深度、模板或辅助缓冲等渲染结果的内存区域，用于显示或后处理。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-framebuffer/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-linear-independence
+    title: Linear Independence
+    titleLocale: 线性无关
+    displayTitle: 线性无关
+    aliases:
+      - 一次独立
+      - linearly independent
+      - linear dependence
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. A property of vectors where no vector can be represented
+      as a linear combination of the others."
+    summaryLocale: "优先级：P0。中文：线性无关；日本語：一次独立；English: Linear
+      Independence。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-linear-independence/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-linear-independence/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-linear-independence/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-parametric-representation
+    title: Parametric Representation
+    titleLocale: 参数式表示
+    displayTitle: 参数式表示
+    aliases:
+      - geometry representation
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Defines geometry as functions of parameters, enabling smooth curves,
+      surfaces, and controllable interpolation.
+    summaryLocale: 将几何定义为参数的函数，便于表达平滑曲线、曲面与可控插值。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-parametric-representation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-matrix-norm
+    title: Matrix Norm
+    titleLocale: 矩阵范数
+    displayTitle: 矩阵范数
+    aliases:
+      - 行列ノルム
+      - matrix norm
+      - operator norm
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P2. A numerical measure of matrix size or induced
+      amplification, used in approximation, stability, and error analysis."
+    summaryLocale: "优先级：P2。中文：矩阵范数；日本語：行列ノルム；English: Matrix Norm。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-matrix-norm/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p2
+  - id: cg-physically-based-rendering
+    title: Physically Based Rendering
+    titleLocale: 物理基础渲染
+    displayTitle: 物理基础渲染
+    aliases:
+      - PBR
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses physically motivated material and lighting models; deeper topics
+      include microfacet models, Fresnel, roughness, metallic workflow, and
+      energy conservation.
+    summaryLocale: 使用基于物理的材质与光照模型；更细主题包括微表面模型、Fresnel、粗糙度、金属度流程与能量守恒。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-physically-based-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-projection-matrix
+    title: Projection Matrix
+    titleLocale: 投影矩阵
+    displayTitle: 投影矩阵
+    aliases:
+      - 射影行列
+      - projection matrix
+      - orthogonal projection
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P2. A matrix representing projection onto a subspace, often
+      satisfying P^2 = P and used in least squares."
+    summaryLocale: "优先级：P2。中文：投影矩阵；日本語：射影行列；English: Projection
+      Matrix。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-projection-matrix/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p2
+  - id: cg-monte-carlo-integration
+    title: Monte Carlo Integration
+    titleLocale: 蒙特卡洛积分
+    displayTitle: 蒙特卡洛积分
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Approximates high-dimensional rendering integrals using random or
+      quasi-random samples.
+    summaryLocale: 使用随机或准随机样本近似高维渲染积分。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-monte-carlo-integration/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-priority-algorithm
+    title: Priority Algorithm
+    titleLocale: 优先级算法
+    displayTitle: 优先级算法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Orders surfaces by visibility priority, historically related to
+      painter-style rendering and visibility sorting.
+    summaryLocale: 按可见性优先级排序表面，历史上与画家算法式渲染和可见性排序相关。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-priority-algorithm/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-projection-transform
+    title: Projection Transform
+    titleLocale: 投影变换
+    displayTitle: 投影变换
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Maps camera-space geometry to clip space using perspective or
+      orthographic projection.
+    summaryLocale: 使用透视或正交投影将相机空间几何映射到裁剪空间。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-projection-transform/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-reinforcement-learning-character-control
+    title: Reinforcement Learning Character Control
+    titleLocale: 强化学习角色控制
+    displayTitle: 强化学习角色控制
+    aliases:
+      - RL Character Control
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Trains policies to control characters through rewards, physics,
+      observations, and actions.
+    summaryLocale: 通过奖励、物理、观测与动作训练策略来控制角色。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-reinforcement-learning-character-control/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-point-based-modeling
+    title: Point-Based Modeling
+    titleLocale: 点基建模
+    displayTitle: 点基建模
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents shape with points rather than explicit surfaces, often
+      requiring splatting, reconstruction, or neighborhood processing.
+    summaryLocale: 用点而非显式曲面表示形状，通常需要 splatting、重建或邻域处理。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-point-based-modeling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-coordinate-systems
+    title: Coordinate Systems
+    titleLocale: 坐标系
+    displayTitle: 坐标系
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Defines spaces such as model, world, view, clip, normalized device, and
+      screen coordinates.
+    summaryLocale: 定义模型、世界、视图、裁剪、标准化设备与屏幕等坐标空间。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-coordinate-systems/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-deepmimic-style-physics-based-control
+    title: DeepMimic-Style Physics-Based Control
+    titleLocale: DeepMimic 式物理角色控制
+    displayTitle: DeepMimic 式物理角色控制
+    aliases:
+      - DeepMimic
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Combines reference motion imitation with physics-based reinforcement
+      learning to produce robust character skills.
+    summaryLocale: 将参考动作模仿与物理基础强化学习结合，生成更鲁棒的角色技能。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-deepmimic-style-physics-based-control/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -321,6 +697,333 @@ nodes:
     tags:
       - rendering
       - shadow
+  - id: cg-transmission-and-refraction
+    title: Transmission and Refraction
+    titleLocale: 透射与折射
+    displayTitle: 透射与折射
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Models light passing through materials and bending according to
+      refractive index changes.
+    summaryLocale: 建模光穿过材料并因折射率变化而改变方向的现象。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-transmission-and-refraction/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-primitive-assembly
+    title: Primitive Assembly
+    titleLocale: 图元装配
+    displayTitle: 图元装配
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Groups processed vertices into primitives such as points, lines, or
+      triangles.
+    summaryLocale: 将处理后的顶点组合为点、线、三角形等图元。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-primitive-assembly/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-view-morphing-approach
+    title: View Morphing Approach
+    titleLocale: 视图变形方法
+    displayTitle: 视图变形方法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Synthesizes intermediate views by warping and blending existing images.
+    summaryLocale: 通过扭曲并混合已有图像来合成中间视图。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-view-morphing-approach/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-subdivision-surface
+    title: Subdivision Surface
+    titleLocale: 细分曲面
+    displayTitle: 细分曲面
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Generates smooth surfaces by repeatedly refining a coarse control mesh;
+      a deeper important case is Catmull-Clark subdivision.
+    summaryLocale: 通过反复细化粗控制网格生成平滑曲面；更细的重要方法包括 Catmull-Clark 细分。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-subdivision-surface/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-voxel
+    title: Voxel
+    titleLocale: 体素
+    displayTitle: 体素
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents space as a regular 3D grid of volume samples, useful for
+      volumes, occupancy, medical data, and discrete simulation.
+    summaryLocale: 用规则三维网格中的体积样本表示空间，适合体数据、占据关系、医学数据与离散仿真。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-voxel/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-path-animation
+    title: Path Animation
+    titleLocale: 路径动画
+    displayTitle: 路径动画
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Constrains object or camera motion to a curve or route with timing and
+      orientation controls.
+    summaryLocale: 将物体或相机运动约束到曲线或路线，并控制时间与朝向。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-path-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-vector-space
+    title: Vector Space
+    titleLocale: 向量空间
+    displayTitle: 向量空间
+    aliases:
+      - ベクトル空間
+      - linear space
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. A set of vectors closed under addition and scalar
+      multiplication, providing the abstract setting for linear algebra."
+    summaryLocale: "优先级：P1。中文：向量空间；日本語：ベクトル空間；English: Vector Space。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-vector-space/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-vector-space/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-vector-space/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-blending
+    title: Blending
+    titleLocale: 混合
+    displayTitle: 混合
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Combines a fragment output with existing framebuffer values, commonly
+      for transparency and compositing.
+    summaryLocale: 将片段输出与已有帧缓冲值组合，常用于透明与合成。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-blending/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-isosurface-extraction
+    title: Isosurface Extraction
+    titleLocale: 等值面提取
+    displayTitle: 等值面提取
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Extracts polygonal surfaces from scalar fields; a deeper important
+      method is Marching Cubes.
+    summaryLocale: 从标量场中提取多边形表面；更细的重要方法包括 Marching Cubes。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-isosurface-extraction/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-blend-tree
+    title: Blend Tree
+    titleLocale: 混合树
+    displayTitle: 混合树
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Blends multiple animations according to parameters such as speed,
+      direction, or stance.
+    summaryLocale: 根据速度、方向、姿态等参数混合多个动画。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-blend-tree/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-mesh-validation
+    title: Mesh Validation
+    titleLocale: 网格检查
+    displayTitle: 网格检查
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Detects mesh problems such as non-manifold edges, flipped normals,
+      holes, self-intersections, and inconsistent topology.
+    summaryLocale: 检测非流形边、法线翻转、孔洞、自相交与拓扑不一致等网格问题。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-mesh-validation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-ambient-term
+    title: Ambient Term
+    titleLocale: 环境光项
+    displayTitle: 环境光项
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A simple approximation of indirect light often used in local
+      illumination models.
+    summaryLocale: 局部光照模型中常用的间接光简化近似项。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-ambient-term/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-anti-aliasing
+    title: Anti-Aliasing
+    titleLocale: 抗锯齿
+    displayTitle: 抗锯齿
+    aliases:
+      - AA
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Reduces aliasing artifacts by filtering, supersampling, multisampling,
+      temporal accumulation, or reconstruction strategies.
+    summaryLocale: 通过滤波、超采样、多重采样、时间累积或重建策略减少走样伪影。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-anti-aliasing/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-bssrdf
+    title: BSSRDF
+    titleLocale: BSSRDF
+    displayTitle: BSSRDF
+    aliases:
+      - Bidirectional Scattering-Surface Reflectance Distribution Function
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Extends surface reflection to account for light entering and exiting at
+      different surface points, important for subsurface scattering.
+    summaryLocale: 将表面反射扩展到光从不同表面点进入和射出的情况，对次表面散射很重要。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-bssrdf/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-inverse-rendering
+    title: Inverse Rendering
+    titleLocale: 逆渲染
+    displayTitle: 逆渲染
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Estimates scene properties such as geometry, material, lighting, or
+      camera from observed images.
+    summaryLocale: 从观测图像估计几何、材质、光照或相机等场景属性。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-inverse-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-signed-distance-field
+    title: Signed Distance Field
+    titleLocale: 符号距离场
+    displayTitle: 符号距离场
+    aliases:
+      - SDF
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Stores the signed distance to the nearest surface, enabling implicit
+      modeling, collision queries, ray marching, and surface reconstruction.
+    summaryLocale: 存储到最近表面的带符号距离，可用于隐式建模、碰撞查询、光线步进与表面重建。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-signed-distance-field/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
   - id: cg-wireframe-model
     title: Wireframe Model
     titleLocale: 线框模型
@@ -342,104 +1045,61 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-ray-tracing
-    title: Ray Tracing
-    titleLocale: 光线追踪
-    displayTitle: 光线追踪
+  - id: cg-ray-marching
+    title: Ray Marching
+    titleLocale: 光线步进
+    displayTitle: 光线步进
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Traces rays through a scene to compute visibility, reflection,
-      refraction, shadows, and sometimes full light transport.
-    summaryLocale: 在场景中追踪射线以计算可见性、反射、折射、阴影，有时也用于完整光传输。
+    summary: Samples along rays incrementally, commonly for implicit surfaces,
+      signed distance fields, and volumes.
+    summaryLocale: 沿射线逐步采样，常用于隐式表面、符号距离场与体积。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-ray-tracing/meta.yaml
+      meta: content/computer-graphics/cg-ray-marching/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-surface-model
-    title: Surface Model
-    titleLocale: 表面模型
-    displayTitle: 表面模型
-    aliases:
-      - geometry representation
+  - id: cg-vertex-shader
+    title: Vertex Shader
+    titleLocale: 顶点着色器
+    displayTitle: 顶点着色器
+    aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents the visible boundary of an object without necessarily
-      encoding interior volume.
-    summaryLocale: 表示物体可见边界，不一定明确记录内部体积。
+    summary: Programmable stage that processes individual vertices and usually
+      outputs clip-space position plus interpolated attributes.
+    summaryLocale: 处理单个顶点的可编程阶段，通常输出裁剪空间位置与待插值属性。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-surface-model/meta.yaml
+      meta: content/computer-graphics/cg-vertex-shader/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-solid-modeling
-    title: Solid Modeling
-    titleLocale: 实体建模
-    displayTitle: 实体建模
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Modeling techniques for closed, volumetric, manufacturable objects,
-      especially CSG, B-Rep, and sweep representations.
-    summaryLocale: 面向封闭、有体积、可制造对象的建模方法，重点包括 CSG、B-Rep 与扫掠表示。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-solid-modeling/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - modeling
-      - solid-modeling
-  - id: cg-polygon-mesh-modeling
-    title: Polygon Mesh Modeling
-    titleLocale: 多边形网格建模
-    displayTitle: 多边形网格建模
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Mesh-based surface representation, topology, subdivision, LOD,
-      smoothing, parameterization, validation, and watermarking.
-    summaryLocale: 基于网格的表面表示，包括拓扑、细分、LOD、平滑、参数化、检查与水印等主题。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-polygon-mesh-modeling/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - modeling
-      - mesh
-  - id: cg-vertex-specification
-    title: Vertex Specification
-    titleLocale: 顶点输入
-    displayTitle: 顶点输入
+  - id: cg-level-of-detail
+    title: Level of Detail
+    titleLocale: 细节层次
+    displayTitle: 细节层次
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Defines how vertex attributes such as position, normal, UV, and color
-      are provided to the pipeline.
-    summaryLocale: 定义位置、法线、UV、颜色等顶点属性如何输入渲染管线。
+    summary: Uses multiple geometric resolutions to trade visual fidelity for
+      performance based on distance, screen size, or importance.
+    summaryLocale: 根据距离、屏幕尺寸或重要性切换不同几何精度，在视觉质量与性能之间权衡。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-vertex-specification/meta.yaml
+      meta: content/computer-graphics/cg-level-of-detail/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -466,306 +1126,171 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-motion-capture
-    title: Motion Capture
-    titleLocale: 动作捕捉
-    displayTitle: 动作捕捉
-    aliases:
-      - Mocap
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Records real-world motion for animation; deeper topics include
-      marker-based capture, motion retargeting, and motion blending.
-    summaryLocale: 记录真实世界运动用于动画；更细主题包括标记点动捕、动作重定向与动作混合。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-motion-capture/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-back-face-culling
-    title: Back-Face Culling
-    titleLocale: 背面剔除
-    displayTitle: 背面剔除
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Skips polygons facing away from the camera to reduce work and remove
-      invisible back sides of closed surfaces.
-    summaryLocale: 跳过背向相机的多边形，以减少计算并移除封闭表面的不可见背面。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-back-face-culling/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-neural-rendering
-    title: Neural Rendering
-    titleLocale: 神经渲染
-    displayTitle: 神经渲染
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses neural networks as part of image synthesis, scene representation,
-      material modeling, or view generation.
-    summaryLocale: 将神经网络用于图像合成、场景表示、材质建模或视图生成。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-neural-rendering/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-path-animation
-    title: Path Animation
-    titleLocale: 路径动画
-    displayTitle: 路径动画
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Constrains object or camera motion to a curve or route with timing and
-      orientation controls.
-    summaryLocale: 将物体或相机运动约束到曲线或路线，并控制时间与朝向。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-path-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-point-cloud
-    title: Point Cloud
-    titleLocale: 点云
-    displayTitle: 点云
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: A set of sampled 3D points, often from scanning or reconstruction, used
-      for geometry acquisition and processing.
-    summaryLocale: 由三维采样点组成，常来自扫描或重建，用于几何采集与处理。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-point-cloud/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-polygon-mesh
-    title: Polygon Mesh
-    titleLocale: 多边形网格
-    displayTitle: 多边形网格
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Represents surfaces as connected polygonal faces, usually triangles or
-      quads, and is the dominant real-time rendering geometry format.
-    summaryLocale: 用连接的多边形面表示表面，常见为三角形或四边形，是实时渲染中最常用的几何格式。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-polygon-mesh/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-volumetric-and-implicit-modeling
-    title: Volumetric and Implicit Modeling
-    titleLocale: 体积与隐式建模
-    displayTitle: 体积与隐式建模
+  - id: cg-coordinate-and-viewing-pipeline
+    title: Coordinate and Viewing Pipeline
+    titleLocale: 坐标与观察管线
+    displayTitle: 坐标与观察管线
     aliases: []
     domain: computer-graphics
     type: topic
     status: seed
-    summary: Shape representation through voxels, spatial trees, implicit fields,
-      signed distance functions, and isosurface extraction.
-    summaryLocale: 通过体素、空间树、隐式场、符号距离函数与等值面提取来表示形状。
+    summary: Coordinate systems and transformations that place geometry into camera
+      and screen space.
+    summaryLocale: 将几何放入相机空间与屏幕空间的坐标系统和变换流程。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-volumetric-and-implicit-modeling/meta.yaml
+      meta: content/computer-graphics/cg-coordinate-and-viewing-pipeline/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
-      - modeling
-      - volume
-      - implicit
-  - id: cg-framebuffer
-    title: Framebuffer
-    titleLocale: 帧缓冲
-    displayTitle: 帧缓冲
+      - rendering
+      - pipeline
+  - id: cg-noise-driven-motion
+    title: Noise-Driven Motion
+    titleLocale: 噪声驱动运动
+    displayTitle: 噪声驱动运动
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Memory that stores render outputs such as color, depth, stencil, or
-      auxiliary buffers before display or post-processing.
-    summaryLocale: 存储颜色、深度、模板或辅助缓冲等渲染结果的内存区域，用于显示或后处理。
+    summary: Uses noise functions to generate irregular, organic, or non-repeating
+      motion.
+    summaryLocale: 使用噪声函数生成不规则、有机或不重复的运动。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-framebuffer/meta.yaml
+      meta: content/computer-graphics/cg-noise-driven-motion/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-image-based-lighting
-    title: Image-Based Lighting
-    titleLocale: 基于图像的照明
-    displayTitle: 基于图像的照明
-    aliases:
-      - IBL
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses captured environment images to light objects with realistic
-      surrounding illumination.
-    summaryLocale: 使用采集的环境图像为物体提供真实感环境照明。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-image-based-lighting/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-light-transport
-    title: Light Transport
-    titleLocale: 光传输
-    displayTitle: 光传输
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Describes how light travels, scatters, reflects, refracts, and is
-      absorbed through a scene.
-    summaryLocale: 描述光在场景中传播、散射、反射、折射与吸收的过程。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-light-transport/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-animation-foundations
-    title: Animation Foundations
-    titleLocale: 动画基础
-    displayTitle: 动画基础
+  - id: cg-visibility-and-hidden-surface-removal
+    title: Visibility and Hidden Surface Removal
+    titleLocale: 可见性与隐藏面消除
+    displayTitle: 可见性与隐藏面消除
     aliases: []
     domain: computer-graphics
     type: topic
     status: seed
-    summary: Time, frames, keyframes, interpolation, transform animation, and camera
-      motion as the basis of temporal graphics.
-    summaryLocale: 以时间、帧、关键帧、插值、变换动画与摄像机运动构成时序图形的基础。
+    summary: Algorithms that determine which surfaces are visible and which are
+      occluded.
+    summaryLocale: 判断哪些表面可见、哪些表面被遮挡的算法体系。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-animation-foundations/meta.yaml
+      meta: content/computer-graphics/cg-visibility-and-hidden-surface-removal/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
-      - animation
-  - id: cg-frame-and-keyframe
-    title: Frame and Keyframe
-    titleLocale: 帧与关键帧
-    displayTitle: 帧与关键帧
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: A frame is a sampled time state; a keyframe is an authored important
-      state used to define motion.
-    summaryLocale: 帧是某一时间的采样状态；关键帧是创作者指定的重要状态，用于定义运动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-frame-and-keyframe/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-solid-texturing
-    title: Solid Texturing
-    titleLocale: 实体纹理
-    displayTitle: 实体纹理
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Defines texture values in 3D space rather than only on a surface
-      parameterization.
-    summaryLocale: 在三维空间中定义纹理值，而不只依赖表面参数化。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-solid-texturing/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-texture-mapping
-    title: Texture Mapping
-    titleLocale: 纹理映射
-    displayTitle: 纹理映射
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Maps 2D or procedural texture data onto surfaces through coordinates
-      such as UVs.
-    summaryLocale: 通过 UV 等坐标将二维或程序化纹理数据映射到表面。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-texture-mapping/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-openusd
-    title: OpenUSD
-    titleLocale: OpenUSD
-    displayTitle: OpenUSD
+      - rendering
+      - visibility
+  - id: cg-z-buffer
+    title: Z-Buffer
+    titleLocale: Z 缓冲
+    displayTitle: Z 缓冲
     aliases:
-      - USD
+      - Depth Buffer
     domain: computer-graphics
     type: concept
     status: seed
-    summary: A scene description and composition framework for large-scale 3D
-      production pipelines and interoperable assets.
-    summaryLocale: 面向大型三维生产管线与可互操作资产的场景描述和组合框架。
+    summary: Stores nearest depth per pixel to resolve visibility efficiently during
+      rasterization.
+    summaryLocale: 为每个像素存储最近深度，在光栅化中高效解决可见性。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-openusd/meta.yaml
+      meta: content/computer-graphics/cg-z-buffer/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-least-squares
+    title: Least Squares
+    titleLocale: 最小二乘法
+    displayTitle: 最小二乘法
+    aliases:
+      - 最小二乗法
+      - least-squares method
+      - linear least squares
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. A method for finding the best approximate solution by
+      minimizing squared residual error, usually via projections or normal
+      equations."
+    summaryLocale: "优先级：P1。中文：最小二乘法；日本語：最小二乗法；English: Least Squares。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-least-squares/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-differentiable-rendering
+    title: Differentiable Rendering
+    titleLocale: 可微渲染
+    displayTitle: 可微渲染
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Makes rendering operations differentiable so scene parameters can be
+      optimized from image-space losses.
+    summaryLocale: 让渲染操作可求梯度，使场景参数能通过图像空间损失反向优化。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-differentiable-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-solid-model
+    title: Solid Model
+    titleLocale: 实体模型
+    displayTitle: 实体模型
+    aliases:
+      - geometry representation
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents an object as a closed volume with inside/outside
+      distinction, suitable for CAD, simulation, and manufacturing reasoning.
+    summaryLocale: 将对象表示为具有内外区别的封闭体积，适合 CAD、仿真与制造相关判断。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-solid-model/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-viewport-transform
+    title: Viewport Transform
+    titleLocale: 视口变换
+    displayTitle: 视口变换
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Maps normalized device coordinates to pixel coordinates in a viewport.
+    summaryLocale: 将标准化设备坐标映射到视口中的像素坐标。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-viewport-transform/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -791,103 +1316,122 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-coordinate-systems
-    title: Coordinate Systems
-    titleLocale: 坐标系
-    displayTitle: 坐标系
+  - id: cg-asset-composition
+    title: Asset Composition
+    titleLocale: 资产组合
+    displayTitle: 资产组合
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Defines spaces such as model, world, view, clip, normalized device, and
-      screen coordinates.
-    summaryLocale: 定义模型、世界、视图、裁剪、标准化设备与屏幕等坐标空间。
+    summary: Combines models, materials, animation, variants, and overrides into
+      reusable scene assets.
+    summaryLocale: 将模型、材质、动画、变体与覆盖信息组合成可复用场景资产。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-coordinate-systems/meta.yaml
+      meta: content/computer-graphics/cg-asset-composition/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-parametric-curves
-    title: Parametric Curves
-    titleLocale: 参数曲线
-    displayTitle: 参数曲线
+  - id: cg-geometry-shader
+    title: Geometry Shader
+    titleLocale: 几何着色器
+    displayTitle: 几何着色器
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Curves defined by parameterized functions; deeper topics include Bezier
-      curves, Ferguson-Hermite curves, B-spline curves, rational Bezier curves,
-      and NURBS curves.
-    summaryLocale: 由参数函数定义的曲线；更细主题包括贝塞尔曲线、Ferguson-Hermite 曲线、B 样条曲线、有理贝塞尔曲线与 NURBS 曲线。
+    summary: Optional programmable stage that can emit new primitives from input
+      primitives, though often avoided in performance-critical pipelines.
+    summaryLocale: 可从输入图元生成新图元的可选可编程阶段，但高性能管线中通常谨慎使用。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-parametric-curves/meta.yaml
+      meta: content/computer-graphics/cg-geometry-shader/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-brdf
-    title: BRDF
-    titleLocale: BRDF
-    displayTitle: BRDF
+  - id: cg-scene-graph
+    title: Scene Graph
+    titleLocale: 场景图
+    displayTitle: 场景图
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Organizes scene objects, hierarchy, transforms, and sometimes
+      visibility or state inheritance.
+    summaryLocale: 组织场景对象、层级、变换，有时也管理可见性或状态继承。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-scene-graph/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-radiosity
+    title: Radiosity
+    titleLocale: 辐射度方法
+    displayTitle: 辐射度方法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A global illumination method emphasizing diffuse energy exchange
+      between surfaces.
+    summaryLocale: 强调表面之间漫反射能量交换的全局光照方法。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-radiosity/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-nerf
+    title: NeRF
+    titleLocale: NeRF
+    displayTitle: NeRF
     aliases:
-      - Bidirectional Reflectance Distribution Function
+      - Neural Radiance Fields
     domain: computer-graphics
     type: concept
     status: seed
-    summary: A function describing how much light arriving from one direction is
-      reflected toward another direction at a surface point.
-    summaryLocale: 描述表面点处某一入射方向的光有多少反射到某一出射方向的函数。
+    summary: Represents a scene as a neural radiance field mapping spatial position
+      and view direction to density and color.
+    summaryLocale: 将场景表示为神经辐射场，把空间位置和视线方向映射到密度与颜色。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-brdf/meta.yaml
+      meta: content/computer-graphics/cg-nerf/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-soft-body-dynamics
-    title: Soft Body Dynamics
-    titleLocale: 软体动力学
-    displayTitle: 软体动力学
+  - id: cg-digital-watermarking
+    title: Digital Watermarking
+    titleLocale: 数字水印
+    displayTitle: 数字水印
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Simulates deformable objects with internal elasticity, damping, and
-      collision response.
-    summaryLocale: 仿真具有内部弹性、阻尼与碰撞响应的可变形物体。
+    summary: Embeds identifying or protective information into geometry or media
+      while trying to preserve perceptual quality.
+    summaryLocale: 在几何或媒体中嵌入识别或保护信息，同时尽量保持视觉质量。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-soft-body-dynamics/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-spline-interpolation
-    title: Spline Interpolation
-    titleLocale: 样条插值
-    displayTitle: 样条插值
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses spline curves for smoother motion with controllable continuity,
-      tangents, and easing.
-    summaryLocale: 用样条曲线生成更平滑的运动，可控制连续性、切线与缓动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-spline-interpolation/meta.yaml
+      meta: content/computer-graphics/cg-digital-watermarking/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -913,190 +1457,247 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-point-particle-and-procedural-geometry
-    title: Point, Particle, and Procedural Geometry
-    titleLocale: 点、粒子与程序化几何
-    displayTitle: 点、粒子与程序化几何
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Geometry represented or generated from points, particles, point clouds,
-      fractals, and procedural rewriting systems.
-    summaryLocale: 由点、粒子、点云、分形与程序化重写系统表示或生成几何。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-point-particle-and-procedural-geometry/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - modeling
-      - procedural
-  - id: cg-skeleton
-    title: Skeleton
-    titleLocale: 骨架
-    displayTitle: 骨架
+  - id: cg-rasterization
+    title: Rasterization
+    titleLocale: 光栅化
+    displayTitle: 光栅化
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: A hierarchy of joints and bones used to control articulated motion and
-      deformation.
-    summaryLocale: 由关节和骨骼构成的层级结构，用于控制关节运动与变形。
+    summary: Converts geometric primitives into fragments over the pixel grid.
+    summaryLocale: 将几何图元转换为像素网格上的片段。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-skeleton/meta.yaml
+      meta: content/computer-graphics/cg-rasterization/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-animation
-    title: Animation
-    titleLocale: 动画
-    displayTitle: 动画
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: The generation and control of motion over time, including keyframes,
-      procedural motion, characters, physics, and data-driven methods.
-    summaryLocale: 研究随时间生成与控制运动的方法，包括关键帧、程序化运动、角色动画、物理动画与数据驱动动画。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - animation
-  - id: cg-depth-test
-    title: Depth Test
-    titleLocale: 深度测试
-    displayTitle: 深度测试
+  - id: cg-specular-reflection
+    title: Specular Reflection
+    titleLocale: 镜面反射
+    displayTitle: 镜面反射
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Compares fragment depth against the depth buffer to keep the visible
-      nearest surface.
-    summaryLocale: 将片段深度与深度缓冲比较，以保留可见的最近表面。
+    summary: Produces view-dependent highlights from glossy or mirror-like surface
+      behavior.
+    summaryLocale: 由有光泽或镜面表面产生与视角相关的高光。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-depth-test/meta.yaml
+      meta: content/computer-graphics/cg-specular-reflection/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-geometry-representation
-    title: Geometry Representation
-    titleLocale: 几何表示
-    displayTitle: 几何表示
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: "Core ways to describe shape: wireframe, surface, solid, explicit,
-      implicit, and parametric representations."
-    summaryLocale: 描述形状的基本方式，包括线框、表面、实体、显式、隐式与参数式表示。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-geometry-representation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - modeling
-      - geometry
-  - id: cg-learned-motion-synthesis
-    title: Learned Motion Synthesis
-    titleLocale: 学习式动作合成
-    displayTitle: 学习式动作合成
+  - id: cg-scanline
+    title: Scanline
+    titleLocale: 扫描线
+    displayTitle: 扫描线
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Uses machine learning models to generate, complete, or control motion
-      from data and conditions.
-    summaryLocale: 使用机器学习模型根据数据与条件生成、补全或控制运动。
+    summary: A row-wise image or polygon processing strategy historically used in
+      rasterization and hidden-surface algorithms.
+    summaryLocale: 按图像行处理图像或多边形的策略，历史上常用于光栅化与隐藏面算法。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-learned-motion-synthesis/meta.yaml
+      meta: content/computer-graphics/cg-scanline/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-view-transform
-    title: View Transform
-    titleLocale: 视图变换
-    displayTitle: 视图变换
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Moves world-space geometry into camera or eye space according to the
-      virtual camera pose.
-    summaryLocale: 根据虚拟相机位姿将世界空间几何转换到相机或眼空间。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-view-transform/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-implicit-representation
-    title: Implicit Representation
-    titleLocale: 隐式表示
-    displayTitle: 隐式表示
+  - id: cg-linear-interpolation
+    title: Linear Interpolation
+    titleLocale: 线性插值
+    displayTitle: 线性插值
     aliases:
-      - geometry representation
+      - LERP
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Defines shape through equations or fields, usually as the zero set or
-      threshold of a scalar function.
-    summaryLocale: 通过方程或场定义形状，常见形式是标量函数的零等值面或阈值面。
+    summary: Interpolates values at constant rate between endpoints; simple but
+      often visually mechanical.
+    summaryLocale: 以恒定比例在端点之间插值，简单但运动容易显得机械。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-implicit-representation/meta.yaml
+      meta: content/computer-graphics/cg-linear-interpolation/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-ray-based-and-field-based-rendering
-    title: Ray-Based and Field-Based Rendering
-    titleLocale: 基于射线与场的渲染
-    displayTitle: 基于射线与场的渲染
+  - id: cg-frame-and-keyframe
+    title: Frame and Keyframe
+    titleLocale: 帧与关键帧
+    displayTitle: 帧与关键帧
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A frame is a sampled time state; a keyframe is an authored important
+      state used to define motion.
+    summaryLocale: 帧是某一时间的采样状态；关键帧是创作者指定的重要状态，用于定义运动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-frame-and-keyframe/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-tessellation-stage
+    title: Tessellation Stage
+    titleLocale: 曲面细分阶段
+    displayTitle: 曲面细分阶段
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Optional programmable stages that subdivide patches into smaller
+      primitives on the GPU.
+    summaryLocale: 在 GPU 上将 patch 细分为更小图元的可选可编程阶段。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-tessellation-stage/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-interpolation-curve
+    title: Interpolation Curve
+    titleLocale: 插值曲线
+    displayTitle: 插值曲线
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Controls how values change between frames or keys, determining speed,
+      easing, and continuity.
+    summaryLocale: 控制帧或关键状态之间数值如何变化，决定速度、缓入缓出与连续性。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-interpolation-curve/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-modeling
+    title: Modeling
+    titleLocale: 建模
+    displayTitle: 建模
     aliases: []
     domain: computer-graphics
     type: topic
     status: seed
-    summary: Rendering methods that trace rays or sample fields for visibility,
-      surfaces, volumes, and light transport.
-    summaryLocale: 通过追踪射线或采样场来处理可见性、表面、体积与光传输的渲染方法。
+    summary: The representation and construction of geometry, shapes, curves,
+      surfaces, volumes, and scene assets.
+    summaryLocale: 用于表示和构造几何、形状、曲线、曲面、体积与场景资产的知识分支。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-ray-based-and-field-based-rendering/meta.yaml
+      meta: content/computer-graphics/cg-modeling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+  - id: cg-articulated-model
+    title: Articulated Model
+    titleLocale: 关节模型
+    displayTitle: 关节模型
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents a body as linked rigid or deformable parts connected by
+      joints with degrees of freedom.
+    summaryLocale: 将身体表示为由关节连接的刚性或可变形部件，并具有自由度。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-articulated-model/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-shading-and-material
+    title: Shading and Material
+    titleLocale: 着色与材质
+    displayTitle: 着色与材质
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Light-material interaction models from simple diffuse/specular terms to
+      physically based BRDFs.
+    summaryLocale: 从简单漫反射/镜面项到物理基础 BRDF 的光照与材质交互模型。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-shading-and-material/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - rendering
-      - ray-tracing
+      - material
+  - id: cg-mipmap
+    title: Mipmap
+    titleLocale: Mipmap
+    displayTitle: Mipmap
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A pyramid of prefiltered texture resolutions used to reduce aliasing
+      and improve cache behavior.
+    summaryLocale: 由预滤波的多级纹理分辨率组成，用于减少走样并改善缓存访问。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-mipmap/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-keyframe-interpolation
+    title: Keyframe Interpolation
+    titleLocale: 关键帧插值
+    displayTitle: 关键帧插值
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Computes in-between values from authored keyframes, forming continuous
+      motion from sparse controls.
+    summaryLocale: 根据创作者指定的关键帧计算中间值，从稀疏控制生成连续运动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-keyframe-interpolation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
   - id: cameras-and-lenses-source-ported
     title: camera and lenses
     titleLocale: 相机与透镜
@@ -1127,42 +1728,238 @@ nodes:
       - refraction
       - focus
       - aperture
-  - id: cg-texture-filtering
-    title: Texture Filtering
-    titleLocale: 纹理过滤
-    displayTitle: 纹理过滤
+  - id: cg-diffuse-reflection
+    title: Diffuse Reflection
+    titleLocale: 漫反射
+    displayTitle: 漫反射
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Computes texture samples between texels or between mip levels using
-      nearest, linear, anisotropic, or related filters.
-    summaryLocale: 用 nearest、linear、anisotropic 等方式在纹素之间或 mip 层之间计算纹理采样。
+    summary: Scatters incoming light broadly, often modeled by Lambertian reflection
+      in simple shading.
+    summaryLocale: 将入射光向多个方向散射，简单着色中常用 Lambert 漫反射建模。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-texture-filtering/meta.yaml
+      meta: content/computer-graphics/cg-diffuse-reflection/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-z-buffer
-    title: Z-Buffer
-    titleLocale: Z 缓冲
-    displayTitle: Z 缓冲
+  - id: cg-inverse-kinematics
+    title: Inverse Kinematics
+    titleLocale: 反向运动学
+    displayTitle: 反向运动学
     aliases:
-      - Depth Buffer
+      - IK
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Stores nearest depth per pixel to resolve visibility efficiently during
-      rasterization.
-    summaryLocale: 为每个像素存储最近深度，在光栅化中高效解决可见性。
+    summary: Solves joint values needed to place an end effector at a target; deeper
+      topics include CCD, FABRIK, and Jacobian IK.
+    summaryLocale: 求解让末端到达目标所需的关节值；更细主题包括 CCD、FABRIK 与雅可比 IK。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-z-buffer/meta.yaml
+      meta: content/computer-graphics/cg-inverse-kinematics/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-particle-animation
+    title: Particle Animation
+    titleLocale: 粒子动画
+    displayTitle: 粒子动画
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses many particles with rules or forces to animate smoke, fire,
+      sparks, fluids, crowds, and other distributed phenomena.
+    summaryLocale: 用大量粒子及规则或力来动画化烟、火、火花、流体、群体等分布式现象。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-particle-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-skeleton
+    title: Skeleton
+    titleLocale: 骨架
+    displayTitle: 骨架
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A hierarchy of joints and bones used to control articulated motion and
+      deformation.
+    summaryLocale: 由关节和骨骼构成的层级结构，用于控制关节运动与变形。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-skeleton/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-fem-deformation
+    title: FEM Deformation
+    titleLocale: 有限元变形
+    displayTitle: 有限元变形
+    aliases:
+      - Finite Element Method
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses finite elements to model continuum deformation and stress-strain
+      behavior.
+    summaryLocale: 使用有限元建模连续体形变与应力-应变行为。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-fem-deformation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-scanline-hidden-surface-algorithm
+    title: Scanline Hidden-Surface Algorithm
+    titleLocale: 扫描线隐藏面算法
+    displayTitle: 扫描线隐藏面算法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Determines visible surfaces while processing the image row by row.
+    summaryLocale: 在逐行处理图像时判断可见表面。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-scanline-hidden-surface-algorithm/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-spline-interpolation
+    title: Spline Interpolation
+    titleLocale: 样条插值
+    displayTitle: 样条插值
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses spline curves for smoother motion with controllable continuity,
+      tangents, and easing.
+    summaryLocale: 用样条曲线生成更平滑的运动，可控制连续性、切线与缓动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-spline-interpolation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-eigenvalues-eigenvectors
+    title: Eigenvalues and Eigenvectors
+    titleLocale: 特征值与特征向量
+    displayTitle: 特征值与特征向量
+    aliases:
+      - 固有値・固有ベクトル
+      - eigenvalue
+      - eigenvector
+      - 固有値
+      - 固有ベクトル
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. Scalars and nonzero vectors satisfying Av = λv, central
+      to diagonalization, powers of matrices, quadratic forms, and stability
+      analysis."
+    summaryLocale: "优先级：P0。中文：特征值与特征向量；日本語：固有値・固有ベクトル；English: Eigenvalues and
+      Eigenvectors。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-eigenvalues-eigenvectors/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-ray-based-and-field-based-rendering
+    title: Ray-Based and Field-Based Rendering
+    titleLocale: 基于射线与场的渲染
+    displayTitle: 基于射线与场的渲染
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Rendering methods that trace rays or sample fields for visibility,
+      surfaces, volumes, and light transport.
+    summaryLocale: 通过追踪射线或采样场来处理可见性、表面、体积与光传输的渲染方法。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-ray-based-and-field-based-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - ray-tracing
+  - id: linear-algebra-rank
+    title: Rank
+    titleLocale: 秩
+    displayTitle: 秩
+    aliases:
+      - 階数
+      - matrix rank
+      - rank of a matrix
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. The dimension of the span of columns or rows, measuring
+      how many independent directions a matrix preserves."
+    summaryLocale: "优先级：P0。中文：秩；日本語：階数；English: Rank。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-rank/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-rank/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-rank/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-clipping
+    title: Clipping
+    titleLocale: 裁剪
+    displayTitle: 裁剪
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Removes or cuts primitives outside the viewing volume before rasterization.
+    summaryLocale: 在光栅化前移除或切割视锥外的图元。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-clipping/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -1188,6 +1985,179 @@ nodes:
       html: ""
     tags:
       - computer-graphics
+  - id: cg-scene-and-asset-representation
+    title: Scene and Asset Representation
+    titleLocale: 场景与资产表示
+    displayTitle: 场景与资产表示
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Higher-level organization of objects, transforms, asset composition,
+      and scene interchange.
+    summaryLocale: 对象、变换、资产组合与场景交换的上层组织方式。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-scene-and-asset-representation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+      - scene
+  - id: linear-algebra-kernel-image
+    title: Kernel and Image
+    titleLocale: 核与像
+    displayTitle: 核与像
+    aliases:
+      - 核と像
+      - null space
+      - range
+      - image
+      - kernel
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. The kernel contains inputs mapped to zero; the image
+      contains all reachable outputs of a linear map."
+    summaryLocale: "优先级：P1。中文：核与像；日本語：核と像；English: Kernel and Image。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-kernel-image/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-kernel-image/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-kernel-image/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-motion-capture
+    title: Motion Capture
+    titleLocale: 动作捕捉
+    displayTitle: 动作捕捉
+    aliases:
+      - Mocap
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Records real-world motion for animation; deeper topics include
+      marker-based capture, motion retargeting, and motion blending.
+    summaryLocale: 记录真实世界运动用于动画；更细主题包括标记点动捕、动作重定向与动作混合。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-motion-capture/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-implicit-representation
+    title: Implicit Representation
+    titleLocale: 隐式表示
+    displayTitle: 隐式表示
+    aliases:
+      - geometry representation
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Defines shape through equations or fields, usually as the zero set or
+      threshold of a scalar function.
+    summaryLocale: 通过方程或场定义形状，常见形式是标量函数的零等值面或阈值面。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-implicit-representation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-free-form-deformation
+    title: Free-Form Deformation
+    titleLocale: 自由形状变形
+    displayTitle: 自由形状变形
+    aliases:
+      - FFD
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Deforms geometry through a surrounding control lattice rather than
+      editing every vertex directly.
+    summaryLocale: 通过包围物体的控制格子变形几何，而不是直接编辑每个顶点。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-free-form-deformation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-image-based-lighting
+    title: Image-Based Lighting
+    titleLocale: 基于图像的照明
+    displayTitle: 基于图像的照明
+    aliases:
+      - IBL
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses captured environment images to light objects with realistic
+      surrounding illumination.
+    summaryLocale: 使用采集的环境图像为物体提供真实感环境照明。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-image-based-lighting/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-transform-animation
+    title: Transform Animation
+    titleLocale: 变换动画
+    displayTitle: 变换动画
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Animates translation, rotation, scale, or full transforms of objects
+      over time.
+    summaryLocale: 随时间驱动物体的平移、旋转、缩放或完整变换。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-transform-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-texture-mapping-approach
+    title: Texture Mapping Approach
+    titleLocale: 纹理映射方法
+    displayTitle: 纹理映射方法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses captured images as textures on geometric proxies to reproduce
+      appearance from limited viewpoints.
+    summaryLocale: 将采集图像作为几何代理上的纹理，从有限视角再现外观。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-texture-mapping-approach/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
   - id: cg-quantization
     title: Quantization
     titleLocale: 量化
@@ -1208,62 +2178,443 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-reinforcement-learning-character-control
-    title: Reinforcement Learning Character Control
-    titleLocale: 强化学习角色控制
-    displayTitle: 强化学习角色控制
+  - id: cg-surface-model
+    title: Surface Model
+    titleLocale: 表面模型
+    displayTitle: 表面模型
     aliases:
-      - RL Character Control
+      - geometry representation
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Trains policies to control characters through rewards, physics,
-      observations, and actions.
-    summaryLocale: 通过奖励、物理、观测与动作训练策略来控制角色。
+    summary: Represents the visible boundary of an object without necessarily
+      encoding interior volume.
+    summaryLocale: 表示物体可见边界，不一定明确记录内部体积。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-reinforcement-learning-character-control/meta.yaml
+      meta: content/computer-graphics/cg-surface-model/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-subdivision-surface
-    title: Subdivision Surface
-    titleLocale: 细分曲面
-    displayTitle: 细分曲面
+  - id: cg-procedural-animation
+    title: Procedural Animation
+    titleLocale: 程序化动画
+    displayTitle: 程序化动画
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Motion generated by algorithms, rules, noise, paths, particles, or
+      procedural systems instead of manually authored frames.
+    summaryLocale: 由算法、规则、噪声、路径、粒子或程序系统生成运动，而不是逐帧手工制作。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-procedural-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - animation
+      - procedural
+  - id: cg-vertex-specification
+    title: Vertex Specification
+    titleLocale: 顶点输入
+    displayTitle: 顶点输入
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Generates smooth surfaces by repeatedly refining a coarse control mesh;
-      a deeper important case is Catmull-Clark subdivision.
-    summaryLocale: 通过反复细化粗控制网格生成平滑曲面；更细的重要方法包括 Catmull-Clark 细分。
+    summary: Defines how vertex attributes such as position, normal, UV, and color
+      are provided to the pipeline.
+    summaryLocale: 定义位置、法线、UV、颜色等顶点属性如何输入渲染管线。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-subdivision-surface/meta.yaml
+      meta: content/computer-graphics/cg-vertex-specification/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-mesh-parameterization
-    title: Mesh Parameterization
-    titleLocale: 网格参数化
-    displayTitle: 网格参数化
+  - id: cg-light-transport
+    title: Light Transport
+    titleLocale: 光传输
+    displayTitle: 光传输
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Maps a surface to a lower-dimensional parameter domain; deeper topics
-      include UV mapping and segmentation.
-    summaryLocale: 将曲面映射到低维参数域；更细主题包括 UV 映射与网格分割。
+    summary: Describes how light travels, scatters, reflects, refracts, and is
+      absorbed through a scene.
+    summaryLocale: 描述光在场景中传播、散射、反射、折射与吸收的过程。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-mesh-parameterization/meta.yaml
+      meta: content/computer-graphics/cg-light-transport/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-forward-kinematics
+    title: Forward Kinematics
+    titleLocale: 正向运动学
+    displayTitle: 正向运动学
+    aliases:
+      - FK
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Computes end-effector poses from a chain of joint transforms applied
+      from parent to child.
+    summaryLocale: 从父到子应用关节变换，根据关节链计算末端位置与姿态。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-forward-kinematics/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-orthogonality
+    title: Orthogonality
+    titleLocale: 正交性
+    displayTitle: 正交性
+    aliases:
+      - 直交性
+      - orthogonal vectors
+      - inner product
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. A geometric relation based on inner product zero, used
+      in projection, least squares, orthonormal bases, and diagonalization."
+    summaryLocale: "优先级：P1。中文：正交性；日本語：直交性；English: Orthogonality。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-orthogonality/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-texture-filtering
+    title: Texture Filtering
+    titleLocale: 纹理过滤
+    displayTitle: 纹理过滤
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Computes texture samples between texels or between mip levels using
+      nearest, linear, anisotropic, or related filters.
+    summaryLocale: 用 nearest、linear、anisotropic 等方式在纹素之间或 mip 层之间计算纹理采样。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-texture-filtering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-rigid-body-dynamics
+    title: Rigid Body Dynamics
+    titleLocale: 刚体动力学
+    displayTitle: 刚体动力学
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Simulates bodies that do not deform, using mass, inertia, forces,
+      impulses, and constraints.
+    summaryLocale: 仿真不发生形变的物体，使用质量、惯性、力、冲量与约束。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-rigid-body-dynamics/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-animation-foundations
+    title: Animation Foundations
+    titleLocale: 动画基础
+    displayTitle: 动画基础
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Time, frames, keyframes, interpolation, transform animation, and camera
+      motion as the basis of temporal graphics.
+    summaryLocale: 以时间、帧、关键帧、插值、变换动画与摄像机运动构成时序图形的基础。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-animation-foundations/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - animation
+  - id: cg-character-animation
+    title: Character Animation
+    titleLocale: 角色动画
+    displayTitle: 角色动画
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Animation of articulated bodies, skeletons, rigs, skin deformation,
+      captured motion, and facial expression.
+    summaryLocale: 关于关节体、骨架、绑定、蒙皮变形、动捕与表情的动画体系。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-character-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - animation
+      - character
+  - id: cg-conic-and-quadratic-curves
+    title: Conic and Quadratic Curves
+    titleLocale: 圆锥曲线与二次曲线
+    displayTitle: 圆锥曲线与二次曲线
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Analytic curves such as circles, ellipses, parabolas, and hyperbolas
+      that form an important bridge between geometry and parametric modeling.
+    summaryLocale: 包括圆、椭圆、抛物线、双曲线等解析曲线，是几何表示与参数建模之间的重要基础。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-conic-and-quadratic-curves/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-point-particle-and-procedural-geometry
+    title: Point, Particle, and Procedural Geometry
+    titleLocale: 点、粒子与程序化几何
+    displayTitle: 点、粒子与程序化几何
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Geometry represented or generated from points, particles, point clouds,
+      fractals, and procedural rewriting systems.
+    summaryLocale: 由点、粒子、点云、分形与程序化重写系统表示或生成几何。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-point-particle-and-procedural-geometry/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+      - procedural
+  - id: cg-quaternion-interpolation
+    title: Quaternion Interpolation
+    titleLocale: 四元数插值
+    displayTitle: 四元数插值
+    aliases:
+      - SLERP
+      - NLERP
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Interpolates rotations using quaternions to avoid many Euler-angle
+      artifacts; deeper topics include slerp and nlerp.
+    summaryLocale: 使用四元数插值旋转，避免许多欧拉角问题；更细主题包括 slerp 与 nlerp。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-quaternion-interpolation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-mvp-matrix
+    title: MVP Matrix
+    titleLocale: MVP 矩阵
+    displayTitle: MVP 矩阵
+    aliases:
+      - Model-View-Projection Matrix
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Combines model, view, and projection transforms into the standard
+      object-to-clip-space transform.
+    summaryLocale: 将模型、视图与投影变换组合为从对象空间到裁剪空间的标准变换。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-mvp-matrix/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-l-system-geometry
+    title: L-System Geometry
+    titleLocale: L-system 几何生成
+    displayTitle: L-system 几何生成
+    aliases:
+      - Lindenmayer System
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Generates branching structures through string rewriting rules; often
+      used for plant and procedural geometry.
+    summaryLocale: 通过字符串重写规则生成分支结构，常用于植物与程序化几何。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-l-system-geometry/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-rendering-equation
+    title: Rendering Equation
+    titleLocale: 渲染方程
+    displayTitle: 渲染方程
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Formalizes emitted and reflected radiance as an integral over incoming
+      light directions and surface scattering.
+    summaryLocale: 将自发光与反射辐射亮度形式化为对入射方向与表面散射的积分。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-rendering-equation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-three-d-gaussian-splatting
+    title: 3D Gaussian Splatting
+    titleLocale: 三维高斯泼溅
+    displayTitle: 三维高斯泼溅
+    aliases:
+      - 3DGS
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents scenes with optimized 3D Gaussians and renders them through
+      visibility-aware splatting for fast novel-view synthesis.
+    summaryLocale: 用优化后的三维高斯表示场景，并通过考虑可见性的 splatting 快速合成新视图。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-three-d-gaussian-splatting/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-time-sampling
+    title: Time Sampling
+    titleLocale: 时间采样
+    displayTitle: 时间采样
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents continuous motion as discrete frames or simulation steps,
+      introducing temporal resolution and possible temporal aliasing.
+    summaryLocale: 将连续运动表示为离散帧或仿真步，引入时间分辨率与可能的时间走样问题。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-time-sampling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-animation-state-machine
+    title: Animation State Machine
+    titleLocale: 动画状态机
+    displayTitle: 动画状态机
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Organizes character animation into states and transitions driven by
+      game or interaction logic.
+    summaryLocale: 将角色动画组织为状态与转移，并由游戏或交互逻辑驱动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-animation-state-machine/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-diagonalization
+    title: Diagonalization
+    titleLocale: 对角化
+    displayTitle: 对角化
+    aliases:
+      - 対角化
+      - diagonalizable matrix
+      - matrix diagonalization
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P0. The representation of a linear transformation by a
+      diagonal matrix under a suitable basis, usually built from eigenvectors."
+    summaryLocale: "优先级：P0。中文：对角化；日本語：対角化；English: Diagonalization。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-diagonalization/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-nyquist-frequency
+    title: Nyquist Frequency
+    titleLocale: 奈奎斯特频率
+    displayTitle: 奈奎斯特频率
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: The sampling limit that determines the highest frequency that can be
+      represented without aliasing under ideal conditions.
+    summaryLocale: 在理想条件下决定无走样可表示最高频率的采样界限。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-nyquist-frequency/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -1284,6 +2635,556 @@ nodes:
     hasNote: false
     path:
       meta: content/computer-graphics/cg-light-field-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-openusd
+    title: OpenUSD
+    titleLocale: OpenUSD
+    displayTitle: OpenUSD
+    aliases:
+      - USD
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A scene description and composition framework for large-scale 3D
+      production pipelines and interoperable assets.
+    summaryLocale: 面向大型三维生产管线与可互操作资产的场景描述和组合框架。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-openusd/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-panoramic-image-approach
+    title: Panoramic Image Approach
+    titleLocale: 全景图方法
+    displayTitle: 全景图方法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses panoramic imagery to represent surrounding views or environment
+      appearance.
+    summaryLocale: 使用全景图像表示周围视图或环境外观。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-panoramic-image-approach/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-fragment-shader
+    title: Fragment Shader
+    titleLocale: 片段着色器
+    displayTitle: 片段着色器
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Programmable stage that computes per-fragment outputs such as color,
+      material response, or auxiliary render targets.
+    summaryLocale: 计算每个片段输出的可编程阶段，如颜色、材质响应或辅助渲染目标。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-fragment-shader/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-basis-dimension
+    title: Basis and Dimension
+    titleLocale: 基与维数
+    displayTitle: 基与维数
+    aliases:
+      - 基底と次元
+      - basis
+      - dimension
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. A basis is a minimal spanning and linearly independent
+      set; dimension counts the number of basis vectors."
+    summaryLocale: "优先级：P1。中文：基与维数；日本語：基底と次元；English: Basis and
+      Dimension。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-basis-dimension/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-basis-dimension/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-basis-dimension/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-depth-test
+    title: Depth Test
+    titleLocale: 深度测试
+    displayTitle: 深度测试
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Compares fragment depth against the depth buffer to keep the visible
+      nearest surface.
+    summaryLocale: 将片段深度与深度缓冲比较，以保留可见的最近表面。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-depth-test/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-hair-simulation
+    title: Hair Simulation
+    titleLocale: 毛发模拟
+    displayTitle: 毛发模拟
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Simulates many strands or strand groups with bending, collisions, guide
+      hairs, and grooming constraints.
+    summaryLocale: 仿真大量发丝或发束，涉及弯曲、碰撞、引导发与造型约束。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-hair-simulation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-hybrid-keyframe-physics-animation
+    title: Hybrid Keyframe-Physics Animation
+    titleLocale: 关键帧-物理混合动画
+    displayTitle: 关键帧-物理混合动画
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Combines authored keyframes with physical simulation to retain control
+      while gaining plausible secondary motion and response.
+    summaryLocale: 结合手工关键帧与物理仿真，在保留控制性的同时获得可信的次级运动与响应。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-hybrid-keyframe-physics-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-image-based-rendering
+    title: Image-Based Rendering
+    titleLocale: 基于图像的渲染
+    displayTitle: 基于图像的渲染
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Uses captured or precomputed images, views, or light fields as primary
+      rendering data.
+    summaryLocale: 使用采集或预计算的图像、视图或光场作为主要渲染数据。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-image-based-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - ibr
+  - id: linear-algebra
+    title: Linear Algebra
+    titleLocale: 线性代数
+    displayTitle: 线性代数
+    aliases:
+      - 線形代数学
+      - linear algebra
+    domain: mathematical-foundations
+    type: topic
+    status: seed
+    summary: "Priority: mixed P0-P2. Linear algebra topic grouping vector spaces,
+      matrices, eigen theory, orthogonality, quadratic forms, and matrix
+      decompositions."
+    summaryLocale: "优先级：P0-P2
+      混合。线性代数主题节点，用于组织向量空间、矩阵、特征理论、正交性、二次型与矩阵分解等知识点。日本語：線形代数学；English: Linear
+      Algebra."
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra/meta.yaml
+      note: content/mathematical-foundations/linear-algebra/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+  - id: cg-l-system
+    title: L-System
+    titleLocale: L-system
+    displayTitle: L-system
+    aliases:
+      - Lindenmayer System
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A rewriting-system approach for procedural growth and branching
+      structures, especially plants.
+    summaryLocale: 一种用于程序化生长与分支结构的重写系统，尤其适合植物。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-l-system/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-gram-schmidt-process
+    title: Gram-Schmidt Process
+    titleLocale: Gram-Schmidt 正交化
+    displayTitle: Gram-Schmidt 正交化
+    aliases:
+      - グラム・シュミット
+      - Gram-Schmidt orthogonalization
+      - orthonormalization
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. A procedure that converts linearly independent vectors
+      into an orthogonal or orthonormal basis spanning the same subspace."
+    summaryLocale: "优先级：P1。中文：Gram-Schmidt 正交化；日本語：グラム・シュミット；English: Gram-Schmidt
+      Process。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-gram-schmidt-process/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: linear-algebra-matrix-powers
+    title: Matrix Powers
+    titleLocale: 矩阵幂
+    displayTitle: 矩阵幂
+    aliases:
+      - 行列のべき乗
+      - powers of matrices
+      - A^n
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P2. Repeated matrix multiplication, often computed using
+      diagonalization, Jordan form, or recurrence structure."
+    summaryLocale: "优先级：P2。中文：矩阵幂；日本語：行列のべき乗；English: Matrix Powers。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-matrix-powers/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p2
+  - id: linear-algebra-orthogonal-diagonalization
+    title: Orthogonal Diagonalization
+    titleLocale: 正交对角化
+    displayTitle: 正交对角化
+    aliases:
+      - 直交対角化
+      - spectral theorem
+      - orthogonally diagonalizable
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. Diagonalization by an orthogonal matrix, especially for
+      real symmetric matrices via an orthonormal eigenbasis."
+    summaryLocale: "优先级：P1。中文：正交对角化；日本語：直交対角化；English: Orthogonal
+      Diagonalization。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-orthogonal-diagonalization/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-skinning
+    title: Skinning
+    titleLocale: 蒙皮
+    displayTitle: 蒙皮
+    aliases:
+      - LBS
+      - Dual Quaternion Skinning
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Deforms a mesh according to skeleton joints and weights; deeper topics
+      include linear blend skinning and dual quaternion skinning.
+    summaryLocale: 根据骨骼关节与权重变形网格；更细主题包括线性混合蒙皮与双四元数蒙皮。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-skinning/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-digital-image-foundations
+    title: Digital Image Foundations
+    titleLocale: 数字图像基础
+    displayTitle: 数字图像基础
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Sampling, quantization, aliasing, raster/vector representations, and
+      framebuffer-level image concepts.
+    summaryLocale: 关于采样、量化、走样、栅格/矢量表示与帧缓冲等图像基础概念。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-digital-image-foundations/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - image
+  - id: cg-octree
+    title: Octree
+    titleLocale: 八叉树
+    displayTitle: 八叉树
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Hierarchically partitions 3D space into eight child cells, enabling
+      adaptive storage and queries for sparse volumes or scenes.
+    summaryLocale: 将三维空间递归划分为八个子单元，适合稀疏体数据或场景的自适应存储与查询。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-octree/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-texture-and-mapping
+    title: Texture and Mapping
+    titleLocale: 纹理与映射
+    displayTitle: 纹理与映射
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Mapping images or procedural signals to surfaces to control color,
+      normals, displacement, and material detail.
+    summaryLocale: 将图像或程序化信号映射到表面，用于控制颜色、法线、位移与材质细节。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-texture-and-mapping/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - texture
+  - id: cg-geometry-representation
+    title: Geometry Representation
+    titleLocale: 几何表示
+    displayTitle: 几何表示
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: "Core ways to describe shape: wireframe, surface, solid, explicit,
+      implicit, and parametric representations."
+    summaryLocale: 描述形状的基本方式，包括线框、表面、实体、显式、隐式与参数式表示。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-geometry-representation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+      - geometry
+  - id: cg-ray-traced-shadow
+    title: Ray-Traced Shadow
+    titleLocale: 光线追踪阴影
+    displayTitle: 光线追踪阴影
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Determines whether a point is shadowed by tracing rays from the shaded
+      point toward light sources.
+    summaryLocale: 从着色点向光源发射射线判断是否被遮挡。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-ray-traced-shadow/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-animation
+    title: Animation
+    titleLocale: 动画
+    displayTitle: 动画
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: The generation and control of motion over time, including keyframes,
+      procedural motion, characters, physics, and data-driven methods.
+    summaryLocale: 研究随时间生成与控制运动的方法，包括关键帧、程序化运动、角色动画、物理动画与数据驱动动画。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - animation
+  - id: cg-texture-mapping
+    title: Texture Mapping
+    titleLocale: 纹理映射
+    displayTitle: 纹理映射
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Maps 2D or procedural texture data onto surfaces through coordinates
+      such as UVs.
+    summaryLocale: 通过 UV 等坐标将二维或程序化纹理数据映射到表面。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-texture-mapping/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-volumetric-and-implicit-modeling
+    title: Volumetric and Implicit Modeling
+    titleLocale: 体积与隐式建模
+    displayTitle: 体积与隐式建模
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Shape representation through voxels, spatial trees, implicit fields,
+      signed distance functions, and isosurface extraction.
+    summaryLocale: 通过体素、空间树、隐式场、符号距离函数与等值面提取来表示形状。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-volumetric-and-implicit-modeling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+      - volume
+      - implicit
+  - id: cg-particle-system-as-geometry
+    title: Particle System as Geometry
+    titleLocale: 作为几何表示的粒子系统
+    displayTitle: 作为几何表示的粒子系统
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Uses many particles as a geometric representation for phenomena such as
+      smoke, fluids, crowds, or point-based surfaces.
+    summaryLocale: 用大量粒子作为几何表示，可描述烟雾、流体、群体或点基曲面等现象。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-particle-system-as-geometry/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-linear-map
+    title: Linear Map
+    titleLocale: 线性映射
+    displayTitle: 线性映射
+    aliases:
+      - 線形写像
+      - linear transformation
+      - linear operator
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P1. A structure-preserving map satisfying additivity and
+      scalar homogeneity, often represented by matrices."
+    summaryLocale: "优先级：P1。中文：线性映射；日本語：線形写像；English: Linear Map。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: html
+    hasNote: true
+    path:
+      meta: content/mathematical-foundations/linear-algebra-linear-map/meta.yaml
+      note: content/mathematical-foundations/linear-algebra-linear-map/note.html
+      markdown: ""
+      html: content/mathematical-foundations/linear-algebra-linear-map/note.html
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p1
+  - id: cg-soft-body-dynamics
+    title: Soft Body Dynamics
+    titleLocale: 软体动力学
+    displayTitle: 软体动力学
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Simulates deformable objects with internal elasticity, damping, and
+      collision response.
+    summaryLocale: 仿真具有内部弹性、阻尼与碰撞响应的可变形物体。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-soft-body-dynamics/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -1312,326 +3213,42 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-point-based-modeling
-    title: Point-Based Modeling
-    titleLocale: 点基建模
-    displayTitle: 点基建模
+  - id: cg-back-face-culling
+    title: Back-Face Culling
+    titleLocale: 背面剔除
+    displayTitle: 背面剔除
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents shape with points rather than explicit surfaces, often
-      requiring splatting, reconstruction, or neighborhood processing.
-    summaryLocale: 用点而非显式曲面表示形状，通常需要 splatting、重建或邻域处理。
+    summary: Skips polygons facing away from the camera to reduce work and remove
+      invisible back sides of closed surfaces.
+    summaryLocale: 跳过背向相机的多边形，以减少计算并移除封闭表面的不可见背面。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-point-based-modeling/meta.yaml
+      meta: content/computer-graphics/cg-back-face-culling/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-rigging
-    title: Rigging
-    titleLocale: 绑定
-    displayTitle: 绑定
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Creates animator-friendly controls, constraints, bones, and deformation
-      setups for a character or object.
-    summaryLocale: 为角色或物体建立便于动画师控制的控制器、约束、骨骼与变形设置。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-rigging/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-signed-distance-field
-    title: Signed Distance Field
-    titleLocale: 符号距离场
-    displayTitle: 符号距离场
-    aliases:
-      - SDF
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Stores the signed distance to the nearest surface, enabling implicit
-      modeling, collision queries, ray marching, and surface reconstruction.
-    summaryLocale: 存储到最近表面的带符号距离，可用于隐式建模、碰撞查询、光线步进与表面重建。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-signed-distance-field/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-tessellation-stage
-    title: Tessellation Stage
-    titleLocale: 曲面细分阶段
-    displayTitle: 曲面细分阶段
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Optional programmable stages that subdivide patches into smaller
-      primitives on the GPU.
-    summaryLocale: 在 GPU 上将 patch 细分为更小图元的可选可编程阶段。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-tessellation-stage/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-modeling
-    title: Modeling
-    titleLocale: 建模
-    displayTitle: 建模
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: The representation and construction of geometry, shapes, curves,
-      surfaces, volumes, and scene assets.
-    summaryLocale: 用于表示和构造几何、形状、曲线、曲面、体积与场景资产的知识分支。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-modeling/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - modeling
-  - id: cg-asset-composition
-    title: Asset Composition
-    titleLocale: 资产组合
-    displayTitle: 资产组合
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Combines models, materials, animation, variants, and overrides into
-      reusable scene assets.
-    summaryLocale: 将模型、材质、动画、变体与覆盖信息组合成可复用场景资产。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-asset-composition/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-bump-mapping
-    title: Bump Mapping
-    titleLocale: 凹凸映射
-    displayTitle: 凹凸映射
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Perturbs shading normals to simulate small surface detail without
-      changing actual geometry.
-    summaryLocale: 扰动着色法线来模拟小尺度表面细节，但不改变真实几何。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-bump-mapping/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-animation-state-machine
-    title: Animation State Machine
-    titleLocale: 动画状态机
-    displayTitle: 动画状态机
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Organizes character animation into states and transitions driven by
-      game or interaction logic.
-    summaryLocale: 将角色动画组织为状态与转移，并由游戏或交互逻辑驱动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-animation-state-machine/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-perfect-reflection
-    title: Perfect Reflection
-    titleLocale: 完全镜面反射
-    displayTitle: 完全镜面反射
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Ideal mirror reflection where outgoing direction is determined exactly
-      by the incoming direction and surface normal.
-    summaryLocale: 理想镜面反射，出射方向由入射方向与表面法线精确决定。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-perfect-reflection/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-homogeneous-coordinates
-    title: Homogeneous Coordinates
-    titleLocale: 齐次坐标
-    displayTitle: 齐次坐标
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Adds an extra coordinate to represent translation, projection, and
-      perspective division using matrix operations.
-    summaryLocale: 增加一个额外坐标，使平移、投影与透视除法可以用矩阵运算统一表达。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-homogeneous-coordinates/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-isosurface-extraction
-    title: Isosurface Extraction
-    titleLocale: 等值面提取
-    displayTitle: 等值面提取
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Extracts polygonal surfaces from scalar fields; a deeper important
-      method is Marching Cubes.
-    summaryLocale: 从标量场中提取多边形表面；更细的重要方法包括 Marching Cubes。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-isosurface-extraction/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-mvp-matrix
-    title: MVP Matrix
-    titleLocale: MVP 矩阵
-    displayTitle: MVP 矩阵
-    aliases:
-      - Model-View-Projection Matrix
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Combines model, view, and projection transforms into the standard
-      object-to-clip-space transform.
-    summaryLocale: 将模型、视图与投影变换组合为从对象空间到裁剪空间的标准变换。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-mvp-matrix/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-inverse-kinematics
-    title: Inverse Kinematics
-    titleLocale: 反向运动学
-    displayTitle: 反向运动学
-    aliases:
-      - IK
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Solves joint values needed to place an end effector at a target; deeper
-      topics include CCD, FABRIK, and Jacobian IK.
-    summaryLocale: 求解让末端到达目标所需的关节值；更细主题包括 CCD、FABRIK 与雅可比 IK。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-inverse-kinematics/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-solid-model
-    title: Solid Model
-    titleLocale: 实体模型
-    displayTitle: 实体模型
+  - id: cg-explicit-representation
+    title: Explicit Representation
+    titleLocale: 显式表示
+    displayTitle: 显式表示
     aliases:
       - geometry representation
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents an object as a closed volume with inside/outside
-      distinction, suitable for CAD, simulation, and manufacturing reasoning.
-    summaryLocale: 将对象表示为具有内外区别的封闭体积，适合 CAD、仿真与制造相关判断。
+    summary: Stores geometry directly, such as vertices, edges, faces, or sampled
+      coordinates.
+    summaryLocale: 直接存储几何元素，如顶点、边、面或采样坐标。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-solid-model/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-fem-deformation
-    title: FEM Deformation
-    titleLocale: 有限元变形
-    displayTitle: 有限元变形
-    aliases:
-      - Finite Element Method
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses finite elements to model continuum deformation and stress-strain
-      behavior.
-    summaryLocale: 使用有限元建模连续体形变与应力-应变行为。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-fem-deformation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-fluid-and-particle-simulation
-    title: Fluid and Particle Simulation
-    titleLocale: 流体与粒子模拟
-    displayTitle: 流体与粒子模拟
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Simulates water, smoke, granular media, or particle effects using grid,
-      particle, or hybrid methods.
-    summaryLocale: 用网格、粒子或混合方法仿真水、烟、颗粒介质或粒子特效。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-fluid-and-particle-simulation/meta.yaml
+      meta: content/computer-graphics/cg-explicit-representation/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -1657,21 +3274,42 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-metaball
-    title: Metaball
-    titleLocale: 元球
-    displayTitle: 元球
+  - id: cg-keyframe-animation
+    title: Keyframe Animation
+    titleLocale: 关键帧动画
+    displayTitle: 关键帧动画
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Motion authoring through important poses or states and interpolation
+      between them.
+    summaryLocale: 通过关键姿态或状态以及它们之间的插值来创作运动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-keyframe-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - animation
+      - keyframe
+  - id: cg-perfect-reflection
+    title: Perfect Reflection
+    titleLocale: 完全镜面反射
+    displayTitle: 完全镜面反射
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents organic blobby shapes by blending implicit fields from
-      multiple primitives.
-    summaryLocale: 通过混合多个基本体的隐式场来表示有机、团状的形状。
+    summary: Ideal mirror reflection where outgoing direction is determined exactly
+      by the incoming direction and surface normal.
+    summaryLocale: 理想镜面反射，出射方向由入射方向与表面法线精确决定。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-metaball/meta.yaml
+      meta: content/computer-graphics/cg-perfect-reflection/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -1697,471 +3335,88 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-l-system-geometry
-    title: L-System Geometry
-    titleLocale: L-system 几何生成
-    displayTitle: L-system 几何生成
+  - id: cg-sweep-representation
+    title: Sweep Representation
+    titleLocale: 扫掠表示
+    displayTitle: 扫掠表示
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Constructs geometry by moving a profile along a path or through a
+      transformation, producing extrusions, revolutions, and generalized swept
+      volumes.
+    summaryLocale: 通过让截面沿路径或变换运动来构造几何，可形成拉伸体、旋转体与广义扫掠体。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-sweep-representation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-umbra-and-penumbra
+    title: Umbra and Penumbra
+    titleLocale: 本影与半影
+    displayTitle: 本影与半影
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Describes fully shadowed and partially shadowed regions produced by
+      finite-size light sources.
+    summaryLocale: 描述由有限面积光源产生的完全阴影区域与部分阴影区域。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-umbra-and-penumbra/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: linear-algebra-quadratic-form
+    title: Quadratic Form
+    titleLocale: 二次型
+    displayTitle: 二次型
     aliases:
-      - Lindenmayer System
-    domain: computer-graphics
+      - 二次形式
+      - quadratic forms
+      - x^T A x
+    domain: mathematical-foundations
     type: concept
     status: seed
-    summary: Generates branching structures through string rewriting rules; often
-      used for plant and procedural geometry.
-    summaryLocale: 通过字符串重写规则生成分支结构，常用于植物与程序化几何。
+    summary: "Priority: P0. An expression such as x^T A x used to analyze curvature,
+      extrema, conic surfaces, and definiteness of symmetric matrices."
+    summaryLocale: "优先级：P0。中文：二次型；日本語：二次形式；English: Quadratic Form。该节点当前仅建立结构，后续再生成中文主体笔记。"
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-l-system-geometry/meta.yaml
+      meta: content/mathematical-foundations/linear-algebra-quadratic-form/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
-      - computer-graphics
-  - id: cg-viewport-transform
-    title: Viewport Transform
-    titleLocale: 视口变换
-    displayTitle: 视口变换
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p0
+  - id: cg-collision-and-constraint
+    title: Collision and Constraint
+    titleLocale: 碰撞与约束
+    displayTitle: 碰撞与约束
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Maps normalized device coordinates to pixel coordinates in a viewport.
-    summaryLocale: 将标准化设备坐标映射到视口中的像素坐标。
+    summary: Detects contacts and enforces positional, velocity, joint, or physical
+      restrictions in animation and simulation.
+    summaryLocale: 检测接触并施加位置、速度、关节或物理限制，是动画与仿真的核心组件。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-viewport-transform/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-three-d-gaussian-splatting
-    title: 3D Gaussian Splatting
-    titleLocale: 三维高斯泼溅
-    displayTitle: 三维高斯泼溅
-    aliases:
-      - 3DGS
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Represents scenes with optimized 3D Gaussians and renders them through
-      visibility-aware splatting for fast novel-view synthesis.
-    summaryLocale: 用优化后的三维高斯表示场景，并通过考虑可见性的 splatting 快速合成新视图。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-three-d-gaussian-splatting/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-global-illumination
-    title: Global Illumination
-    titleLocale: 全局光照
-    displayTitle: 全局光照
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Models indirect light transport between surfaces and media beyond
-      direct local illumination.
-    summaryLocale: 建模直接局部光照之外的表面与介质间间接光传输。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-global-illumination/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - global-illumination
-  - id: cg-projection-transform
-    title: Projection Transform
-    titleLocale: 投影变换
-    displayTitle: 投影变换
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Maps camera-space geometry to clip space using perspective or
-      orthographic projection.
-    summaryLocale: 使用透视或正交投影将相机空间几何映射到裁剪空间。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-projection-transform/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-l-system
-    title: L-System
-    titleLocale: L-system
-    displayTitle: L-system
-    aliases:
-      - Lindenmayer System
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: A rewriting-system approach for procedural growth and branching
-      structures, especially plants.
-    summaryLocale: 一种用于程序化生长与分支结构的重写系统，尤其适合植物。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-l-system/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-rendering-equation
-    title: Rendering Equation
-    titleLocale: 渲染方程
-    displayTitle: 渲染方程
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Formalizes emitted and reflected radiance as an integral over incoming
-      light directions and surface scattering.
-    summaryLocale: 将自发光与反射辐射亮度形式化为对入射方向与表面散射的积分。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-rendering-equation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-priority-algorithm
-    title: Priority Algorithm
-    titleLocale: 优先级算法
-    displayTitle: 优先级算法
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Orders surfaces by visibility priority, historically related to
-      painter-style rendering and visibility sorting.
-    summaryLocale: 按可见性优先级排序表面，历史上与画家算法式渲染和可见性排序相关。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-priority-algorithm/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-texture-and-mapping
-    title: Texture and Mapping
-    titleLocale: 纹理与映射
-    displayTitle: 纹理与映射
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Mapping images or procedural signals to surfaces to control color,
-      normals, displacement, and material detail.
-    summaryLocale: 将图像或程序化信号映射到表面，用于控制颜色、法线、位移与材质细节。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-texture-and-mapping/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - texture
-  - id: cg-primitive-assembly
-    title: Primitive Assembly
-    titleLocale: 图元装配
-    displayTitle: 图元装配
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Groups processed vertices into primitives such as points, lines, or
-      triangles.
-    summaryLocale: 将处理后的顶点组合为点、线、三角形等图元。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-primitive-assembly/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-physically-based-rendering
-    title: Physically Based Rendering
-    titleLocale: 物理基础渲染
-    displayTitle: 物理基础渲染
-    aliases:
-      - PBR
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses physically motivated material and lighting models; deeper topics
-      include microfacet models, Fresnel, roughness, metallic workflow, and
-      energy conservation.
-    summaryLocale: 使用基于物理的材质与光照模型；更细主题包括微表面模型、Fresnel、粗糙度、金属度流程与能量守恒。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-physically-based-rendering/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-ray-database-approach
-    title: Ray Database Approach
-    titleLocale: 光线数据库方法
-    displayTitle: 光线数据库方法
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Stores sampled rays or view-dependent samples to reconstruct novel
-      views from captured light information.
-    summaryLocale: 存储采样射线或视角相关样本，以从已采集光信息重建新视图。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-ray-database-approach/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-view-morphing-approach
-    title: View Morphing Approach
-    titleLocale: 视图变形方法
-    displayTitle: 视图变形方法
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Synthesizes intermediate views by warping and blending existing images.
-    summaryLocale: 通过扭曲并混合已有图像来合成中间视图。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-view-morphing-approach/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-nerf
-    title: NeRF
-    titleLocale: NeRF
-    displayTitle: NeRF
-    aliases:
-      - Neural Radiance Fields
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Represents a scene as a neural radiance field mapping spatial position
-      and view direction to density and color.
-    summaryLocale: 将场景表示为神经辐射场，把空间位置和视线方向映射到密度与颜色。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-nerf/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-hybrid-keyframe-physics-animation
-    title: Hybrid Keyframe-Physics Animation
-    titleLocale: 关键帧-物理混合动画
-    displayTitle: 关键帧-物理混合动画
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Combines authored keyframes with physical simulation to retain control
-      while gaining plausible secondary motion and response.
-    summaryLocale: 结合手工关键帧与物理仿真，在保留控制性的同时获得可信的次级运动与响应。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-hybrid-keyframe-physics-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-visibility-and-hidden-surface-removal
-    title: Visibility and Hidden Surface Removal
-    titleLocale: 可见性与隐藏面消除
-    displayTitle: 可见性与隐藏面消除
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Algorithms that determine which surfaces are visible and which are
-      occluded.
-    summaryLocale: 判断哪些表面可见、哪些表面被遮挡的算法体系。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-visibility-and-hidden-surface-removal/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - visibility
-  - id: cg-conic-and-quadratic-curves
-    title: Conic and Quadratic Curves
-    titleLocale: 圆锥曲线与二次曲线
-    displayTitle: 圆锥曲线与二次曲线
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Analytic curves such as circles, ellipses, parabolas, and hyperbolas
-      that form an important bridge between geometry and parametric modeling.
-    summaryLocale: 包括圆、椭圆、抛物线、双曲线等解析曲线，是几何表示与参数建模之间的重要基础。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-conic-and-quadratic-curves/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-free-form-deformation
-    title: Free-Form Deformation
-    titleLocale: 自由形状变形
-    displayTitle: 自由形状变形
-    aliases:
-      - FFD
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Deforms geometry through a surrounding control lattice rather than
-      editing every vertex directly.
-    summaryLocale: 通过包围物体的控制格子变形几何，而不是直接编辑每个顶点。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-free-form-deformation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-keyframe-interpolation
-    title: Keyframe Interpolation
-    titleLocale: 关键帧插值
-    displayTitle: 关键帧插值
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Computes in-between values from authored keyframes, forming continuous
-      motion from sparse controls.
-    summaryLocale: 根据创作者指定的关键帧计算中间值，从稀疏控制生成连续运动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-keyframe-interpolation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-particle-system-as-geometry
-    title: Particle System as Geometry
-    titleLocale: 作为几何表示的粒子系统
-    displayTitle: 作为几何表示的粒子系统
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses many particles as a geometric representation for phenomena such as
-      smoke, fluids, crowds, or point-based surfaces.
-    summaryLocale: 用大量粒子作为几何表示，可描述烟雾、流体、群体或点基曲面等现象。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-particle-system-as-geometry/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-shading-and-material
-    title: Shading and Material
-    titleLocale: 着色与材质
-    displayTitle: 着色与材质
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Light-material interaction models from simple diffuse/specular terms to
-      physically based BRDFs.
-    summaryLocale: 从简单漫反射/镜面项到物理基础 BRDF 的光照与材质交互模型。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-shading-and-material/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - material
-  - id: cg-physics-based-animation
-    title: Physics-Based Animation
-    titleLocale: 物理基础动画
-    displayTitle: 物理基础动画
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Motion generated by physical simulation of forces, constraints,
-      collisions, deformable bodies, fluids, cloth, and hair.
-    summaryLocale: 通过力、约束、碰撞、可变形体、流体、布料与毛发等物理仿真生成运动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-physics-based-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - animation
-      - physics
-  - id: cg-camera-animation
-    title: Camera Animation
-    titleLocale: 摄像机动画
-    displayTitle: 摄像机动画
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Animates camera position, orientation, focal length, or path to control
-      viewpoint and cinematic motion.
-    summaryLocale: 驱动相机位置、朝向、焦距或路径，以控制视角与镜头运动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-camera-animation/meta.yaml
+      meta: content/computer-graphics/cg-collision-and-constraint/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -2187,548 +3442,21 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-scanline
-    title: Scanline
-    titleLocale: 扫描线
-    displayTitle: 扫描线
+  - id: cg-neural-rendering
+    title: Neural Rendering
+    titleLocale: 神经渲染
+    displayTitle: 神经渲染
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: A row-wise image or polygon processing strategy historically used in
-      rasterization and hidden-surface algorithms.
-    summaryLocale: 按图像行处理图像或多边形的策略，历史上常用于光栅化与隐藏面算法。
+    summary: Uses neural networks as part of image synthesis, scene representation,
+      material modeling, or view generation.
+    summaryLocale: 将神经网络用于图像合成、场景表示、材质建模或视图生成。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-scanline/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-neural-and-differentiable-rendering
-    title: Neural and Differentiable Rendering
-    titleLocale: 神经与可微渲染
-    displayTitle: 神经与可微渲染
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Modern rendering methods using neural representations,
-      differentiability, inverse rendering, and learned scene reconstruction.
-    summaryLocale: 使用神经表示、可微性、逆渲染与学习式场景重建的现代渲染方法。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-neural-and-differentiable-rendering/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - neural-rendering
-  - id: cg-shadow-mapping
-    title: Shadow Mapping
-    titleLocale: 阴影贴图
-    displayTitle: 阴影贴图
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Renders depth from the light view and compares receiver depth to
-      determine shadowing.
-    summaryLocale: 从光源视角渲染深度，并用接收点深度比较判断阴影。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-shadow-mapping/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-modeling-transform
-    title: Modeling Transform
-    titleLocale: 模型变换
-    displayTitle: 模型变换
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Places object-local geometry into world space through translation,
-      rotation, scale, or more general affine transforms.
-    summaryLocale: 通过平移、旋转、缩放或一般仿射变换将对象局部几何放入世界空间。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-modeling-transform/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-smooth-shading
-    title: Smooth Shading
-    titleLocale: 平滑着色
-    displayTitle: 平滑着色
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Interpolates vertex normals or shading quantities to reduce faceting;
-      deeper topics include Gouraud and Phong shading.
-    summaryLocale: 通过插值顶点法线或着色量减少棱面感；更细主题包括 Gouraud 着色与 Phong 着色。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-smooth-shading/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-transform-animation
-    title: Transform Animation
-    titleLocale: 变换动画
-    displayTitle: 变换动画
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Animates translation, rotation, scale, or full transforms of objects
-      over time.
-    summaryLocale: 随时间驱动物体的平移、旋转、缩放或完整变换。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-transform-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-rigid-body-dynamics
-    title: Rigid Body Dynamics
-    titleLocale: 刚体动力学
-    displayTitle: 刚体动力学
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Simulates bodies that do not deform, using mass, inertia, forces,
-      impulses, and constraints.
-    summaryLocale: 仿真不发生形变的物体，使用质量、惯性、力、冲量与约束。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-rigid-body-dynamics/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-quaternion-interpolation
-    title: Quaternion Interpolation
-    titleLocale: 四元数插值
-    displayTitle: 四元数插值
-    aliases:
-      - SLERP
-      - NLERP
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Interpolates rotations using quaternions to avoid many Euler-angle
-      artifacts; deeper topics include slerp and nlerp.
-    summaryLocale: 使用四元数插值旋转，避免许多欧拉角问题；更细主题包括 slerp 与 nlerp。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-quaternion-interpolation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-forward-kinematics
-    title: Forward Kinematics
-    titleLocale: 正向运动学
-    displayTitle: 正向运动学
-    aliases:
-      - FK
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Computes end-effector poses from a chain of joint transforms applied
-      from parent to child.
-    summaryLocale: 从父到子应用关节变换，根据关节链计算末端位置与姿态。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-forward-kinematics/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-mesh-smoothing
-    title: Mesh Smoothing
-    titleLocale: 网格平滑
-    displayTitle: 网格平滑
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Reduces high-frequency noise or faceting in mesh geometry or normals
-      while trying to preserve important shape features.
-    summaryLocale: 降低网格几何或法线中的高频噪声与棱面感，同时尽量保留关键形状特征。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-mesh-smoothing/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-normal-mapping
-    title: Normal Mapping
-    titleLocale: 法线映射
-    displayTitle: 法线映射
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Stores detailed normals in a texture, often tangent-space normals, to
-      enrich lighting without increasing mesh density.
-    summaryLocale: 在纹理中存储详细法线，常为切线空间法线，以在不增加网格密度的情况下丰富光照。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-normal-mapping/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-gpu-rendering-pipeline
-    title: GPU Rendering Pipeline
-    titleLocale: GPU 渲染管线
-    displayTitle: GPU 渲染管线
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Programmable and fixed-function stages that convert submitted
-      primitives into framebuffer fragments.
-    summaryLocale: 将提交的图元转换为帧缓冲片段的可编程与固定功能阶段。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-gpu-rendering-pipeline/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - gpu
-  - id: cg-mesh-validation
-    title: Mesh Validation
-    titleLocale: 网格检查
-    displayTitle: 网格检查
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Detects mesh problems such as non-manifold edges, flipped normals,
-      holes, self-intersections, and inconsistent topology.
-    summaryLocale: 检测非流形边、法线翻转、孔洞、自相交与拓扑不一致等网格问题。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-mesh-validation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-panoramic-image-approach
-    title: Panoramic Image Approach
-    titleLocale: 全景图方法
-    displayTitle: 全景图方法
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses panoramic imagery to represent surrounding views or environment
-      appearance.
-    summaryLocale: 使用全景图像表示周围视图或环境外观。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-panoramic-image-approach/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-parametric-surfaces
-    title: Parametric Surfaces
-    titleLocale: 参数曲面
-    displayTitle: 参数曲面
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Surfaces defined by two parameters; deeper topics include Bezier
-      surfaces, B-spline surfaces, and NURBS surfaces.
-    summaryLocale: 由两个参数定义的曲面；更细主题包括贝塞尔曲面、B 样条曲面与 NURBS 曲面。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-parametric-surfaces/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-radiosity
-    title: Radiosity
-    titleLocale: 辐射度方法
-    displayTitle: 辐射度方法
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: A global illumination method emphasizing diffuse energy exchange
-      between surfaces.
-    summaryLocale: 强调表面之间漫反射能量交换的全局光照方法。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-radiosity/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-ray-tracing-visibility
-    title: Ray Tracing Visibility
-    titleLocale: 光线追踪可见性
-    displayTitle: 光线追踪可见性
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Determines the first visible surface by intersecting camera rays with
-      scene geometry.
-    summaryLocale: 通过相机射线与场景几何求交，确定最先可见的表面。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-ray-tracing-visibility/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-stencil-test
-    title: Stencil Test
-    titleLocale: 模板测试
-    displayTitle: 模板测试
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses a stencil buffer to mask, count, or conditionally accept fragments.
-    summaryLocale: 使用模板缓冲对片段进行遮罩、计数或条件接收。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-stencil-test/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-deepmimic-style-physics-based-control
-    title: DeepMimic-Style Physics-Based Control
-    titleLocale: DeepMimic 式物理角色控制
-    displayTitle: DeepMimic 式物理角色控制
-    aliases:
-      - DeepMimic
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Combines reference motion imitation with physics-based reinforcement
-      learning to produce robust character skills.
-    summaryLocale: 将参考动作模仿与物理基础强化学习结合，生成更鲁棒的角色技能。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-deepmimic-style-physics-based-control/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-procedural-animation
-    title: Procedural Animation
-    titleLocale: 程序化动画
-    displayTitle: 程序化动画
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Motion generated by algorithms, rules, noise, paths, particles, or
-      procedural systems instead of manually authored frames.
-    summaryLocale: 由算法、规则、噪声、路径、粒子或程序系统生成运动，而不是逐帧手工制作。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-procedural-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - animation
-      - procedural
-  - id: cg-sweep-representation
-    title: Sweep Representation
-    titleLocale: 扫掠表示
-    displayTitle: 扫掠表示
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Constructs geometry by moving a profile along a path or through a
-      transformation, producing extrusions, revolutions, and generalized swept
-      volumes.
-    summaryLocale: 通过让截面沿路径或变换运动来构造几何，可形成拉伸体、旋转体与广义扫掠体。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-sweep-representation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-nyquist-frequency
-    title: Nyquist Frequency
-    titleLocale: 奈奎斯特频率
-    displayTitle: 奈奎斯特频率
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: The sampling limit that determines the highest frequency that can be
-      represented without aliasing under ideal conditions.
-    summaryLocale: 在理想条件下决定无走样可表示最高频率的采样界限。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-nyquist-frequency/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-transmission-and-refraction
-    title: Transmission and Refraction
-    titleLocale: 透射与折射
-    displayTitle: 透射与折射
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Models light passing through materials and bending according to
-      refractive index changes.
-    summaryLocale: 建模光穿过材料并因折射率变化而改变方向的现象。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-transmission-and-refraction/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-particle-animation
-    title: Particle Animation
-    titleLocale: 粒子动画
-    displayTitle: 粒子动画
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses many particles with rules or forces to animate smoke, fire,
-      sparks, fluids, crowds, and other distributed phenomena.
-    summaryLocale: 用大量粒子及规则或力来动画化烟、火、火花、流体、群体等分布式现象。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-particle-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-scene-graph
-    title: Scene Graph
-    titleLocale: 场景图
-    displayTitle: 场景图
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Organizes scene objects, hierarchy, transforms, and sometimes
-      visibility or state inheritance.
-    summaryLocale: 组织场景对象、层级、变换，有时也管理可见性或状态继承。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-scene-graph/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-vector-representation
-    title: Vector Representation
-    titleLocale: 矢量表示
-    displayTitle: 矢量表示
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Stores images as geometric primitives and attributes, allowing
-      resolution-independent editing and rendering.
-    summaryLocale: 将图像存储为几何图元及其属性，支持分辨率无关的编辑与渲染。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-vector-representation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-vertex-shader
-    title: Vertex Shader
-    titleLocale: 顶点着色器
-    displayTitle: 顶点着色器
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Programmable stage that processes individual vertices and usually
-      outputs clip-space position plus interpolated attributes.
-    summaryLocale: 处理单个顶点的可编程阶段，通常输出裁剪空间位置与待插值属性。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-vertex-shader/meta.yaml
+      meta: content/computer-graphics/cg-neural-rendering/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -2756,62 +3484,62 @@ nodes:
       - modeling
       - curves
       - surfaces
-  - id: cg-explicit-representation
-    title: Explicit Representation
-    titleLocale: 显式表示
-    displayTitle: 显式表示
-    aliases:
-      - geometry representation
+  - id: cg-solid-modeling
+    title: Solid Modeling
+    titleLocale: 实体建模
+    displayTitle: 实体建模
+    aliases: []
     domain: computer-graphics
-    type: concept
+    type: topic
     status: seed
-    summary: Stores geometry directly, such as vertices, edges, faces, or sampled
-      coordinates.
-    summaryLocale: 直接存储几何元素，如顶点、边、面或采样坐标。
+    summary: Modeling techniques for closed, volumetric, manufacturable objects,
+      especially CSG, B-Rep, and sweep representations.
+    summaryLocale: 面向封闭、有体积、可制造对象的建模方法，重点包括 CSG、B-Rep 与扫掠表示。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-explicit-representation/meta.yaml
+      meta: content/computer-graphics/cg-solid-modeling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+      - solid-modeling
+  - id: cg-mesh-parameterization
+    title: Mesh Parameterization
+    titleLocale: 网格参数化
+    displayTitle: 网格参数化
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Maps a surface to a lower-dimensional parameter domain; deeper topics
+      include UV mapping and segmentation.
+    summaryLocale: 将曲面映射到低维参数域；更细主题包括 UV 映射与网格分割。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-mesh-parameterization/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-texture-mapping-approach
-    title: Texture Mapping Approach
-    titleLocale: 纹理映射方法
-    displayTitle: 纹理映射方法
+  - id: cg-modeling-transform
+    title: Modeling Transform
+    titleLocale: 模型变换
+    displayTitle: 模型变换
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Uses captured images as textures on geometric proxies to reproduce
-      appearance from limited viewpoints.
-    summaryLocale: 将采集图像作为几何代理上的纹理，从有限视角再现外观。
+    summary: Places object-local geometry into world space through translation,
+      rotation, scale, or more general affine transforms.
+    summaryLocale: 通过平移、旋转、缩放或一般仿射变换将对象局部几何放入世界空间。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-texture-mapping-approach/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-hair-simulation
-    title: Hair Simulation
-    titleLocale: 毛发模拟
-    displayTitle: 毛发模拟
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Simulates many strands or strand groups with bending, collisions, guide
-      hairs, and grooming constraints.
-    summaryLocale: 仿真大量发丝或发束，涉及弯曲、碰撞、引导发与造型约束。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-hair-simulation/meta.yaml
+      meta: content/computer-graphics/cg-modeling-transform/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -2837,41 +3565,110 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-blend-tree
-    title: Blend Tree
-    titleLocale: 混合树
-    displayTitle: 混合树
+  - id: linear-algebra-jordan-normal-form-basics
+    title: Basics of Jordan Normal Form
+    titleLocale: Jordan 标准形基础
+    displayTitle: Jordan 标准形基础
+    aliases:
+      - ジョルダン標準形の基礎
+      - Jordan normal form
+      - Jordan canonical form
+    domain: mathematical-foundations
+    type: concept
+    status: seed
+    summary: "Priority: P2. A canonical block form for matrices that are not fully
+      diagonalizable, useful for understanding generalized eigenvectors and
+      matrix powers."
+    summaryLocale: "优先级：P2。中文：Jordan 标准形基础；日本語：ジョルダン標準形の基礎；English: Basics of Jordan
+      Normal Form。该节点当前仅建立结构，后续再生成中文主体笔记。"
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/mathematical-foundations/linear-algebra-jordan-normal-form-basics/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p2
+  - id: cg-mesh-smoothing
+    title: Mesh Smoothing
+    titleLocale: 网格平滑
+    displayTitle: 网格平滑
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Blends multiple animations according to parameters such as speed,
-      direction, or stance.
-    summaryLocale: 根据速度、方向、姿态等参数混合多个动画。
+    summary: Reduces high-frequency noise or faceting in mesh geometry or normals
+      while trying to preserve important shape features.
+    summaryLocale: 降低网格几何或法线中的高频噪声与棱面感，同时尽量保留关键形状特征。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-blend-tree/meta.yaml
+      meta: content/computer-graphics/cg-mesh-smoothing/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-interpolation-curve
-    title: Interpolation Curve
-    titleLocale: 插值曲线
-    displayTitle: 插值曲线
+  - id: cg-facial-animation
+    title: Facial Animation
+    titleLocale: 表情动画
+    displayTitle: 表情动画
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Controls how values change between frames or keys, determining speed,
-      easing, and continuity.
-    summaryLocale: 控制帧或关键状态之间数值如何变化，决定速度、缓入缓出与连续性。
+    summary: Animates facial expression and speech; deeper topics include
+      blendshapes and lip sync.
+    summaryLocale: 驱动面部表情与说话动作；更细主题包括 blendshape 与口型同步。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-interpolation-curve/meta.yaml
+      meta: content/computer-graphics/cg-facial-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-polygon-mesh-modeling
+    title: Polygon Mesh Modeling
+    titleLocale: 多边形网格建模
+    displayTitle: 多边形网格建模
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Mesh-based surface representation, topology, subdivision, LOD,
+      smoothing, parameterization, validation, and watermarking.
+    summaryLocale: 基于网格的表面表示，包括拓扑、细分、LOD、平滑、参数化、检查与水印等主题。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-polygon-mesh-modeling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - modeling
+      - mesh
+  - id: cg-aliasing
+    title: Aliasing
+    titleLocale: 走样
+    displayTitle: 走样
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Artifact caused when sampled data cannot represent the original signal
+      frequency or geometry accurately.
+    summaryLocale: 当采样数据无法准确表示原信号频率或几何细节时产生的伪影。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-aliasing/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -2898,264 +3695,102 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-multiple-importance-sampling
-    title: Multiple Importance Sampling
-    titleLocale: 多重重要性采样
-    displayTitle: 多重重要性采样
+  - id: cg-parametric-curves
+    title: Parametric Curves
+    titleLocale: 参数曲线
+    displayTitle: 参数曲线
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Combines samples from multiple strategies to reduce variance in light
-      transport estimation.
-    summaryLocale: 组合多种采样策略，以降低光传输估计中的方差。
+    summary: Curves defined by parameterized functions; deeper topics include Bezier
+      curves, Ferguson-Hermite curves, B-spline curves, rational Bezier curves,
+      and NURBS curves.
+    summaryLocale: 由参数函数定义的曲线；更细主题包括贝塞尔曲线、Ferguson-Hermite 曲线、B 样条曲线、有理贝塞尔曲线与 NURBS 曲线。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-multiple-importance-sampling/meta.yaml
+      meta: content/computer-graphics/cg-parametric-curves/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-parametric-representation
-    title: Parametric Representation
-    titleLocale: 参数式表示
-    displayTitle: 参数式表示
-    aliases:
-      - geometry representation
+  - id: cg-morphing
+    title: Morphing
+    titleLocale: 形态变换
+    displayTitle: 形态变换
+    aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Defines geometry as functions of parameters, enabling smooth curves,
-      surfaces, and controllable interpolation.
-    summaryLocale: 将几何定义为参数的函数，便于表达平滑曲线、曲面与可控插值。
+    summary: Transforms one shape or image into another through correspondence,
+      interpolation, and sometimes warping.
+    summaryLocale: 通过对应关系、插值，有时结合变形，将一个形状或图像过渡到另一个。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-parametric-representation/meta.yaml
+      meta: content/computer-graphics/cg-morphing/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-specular-reflection
-    title: Specular Reflection
-    titleLocale: 镜面反射
-    displayTitle: 镜面反射
+  - id: cg-metaball
+    title: Metaball
+    titleLocale: 元球
+    displayTitle: 元球
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Produces view-dependent highlights from glossy or mirror-like surface
-      behavior.
-    summaryLocale: 由有光泽或镜面表面产生与视角相关的高光。
+    summary: Represents organic blobby shapes by blending implicit fields from
+      multiple primitives.
+    summaryLocale: 通过混合多个基本体的隐式场来表示有机、团状的形状。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-specular-reflection/meta.yaml
+      meta: content/computer-graphics/cg-metaball/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-keyframe-animation
-    title: Keyframe Animation
-    titleLocale: 关键帧动画
-    displayTitle: 关键帧动画
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Motion authoring through important poses or states and interpolation
-      between them.
-    summaryLocale: 通过关键姿态或状态以及它们之间的插值来创作运动。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-keyframe-animation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - animation
-      - keyframe
-  - id: cg-noise-driven-motion
-    title: Noise-Driven Motion
-    titleLocale: 噪声驱动运动
-    displayTitle: 噪声驱动运动
+  - id: cg-parametric-surfaces
+    title: Parametric Surfaces
+    titleLocale: 参数曲面
+    displayTitle: 参数曲面
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Uses noise functions to generate irregular, organic, or non-repeating
-      motion.
-    summaryLocale: 使用噪声函数生成不规则、有机或不重复的运动。
+    summary: Surfaces defined by two parameters; deeper topics include Bezier
+      surfaces, B-spline surfaces, and NURBS surfaces.
+    summaryLocale: 由两个参数定义的曲面；更细主题包括贝塞尔曲面、B 样条曲面与 NURBS 曲面。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-noise-driven-motion/meta.yaml
+      meta: content/computer-graphics/cg-parametric-surfaces/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-digital-watermarking
-    title: Digital Watermarking
-    titleLocale: 数字水印
-    displayTitle: 数字水印
+  - id: cg-ray-tracing
+    title: Ray Tracing
+    titleLocale: 光线追踪
+    displayTitle: 光线追踪
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Embeds identifying or protective information into geometry or media
-      while trying to preserve perceptual quality.
-    summaryLocale: 在几何或媒体中嵌入识别或保护信息，同时尽量保持视觉质量。
+    summary: Traces rays through a scene to compute visibility, reflection,
+      refraction, shadows, and sometimes full light transport.
+    summaryLocale: 在场景中追踪射线以计算可见性、反射、折射、阴影，有时也用于完整光传输。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-digital-watermarking/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-octree
-    title: Octree
-    titleLocale: 八叉树
-    displayTitle: 八叉树
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Hierarchically partitions 3D space into eight child cells, enabling
-      adaptive storage and queries for sparse volumes or scenes.
-    summaryLocale: 将三维空间递归划分为八个子单元，适合稀疏体数据或场景的自适应存储与查询。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-octree/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-image-based-rendering
-    title: Image-Based Rendering
-    titleLocale: 基于图像的渲染
-    displayTitle: 基于图像的渲染
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Uses captured or precomputed images, views, or light fields as primary
-      rendering data.
-    summaryLocale: 使用采集或预计算的图像、视图或光场作为主要渲染数据。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-image-based-rendering/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - ibr
-  - id: cg-ambient-term
-    title: Ambient Term
-    titleLocale: 环境光项
-    displayTitle: 环境光项
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: A simple approximation of indirect light often used in local
-      illumination models.
-    summaryLocale: 局部光照模型中常用的间接光简化近似项。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-ambient-term/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-monte-carlo-integration
-    title: Monte Carlo Integration
-    titleLocale: 蒙特卡洛积分
-    displayTitle: 蒙特卡洛积分
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Approximates high-dimensional rendering integrals using random or
-      quasi-random samples.
-    summaryLocale: 使用随机或准随机样本近似高维渲染积分。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-monte-carlo-integration/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-collision-and-constraint
-    title: Collision and Constraint
-    titleLocale: 碰撞与约束
-    displayTitle: 碰撞与约束
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Detects contacts and enforces positional, velocity, joint, or physical
-      restrictions in animation and simulation.
-    summaryLocale: 检测接触并施加位置、速度、关节或物理限制，是动画与仿真的核心组件。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-collision-and-constraint/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-blending
-    title: Blending
-    titleLocale: 混合
-    displayTitle: 混合
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Combines a fragment output with existing framebuffer values, commonly
-      for transparency and compositing.
-    summaryLocale: 将片段输出与已有帧缓冲值组合，常用于透明与合成。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-blending/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-level-of-detail
-    title: Level of Detail
-    titleLocale: 细节层次
-    displayTitle: 细节层次
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Uses multiple geometric resolutions to trade visual fidelity for
-      performance based on distance, screen size, or importance.
-    summaryLocale: 根据距离、屏幕尺寸或重要性切换不同几何精度，在视觉质量与性能之间权衡。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-level-of-detail/meta.yaml
+      meta: content/computer-graphics/cg-ray-tracing/meta.yaml
       note: ""
       markdown: ""
       html: ""
@@ -3182,106 +3817,72 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-rendering
-    title: Rendering
-    titleLocale: 渲染
-    displayTitle: 渲染
-    aliases: []
-    domain: computer-graphics
-    type: topic
+  - id: linear-algebra-orthogonal-complement
+    title: Orthogonal Complement
+    titleLocale: 正交补空间
+    displayTitle: 正交补空间
+    aliases:
+      - 直交補空間
+      - orthogonal complement
+      - perpendicular subspace
+    domain: mathematical-foundations
+    type: concept
     status: seed
-    summary: The transformation of scene data into images through sampling,
-      visibility, lighting, materials, and image synthesis.
-    summaryLocale: 将场景数据通过采样、可见性、光照、材质与图像合成转化为图像的知识分支。
+    summary: "Priority: P2. The subspace of all vectors orthogonal to a given
+      subspace, important for decompositions and projection theory."
+    summaryLocale: "优先级：P2。中文：正交补空间；日本語：直交補空間；English: Orthogonal
+      Complement。该节点当前仅建立结构，后续再生成中文主体笔记。"
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-rendering/meta.yaml
+      meta: content/mathematical-foundations/linear-algebra-orthogonal-complement/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
-      - rendering
-  - id: cg-facial-animation
-    title: Facial Animation
-    titleLocale: 表情动画
-    displayTitle: 表情动画
+      - tokyo-science-cs-exam
+      - mathematics
+      - linear-algebra
+      - p2
+  - id: cg-stencil-test
+    title: Stencil Test
+    titleLocale: 模板测试
+    displayTitle: 模板测试
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Animates facial expression and speech; deeper topics include
-      blendshapes and lip sync.
-    summaryLocale: 驱动面部表情与说话动作；更细主题包括 blendshape 与口型同步。
+    summary: Uses a stencil buffer to mask, count, or conditionally accept fragments.
+    summaryLocale: 使用模板缓冲对片段进行遮罩、计数或条件接收。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-facial-animation/meta.yaml
+      meta: content/computer-graphics/cg-stencil-test/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-articulated-model
-    title: Articulated Model
-    titleLocale: 关节模型
-    displayTitle: 关节模型
+  - id: cg-bump-mapping
+    title: Bump Mapping
+    titleLocale: 凹凸映射
+    displayTitle: 凹凸映射
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Represents a body as linked rigid or deformable parts connected by
-      joints with degrees of freedom.
-    summaryLocale: 将身体表示为由关节连接的刚性或可变形部件，并具有自由度。
+    summary: Perturbs shading normals to simulate small surface detail without
+      changing actual geometry.
+    summaryLocale: 扰动着色法线来模拟小尺度表面细节，但不改变真实几何。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-articulated-model/meta.yaml
+      meta: content/computer-graphics/cg-bump-mapping/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-clipping
-    title: Clipping
-    titleLocale: 裁剪
-    displayTitle: 裁剪
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Removes or cuts primitives outside the viewing volume before rasterization.
-    summaryLocale: 在光栅化前移除或切割视锥外的图元。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-clipping/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-digital-image-foundations
-    title: Digital Image Foundations
-    titleLocale: 数字图像基础
-    displayTitle: 数字图像基础
-    aliases: []
-    domain: computer-graphics
-    type: topic
-    status: seed
-    summary: Sampling, quantization, aliasing, raster/vector representations, and
-      framebuffer-level image concepts.
-    summaryLocale: 关于采样、量化、走样、栅格/矢量表示与帧缓冲等图像基础概念。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-digital-image-foundations/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - rendering
-      - image
   - id: cg-displacement-mapping
     title: Displacement Mapping
     titleLocale: 位移映射
@@ -3303,247 +3904,264 @@ nodes:
       html: ""
     tags:
       - computer-graphics
-  - id: cg-geometry-shader
-    title: Geometry Shader
-    titleLocale: 几何着色器
-    displayTitle: 几何着色器
+  - id: cg-motion-matching
+    title: Motion Matching
+    titleLocale: 动作匹配
+    displayTitle: 动作匹配
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Optional programmable stage that can emit new primitives from input
-      primitives, though often avoided in performance-critical pipelines.
-    summaryLocale: 可从输入图元生成新图元的可选可编程阶段，但高性能管线中通常谨慎使用。
+    summary: Selects and stitches poses from a motion database based on current
+      character state and desired future trajectory.
+    summaryLocale: 根据当前角色状态与期望未来轨迹，从动作数据库中选择并拼接姿态。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-geometry-shader/meta.yaml
+      meta: content/computer-graphics/cg-motion-matching/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - computer-graphics
-  - id: cg-inverse-rendering
-    title: Inverse Rendering
-    titleLocale: 逆渲染
-    displayTitle: 逆渲染
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Estimates scene properties such as geometry, material, lighting, or
-      camera from observed images.
-    summaryLocale: 从观测图像估计几何、材质、光照或相机等场景属性。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-inverse-rendering/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-linear-interpolation
-    title: Linear Interpolation
-    titleLocale: 线性插值
-    displayTitle: 线性插值
-    aliases:
-      - LERP
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Interpolates values at constant rate between endpoints; simple but
-      often visually mechanical.
-    summaryLocale: 以恒定比例在端点之间插值，简单但运动容易显得机械。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-linear-interpolation/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-ray-marching
-    title: Ray Marching
-    titleLocale: 光线步进
-    displayTitle: 光线步进
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Samples along rays incrementally, commonly for implicit surfaces,
-      signed distance fields, and volumes.
-    summaryLocale: 沿射线逐步采样，常用于隐式表面、符号距离场与体积。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-ray-marching/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-umbra-and-penumbra
-    title: Umbra and Penumbra
-    titleLocale: 本影与半影
-    displayTitle: 本影与半影
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Describes fully shadowed and partially shadowed regions produced by
-      finite-size light sources.
-    summaryLocale: 描述由有限面积光源产生的完全阴影区域与部分阴影区域。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-umbra-and-penumbra/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-morphing
-    title: Morphing
-    titleLocale: 形态变换
-    displayTitle: 形态变换
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Transforms one shape or image into another through correspondence,
-      interpolation, and sometimes warping.
-    summaryLocale: 通过对应关系、插值，有时结合变形，将一个形状或图像过渡到另一个。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-morphing/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-data-driven-and-learning-based-animation
-    title: Data-Driven and Learning-Based Animation
-    titleLocale: 数据驱动与学习动画
-    displayTitle: 数据驱动与学习动画
+  - id: cg-neural-and-differentiable-rendering
+    title: Neural and Differentiable Rendering
+    titleLocale: 神经与可微渲染
+    displayTitle: 神经与可微渲染
     aliases: []
     domain: computer-graphics
     type: topic
     status: seed
-    summary: Modern animation systems using motion databases, state machines,
-      matching, neural synthesis, and reinforcement learning.
-    summaryLocale: 使用动作数据库、状态机、动作匹配、神经合成与强化学习的现代动画系统。
+    summary: Modern rendering methods using neural representations,
+      differentiability, inverse rendering, and learned scene reconstruction.
+    summaryLocale: 使用神经表示、可微性、逆渲染与学习式场景重建的现代渲染方法。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-data-driven-and-learning-based-animation/meta.yaml
+      meta: content/computer-graphics/cg-neural-and-differentiable-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+      - neural-rendering
+  - id: cg-multiple-importance-sampling
+    title: Multiple Importance Sampling
+    titleLocale: 多重重要性采样
+    displayTitle: 多重重要性采样
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Combines samples from multiple strategies to reduce variance in light
+      transport estimation.
+    summaryLocale: 组合多种采样策略，以降低光传输估计中的方差。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-multiple-importance-sampling/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-brdf
+    title: BRDF
+    titleLocale: BRDF
+    displayTitle: BRDF
+    aliases:
+      - Bidirectional Reflectance Distribution Function
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: A function describing how much light arriving from one direction is
+      reflected toward another direction at a surface point.
+    summaryLocale: 描述表面点处某一入射方向的光有多少反射到某一出射方向的函数。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-brdf/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-camera-animation
+    title: Camera Animation
+    titleLocale: 摄像机动画
+    displayTitle: 摄像机动画
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Animates camera position, orientation, focal length, or path to control
+      viewpoint and cinematic motion.
+    summaryLocale: 驱动相机位置、朝向、焦距或路径，以控制视角与镜头运动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-camera-animation/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-normal-mapping
+    title: Normal Mapping
+    titleLocale: 法线映射
+    displayTitle: 法线映射
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Stores detailed normals in a texture, often tangent-space normals, to
+      enrich lighting without increasing mesh density.
+    summaryLocale: 在纹理中存储详细法线，常为切线空间法线，以在不增加网格密度的情况下丰富光照。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-normal-mapping/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-ray-database-approach
+    title: Ray Database Approach
+    titleLocale: 光线数据库方法
+    displayTitle: 光线数据库方法
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Stores sampled rays or view-dependent samples to reconstruct novel
+      views from captured light information.
+    summaryLocale: 存储采样射线或视角相关样本，以从已采集光信息重建新视图。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-ray-database-approach/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-rendering
+    title: Rendering
+    titleLocale: 渲染
+    displayTitle: 渲染
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: The transformation of scene data into images through sampling,
+      visibility, lighting, materials, and image synthesis.
+    summaryLocale: 将场景数据通过采样、可见性、光照、材质与图像合成转化为图像的知识分支。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-rendering/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - rendering
+  - id: cg-polygon-mesh
+    title: Polygon Mesh
+    titleLocale: 多边形网格
+    displayTitle: 多边形网格
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Represents surfaces as connected polygonal faces, usually triangles or
+      quads, and is the dominant real-time rendering geometry format.
+    summaryLocale: 用连接的多边形面表示表面，常见为三角形或四边形，是实时渲染中最常用的几何格式。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-polygon-mesh/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-ray-tracing-visibility
+    title: Ray Tracing Visibility
+    titleLocale: 光线追踪可见性
+    displayTitle: 光线追踪可见性
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Determines the first visible surface by intersecting camera rays with
+      scene geometry.
+    summaryLocale: 通过相机射线与场景几何求交，确定最先可见的表面。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-ray-tracing-visibility/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-smooth-shading
+    title: Smooth Shading
+    titleLocale: 平滑着色
+    displayTitle: 平滑着色
+    aliases: []
+    domain: computer-graphics
+    type: concept
+    status: seed
+    summary: Interpolates vertex normals or shading quantities to reduce faceting;
+      deeper topics include Gouraud and Phong shading.
+    summaryLocale: 通过插值顶点法线或着色量减少棱面感；更细主题包括 Gouraud 着色与 Phong 着色。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-smooth-shading/meta.yaml
+      note: ""
+      markdown: ""
+      html: ""
+    tags:
+      - computer-graphics
+  - id: cg-physics-based-animation
+    title: Physics-Based Animation
+    titleLocale: 物理基础动画
+    displayTitle: 物理基础动画
+    aliases: []
+    domain: computer-graphics
+    type: topic
+    status: seed
+    summary: Motion generated by physical simulation of forces, constraints,
+      collisions, deformable bodies, fluids, cloth, and hair.
+    summaryLocale: 通过力、约束、碰撞、可变形体、流体、布料与毛发等物理仿真生成运动。
+    contentFormat: none
+    hasNote: false
+    path:
+      meta: content/computer-graphics/cg-physics-based-animation/meta.yaml
       note: ""
       markdown: ""
       html: ""
     tags:
       - animation
-      - data-driven
-  - id: cg-bssrdf
-    title: BSSRDF
-    titleLocale: BSSRDF
-    displayTitle: BSSRDF
-    aliases:
-      - Bidirectional Scattering-Surface Reflectance Distribution Function
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Extends surface reflection to account for light entering and exiting at
-      different surface points, important for subsurface scattering.
-    summaryLocale: 将表面反射扩展到光从不同表面点进入和射出的情况，对次表面散射很重要。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-bssrdf/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-anti-aliasing
-    title: Anti-Aliasing
-    titleLocale: 抗锯齿
-    displayTitle: 抗锯齿
-    aliases:
-      - AA
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Reduces aliasing artifacts by filtering, supersampling, multisampling,
-      temporal accumulation, or reconstruction strategies.
-    summaryLocale: 通过滤波、超采样、多重采样、时间累积或重建策略减少走样伪影。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-anti-aliasing/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-skinning
-    title: Skinning
-    titleLocale: 蒙皮
-    displayTitle: 蒙皮
-    aliases:
-      - LBS
-      - Dual Quaternion Skinning
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: Deforms a mesh according to skeleton joints and weights; deeper topics
-      include linear blend skinning and dual quaternion skinning.
-    summaryLocale: 根据骨骼关节与权重变形网格；更细主题包括线性混合蒙皮与双四元数蒙皮。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-skinning/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-fragment-shader
-    title: Fragment Shader
-    titleLocale: 片段着色器
-    displayTitle: 片段着色器
+      - physics
+  - id: cg-fractal-modeling
+    title: Fractal Modeling
+    titleLocale: 分形建模
+    displayTitle: 分形建模
     aliases: []
     domain: computer-graphics
     type: concept
     status: seed
-    summary: Programmable stage that computes per-fragment outputs such as color,
-      material response, or auxiliary render targets.
-    summaryLocale: 计算每个片段输出的可编程阶段，如颜色、材质响应或辅助渲染目标。
+    summary: Generates self-similar or recursive geometric structures, useful for
+      natural forms such as terrain, plants, and clouds.
+    summaryLocale: 生成自相似或递归几何结构，适合地形、植物、云等自然形态。
     contentFormat: none
     hasNote: false
     path:
-      meta: content/computer-graphics/cg-fragment-shader/meta.yaml
-      note: ""
-      markdown: ""
-      html: ""
-    tags:
-      - computer-graphics
-  - id: cg-mipmap
-    title: Mipmap
-    titleLocale: Mipmap
-    displayTitle: Mipmap
-    aliases: []
-    domain: computer-graphics
-    type: concept
-    status: seed
-    summary: A pyramid of prefiltered texture resolutions used to reduce aliasing
-      and improve cache behavior.
-    summaryLocale: 由预滤波的多级纹理分辨率组成，用于减少走样并改善缓存访问。
-    contentFormat: none
-    hasNote: false
-    path:
-      meta: content/computer-graphics/cg-mipmap/meta.yaml
+      meta: content/computer-graphics/cg-fractal-modeling/meta.yaml
       note: ""
       markdown: ""
       html: ""
