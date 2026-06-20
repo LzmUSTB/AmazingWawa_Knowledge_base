@@ -16,6 +16,7 @@ import {
   getGraphBoardSize,
   getStageLayout,
   getTracePoints,
+  isPointInsideStage,
   pointsToPath,
 } from "../../graph/graph-layout.js";
 import { generateOrthogonalRoute } from "../../graph/graph-route-generator.js";
@@ -81,11 +82,6 @@ const boardGrid = computed(() => props.draftBoard?.grid || 32);
 const stages = computed(() => getBoardStages(currentScope.value.id, props.draftBoard));
 const movedNodeIds = computed(() => new Set(props.draftMovedNodeIds));
 const externalNodeIds = computed(() => new Set(currentScope.value.externalNodeIds || []));
-const scopeLabel = computed(() => {
-  if (currentScope.value.type === "root") return "ROOT / DOMAIN LEVEL ONLY";
-  if (currentScope.value.type === "domain") return "DOMAIN / DIRECT CHILDREN ONLY";
-  return "FOCUS / ONE-HOP RELATIONS";
-});
 const focusNodeId = computed(() => hoveredNodeId.value || props.selectedNodeId);
 const connectedIds = computed(() => getConnectedNodeIds(focusNodeId.value, currentScope.value.edges));
 function nodeState(node) {
@@ -199,6 +195,13 @@ function beginStageMove(event, stage) {
   event.preventDefault();
   event.stopPropagation();
   const box = getStageLayout(stage);
+  const nodeStarts = currentScope.value.nodes
+    .filter((node) => node.id !== currentScope.value.centerNodeId && !externalNodeIds.value.has(node.id))
+    .map((node) => ({ nodeId: node.id, layout: { ...getResolvedNodeLayout(node.id) } }))
+    .filter(({ layout }) => isPointInsideStage({
+      x: layout.x + layout.width / 2,
+      y: layout.y + layout.height / 2,
+    }, box));
   stageInteraction.value = {
     mode: "move",
     pointerId: event.pointerId,
@@ -206,6 +209,7 @@ function beginStageMove(event, stage) {
     clientX: event.clientX,
     clientY: event.clientY,
     startBox: box,
+    nodeStarts,
   };
   event.currentTarget.setPointerCapture(event.pointerId);
 }
@@ -250,7 +254,17 @@ function updateStageInteraction(event) {
       height: start.height,
     };
   }
-  emit("stage-layout-changed", { stageId: interaction.stageId, layout });
+  const nodeLayouts = interaction.mode === "move"
+    ? interaction.nodeStarts.map(({ nodeId, layout: nodeLayout }) => ({
+        nodeId,
+        layout: {
+          ...nodeLayout,
+          x: nodeLayout.x + layout.x - start.x,
+          y: nodeLayout.y + layout.y - start.y,
+        },
+      }))
+    : [];
+  emit("stage-layout-changed", { stageId: interaction.stageId, layout, nodeLayouts });
   return true;
 }
 
@@ -539,7 +553,8 @@ function stopNodeDrag(event) {
 }
 
 function isInteractiveTarget(event) {
-  return Boolean(event.target.closest("button, a, input, textarea, select, .learning-stage"));
+  if (event.target.closest("button, a, input, textarea, select")) return true;
+  return props.isLayoutEditing && Boolean(event.target.closest(".learning-stage"));
 }
 
 function fitCurrentScope() {
@@ -557,7 +572,7 @@ function fitCurrentScope() {
       }
     : nodeBounds;
   camera.value = fitCameraToBounds(viewportRef.value, bounds, {
-    margin: 160,
+    margin: 40,
     minZoom: GRAPH_CAMERA_LIMITS.minZoom,
     maxZoom: 1.4,
   });
@@ -572,6 +587,7 @@ function scheduleFitCurrentScope(delay = 150) {
 
 function handlePointerDown(event) {
   if (isInteractiveTarget(event)) return;
+  if (event.button !== 0) return;
   if ((props.stageCreateMode || event.shiftKey) && event.button === 0) {
     beginStageCreate(event);
     return;
@@ -583,6 +599,7 @@ function handlePointerDown(event) {
     y: event.clientY,
     cameraX: camera.value.x,
     cameraY: camera.value.y,
+    moved: false,
   };
   event.currentTarget.setPointerCapture(event.pointerId);
 }
@@ -596,16 +613,23 @@ function handlePointerMove(event) {
   }
   if (updateStageInteraction(event)) return;
   if (!isPanning.value || event.pointerId !== panStart.value.pointerId) return;
+  const deltaX = event.clientX - panStart.value.x;
+  const deltaY = event.clientY - panStart.value.y;
+  if (!panStart.value.moved && Math.hypot(deltaX, deltaY) > 3) {
+    panStart.value = { ...panStart.value, moved: true };
+  }
   camera.value = {
     ...camera.value,
-    x: panStart.value.cameraX + event.clientX - panStart.value.x,
-    y: panStart.value.cameraY + event.clientY - panStart.value.y,
+    x: panStart.value.cameraX + deltaX,
+    y: panStart.value.cameraY + deltaY,
   };
 }
 
-function stopPanning(event) {
+function stopPanning(event, { clearSelection = true } = {}) {
   if (event?.pointerId && event.pointerId !== panStart.value.pointerId) return;
+  const shouldClearSelection = clearSelection && isPanning.value && !panStart.value.moved;
   isPanning.value = false;
+  if (shouldClearSelection) emit("select-node", "");
 }
 
 function handlePointerUp(event) {
@@ -621,7 +645,7 @@ function handlePointerCancel(event) {
     if (toolbarMode) emit("stop-stage-create");
   }
   if (stageInteraction.value?.pointerId === event.pointerId) stageInteraction.value = null;
-  stopPanning(event);
+  stopPanning(event, { clearSelection: false });
 }
 
 function handleStageKeydown(event) {
@@ -698,12 +722,15 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
       }">
         <div class="stage-layer">
           <div v-for="stage in stages" :key="stage.id" class="learning-stage" :style="stageStyle(stage)">
-            <div class="learning-stage__header" title="Double-click to edit stage"
-              @dblclick.stop="editStage(stage)" @pointerdown="beginStageMove($event, stage)">
+            <div class="learning-stage__header" @pointerdown="beginStageMove($event, stage)">
               <span class="learning-stage__order">{{ stageOrderLabel(stage) }}</span>
               <strong class="learning-stage__title">{{ stage.title }}</strong>
+              <button v-if="isLayoutEditing" class="learning-stage__edit" type="button" title="Edit stage"
+                aria-label="Edit stage" @pointerdown.stop.prevent @click.stop="editStage(stage)">
+                <AppIcon name="edit" :size="16" />
+              </button>
               <button v-if="isLayoutEditing" class="learning-stage__delete" type="button" title="Delete stage"
-                aria-label="Delete stage" @pointerdown.stop @click.stop="deleteStage(stage)">
+                aria-label="Delete stage" @pointerdown.stop.prevent @click.stop="deleteStage(stage)">
                 <AppIcon name="x" :size="16" />
               </button>
             </div>
@@ -791,9 +818,6 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
       </div>
     </div>
 
-    <div class="routing-label routing-label--a">
-      {{ isLayoutEditing ? "LAYOUT EDIT / GRID SNAP" : scopeLabel }}
-    </div>
   </section>
 </template>
 
@@ -864,10 +888,15 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 .learning-stage {
   position: absolute;
   overflow: hidden;
-  border: 1px solid rgba(237, 237, 237, 0.35);
-  background: rgba(237, 237, 237, 0.035);
+  border: 1px solid rgba(237, 237, 237, 0.58);
+  background: rgba(237, 237, 237, 0.075);
   color: var(--text-secondary);
   pointer-events: auto;
+}
+
+.learning-stage:hover {
+  border-color: rgba(237, 237, 237, 0.82);
+  background: rgba(237, 237, 237, 0.095);
 }
 
 .learning-stage__header {
@@ -875,8 +904,8 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   align-items: center;
   gap: 8px;
   min-height: 28px;
-  border-bottom: 1px solid rgba(237, 237, 237, 0.18);
-  background: rgba(0, 0, 0, 0.58);
+  border-bottom: 1px solid rgba(237, 237, 237, 0.32);
+  background: rgba(0, 0, 0, 0.78);
   cursor: default;
   padding: 4px 8px;
   user-select: none;
@@ -884,7 +913,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 .is-layout-editing .learning-stage__header {
   cursor: move;
-  padding-right: 32px;
+  padding-right: 58px;
 }
 
 .learning-stage__order {
@@ -907,12 +936,13 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 .learning-stage__comment {
   margin: 0;
-  color: var(--text-muted);
+  color: rgba(237, 237, 237, 0.68);
   font-size: var(--font-size-small);
   line-height: 1.5;
   padding: 8px;
 }
 
+.learning-stage__edit,
 .learning-stage__delete,
 .learning-stage__resize {
   position: absolute;
@@ -925,16 +955,29 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   padding: 0;
 }
 
-.learning-stage__delete {
+.learning-stage__edit {
   top: 3px;
-  right: 4px;
+  right: 30px;
   border: 1px solid rgba(237, 237, 237, 0.28);
   background: rgba(0, 0, 0, 0.72);
   cursor: pointer;
 }
 
-.learning-stage__delete:hover {
+.learning-stage__edit:hover {
   border-color: rgba(237, 237, 237, 0.65);
+}
+
+.learning-stage__delete {
+  top: 3px;
+  right: 4px;
+  border: 1px solid rgba(255, 76, 76, 0.72);
+  background: rgba(96, 0, 0, 0.78);
+  cursor: pointer;
+}
+
+.learning-stage__delete:hover {
+  border-color: rgba(255, 92, 92, 1);
+  background: rgba(142, 0, 0, 0.88);
 }
 
 .learning-stage__resize {
@@ -949,6 +992,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   border-color: rgba(237, 237, 237, 0.6);
 }
 
+.learning-stage__edit :deep(.app-icon),
 .learning-stage__delete :deep(.app-icon),
 .learning-stage__resize :deep(.app-icon) {
   display: block;
@@ -1182,16 +1226,4 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
   content: " / EXTERNAL";
 }
 
-.routing-label {
-  position: absolute;
-  color: var(--text-muted);
-  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.routing-label--a {
-  left: 24px;
-  bottom: 24px;
-}
 </style>

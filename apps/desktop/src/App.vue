@@ -557,9 +557,11 @@ function createDraftStage({ stage } = {}) {
   updateDraftStages(graphScopeId.value, (stages) => [...stages, { ...stage }]);
 }
 
-function updateDraftStageLayout({ stageId, layout } = {}) {
+function updateDraftStageLayout({ stageId, layout, nodeLayouts = [] } = {}) {
   if (!stageId || !layout) return;
-  updateDraftStages(graphScopeId.value, (stages) => stages.map((stage) => (
+  const scopeId = graphScopeId.value;
+  const board = ensureLayoutDraft(scopeId);
+  const stages = (board.stages || []).map((stage) => (
     stage.id === stageId
       ? {
           ...stage,
@@ -569,7 +571,40 @@ function updateDraftStageLayout({ stageId, layout } = {}) {
           height: layout.height,
         }
       : stage
-  )));
+  ));
+  const nodes = { ...(board.nodes || {}) };
+  const movedNodeIds = [];
+
+  nodeLayouts.forEach(({ nodeId, layout: nodeLayout } = {}) => {
+    if (!nodeId || !nodeLayout || !nodes[nodeId]) return;
+    nodes[nodeId] = {
+      ...nodes[nodeId],
+      x: nodeLayout.x,
+      y: nodeLayout.y,
+      width: nodeLayout.width,
+      height: nodeLayout.height,
+    };
+    movedNodeIds.push(nodeId);
+  });
+
+  layoutDraftBoards.value = {
+    ...layoutDraftBoards.value,
+    [scopeId]: {
+      ...board,
+      stages,
+      nodes,
+    },
+  };
+  if (movedNodeIds.length) {
+    layoutMovedNodeIds.value = {
+      ...layoutMovedNodeIds.value,
+      [scopeId]: Array.from(new Set([...(layoutMovedNodeIds.value[scopeId] || []), ...movedNodeIds])),
+    };
+  }
+  activeLayoutScopeId.value = scopeId;
+  isLayoutEditing.value = true;
+  layoutDirty.value = true;
+  layoutError.value = "";
 }
 
 function updateDraftStageMeta({ stageId, patch } = {}) {

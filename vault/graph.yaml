@@ -916,3 +916,11 @@ edges:
     from: linear-algebra-singular-value-decomposition
     to: linear-algebra-least-squares
     relation: used-in
+  - id: linear-algebra-contains-gaussian-elimination-linear-systems
+    from: linear-algebra
+    to: gaussian-elimination-linear-systems
+    relation: contains
+  - id: linear-algebra-contains-inner-product
+    from: linear-algebra
+    to: inner-product
+    relation: contains
