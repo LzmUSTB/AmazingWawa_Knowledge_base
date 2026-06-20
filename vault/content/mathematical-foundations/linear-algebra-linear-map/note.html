@@ -253,23 +253,21 @@
 
         <h3>看到具体现式时，如何快速判断它是不是线性映射</h3>
         <p>
-          比如看到 \(T(x,y)=(2x+y,\,x-y)\) 这样的式子时，最实用的判断思路有两层：
+          比如看到\(T(x,y)=(2x+y,\,x-y)\) 这样的式子时，最实用的判断思路有两层：
           <span class="highlight">先看它能不能写成矩阵乘法</span>；如果你想更扎实一些，再用定义把“保持加法”和“保持数乘”各验一次。
         </p>
 
         <div class="formula-box">
           \[
-          T(x,y)=
-          \begin{bmatrix}
+          T(x,y)=egin{bmatrix}
           2 & 1\\
           1 & -1
           \end{bmatrix}
-          \begin{bmatrix}
+          egin{bmatrix}
           x\\
           y
           \end{bmatrix}
-          =
-          \begin{bmatrix}
+          =egin{bmatrix}
           2x+y\\
           x-y
           \end{bmatrix}
@@ -278,7 +276,7 @@
 
         <div class="callout good-box">
           <strong>快速结论：</strong>
-          只要一个映射的每个分量都是 \(x,y\) 的 <span class="good">一次齐次表达式</span>，也就是只含 \(ax+by\) 这样的形式，
+          只要一个映射的每个分量都是 \(x,y\) 的\<span class="good">一次齐次表达式</span>，也就是只含 \(ax+by\) 这样的形式，
           <span class="good">没有常数项、没有平方、没有 \(xy\) 乘积</span>，通常就可以写成矩阵乘法，因此它就是线性映射。
         </div>
 
@@ -286,10 +284,12 @@
           <div class="card">
             <h3>方法 A：先写成矩阵乘法</h3>
             <p>
-              观察两个输出分量：\(2x+y\) 和 \(x-y\)。它们都只是 \(x\) 与 \(y\) 的线性组合，因此可以直接写成 \(A\mathbf{x}\) 的形式。
+              观察两个输出分量：\(2x+y\) 和 \(x-y\)。它们都只是 \(x\) 与 \(y\) 的线性组合，因此可以直接写成\(A\mathbf{x}\) 的形式。
             </p>
             <p>
-              一旦你成功写成 \(T(\mathbf{x})=A\mathbf{x}\)，就已经几乎可以立刻判断：<span class="good">这是线性映射</span>。
+              一旦你成功写成
+              \(\;T(\mathbf{x})=A\mathbf{x}\;\)，
+              就已经几乎可以立刻判断：<span class="good">这是线性映射</span>。
             </p>
           </div>
           <div class="card">
@@ -307,10 +307,10 @@
             \mathbf{u}+\mathbf{v}=(x_1+x_2,\,y_1+y_2)
             \]
             \[
-            T(\mathbf{u}+\mathbf{v})=\bigl(2(x_1+x_2)+(y_1+y_2),\,(x_1+x_2)-(y_1+y_2)\bigr)
+            T(\mathbf{u}+\mathbf{v})=igl(2(x_1+x_2)+(y_1+y_2),\,(x_1+x_2)-(y_1+y_2)igr)
             \]
             \[
-            =\bigl((2x_1+y_1)+(2x_2+y_2),\,(x_1-y_1)+(x_2-y_2)\bigr)
+            =igl((2x_1+y_1)+(2x_2+y_2),\,(x_1-y_1)+(x_2-y_2)igr)
             \]
             \[
             =T(\mathbf{u})+T(\mathbf{v})
@@ -339,7 +339,8 @@
 
         <div class="callout warn-box">
           <strong>顺手做一个反面对比：</strong>
-          如果是 \(T(x,y)=(2x+y+1,\,x-y)\)，虽然看起来只多了一个 \(+1\)，但这个常数项会让 \(T(0,0)\neq(0,0)\)，因此它不再是线性映射，而是仿射变换。
+          如果是 \(T(x,y)=(2x+y+1,\,x-y)\)，虽然看起来只多了一个 \(+1\)，但这个常数项会让 \(T(0,0)
+eq(0,0)\)，因此它不再是线性映射，而是仿射变换。
         </div>
 
         <p>
@@ -667,6 +668,128 @@
               <li>对于 \(P(x,y)=(x,0)\)，哪些向量会被送到零向量？</li>
               <li>矩阵和线性映射是什么关系？它们是否完全等同？</li>
             </ol>
+
+            <h3>答案与解析</h3>
+
+            <details>
+              <summary>1. 为什么 \(T(x,y)=(x+1,y)\) 不是线性映射？</summary>
+              <p>
+                线性映射必须把零向量送到零向量。因为如果 \(T\) 线性，则：
+              </p>
+              <div class="formula-box">
+                \[
+                T(\mathbf{0})=T(0\mathbf{v})=0T(\mathbf{v})=\mathbf{0}
+                \]
+              </div>
+              <p>
+                但对 \(T(x,y)=(x+1,y)\)，有：
+              </p>
+              <div class="formula-box">
+                \[
+                T(0,0)=(1,0)\neq(0,0)
+                \]
+              </div>
+              <p>
+                因此它不是线性映射。它是一个带平移的仿射变换。
+              </p>
+            </details>
+
+            <details>
+              <summary>2. 如果 \(A\mathbf{e}_1\) 和 \(A\mathbf{e}_2\) 共线，说明平面被怎样改变了？</summary>
+              <p>
+                \(\mathbf{e}_1,\mathbf{e}_2\) 是二维空间的标准基。任意向量都可以写成：
+              </p>
+              <div class="formula-box">
+                \[
+                \mathbf{x}=x\mathbf{e}_1+y\mathbf{e}_2
+                \]
+              </div>
+              <p>
+                经过矩阵 \(A\) 后：
+              </p>
+              <div class="formula-box">
+                \[
+                A\mathbf{x}=xA\mathbf{e}_1+yA\mathbf{e}_2
+                \]
+              </div>
+              <p>
+                如果 \(A\mathbf{e}_1\) 和 \(A\mathbf{e}_2\) 共线，那么所有输出都只是同一条直线方向上的线性组合。因此原来的二维平面被压到一条过原点的直线上，秩变成 \(1\)。
+              </p>
+            </details>
+
+            <details>
+              <summary>3. 为什么只知道基向量的去向，就能决定整个线性映射？</summary>
+              <p>
+                因为任意向量都可以由基向量线性组合得到。以二维标准基为例：
+              </p>
+              <div class="formula-box">
+                \[
+                \mathbf{x}=x\mathbf{e}_1+y\mathbf{e}_2
+                \]
+              </div>
+              <p>
+                如果 \(T\) 是线性映射，则：
+              </p>
+              <div class="formula-box">
+                \[
+                T(\mathbf{x})=T(x\mathbf{e}_1+y\mathbf{e}_2)
+                =xT(\mathbf{e}_1)+yT(\mathbf{e}_2)
+                \]
+              </div>
+              <p>
+                所以只要知道 \(T(\mathbf{e}_1)\) 和 \(T(\mathbf{e}_2)\)，就能计算任意 \(T(\mathbf{x})\)。
+              </p>
+            </details>
+
+            <details>
+              <summary>4. 对于 \(P(x,y)=(x,0)\)，哪些向量会被送到零向量？</summary>
+              <p>
+                要找被送到零向量的输入，就解：
+              </p>
+              <div class="formula-box">
+                \[
+                P(x,y)=(x,0)=(0,0)
+                \]
+              </div>
+              <p>
+                因此必须有 \(x=0\)，而 \(y\) 可以是任意实数：
+              </p>
+              <div class="formula-box">
+                \[
+                (x,y)=(0,y)
+                \]
+              </div>
+              <p>
+                所以：
+              </p>
+              <div class="formula-box">
+                \[
+                \ker(P)=\{(0,y)\mid y\in\mathbb{R}\}
+                =\operatorname{span}\{(0,1)\}
+                \]
+              </div>
+              <p>
+                几何上，整个 \(y\) 轴都会被投影到原点。
+              </p>
+            </details>
+
+            <details>
+              <summary>5. 矩阵和线性映射是什么关系？它们是否完全等同？</summary>
+              <p>
+                在有限维向量空间中，一旦选定基，线性映射就可以用矩阵表示。矩阵记录的是基向量被映射到哪里。
+              </p>
+              <p>
+                但严格来说，线性映射是抽象规则，矩阵是它在某组基下的表示。同一个线性映射在不同基下可能对应不同矩阵。
+              </p>
+              <div class="formula-box">
+                \[
+                T(\mathbf{x})=A\mathbf{x}
+                \]
+              </div>
+              <p>
+                这个式子表示：在当前基下，线性映射 \(T\) 由矩阵 \(A\) 表示。
+              </p>
+            </details>
           </div>
         </div>
 

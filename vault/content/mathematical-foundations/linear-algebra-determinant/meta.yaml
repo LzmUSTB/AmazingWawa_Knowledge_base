@@ -4,19 +4,20 @@ titleLocale: 行列式
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P0. A scalar value associated with a square matrix, used to judge
-  invertibility, volume scaling, orientation, and eigenvalue-related calculations.'
-summaryLocale: '优先级：P0。中文：行列式；日本語：行列式；English: Determinant。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P0. A scalar value associated with a square matrix, used to
+  judge invertibility, volume scaling, orientation, and eigenvalue-related
+  calculations."
+summaryLocale: "优先级：P0。中文：行列式；日本語：行列式；English: Determinant。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 行列式
-- det
+  - 行列式
+  - det
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p0
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p0
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-19

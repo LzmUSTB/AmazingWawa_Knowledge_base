@@ -553,6 +553,125 @@
           <li>如果 \(\ker(A)=\{\mathbf{0}\}\)，这说明映射至少没有把任何非零输入完全压成零。它是否一定能覆盖整个输出空间？需要看定义域和到达域的维数。</li>
         </ol>
 
+        <h3>答案与解析</h3>
+
+        <details>
+          <summary>1. 为什么 \(\ker(T)\) 一定属于输入空间，而 \(\operatorname{Im}(T)\) 一定属于输出空间？</summary>
+          <p>
+            设 \(T:V\to W\)。核的定义是：
+          </p>
+          <div class="formula-box">
+            \[
+            \ker(T)=\{\mathbf{v}\in V\mid T(\mathbf{v})=\mathbf{0}\}
+            \]
+          </div>
+          <p>
+            这里被收集的是满足条件的输入 \(\mathbf{v}\)，所以核属于输入空间 \(V\)。
+          </p>
+          <p>
+            像的定义是：
+          </p>
+          <div class="formula-box">
+            \[
+            \operatorname{Im}(T)=\{T(\mathbf{v})\mid \mathbf{v}\in V\}
+            \]
+          </div>
+          <p>
+            这里被收集的是输出 \(T(\mathbf{v})\)，所以像属于输出空间 \(W\)。
+          </p>
+        </details>
+
+        <details>
+          <summary>2. 如果一个二维矩阵把整个平面压到一条直线，它的核可能是什么形状？</summary>
+          <p>
+            对 \(2\times2\) 矩阵来说，如果平面被压到一条直线，说明像空间是一维：
+          </p>
+          <div class="formula-box">
+            \[
+            \dim\operatorname{Im}(A)=1
+            \]
+          </div>
+          <p>
+            输入空间原本是二维。根据秩-零化度关系：
+          </p>
+          <div class="formula-box">
+            \[
+            \dim\ker(A)+\dim\operatorname{Im}(A)=2
+            \]
+          </div>
+          <p>
+            因此：
+          </p>
+          <div class="formula-box">
+            \[
+            \dim\ker(A)=1
+            \]
+          </div>
+          <p>
+            所以核通常是一条过原点的直线，表示这条方向上的所有输入都会被压成零向量。
+          </p>
+        </details>
+
+        <details>
+          <summary>3. 为什么求 \(\operatorname{Im}(A)\) 时要看列向量，而求 \(\ker(A)\) 时要解 \(A\mathbf{x}=\mathbf{0}\)？</summary>
+          <p>
+            对矩阵：
+          </p>
+          <div class="formula-box">
+            \[
+            A=
+            \begin{bmatrix}
+            \mathbf{a}_1&\mathbf{a}_2&\cdots&\mathbf{a}_n
+            \end{bmatrix}
+            \]
+          </div>
+          <p>
+            有：
+          </p>
+          <div class="formula-box">
+            \[
+            A\mathbf{x}=x_1\mathbf{a}_1+x_2\mathbf{a}_2+\cdots+x_n\mathbf{a}_n
+            \]
+          </div>
+          <p>
+            因此所有可能输出都是列向量的线性组合，所以：
+          </p>
+          <div class="formula-box">
+            \[
+            \operatorname{Im}(A)=\operatorname{span}\{\mathbf{a}_1,\dots,\mathbf{a}_n\}
+            \]
+          </div>
+          <p>
+            核则要求输出正好是零向量：
+          </p>
+          <div class="formula-box">
+            \[
+            \ker(A)=\{\mathbf{x}\mid A\mathbf{x}=\mathbf{0}\}
+            \]
+          </div>
+          <p>
+            所以求核必须解齐次方程 \(A\mathbf{x}=\mathbf{0}\)。
+          </p>
+        </details>
+
+        <details>
+          <summary>4. 如果 \(\ker(A)=\{\mathbf{0}\}\)，它是否一定能覆盖整个输出空间？</summary>
+          <p>
+            不一定。关键要看输入空间和输出空间的维数。
+          </p>
+          <p>
+            如果 \(A:\mathbb{R}^n\to\mathbb{R}^n\) 是方阵映射，那么 \(\ker(A)=\{\mathbf{0}\}\) 意味着没有非零方向被压成零，通常等价于满秩，因此像可以覆盖整个 \(\mathbb{R}^n\)。
+          </p>
+          <p>
+            但如果 \(A:\mathbb{R}^2\to\mathbb{R}^3\)，即使 \(\ker(A)=\{\mathbf{0}\}\)，输入只有二维，最多只能生成二维的像空间，不可能覆盖整个三维输出空间。
+          </p>
+          <div class="formula-box">
+            \[
+            \dim\operatorname{Im}(A)\leq \dim\mathbb{R}^2=2<3
+            \]
+          </div>
+        </details>
+
         <div class="callout">
           <strong>下一步：</strong>
           秩会把“像的大小”精确化。它衡量矩阵真正保留了多少维输出信息。
@@ -794,7 +913,10 @@
       document.getElementById('caseImage').innerHTML = data.image;
       document.getElementById('caseInfo').textContent = data.info;
       document.getElementById('caseNote').textContent = data.note;
-      if (window.MathJax) MathJax.typesetPromise();
+      if (window.MathJax) {
+        MathJax.typesetClear([document.getElementById('caseMatrix'), document.getElementById('caseKernel'), document.getElementById('caseImage')]);
+        MathJax.typesetPromise([document.getElementById('caseMatrix'), document.getElementById('caseKernel'), document.getElementById('caseImage')]);
+      }
     }
 
     function drawTimeline() {
@@ -840,7 +962,7 @@
 
       document.getElementById('timelineMatrix').textContent = `diag(1, ${(1 - t).toFixed(2)})`;
       document.getElementById('timelineImage').textContent = t > 0.97 ? 'x 轴' : '被纵向压缩的二维平面';
-      document.getElementById('timelineKernel').innerHTML = t > 0.97 ? '\\(\\operatorname{span}\\{(0,1)\\}\\)' : '\\(\\{\\mathbf{0}\\}\\)';
+      document.getElementById('timelineKernel').innerHTML = t > 0.97 ? '\(\operatorname{span}\{(0,1)\}\)' : '\(\{\mathbf{0}\}\)';
       if (window.MathJax) MathJax.typesetPromise();
     }
 

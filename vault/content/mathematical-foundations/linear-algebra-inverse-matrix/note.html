@@ -529,100 +529,201 @@
           行变换相当于对左边不断施加可逆操作。当这些操作把 \(A\) 变成 \(I\) 时，同一批操作作用到右边的 \(I\) 上，就记录下了把 \(A\) 撤销的矩阵。
         </div>
 
-        <h3>标准例子</h3>
+        <h3>三维标准例子</h3>
         <p>
-          求：
+          求下面 \(3\times3\) 方阵的逆矩阵：
         </p>
 
         <div class="formula-box">
           \[
           A=
           \begin{bmatrix}
-          2&1\\
-          1&1
+          2&1&0\\
+          1&1&1\\
+          0&1&1
           \end{bmatrix}
           \]
         </div>
 
         <p>
-          写成 \([A\mid I]\)：
+          由于 \(A\) 是三阶方阵，右侧要放三阶恒等矩阵 \(I_3\)。目标仍然是把左侧的 \(A\) 通过行变换化成 \(I_3\)：
         </p>
+
+        <div class="formula-box">
+          \[
+          [A\mid I_3]\longrightarrow[I_3\mid A^{-1}]
+          \]
+        </div>
 
         <div class="workspace">
           <div class="step-box">
             <div class="step-list">
               <div class="state-row" id="stepButtons">
-                <button class="state-btn active" data-step="0">0. 写出 \([A\mid I]\)</button>
+                <button class="state-btn active" data-step="0">0. 写出 \([A\mid I_3]\)</button>
                 <button class="state-btn" data-step="1">1. 交换行</button>
-                <button class="state-btn" data-step="2">2. 消去第一列</button>
-                <button class="state-btn" data-step="3">3. 消去第二列</button>
-                <button class="state-btn" data-step="4">4. 读出逆矩阵</button>
+                <button class="state-btn" data-step="2">2. 第一列归零</button>
+                <button class="state-btn" data-step="3">3. 第二列归零</button>
+                <button class="state-btn" data-step="4">4. 第三列归一</button>
+                <button class="state-btn" data-step="5">5. 向上消元</button>
+                <button class="state-btn" data-step="6">6. 读出逆矩阵</button>
               </div>
             </div>
             <div class="step-content">
-              <h3 id="stepTitle">0. 写出 \([A\mid I]\)</h3>
+              <h3 id="stepTitle">0. 写出 \([A\mid I_3]\)</h3>
               <div class="formula-box" id="stepFormula">
                 \[
                 \left[
-                \begin{array}{cc|cc}
-                2&1&1&0\\
-                1&1&0&1
+                \begin{array}{ccc|ccc}
+                2&1&0&1&0&0\\
+                1&1&1&0&1&0\\
+                0&1&1&0&0&1
                 \end{array}
                 \right]
                 \]
               </div>
               <p id="stepText">
-                左边是要被化成恒等矩阵的 \(A\)，右边放恒等矩阵 \(I\)。
+                左边是要被化成恒等矩阵的 \(A\)，右边是三阶恒等矩阵 \(I_3\)。
               </p>
             </div>
           </div>
         </div>
 
         <h3>完整推导</h3>
+        <p>
+          先写出增广形式：
+        </p>
+
         <div class="formula-box">
           \[
           \left[
-          \begin{array}{cc|cc}
-          2&1&1&0\\
-          1&1&0&1
+          \begin{array}{ccc|ccc}
+          2&1&0&1&0&0\\
+          1&1&1&0&1&0\\
+          0&1&1&0&0&1
           \end{array}
           \right]
-          \xrightarrow{R_1\leftrightarrow R_2}
+          \]
+        </div>
+
+        <p>
+          第一列第二行已经有 \(1\)，把它换到第一行作为主元：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_1\leftrightarrow R_2
+          \]
+          \[
           \left[
-          \begin{array}{cc|cc}
-          1&1&0&1\\
-          2&1&1&0
+          \begin{array}{ccc|ccc}
+          1&1&1&0&1&0\\
+          2&1&0&1&0&0\\
+          0&1&1&0&0&1
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          用第一行消去第一列下面的 \(2\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_2\leftarrow R_2-2R_1
+          \]
+          \[
+          \left[
+          \begin{array}{ccc|ccc}
+          1&1&1&0&1&0\\
+          0&-1&-2&1&-2&0\\
+          0&1&1&0&0&1
           \end{array}
           \right]
           \]
           \[
-          \xrightarrow{R_2\leftarrow R_2-2R_1}
+          R_2\leftarrow -R_2
+          \]
+          \[
           \left[
-          \begin{array}{cc|cc}
-          1&1&0&1\\
-          0&-1&1&-2
+          \begin{array}{ccc|ccc}
+          1&1&1&0&1&0\\
+          0&1&2&-1&2&0\\
+          0&1&1&0&0&1
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          用第二行消去第二列下面的 \(1\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_3\leftarrow R_3-R_2
+          \]
+          \[
+          \left[
+          \begin{array}{ccc|ccc}
+          1&1&1&0&1&0\\
+          0&1&2&-1&2&0\\
+          0&0&-1&1&-2&1
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          把第三个主元化成 \(1\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_3\leftarrow -R_3
+          \]
+          \[
+          \left[
+          \begin{array}{ccc|ccc}
+          1&1&1&0&1&0\\
+          0&1&2&-1&2&0\\
+          0&0&1&-1&2&-1
+          \end{array}
+          \right]
+          \]
+        </div>
+
+        <p>
+          从第三列开始向上消元，再用第二行消去第一行第二列：
+        </p>
+
+        <div class="formula-box">
+          \[
+          R_2\leftarrow R_2-2R_3,\quad
+          R_1\leftarrow R_1-R_3
+          \]
+          \[
+          \left[
+          \begin{array}{ccc|ccc}
+          1&1&0&1&-1&1\\
+          0&1&0&1&-2&2\\
+          0&0&1&-1&2&-1
           \end{array}
           \right]
           \]
           \[
-          \xrightarrow{R_2\leftarrow -R_2}
-          \left[
-          \begin{array}{cc|cc}
-          1&1&0&1\\
-          0&1&-1&2
-          \end{array}
-          \right]
+          R_1\leftarrow R_1-R_2
           \]
           \[
-          \xrightarrow{R_1\leftarrow R_1-R_2}
           \left[
-          \begin{array}{cc|cc}
-          1&0&1&-1\\
-          0&1&-1&2
+          \begin{array}{ccc|ccc}
+          1&0&0&0&1&-1\\
+          0&1&0&1&-2&2\\
+          0&0&1&-1&2&-1
           \end{array}
           \right]
           =
-          [I\mid A^{-1}]
+          [I_3\mid A^{-1}]
           \]
         </div>
 
@@ -634,8 +735,34 @@
           \[
           A^{-1}=
           \begin{bmatrix}
-          1&-1\\
-          -1&2
+          0&1&-1\\
+          1&-2&2\\
+          -1&2&-1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          可以用矩阵乘法检查：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \begin{bmatrix}
+          2&1&0\\
+          1&1&1\\
+          0&1&1
+          \end{bmatrix}
+          \begin{bmatrix}
+          0&1&-1\\
+          1&-2&2\\
+          -1&2&-1
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          1&0&0\\
+          0&1&0\\
+          0&0&1
           \end{bmatrix}
           \]
         </div>
@@ -782,6 +909,154 @@
           <li>如果 \(\ker(A)\) 中存在非零向量，为什么 \(A\) 不可能可逆？</li>
           <li>为什么 \(A\mathbf{x}=\mathbf{b}\) 在 \(A\) 可逆时一定有唯一解？</li>
         </ol>
+
+        <h3>答案与解析</h3>
+
+        <details>
+          <summary>1. 为什么被压成一条线的二维矩阵没有逆矩阵？</summary>
+          <p>
+            二维平面被压成一条线，说明二维信息只剩下一维信息。原来平面中许多不同的点会落到同一条线上的同一个点，输入信息已经丢失。
+          </p>
+          <p>
+            从秩的角度看，这种矩阵的秩是 \(1\)，不是满秩 \(2\)。对 \(2\times2\) 方阵来说，可逆要求 \(\operatorname{rank}(A)=2\)，所以它不可逆。
+          </p>
+        </details>
+
+        <details>
+          <summary>2. 为什么 \(A^{-1}\) 不是普通意义上的 \(\frac{1}{A}\)？</summary>
+          <p>
+            数字里的 \(\frac{1}{a}\) 是乘法逆元，满足 \(a\cdot\frac{1}{a}=1\)。矩阵里的 \(A^{-1}\) 也是“乘法逆元”的思想，但矩阵乘法不是普通数字乘法。
+          </p>
+          <p>
+            因此 \(A^{-1}\) 的定义不是“把矩阵每个元素取倒数”，而是满足：
+          </p>
+          <div class="formula-box">
+            \[
+            AA^{-1}=A^{-1}A=I
+            \]
+          </div>
+          <p>
+            例如：
+          </p>
+          <div class="formula-box">
+            \[
+            \begin{bmatrix}
+            2&1\\
+            1&1
+            \end{bmatrix}^{-1}
+            =
+            \begin{bmatrix}
+            1&-1\\
+            -1&2
+            \end{bmatrix}
+            \]
+          </div>
+          <p>
+            这显然不是把每个元素分别变成倒数。
+          </p>
+        </details>
+
+        <details>
+          <summary>3. 为什么求逆时要把 \([A\mid I]\) 化成 \([I\mid A^{-1}]\)？</summary>
+          <p>
+            对 \([A\mid I]\) 做行变换时，左边和右边必须执行完全相同的操作。设这些行变换合起来等价于左乘某个可逆矩阵 \(E\)，那么：
+          </p>
+          <div class="formula-box">
+            \[
+            E[A\mid I]=[EA\mid EI]
+            \]
+          </div>
+          <p>
+            如果左边被化成 \(I\)，也就是 \(EA=I\)，那么 \(E=A^{-1}\)。此时右边变成：
+          </p>
+          <div class="formula-box">
+            \[
+            EI=E=A^{-1}
+            \]
+          </div>
+          <p>
+            所以最终得到：
+          </p>
+          <div class="formula-box">
+            \[
+            [A\mid I]\longrightarrow[I\mid A^{-1}]
+            \]
+          </div>
+        </details>
+
+        <details>
+          <summary>4. 如果 \(\ker(A)\) 中存在非零向量，为什么 \(A\) 不可能可逆？</summary>
+          <p>
+            如果存在非零向量 \(\mathbf{v}\neq\mathbf{0}\)，满足：
+          </p>
+          <div class="formula-box">
+            \[
+            A\mathbf{v}=\mathbf{0}
+            \]
+          </div>
+          <p>
+            那么 \(\mathbf{v}\) 和 \(\mathbf{0}\) 这两个不同输入都会被 \(A\) 映射成同一个输出 \(\mathbf{0}\)：
+          </p>
+          <div class="formula-box">
+            \[
+            A\mathbf{v}=A\mathbf{0}=\mathbf{0}
+            \]
+          </div>
+          <p>
+            这意味着输出无法唯一判断原输入到底是 \(\mathbf{v}\) 还是 \(\mathbf{0}\)。信息已经丢失，所以不可能存在能完整还原输入的逆矩阵。
+          </p>
+        </details>
+
+        <details>
+          <summary>5. 为什么 \(A\mathbf{x}=\mathbf{b}\) 在 \(A\) 可逆时一定有唯一解？</summary>
+          <p>
+            因为 \(A\) 可逆时，可以对方程两边左乘 \(A^{-1}\)：
+          </p>
+          <div class="formula-box">
+            \[
+            A\mathbf{x}=\mathbf{b}
+            \]
+            \[
+            A^{-1}A\mathbf{x}=A^{-1}\mathbf{b}
+            \]
+            \[
+            I\mathbf{x}=A^{-1}\mathbf{b}
+            \]
+            \[
+            \mathbf{x}=A^{-1}\mathbf{b}
+            \]
+          </div>
+          <p>
+            这说明至少存在一个解。另一方面，如果有两个解 \(\mathbf{x}_1,\mathbf{x}_2\)，满足：
+          </p>
+          <div class="formula-box">
+            \[
+            A\mathbf{x}_1=\mathbf{b},\qquad A\mathbf{x}_2=\mathbf{b}
+            \]
+          </div>
+          <p>
+            两式相减：
+          </p>
+          <div class="formula-box">
+            \[
+            A(\mathbf{x}_1-\mathbf{x}_2)=\mathbf{0}
+            \]
+          </div>
+          <p>
+            因为 \(A\) 可逆，\(\ker(A)=\{\mathbf{0}\}\)，所以：
+          </p>
+          <div class="formula-box">
+            \[
+            \mathbf{x}_1-\mathbf{x}_2=\mathbf{0}
+            \]
+            \[
+            \mathbf{x}_1=\mathbf{x}_2
+            \]
+          </div>
+          <p>
+            因此解不仅存在，而且唯一。
+          </p>
+        </details>
 
         <div class="callout">
           <strong>下一步：</strong>
@@ -1099,16 +1374,17 @@
 
     const stepData = [
       {
-        title: '0. 写出 \\([A\\mid I]\\)',
+        title: '0. 写出 \\([A\\mid I_3]\\)',
         formula: String.raw`\[
 \left[
-\begin{array}{cc|cc}
-2&1&1&0\\
-1&1&0&1
+\begin{array}{ccc|ccc}
+2&1&0&1&0&0\\
+1&1&1&0&1&0\\
+0&1&1&0&0&1
 \end{array}
 \right]
 \]`,
-        text: '左边是要被化成恒等矩阵的 A，右边放恒等矩阵 I。'
+        text: '左边是要被化成恒等矩阵的 A，右边是三阶恒等矩阵 I_3。'
       },
       {
         title: '1. 交换行',
@@ -1117,24 +1393,26 @@ R_1\leftrightarrow R_2
 \]
 \[
 \left[
-\begin{array}{cc|cc}
-1&1&0&1\\
-2&1&1&0
+\begin{array}{ccc|ccc}
+1&1&1&0&1&0\\
+2&1&0&1&0&0\\
+0&1&1&0&0&1
 \end{array}
 \right]
 \]`,
-        text: '把第一列中已经是 1 的行放到上面，方便作为主元。'
+        text: '第一列第二行已经有 1，把它换到第一行作为第一个主元。'
       },
       {
-        title: '2. 消去第一列',
+        title: '2. 第一列归零',
         formula: String.raw`\[
 R_2\leftarrow R_2-2R_1
 \]
 \[
 \left[
-\begin{array}{cc|cc}
-1&1&0&1\\
-0&-1&1&-2
+\begin{array}{ccc|ccc}
+1&1&1&0&1&0\\
+0&-1&-2&1&-2&0\\
+0&1&1&0&0&1
 \end{array}
 \right]
 \]
@@ -1143,39 +1421,87 @@ R_2\leftarrow -R_2
 \]
 \[
 \left[
-\begin{array}{cc|cc}
-1&1&0&1\\
-0&1&-1&2
+\begin{array}{ccc|ccc}
+1&1&1&0&1&0\\
+0&1&2&-1&2&0\\
+0&1&1&0&0&1
 \end{array}
 \right]
 \]`,
-        text: '第一列已经化成主元列，第二行第二列也整理成 1。'
+        text: '第一列下面已经归零，第二行第二列整理成 1，作为第二个主元。'
       },
       {
-        title: '3. 消去第二列',
+        title: '3. 第二列归零',
         formula: String.raw`\[
+R_3\leftarrow R_3-R_2
+\]
+\[
+\left[
+\begin{array}{ccc|ccc}
+1&1&1&0&1&0\\
+0&1&2&-1&2&0\\
+0&0&-1&1&-2&1
+\end{array}
+\right]
+\]`,
+        text: '第二列下面归零，第三行第三列将成为第三个主元。'
+      },
+      {
+        title: '4. 第三列归一',
+        formula: String.raw`\[
+R_3\leftarrow -R_3
+\]
+\[
+\left[
+\begin{array}{ccc|ccc}
+1&1&1&0&1&0\\
+0&1&2&-1&2&0\\
+0&0&1&-1&2&-1
+\end{array}
+\right]
+\]`,
+        text: '第三个主元已经化成 1。接下来要把第三列上方的元素消成 0。'
+      },
+      {
+        title: '5. 向上消元',
+        formula: String.raw`\[
+R_2\leftarrow R_2-2R_3,\quad
+R_1\leftarrow R_1-R_3
+\]
+\[
+\left[
+\begin{array}{ccc|ccc}
+1&1&0&1&-1&1\\
+0&1&0&1&-2&2\\
+0&0&1&-1&2&-1
+\end{array}
+\right]
+\]
+\[
 R_1\leftarrow R_1-R_2
 \]
 \[
 \left[
-\begin{array}{cc|cc}
-1&0&1&-1\\
-0&1&-1&2
+\begin{array}{ccc|ccc}
+1&0&0&0&1&-1\\
+0&1&0&1&-2&2\\
+0&0&1&-1&2&-1
 \end{array}
 \right]
 \]`,
-        text: '左边已经变成恒等矩阵 I。'
+        text: '左边已经化成三阶恒等矩阵 I_3。'
       },
       {
-        title: '4. 读出逆矩阵',
+        title: '6. 读出逆矩阵',
         formula: String.raw`\[
-[A\mid I]\longrightarrow[I\mid A^{-1}]
+[A\mid I_3]\longrightarrow[I_3\mid A^{-1}]
 \]
 \[
 A^{-1}=
 \begin{bmatrix}
-1&-1\\
--1&2
+0&1&-1\\
+1&-2&2\\
+-1&2&-1
 \end{bmatrix}
 \]`,
         text: '右边矩阵就是 A 的逆矩阵。'

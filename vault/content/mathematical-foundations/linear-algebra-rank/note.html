@@ -792,6 +792,97 @@
           <li>为什么 \(\operatorname{rank}(A)=\operatorname{rank}([A\mid\mathbf{b}])\) 可以判断 \(A\mathbf{x}=\mathbf{b}\) 是否有解？</li>
         </ol>
 
+        <h3>答案与解析</h3>
+
+        <details>
+          <summary>1. 为什么 \(\begin{bmatrix}1&2\\2&4\end{bmatrix}\) 的秩不是 2？</summary>
+          <p>
+            这个矩阵的两列是：
+          </p>
+          <div class="formula-box">
+            \[
+            \mathbf{a}_1=
+            \begin{bmatrix}
+            1\\2
+            \end{bmatrix},
+            \qquad
+            \mathbf{a}_2=
+            \begin{bmatrix}
+            2\\4
+            \end{bmatrix}
+            =
+            2\mathbf{a}_1
+            \]
+          </div>
+          <p>
+            第二列只是第一列的 2 倍，没有提供新的独立方向。因此列空间只有一维：
+          </p>
+          <div class="formula-box">
+            \[
+            \operatorname{rank}
+            \begin{bmatrix}
+            1&2\\
+            2&4
+            \end{bmatrix}
+            =1
+            \]
+          </div>
+        </details>
+
+        <details>
+          <summary>2. 为什么秩为 1 的 \(2\times2\) 矩阵会把平面压到一条直线？</summary>
+          <p>
+            \(2\times2\) 矩阵的输出在 \(\mathbb{R}^2\) 中。如果秩为 1，说明像空间的维数为 1：
+          </p>
+          <div class="formula-box">
+            \[
+            \dim\operatorname{Im}(A)=1
+            \]
+          </div>
+          <p>
+            在二维平面中，一维子空间就是一条过原点的直线。因此所有输出都会落在这条直线上。
+          </p>
+          <p>
+            换句话说，原来的二维输入虽然有两个自由方向，但矩阵只保留了一个输出方向。
+          </p>
+        </details>
+
+        <details>
+          <summary>3. 如果一个 \(3\times2\) 矩阵满秩，它的最大秩是多少？为什么不是 3？</summary>
+          <p>
+            一个 \(3\times2\) 矩阵表示从 \(\mathbb{R}^2\) 到 \(\mathbb{R}^3\) 的线性映射。它只有 2 个列向量，因此最多只能有 2 个线性无关列向量。
+          </p>
+          <div class="formula-box">
+            \[
+            \operatorname{rank}(A)\leq \min(3,2)=2
+            \]
+          </div>
+          <p>
+            所以它满秩时的秩是 \(2\)，不是 \(3\)。虽然输出空间是三维，但二维输入最多只能生成二维的像空间。
+          </p>
+        </details>
+
+        <details>
+          <summary>4. 为什么 \(\operatorname{rank}(A)=\operatorname{rank}([A\mid\mathbf{b}])\) 可以判断 \(A\mathbf{x}=\mathbf{b}\) 是否有解？</summary>
+          <p>
+            方程 \(A\mathbf{x}=\mathbf{b}\) 的含义是：能否用 \(A\) 的列向量线性组合出 \(\mathbf{b}\)。
+          </p>
+          <p>
+            如果把 \(\mathbf{b}\) 作为新列加入 \(A\) 后，秩没有增加：
+          </p>
+          <div class="formula-box">
+            \[
+            \operatorname{rank}(A)=\operatorname{rank}([A\mid\mathbf{b}])
+            \]
+          </div>
+          <p>
+            说明 \(\mathbf{b}\) 本来就在 \(A\) 的列空间中，因此方程组有解。
+          </p>
+          <p>
+            如果加入 \(\mathbf{b}\) 后秩增加，说明 \(\mathbf{b}\) 提供了一个原列空间没有的新方向，也就是 \(\mathbf{b}\notin\operatorname{Im}(A)\)，因此方程组无解。
+          </p>
+        </details>
+
         <div class="callout">
           <strong>下一步：</strong>
           逆矩阵会把“满秩”进一步解释为“线性变换可以被完全撤销”。

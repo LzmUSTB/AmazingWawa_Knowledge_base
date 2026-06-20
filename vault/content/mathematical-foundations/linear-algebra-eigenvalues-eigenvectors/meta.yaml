@@ -4,22 +4,24 @@ titleLocale: 特征值与特征向量
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P0. Scalars and nonzero vectors satisfying Av = λv, central to
-  diagonalization, powers of matrices, quadratic forms, and stability analysis.'
-summaryLocale: '优先级：P0。中文：特征值与特征向量；日本語：固有値・固有ベクトル；English: Eigenvalues and Eigenvectors。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P0. Scalars and nonzero vectors satisfying Av = λv, central
+  to diagonalization, powers of matrices, quadratic forms, and stability
+  analysis."
+summaryLocale: "优先级：P0。中文：特征值与特征向量；日本語：固有値・固有ベクトル；English: Eigenvalues and
+  Eigenvectors。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 固有値・固有ベクトル
-- eigenvalue
-- eigenvector
-- 固有値
-- 固有ベクトル
+  - 固有値・固有ベクトル
+  - eigenvalue
+  - eigenvector
+  - 固有値
+  - 固有ベクトル
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p0
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p0
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-20

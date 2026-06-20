@@ -4,20 +4,20 @@ titleLocale: 对角化
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P0. The representation of a linear transformation by a diagonal
-  matrix under a suitable basis, usually built from eigenvectors.'
-summaryLocale: '优先级：P0。中文：对角化；日本語：対角化；English: Diagonalization。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P0. The representation of a linear transformation by a
+  diagonal matrix under a suitable basis, usually built from eigenvectors."
+summaryLocale: "优先级：P0。中文：对角化；日本語：対角化；English: Diagonalization。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 対角化
-- diagonalizable matrix
-- matrix diagonalization
+  - 対角化
+  - diagonalizable matrix
+  - matrix diagonalization
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p0
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p0
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-20

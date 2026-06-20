@@ -1,0 +1,1248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diagonalization / 对角化 / 対角化</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)'], ['$', '$']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #14161d;
+      --panel-2: #1c1f29;
+      --text: #f3f5f7;
+      --muted: #b7bdc9;
+      --line: #343847;
+      --accent: #9cff3a;
+      --accent-2: #46c7ff;
+      --accent-3: #ff4fd8;
+      --warn: #ffd166;
+      --bad: #ff6b6b;
+      --good: #6dff9e;
+      --shadow: rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(70,199,255,.13), transparent 28%),
+        radial-gradient(circle at 86% 4%, rgba(156,255,58,.11), transparent 24%),
+        radial-gradient(circle at 68% 64%, rgba(255,79,216,.07), transparent 31%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.72;
+    }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+    header.hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(20,22,29,.97), rgba(20,22,29,.68));
+      box-shadow: 0 24px 70px var(--shadow);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    header.hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(90deg, rgba(0,0,0,.3), rgba(0,0,0,1));
+      pointer-events: none;
+    }
+    .hero > * { position: relative; }
+    .kicker {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-size: 13px;
+      border: 1px solid rgba(156,255,58,.5);
+      padding: 4px 10px;
+      background: rgba(156,255,58,.08);
+    }
+    h1 { font-size: clamp(32px, 5vw, 58px); line-height: 1.08; margin: 22px 0 16px; letter-spacing: -.04em; }
+    .subtitle { font-size: 19px; max-width: 900px; color: var(--muted); margin: 0; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+    .meta-card { border: 1px solid var(--line); background: rgba(11,12,16,.65); padding: 14px 16px; }
+    .meta-card strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .meta-card span { display: block; margin-top: 3px; font-weight: 750; }
+    nav.toc { margin: 22px 0 34px; border: 1px solid var(--line); background: rgba(20,22,29,.82); padding: 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    nav.toc a { border: 1px solid var(--line); padding: 10px 12px; color: var(--text); background: rgba(255,255,255,.03); font-weight: 650; font-size: 14px; }
+    nav.toc a:hover { border-color: var(--accent-2); background: rgba(70,199,255,.08); text-decoration: none; }
+    section { margin: 26px 0; border: 1px solid var(--line); background: rgba(20,22,29,.88); box-shadow: 0 16px 46px rgba(0,0,0,.18); }
+    .section-inner { padding: 30px; }
+    h2 { margin: 0 0 14px; font-size: clamp(24px, 3vw, 36px); line-height: 1.18; letter-spacing: -.02em; }
+    h3 { margin: 28px 0 10px; font-size: 22px; }
+    p { margin: 12px 0; }
+    .lead { color: var(--muted); font-size: 17px; }
+    .highlight { color: var(--accent); font-weight: 800; }
+    .blue { color: var(--accent-2); font-weight: 800; }
+    .pink { color: var(--accent-3); font-weight: 800; }
+    .warn { color: var(--warn); font-weight: 800; }
+    .good { color: var(--good); font-weight: 800; }
+    .bad { color: var(--bad); font-weight: 800; }
+    .callout { border: 1px solid rgba(70,199,255,.45); background: rgba(70,199,255,.08); padding: 15px 17px; margin: 18px 0; }
+    .callout strong { color: var(--accent-2); }
+    .callout.warn-box { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.08); }
+    .callout.good-box { border-color: rgba(109,255,158,.45); background: rgba(109,255,158,.07); }
+    .callout.bad-box { border-color: rgba(255,107,107,.45); background: rgba(255,107,107,.075); }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 16px; }
+    .formula-box { border: 1px solid rgba(156,255,58,.42); background: rgba(156,255,58,.065); padding: 16px; margin: 16px 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; overflow: hidden; }
+    th, td { border: 1px solid var(--line); padding: 11px 12px; text-align: left; vertical-align: top; }
+    th { color: var(--accent); background: rgba(156,255,58,.08); }
+    td { background: rgba(255,255,255,.025); }
+    ul, ol { padding-left: 1.4em; }
+    li { margin: 6px 0; }
+    .workspace { border: 1px solid var(--line); background: rgba(11,12,16,.76); padding: 16px; margin: 18px 0; }
+    .canvas-wrap { border: 1px solid rgba(255,255,255,.08); background: #090a0f; position: relative; }
+    canvas { display: block; width: 100%; height: 430px; }
+    .state-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .state-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 9px 12px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 0;
+    }
+    .state-btn:hover { border-color: var(--accent-2); background: rgba(70,199,255,.09); }
+    .state-btn.active { border-color: var(--accent); color: #071006; background: var(--accent); }
+    .state-note { margin-top: 10px; color: var(--muted); font-size: 14px; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .readout.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .readout div { border: 1px solid var(--line); padding: 10px; background: rgba(255,255,255,.03); }
+    .readout strong { display: block; color: var(--muted); font-size: 12px; }
+    .readout span { display: block; color: var(--text); font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .timeline-row { display: grid; grid-template-columns: 180px minmax(0, 1fr) 180px; gap: 12px; align-items: center; margin-top: 14px; }
+    .timeline-label { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 10px; color: var(--muted); font-weight: 800; font-size: 13px; text-align: center; }
+    input[type="range"] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+    .step-box { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+    .step-list { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px; }
+    .step-content { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 16px; min-height: 250px; }
+    details { border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 12px 14px; margin: 10px 0; }
+    summary { cursor: pointer; color: var(--accent-2); font-weight: 800; }
+    .mjx-svg { outline: none; }
+    @media (max-width: 920px) {
+      .meta-grid, nav.toc, .grid-2, .grid-3, .readout, .readout.three, .timeline-row, .step-box { grid-template-columns: 1fr; }
+      header.hero, .section-inner { padding: 22px; }
+      canvas { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="kicker">Linear Algebra Core</div>
+      <h1>Diagonalization<br>对角化 / 対角化</h1>
+      <p class="subtitle">
+        对角化把一个复杂矩阵改写成“换坐标轴 → 分别缩放 → 换回原坐标轴”的形式。特征向量提供新坐标轴，特征值提供各轴上的缩放倍率。
+      </p>
+      <div class="meta-grid">
+        <div class="meta-card"><strong>前置概念</strong><span>特征值、特征向量、逆矩阵、矩阵乘法</span></div>
+        <div class="meta-card"><strong>核心问题</strong><span>能否找到一组特征向量作为新基</span></div>
+        <div class="meta-card"><strong>连接节点</strong><span>矩阵幂、递推系统、二次型、主方向</span></div>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <a href="#terms">术语</a>
+      <a href="#definition">定义</a>
+      <a href="#geometry">几何直觉</a>
+      <a href="#condition">条件</a>
+      <a href="#example">三维计算例</a>
+      <a href="#power">矩阵幂</a>
+      <a href="#cases">典型情况</a>
+      <a href="#summary">整理与检查</a>
+    </nav>
+
+    <section id="terms">
+      <div class="section-inner">
+        <h2>对角化需要哪些术语</h2>
+        <p class="lead">
+          对角化的核心是选择一组更适合矩阵的坐标轴。普通坐标轴不一定能揭示变换结构，而特征向量方向上只发生缩放，因此很适合作为新坐标轴。
+        </p>
+
+        <table>
+          <thead>
+            <tr><th>中文</th><th>日本語</th><th>English</th><th>含义</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>对角矩阵</td>
+              <td>対角行列</td>
+              <td>Diagonal Matrix</td>
+              <td>非主对角线元素全为 \(0\) 的方阵。</td>
+            </tr>
+            <tr>
+              <td>对角化</td>
+              <td>対角化</td>
+              <td>Diagonalization</td>
+              <td>把矩阵写成 \(A=PDP^{-1}\) 的形式，其中 \(D\) 是对角矩阵。</td>
+            </tr>
+            <tr>
+              <td>相似矩阵</td>
+              <td>相似行列</td>
+              <td>Similar Matrices</td>
+              <td>如果 \(A=PDP^{-1}\)，则 \(A\) 与 \(D\) 相似，表示同一个线性变换在不同基下的矩阵表示。</td>
+            </tr>
+            <tr>
+              <td>换基矩阵</td>
+              <td>基底変換行列</td>
+              <td>Change-of-Basis Matrix</td>
+              <td>由新基向量作为列组成的矩阵。在对角化中，\(P\) 的列通常是特征向量。</td>
+            </tr>
+            <tr>
+              <td>可对角化</td>
+              <td>対角化可能</td>
+              <td>Diagonalizable</td>
+              <td>存在足够多线性无关特征向量，使矩阵能写成 \(A=PDP^{-1}\)。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>对角矩阵为什么简单</h3>
+        <p>
+          对角矩阵只沿坐标轴分别缩放：
+        </p>
+
+        <div class="formula-box">
+          \[
+          D=
+          \begin{bmatrix}
+          \lambda_1&0&0\\
+          0&\lambda_2&0\\
+          0&0&\lambda_3
+          \end{bmatrix}
+          \]
+          \[
+          D
+          \begin{bmatrix}
+          x\\y\\z
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          \lambda_1x\\
+          \lambda_2y\\
+          \lambda_3z
+          \end{bmatrix}
+          \]
+        </div>
+
+        <div class="callout">
+          <strong>直觉：</strong>
+          对角矩阵没有混合不同坐标分量。第一坐标只影响第一坐标，第二坐标只影响第二坐标，第三坐标只影响第三坐标。
+        </div>
+      </div>
+    </section>
+
+    <section id="definition">
+      <div class="section-inner">
+        <h2>对角化的定义</h2>
+        <p>
+          如果方阵 \(A\) 可以写成：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=PDP^{-1}
+          \]
+        </div>
+
+        <p>
+          其中 \(P\) 可逆，\(D\) 是对角矩阵，则称 \(A\) 可对角化。
+        </p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>\(P\)</h3>
+            <p>
+              列向量是 \(A\) 的一组线性无关特征向量。
+            </p>
+          </div>
+          <div class="card">
+            <h3>\(D\)</h3>
+            <p>
+              主对角线放对应的特征值。
+            </p>
+          </div>
+          <div class="card">
+            <h3>\(P^{-1}\)</h3>
+            <p>
+              把原坐标转换到特征向量坐标中。
+            </p>
+          </div>
+        </div>
+
+        <p>
+          如果
+          \[
+          P=
+          \begin{bmatrix}
+          \mathbf{v}_1&\mathbf{v}_2&\cdots&\mathbf{v}_n
+          \end{bmatrix}
+          \]
+          且
+          \[
+          A\mathbf{v}_i=\lambda_i\mathbf{v}_i
+          \]
+          那么：
+        </p>
+
+        <div class="formula-box">
+          \[
+          AP=PD
+          \]
+        </div>
+
+        <p>
+          两边右乘 \(P^{-1}\)，得到：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=PDP^{-1}
+          \]
+        </div>
+
+        <div class="callout good-box">
+          <strong>构造规则：</strong>
+          特征向量放进 \(P\) 的列；对应特征值按同样顺序放进 \(D\) 的对角线。
+        </div>
+      </div>
+    </section>
+
+    <section id="geometry">
+      <div class="section-inner">
+        <h2>几何直觉：换到特征向量坐标系</h2>
+        <p>
+          以二维矩阵
+          \[
+          A=
+          \begin{bmatrix}
+          2&1\\
+          1&2
+          \end{bmatrix}
+          \]
+          为例，它的特征方向是 \((1,1)\) 和 \((1,-1)\)。在标准坐标系中它会混合 \(x,y\) 分量；在特征向量坐标系中，它只沿两条特征方向分别缩放。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="basisCanvas"></canvas></div>
+          <div class="timeline-row">
+            <div class="timeline-label">标准基</div>
+            <input id="basisRange" type="range" min="0" max="1" step="0.01" value="0">
+            <div class="timeline-label">特征向量基</div>
+          </div>
+          <div class="readout">
+            <div><strong>当前坐标轴</strong><span id="basisState">标准基</span></div>
+            <div><strong>第一轴</strong><span id="axis1Read"></span></div>
+            <div><strong>第二轴</strong><span id="axis2Read"></span></div>
+            <div><strong>矩阵效果</strong><span id="basisEffect">混合坐标分量</span></div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>读图方法：</strong>
+          蓝色和粉色直线表示当前选取的坐标轴。拖到右侧时，两条轴变成特征方向；矩阵作用在这些轴上只会伸缩，不会偏离轴线。
+        </div>
+      </div>
+    </section>
+
+    <section id="condition">
+      <div class="section-inner">
+        <h2>什么时候可以对角化</h2>
+        <p>
+          \(n\times n\) 矩阵可对角化的核心条件是：它有 \(n\) 个线性无关的特征向量。
+        </p>
+
+        <div class="formula-box">
+          \[
+          A\text{ 可对角化}
+          \quad\Longleftrightarrow\quad
+          \text{\(A\) 有 \(n\) 个线性无关特征向量}
+          \]
+        </div>
+
+        <h3>充分条件</h3>
+        <p>
+          如果 \(n\times n\) 矩阵有 \(n\) 个互不相同的特征值，那么它一定可对角化。
+        </p>
+
+        <div class="formula-box">
+          \[
+          \lambda_1,\lambda_2,\dots,\lambda_n\text{ 两两不同}
+          \quad\Longrightarrow\quad
+          A\text{ 可对角化}
+          \]
+        </div>
+
+        <h3>重复特征值时要检查特征向量数量</h3>
+        <p>
+          特征值重复时，不能只看特征值个数。需要检查每个特征值对应的特征空间维数是否足够。
+        </p>
+
+        <table>
+          <thead>
+            <tr><th>术语</th><th>日本語</th><th>English</th><th>含义</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>代数重数</td>
+              <td>代数的重複度</td>
+              <td>Algebraic Multiplicity</td>
+              <td>某个特征值作为特征多项式根出现的次数。</td>
+            </tr>
+            <tr>
+              <td>几何重数</td>
+              <td>幾何的重複度</td>
+              <td>Geometric Multiplicity</td>
+              <td>该特征值对应特征空间的维数，也就是独立特征向量方向的数量。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn-box">
+          <strong>判断要点：</strong>
+          对每个特征值，几何重数不能超过代数重数。矩阵可对角化要求所有特征空间维数加起来等于矩阵阶数。
+        </div>
+      </div>
+    </section>
+
+    <section id="example">
+      <div class="section-inner">
+        <h2>三维计算例</h2>
+        <p>
+          对上一节中的矩阵：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=
+          \begin{bmatrix}
+          2&1&0\\
+          1&2&0\\
+          0&0&4
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          已经求得：
+        </p>
+
+        <div class="formula-box">
+          \[
+          \lambda_1=3,\quad \mathbf{v}_1=
+          \begin{bmatrix}1\\1\\0\end{bmatrix}
+          \]
+          \[
+          \lambda_2=1,\quad \mathbf{v}_2=
+          \begin{bmatrix}1\\-1\\0\end{bmatrix}
+          \]
+          \[
+          \lambda_3=4,\quad \mathbf{v}_3=
+          \begin{bmatrix}0\\0\\1\end{bmatrix}
+          \]
+        </div>
+
+        <div class="workspace">
+          <div class="step-box">
+            <div class="step-list">
+              <div class="state-row" id="stepButtons">
+                <button class="state-btn active" data-step="0">0. 排列特征向量</button>
+                <button class="state-btn" data-step="1">1. 构造 \(P\)</button>
+                <button class="state-btn" data-step="2">2. 构造 \(D\)</button>
+                <button class="state-btn" data-step="3">3. 求 \(P^{-1}\)</button>
+                <button class="state-btn" data-step="4">4. 写出对角化</button>
+                <button class="state-btn" data-step="5">5. 检查 \(AP=PD\)</button>
+              </div>
+            </div>
+            <div class="step-content">
+              <h3 id="stepTitle">0. 排列特征向量</h3>
+              <div class="formula-box" id="stepFormula">
+                \[
+                \mathbf{v}_1=(1,1,0),\quad
+                \mathbf{v}_2=(1,-1,0),\quad
+                \mathbf{v}_3=(0,0,1)
+                \]
+              </div>
+              <p id="stepText">
+                先决定特征向量的列顺序。后面 \(D\) 中特征值的顺序必须和这里完全一致。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3>完整推导</h3>
+        <p>
+          把特征向量作为列组成 \(P\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          P=
+          \begin{bmatrix}
+          1&1&0\\
+          1&-1&0\\
+          0&0&1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          按相同顺序放入对应特征值：
+        </p>
+
+        <div class="formula-box">
+          \[
+          D=
+          \begin{bmatrix}
+          3&0&0\\
+          0&1&0\\
+          0&0&4
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          这个 \(P\) 的逆矩阵是：
+        </p>
+
+        <div class="formula-box">
+          \[
+          P^{-1}=
+          \begin{bmatrix}
+          \frac12&\frac12&0\\
+          \frac12&-\frac12&0\\
+          0&0&1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          因此：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=PDP^{-1}
+          \]
+          \[
+          \begin{bmatrix}
+          2&1&0\\
+          1&2&0\\
+          0&0&4
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          1&1&0\\
+          1&-1&0\\
+          0&0&1
+          \end{bmatrix}
+          \begin{bmatrix}
+          3&0&0\\
+          0&1&0\\
+          0&0&4
+          \end{bmatrix}
+          \begin{bmatrix}
+          \frac12&\frac12&0\\
+          \frac12&-\frac12&0\\
+          0&0&1
+          \end{bmatrix}
+          \]
+        </div>
+
+        <h3>为什么 \(AP=PD\)</h3>
+        <p>
+          左边 \(AP\) 表示 \(A\) 分别作用到 \(P\) 的每一列：
+        </p>
+
+        <div class="formula-box">
+          \[
+          AP=
+          \begin{bmatrix}
+          A\mathbf{v}_1&A\mathbf{v}_2&A\mathbf{v}_3
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          3\mathbf{v}_1&1\mathbf{v}_2&4\mathbf{v}_3
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          右边 \(PD\) 则表示把 \(P\) 的第 \(i\) 列乘以对应的 \(\lambda_i\)：
+        </p>
+
+        <div class="formula-box">
+          \[
+          PD=
+          \begin{bmatrix}
+          \mathbf{v}_1&\mathbf{v}_2&\mathbf{v}_3
+          \end{bmatrix}
+          \begin{bmatrix}
+          3&0&0\\
+          0&1&0\\
+          0&0&4
+          \end{bmatrix}
+          =
+          \begin{bmatrix}
+          3\mathbf{v}_1&1\mathbf{v}_2&4\mathbf{v}_3
+          \end{bmatrix}
+          \]
+        </div>
+      </div>
+    </section>
+
+    <section id="power">
+      <div class="section-inner">
+        <h2>为什么对角化有用：快速计算矩阵幂</h2>
+        <p>
+          直接计算 \(A^k\) 通常很麻烦。但如果：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A=PDP^{-1}
+          \]
+        </div>
+
+        <p>
+          那么：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A^2=(PDP^{-1})(PDP^{-1})=PD^2P^{-1}
+          \]
+          \[
+          A^k=PD^kP^{-1}
+          \]
+        </div>
+
+        <p>
+          对角矩阵的幂很容易计算：
+        </p>
+
+        <div class="formula-box">
+          \[
+          D^k=
+          \begin{bmatrix}
+          \lambda_1^k&0&0\\
+          0&\lambda_2^k&0\\
+          0&0&\lambda_3^k
+          \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          对本节例子：
+        </p>
+
+        <div class="formula-box">
+          \[
+          A^k=
+          P
+          \begin{bmatrix}
+          3^k&0&0\\
+          0&1^k&0\\
+          0&0&4^k
+          \end{bmatrix}
+          P^{-1}
+          \]
+        </div>
+
+        <div class="callout good-box">
+          <strong>应用价值：</strong>
+          矩阵幂出现在离散动态系统、马尔可夫链、递推数列、图算法和物理模拟中。对角化可以把重复作用的矩阵变成各方向上独立的倍率。
+        </div>
+      </div>
+    </section>
+
+    <section id="cases">
+      <div class="section-inner">
+        <h2>典型情况比较</h2>
+        <p>
+          选择不同矩阵，比较它们是否能对角化。这里是特殊情况判断，因此使用按钮切换。
+        </p>
+
+        <div class="workspace">
+          <div class="canvas-wrap"><canvas id="caseCanvas"></canvas></div>
+          <div class="state-row" id="caseButtons">
+            <button class="state-btn active" data-case="distinct">不同特征值</button>
+            <button class="state-btn" data-case="repeatedEnough">重复但够用</button>
+            <button class="state-btn" data-case="defective">重复但不够</button>
+            <button class="state-btn" data-case="rotation">实数范围旋转</button>
+          </div>
+          <div class="readout">
+            <div><strong>矩阵</strong><span id="caseMatrix"></span></div>
+            <div><strong>特征向量数量</strong><span id="caseVectors"></span></div>
+            <div><strong>结论</strong><span id="caseConclusion"></span></div>
+            <div><strong>原因</strong><span id="caseReason"></span></div>
+          </div>
+          <p class="state-note" id="caseNote"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="summary">
+      <div class="section-inner">
+        <h2>整理与检查</h2>
+
+        <table>
+          <thead>
+            <tr><th>表达</th><th>意义</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(A=PDP^{-1}\)</td><td>矩阵 \(A\) 可对角化。</td></tr>
+            <tr><td>\(P\)</td><td>由线性无关特征向量作为列组成。</td></tr>
+            <tr><td>\(D\)</td><td>对角线放对应特征值。</td></tr>
+            <tr><td>\(AP=PD\)</td><td>\(A\) 作用在特征向量上，等价于按特征值缩放这些列。</td></tr>
+            <tr><td>\(A^k=PD^kP^{-1}\)</td><td>对角化简化矩阵幂。</td></tr>
+          </tbody>
+        </table>
+
+        <h3>自检问题</h3>
+        <ol>
+          <li>为什么 \(P\) 的列必须是线性无关特征向量？</li>
+          <li>为什么 \(D\) 中特征值的顺序必须和 \(P\) 中特征向量的顺序一致？</li>
+          <li>为什么 \(AP=PD\) 可以推出 \(A=PDP^{-1}\)？</li>
+          <li>为什么有 \(n\) 个互不相同特征值的 \(n\times n\) 矩阵一定可对角化？</li>
+          <li>为什么重复特征值不一定导致不可对角化？</li>
+          <li>为什么对角化可以快速计算 \(A^k\)？</li>
+        </ol>
+
+        <h3>答案与解析</h3>
+
+        <details>
+          <summary>1. 为什么 \(P\) 的列必须是线性无关特征向量？</summary>
+          <p>
+            \(P\) 必须可逆，才能写出 \(P^{-1}\)。一个矩阵可逆等价于它的列向量线性无关。
+          </p>
+          <div class="formula-box">
+            \[
+            A=PDP^{-1}
+            \]
+          </div>
+          <p>
+            如果特征向量线性相关，\(P\) 不可逆，\(P^{-1}\) 不存在，对角化公式就无法成立。
+          </p>
+        </details>
+
+        <details>
+          <summary>2. 为什么 \(D\) 中特征值的顺序必须和 \(P\) 中特征向量的顺序一致？</summary>
+          <p>
+            如果 \(P\) 的第 \(i\) 列是 \(\mathbf{v}_i\)，那么 \(D\) 的第 \(i\) 个对角元素必须是对应的 \(\lambda_i\)。这样才有：
+          </p>
+          <div class="formula-box">
+            \[
+            A\mathbf{v}_i=\lambda_i\mathbf{v}_i
+            \]
+          </div>
+          <p>
+            若顺序错位，\(PD\) 会把错误的特征值乘到特征向量上，导致 \(AP=PD\) 不成立。
+          </p>
+        </details>
+
+        <details>
+          <summary>3. 为什么 \(AP=PD\) 可以推出 \(A=PDP^{-1}\)？</summary>
+          <p>
+            如果 \(P\) 可逆，可以在等式 \(AP=PD\) 的右边同时右乘 \(P^{-1}\)：
+          </p>
+          <div class="formula-box">
+            \[
+            AP=PD
+            \]
+            \[
+            APP^{-1}=PDP^{-1}
+            \]
+            \[
+            A=PDP^{-1}
+            \]
+          </div>
+          <p>
+            关键条件是 \(P^{-1}\) 必须存在。
+          </p>
+        </details>
+
+        <details>
+          <summary>4. 为什么有 \(n\) 个互不相同特征值的 \(n\times n\) 矩阵一定可对角化？</summary>
+          <p>
+            不同特征值对应的特征向量一定线性无关。因此如果 \(n\times n\) 矩阵有 \(n\) 个互不相同的特征值，就可以找到 \(n\) 个线性无关特征向量。
+          </p>
+          <p>
+            用这些特征向量作为列构造 \(P\)，则 \(P\) 可逆，矩阵可以写成 \(A=PDP^{-1}\)。
+          </p>
+        </details>
+
+        <details>
+          <summary>5. 为什么重复特征值不一定导致不可对角化？</summary>
+          <p>
+            重复特征值只说明代数重数大于 1。是否可对角化，取决于该特征值对应的特征空间维数是否足够。
+          </p>
+          <p>
+            例如恒等矩阵：
+          </p>
+          <div class="formula-box">
+            \[
+            I=
+            \begin{bmatrix}
+            1&0\\
+            0&1
+            \end{bmatrix}
+            \]
+          </div>
+          <p>
+            它只有一个特征值 \(\lambda=1\)，代数重数为 2，但整个平面中的任意非零向量都是特征向量，所以可以找到 2 个线性无关特征向量。因此它可对角化。
+          </p>
+        </details>
+
+        <details>
+          <summary>6. 为什么对角化可以快速计算 \(A^k\)？</summary>
+          <p>
+            若 \(A=PDP^{-1}\)，则：
+          </p>
+          <div class="formula-box">
+            \[
+            A^2=(PDP^{-1})(PDP^{-1})=PD^2P^{-1}
+            \]
+          </div>
+          <p>
+            中间的 \(P^{-1}P=I\) 会抵消。继续重复可得：
+          </p>
+          <div class="formula-box">
+            \[
+            A^k=PD^kP^{-1}
+            \]
+          </div>
+          <p>
+            而 \(D^k\) 只需要把每个对角元素分别乘方：
+          </p>
+          <div class="formula-box">
+            \[
+            D^k=
+            \begin{bmatrix}
+            \lambda_1^k&0&0\\
+            0&\lambda_2^k&0\\
+            0&0&\lambda_3^k
+            \end{bmatrix}
+            \]
+          </div>
+          <p>
+            因此计算量大幅降低。
+          </p>
+        </details>
+
+        <div class="callout">
+          <strong>下一步：</strong>
+          矩阵幂和线性递推会把对角化的计算优势具体应用到反复迭代的系统中。
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function setupCanvas(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function setupPlane(ctx, cx, cy, scale, title) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = 'rgba(255,255,255,.08)';
+      ctx.lineWidth = 1;
+      for (let i = -4; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-4 * scale, i * scale);
+        ctx.lineTo(4 * scale, i * scale);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(i * scale, -4 * scale);
+        ctx.lineTo(i * scale, 4 * scale);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.38)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-4.2 * scale, 0);
+      ctx.lineTo(4.2 * scale, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -4.2 * scale);
+      ctx.lineTo(0, 4.2 * scale);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.72)';
+      ctx.font = '700 13px ui-sans-serif, system-ui';
+      ctx.fillText(title, -4.1 * scale, -4.25 * scale);
+      ctx.restore();
+    }
+
+    function norm(v) { return Math.hypot(v[0], v[1]) || 1; }
+
+    function normalize(v) {
+      const n = norm(v);
+      return [v[0] / n, v[1] / n];
+    }
+
+    function lerp(a, b, t) { return a * (1 - t) + b * t; }
+
+    function lineThrough(ctx, cx, cy, scale, v, color, width = 4) {
+      const u = normalize(v);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(-u[0] * 4.2 * scale, u[1] * 4.2 * scale);
+      ctx.lineTo(u[0] * 4.2 * scale, -u[1] * 4.2 * scale);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function arrow(ctx, cx, cy, scale, p, color, label, width = 3) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      const x = p[0] * scale;
+      const y = -p[1] * scale;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      const ang = Math.atan2(y, x);
+      const len = 11;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - len * Math.cos(ang - Math.PI / 6), y - len * Math.sin(ang - Math.PI / 6));
+      ctx.lineTo(x - len * Math.cos(ang + Math.PI / 6), y - len * Math.sin(ang + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      if (label) {
+        ctx.font = '800 13px ui-sans-serif, system-ui';
+        ctx.fillText(label, x + 8, y - 8);
+      }
+      ctx.restore();
+    }
+
+    function drawMappedGrid(ctx, cx, cy, scale, A) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = 'rgba(109,255,158,.24)';
+      ctx.lineWidth = 1.2;
+      for (let k = -3; k <= 3; k++) {
+        ctx.beginPath();
+        for (let i = -90; i <= 90; i++) {
+          const x = i / 30;
+          const p = [A[0][0] * x + A[0][1] * k, A[1][0] * x + A[1][1] * k];
+          const px = p[0] * scale;
+          const py = -p[1] * scale;
+          if (i === -90) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = -90; i <= 90; i++) {
+          const y = i / 30;
+          const p = [A[0][0] * k + A[0][1] * y, A[1][0] * k + A[1][1] * y];
+          const px = p[0] * scale;
+          const py = -p[1] * scale;
+          if (i === -90) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function typesetDynamicMath(elements) {
+      const els = elements.filter(Boolean);
+      if (!els.length) return;
+      const run = () => {
+        if (window.MathJax && MathJax.typesetPromise) {
+          if (MathJax.typesetClear) MathJax.typesetClear(els);
+          MathJax.typesetPromise(els).catch(() => {});
+        } else {
+          window.setTimeout(run, 80);
+        }
+      };
+      if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+        MathJax.startup.promise.then(run);
+      } else {
+        run();
+      }
+    }
+
+    function drawBasis() {
+      const canvas = document.getElementById('basisCanvas');
+      const { ctx, w, h } = setupCanvas(canvas);
+      ctx.clearRect(0, 0, w, h);
+      const scale = Math.min(w / 12, h / 9);
+      const cx = w * 0.5;
+      const cy = h * 0.56;
+      const t = parseFloat(document.getElementById('basisRange').value);
+
+      const e1 = [1, 0];
+      const e2 = [0, 1];
+      const v1 = normalize([1, 1]);
+      const v2 = normalize([1, -1]);
+      const axis1 = normalize([lerp(e1[0], v1[0], t), lerp(e1[1], v1[1], t)]);
+      const axis2 = normalize([lerp(e2[0], v2[0], t), lerp(e2[1], v2[1], t)]);
+
+      setupPlane(ctx, cx, cy, scale, '坐标轴从标准基过渡到特征向量基');
+      drawMappedGrid(ctx, cx, cy, scale, [[2, 1], [1, 2]]);
+      lineThrough(ctx, cx, cy, scale, axis1, 'rgba(70,199,255,.95)', 4);
+      lineThrough(ctx, cx, cy, scale, axis2, 'rgba(255,79,216,.95)', 4);
+      arrow(ctx, cx, cy, scale, [axis1[0] * 1.8, axis1[1] * 1.8], 'rgba(70,199,255,.95)', 'axis 1');
+      arrow(ctx, cx, cy, scale, [axis2[0] * 1.8, axis2[1] * 1.8], 'rgba(255,79,216,.95)', 'axis 2');
+
+      const state = t < 0.05 ? '标准基' : t > 0.95 ? '特征向量基' : '过渡中';
+      document.getElementById('basisState').textContent = state;
+      document.getElementById('axis1Read').textContent = t > 0.95 ? '(1,1)' : t < 0.05 ? '(1,0)' : '逐渐转向 (1,1)';
+      document.getElementById('axis2Read').textContent = t > 0.95 ? '(1,-1)' : t < 0.05 ? '(0,1)' : '逐渐转向 (1,-1)';
+      document.getElementById('basisEffect').textContent = t > 0.95 ? '只沿轴缩放' : '混合坐标分量';
+    }
+
+    const stepData = [
+      {
+        title: '0. 排列特征向量',
+        formula: String.raw`\[
+\mathbf{v}_1=(1,1,0),\quad
+\mathbf{v}_2=(1,-1,0),\quad
+\mathbf{v}_3=(0,0,1)
+\]`,
+        text: '先决定特征向量的列顺序。后面 D 中特征值的顺序必须和这里完全一致。'
+      },
+      {
+        title: '1. 构造 \\(P\\)',
+        formula: String.raw`\[
+P=
+\begin{bmatrix}
+1&1&0\\
+1&-1&0\\
+0&0&1
+\end{bmatrix}
+\]`,
+        text: 'P 的每一列都是一个特征向量。'
+      },
+      {
+        title: '2. 构造 \\(D\\)',
+        formula: String.raw`\[
+D=
+\begin{bmatrix}
+3&0&0\\
+0&1&0\\
+0&0&4
+\end{bmatrix}
+\]`,
+        text: 'D 的对角元素按 P 的列顺序放入对应特征值。'
+      },
+      {
+        title: '3. 求 \\(P^{-1}\\)',
+        formula: String.raw`\[
+P^{-1}=
+\begin{bmatrix}
+\frac12&\frac12&0\\
+\frac12&-\frac12&0\\
+0&0&1
+\end{bmatrix}
+\]`,
+        text: 'P 可逆，因为三个特征向量线性无关。'
+      },
+      {
+        title: '4. 写出对角化',
+        formula: String.raw`\[
+A=PDP^{-1}
+\]
+\[
+\begin{bmatrix}
+2&1&0\\
+1&2&0\\
+0&0&4
+\end{bmatrix}
+=
+\begin{bmatrix}
+1&1&0\\
+1&-1&0\\
+0&0&1
+\end{bmatrix}
+\begin{bmatrix}
+3&0&0\\
+0&1&0\\
+0&0&4
+\end{bmatrix}
+\begin{bmatrix}
+\frac12&\frac12&0\\
+\frac12&-\frac12&0\\
+0&0&1
+\end{bmatrix}
+\]`,
+        text: '这就是该矩阵的对角化。'
+      },
+      {
+        title: '5. 检查 \\(AP=PD\\)',
+        formula: String.raw`\[
+AP=
+\begin{bmatrix}
+A\mathbf{v}_1&A\mathbf{v}_2&A\mathbf{v}_3
+\end{bmatrix}
+=
+\begin{bmatrix}
+3\mathbf{v}_1&1\mathbf{v}_2&4\mathbf{v}_3
+\end{bmatrix}
+\]
+\[
+PD=
+\begin{bmatrix}
+\mathbf{v}_1&\mathbf{v}_2&\mathbf{v}_3
+\end{bmatrix}
+\begin{bmatrix}
+3&0&0\\
+0&1&0\\
+0&0&4
+\end{bmatrix}
+=
+\begin{bmatrix}
+3\mathbf{v}_1&1\mathbf{v}_2&4\mathbf{v}_3
+\end{bmatrix}
+\]`,
+        text: '两边相等，因此对角化成立。'
+      }
+    ];
+
+    function updateStep(index) {
+      const data = stepData[index];
+      const title = document.getElementById('stepTitle');
+      const formula = document.getElementById('stepFormula');
+      const text = document.getElementById('stepText');
+      title.textContent = data.title;
+      formula.innerHTML = data.formula;
+      text.textContent = data.text;
+      typesetDynamicMath([formula, title]);
+    }
+
+    const cases = {
+      distinct: {
+        matrix: String.raw`\(\begin{bmatrix}2&1\\1&2\end{bmatrix}\)`,
+        vectors: '2 个独立方向',
+        conclusion: '可对角化',
+        reason: '有两个不同特征值',
+        note: '不同特征值对应的特征向量线性无关。',
+        A: [[2,1],[1,2]],
+        lines: [[1,1],[1,-1]]
+      },
+      repeatedEnough: {
+        matrix: String.raw`\(\begin{bmatrix}1&0\\0&1\end{bmatrix}\)`,
+        vectors: '无穷多个方向',
+        conclusion: '可对角化',
+        reason: '重复特征值但特征空间足够大',
+        note: '恒等矩阵只有特征值 1，但整个平面都是特征空间。',
+        A: [[1,0],[0,1]],
+        lines: [[1,0],[0,1]]
+      },
+      defective: {
+        matrix: String.raw`\(\begin{bmatrix}1&1\\0&1\end{bmatrix}\)`,
+        vectors: '只有 1 个独立方向',
+        conclusion: '不可对角化',
+        reason: '缺少第二个独立特征向量',
+        note: '这个剪切矩阵只有 x 轴一个特征方向，不能组成二维基。',
+        A: [[1,1],[0,1]],
+        lines: [[1,0]]
+      },
+      rotation: {
+        matrix: String.raw`\(\begin{bmatrix}0&-1\\1&0\end{bmatrix}\)`,
+        vectors: '无实特征方向',
+        conclusion: '实数范围不可对角化',
+        reason: '90°旋转没有非零实特征向量',
+        note: '若扩展到复数范围，可以讨论复对角化；当前课程先以实向量空间为主。',
+        A: [[0,-1],[1,0]],
+        lines: []
+      }
+    };
+
+    let currentCase = 'distinct';
+
+    function updateCase() {
+      const data = cases[currentCase];
+      document.getElementById('caseMatrix').innerHTML = data.matrix;
+      document.getElementById('caseVectors').textContent = data.vectors;
+      document.getElementById('caseConclusion').textContent = data.conclusion;
+      document.getElementById('caseConclusion').className = data.conclusion.includes('不可') ? 'bad' : 'good';
+      document.getElementById('caseReason').textContent = data.reason;
+      document.getElementById('caseNote').textContent = data.note;
+
+      const canvas = document.getElementById('caseCanvas');
+      const { ctx, w, h } = setupCanvas(canvas);
+      ctx.clearRect(0, 0, w, h);
+      const scale = Math.min(w / 12, h / 9);
+      const cx = w * 0.5;
+      const cy = h * 0.56;
+      setupPlane(ctx, cx, cy, scale, '特征方向数量与可对角化');
+      drawMappedGrid(ctx, cx, cy, scale, data.A);
+      data.lines.forEach((line, i) => {
+        lineThrough(ctx, cx, cy, scale, line, i === 0 ? 'rgba(156,255,58,.95)' : 'rgba(255,79,216,.95)', 4);
+      });
+      typesetDynamicMath([document.getElementById('caseMatrix')]);
+    }
+
+    document.getElementById('basisRange').addEventListener('input', drawBasis);
+
+    document.querySelectorAll('#stepButtons .state-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#stepButtons .state-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateStep(parseInt(btn.dataset.step, 10));
+      });
+    });
+
+    document.querySelectorAll('#caseButtons .state-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#caseButtons .state-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCase = btn.dataset.case;
+        updateCase();
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      drawBasis();
+      updateCase();
+    });
+
+    drawBasis();
+    updateStep(0);
+    updateCase();
+  </script>
+</body>
+</html>
