@@ -142,6 +142,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  stageCreateMode: {
+    type: Boolean,
+    default: false,
+  },
   sidebarCollapsed: {
     type: Boolean,
     default: false,
@@ -196,6 +200,12 @@ const emit = defineEmits([
   "save-layout",
   "save-relation-edit",
   "select-node",
+  "stage-created",
+  "stage-deleted",
+  "stage-layout-changed",
+  "stage-meta-changed",
+  "start-stage-create",
+  "stop-stage-create",
   "set-note-find-visible",
   "set-note-dirty",
   "set-note-mode",
@@ -251,14 +261,20 @@ function fitGraphView() {
           <GraphToolbar :edge-count="currentScope.edges.length" :can-save-layout="canSaveLayout"
             :can-create-node="canCreateNote" :layout-dirty="layoutDirty" :layout-editing="isLayoutEditing"
             :layout-mode="layoutMode" :layout-save-in-progress="layoutSaveInProgress"
+            :stage-create-mode="stageCreateMode"
             :node-count="currentScope.nodes.length" @cancel-layout="$emit('cancel-layout')"
             @edit-layout="$emit('edit-layout')" @fit-view="fitGraphView" @open-dialog="$emit('open-dialog', $event)"
-            @save-layout="$emit('save-layout')" />
+            @save-layout="$emit('save-layout')" @start-stage-create="$emit('start-stage-create')" />
           <GraphView ref="graphViewRef" :draft-board="draftLayoutBoard" :draft-moved-node-ids="draftMovedNodeIds"
             :is-layout-editing="isLayoutEditing" :selected-node-id="selectedNodeId" :scope-id="graphScopeId"
+            :stage-create-mode="stageCreateMode"
             @ensure-layout-draft="$emit('ensure-layout-draft', $event)"
             @layout-node-dragged="$emit('layout-node-dragged', $event)" @open-note="$emit('open-note', $event)"
-            @open-scope="$emit('open-scope', $event)" @select-node="$emit('select-node', $event)" />
+            @open-scope="$emit('open-scope', $event)" @select-node="$emit('select-node', $event)"
+            @stage-created="$emit('stage-created', $event)" @stage-deleted="$emit('stage-deleted', $event)"
+            @stage-layout-changed="$emit('stage-layout-changed', $event)"
+            @stage-meta-changed="$emit('stage-meta-changed', $event)"
+            @stop-stage-create="$emit('stop-stage-create')" />
         </template>
 
         <AiImportView v-else-if="currentView === 'ai-import'" :vault-root-path="activeVaultRootPath"
@@ -280,7 +296,8 @@ function fitGraphView() {
       <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"
         :add-link-open-key="addLinkOpenKey" :add-link-saving="addLinkSaving" :collapsed="relationSidebarCollapsed"
         :current-note-id="currentNoteId" :current-node-pinned="currentRelationNodePinned" :current-view="currentView"
-        :can-save-note="canSaveNote" :graph-scope-id="graphScopeId" :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
+        :can-save-note="canSaveNote" :graph-scope-id="graphScopeId" :layout-board="draftLayoutBoard"
+        :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
         @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
         @request-add-link="$emit('request-add-link')"
         @request-delete-note="$emit('delete-note', $event)"

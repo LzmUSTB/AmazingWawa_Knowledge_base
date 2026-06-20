@@ -79,6 +79,20 @@ function normalizeLayoutBox(box = {}) {
   };
 }
 
+function normalizeStage(stage = {}, index = 0) {
+  return {
+    id: stage.id || `stage-${index + 1}`,
+    order: Number.isFinite(Number(stage.order)) ? Number(stage.order) : index + 1,
+    title: stage.title || `Stage ${index + 1}`,
+    comment: stage.comment || "",
+    x: stage.x ?? 0,
+    y: stage.y ?? 0,
+    width: stage.width ?? stage.w ?? 360,
+    height: stage.height ?? stage.h ?? 220,
+    flow: ["free", "left-to-right", "top-to-bottom"].includes(stage.flow) ? stage.flow : "free",
+  };
+}
+
 function normalizeBoard(board = {}, source = "manual") {
   const nodes = Object.fromEntries(
     Object.entries(board.nodes || {}).map(([id, box]) => [id, normalizeLayoutBox(box)]),
@@ -101,6 +115,7 @@ function normalizeBoard(board = {}, source = "manual") {
     source: board.source || source,
     nodes,
     routes,
+    stages: asArray(board.stages).map(normalizeStage),
   };
 }
 
@@ -124,7 +139,7 @@ function ensureScopeBoards(layouts, scopes) {
 
   Object.values(scopes).forEach((scope) => {
     const hasManualBoard = Boolean(boards[scope.id]);
-    const board = boards[scope.id] || { ...DEFAULT_BOARD_SIZE, nodes: {}, routes: {} };
+    const board = boards[scope.id] || { ...DEFAULT_BOARD_SIZE, nodes: {}, routes: {}, stages: [] };
     const nextBoard = normalizeBoard(board, hasManualBoard ? "manual" : "generated");
 
     scope.nodes.forEach((node, index) => {

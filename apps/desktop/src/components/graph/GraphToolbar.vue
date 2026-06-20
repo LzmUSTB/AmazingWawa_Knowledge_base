@@ -34,6 +34,10 @@ defineProps({
     type: Boolean,
     default: true,
   },
+  stageCreateMode: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 defineEmits([
@@ -42,6 +46,7 @@ defineEmits([
   "fit-view",
   "open-dialog",
   "save-layout",
+  "start-stage-create",
 ]);
 </script>
 
@@ -71,6 +76,16 @@ defineEmits([
       <span class="button-icon-label">Edit Layout</span>
     </button>
     <template v-else>
+      <button
+        class="hud-button button-with-icon graph-toolbar__button--stage"
+        :class="{ 'is-active': stageCreateMode }"
+        style="--button-color: var(--graphics)"
+        type="button"
+        @click="$emit('start-stage-create')"
+      >
+        <AppIcon name="stage" />
+        <span class="button-icon-label">{{ stageCreateMode ? "Draw Stage" : "New Stage" }}</span>
+      </button>
       <button
         class="hud-button button-with-icon"
         :disabled="!canSaveLayout || !layoutDirty || layoutSaveInProgress"
@@ -124,6 +139,13 @@ defineEmits([
 .hud-button:disabled {
   cursor: not-allowed;
   opacity: 0.42;
+}
+
+.graph-toolbar__button--stage :deep(.app-icon) {
+  display: block;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
 }
 
 @media (max-width: 900px) {

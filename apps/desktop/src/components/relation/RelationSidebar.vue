@@ -4,13 +4,14 @@ import NodeFilterList from "../common/NodeFilterList.vue";
 import AppIcon from "../ui/AppIcon.vue";
 import RelationContextMenu from "./RelationContextMenu.vue";
 import { findGraphNode, getActiveVault } from "../../graph/graph-data-store.js";
+import { getStageForNode } from "../../graph/graph-layout.js";
 import {
   getDirectRelationsForNode,
   getHierarchyForNode,
   getNodeTitleOrId,
   getOtherNodeId,
 } from "../../graph/graph-relations.js";
-import { isDomainNode } from "../../graph/graph-scope.js";
+import { getGraphScope, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor, relationTheme } from "../../graph/graph-theme.js";
 
 const props = defineProps({
@@ -54,6 +55,10 @@ const props = defineProps({
     type: String,
     default: "root",
   },
+  layoutBoard: {
+    type: Object,
+    default: null,
+  },
   nodeId: {
     type: String,
     default: "",
@@ -81,6 +86,13 @@ const contextMenu = ref({ edge: null, x: 0, y: 0 });
 
 const node = computed(() => findGraphNode(props.nodeId));
 const nodeColor = computed(() => getDomainColor(node.value?.domain));
+const nodeIsExternal = computed(() => (
+  getGraphScope(props.graphScopeId).externalNodeIds || []
+).includes(props.nodeId));
+const nodeStage = computed(() => {
+  if (!node.value || nodeIsExternal.value) return null;
+  return getStageForNode(node.value.id, props.graphScopeId, props.layoutBoard);
+});
 const domainSelected = computed(() => Boolean(node.value && isDomainNode(node.value.id)));
 const nodeHasNote = computed(() => {
   if (!node.value || domainSelected.value) return false;
@@ -262,6 +274,11 @@ function requestDeleteNote() {
           <h2>{{ getNodeTitleOrId(node.id) }}</h2>
           <p>{{ node.id }}</p>
           <p>{{ node.type }} / {{ node.domain }}</p>
+          <div v-if="nodeIsExternal" class="stage-summary is-external">External node</div>
+          <div v-else-if="nodeStage" class="stage-summary">
+            <strong>Stage: {{ String(Number(nodeStage.order) || 0).padStart(2, "0") }} {{ nodeStage.title }}</strong>
+            <span v-if="nodeStage.comment">Comment: {{ nodeStage.comment }}</span>
+          </div>
           <button class="hud-button button-with-icon pin-action"
             :class="{ 'is-pinned': currentNodePinned, 'is-unpinned': !currentNodePinned }"
             style="--button-color: var(--career)" @click="$emit('toggle-pin-node')">
@@ -470,6 +487,34 @@ function requestDeleteNote() {
   font-size: var(--font-size-small);
   line-height: 1.45;
   text-transform: uppercase;
+}
+
+.stage-summary {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 4px;
+  border-left: 4px solid var(--relation-node-color, var(--graphics));
+  background: var(--background-panel);
+  padding: 8px 10px;
+}
+
+.stage-summary strong,
+.stage-summary span {
+  overflow: hidden;
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+}
+
+.stage-summary strong {
+  color: var(--text-primary);
+}
+
+.stage-summary span,
+.stage-summary.is-external {
+  color: var(--text-muted);
 }
 
 .sidebar-section {

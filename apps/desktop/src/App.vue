@@ -69,6 +69,7 @@ const layoutMovedNodeIds = ref({});
 const activeLayoutScopeId = ref("");
 const layoutSaveInProgress = ref(false);
 const layoutError = ref("");
+const stageCreateMode = ref(false);
 const contextExportError = ref("");
 const contextExporting = ref(false);
 const uiFontScale = ref(Number.isFinite(savedUiFontScale) ? clampUiFontScale(savedUiFontScale) : 1);
@@ -433,6 +434,7 @@ function clearLayoutDrafts() {
   activeLayoutScopeId.value = "";
   layoutSaveInProgress.value = false;
   layoutError.value = "";
+  stageCreateMode.value = false;
 }
 
 function confirmDiscardNoteDirty() {
@@ -459,6 +461,7 @@ function discardLayoutDraft({ confirm = true, scopeId = activeLayoutScopeId.valu
   layoutDirty.value = false;
   activeLayoutScopeId.value = "";
   layoutError.value = "";
+  stageCreateMode.value = false;
   return true;
 }
 
@@ -495,6 +498,7 @@ function buildDraftBoard(scopeId) {
     height: existingBoard?.height || size.height || 1600,
     grid: existingBoard?.grid || 32,
     nodes,
+    stages: (existingBoard?.stages || []).map((stage) => ({ ...stage })),
   };
 }
 
@@ -519,6 +523,65 @@ function startLayoutEditing() {
   layoutError.value = "";
   ensureLayoutDraft(graphScopeId.value);
   isLayoutEditing.value = true;
+}
+
+function startStageCreateMode() {
+  layoutError.value = "";
+  ensureLayoutDraft(graphScopeId.value);
+  isLayoutEditing.value = true;
+  stageCreateMode.value = true;
+}
+
+function stopStageCreateMode() {
+  stageCreateMode.value = false;
+}
+
+function updateDraftStages(scopeId, update) {
+  const board = ensureLayoutDraft(scopeId);
+  const stages = update(board.stages || []);
+  layoutDraftBoards.value = {
+    ...layoutDraftBoards.value,
+    [scopeId]: {
+      ...board,
+      stages,
+    },
+  };
+  activeLayoutScopeId.value = scopeId;
+  isLayoutEditing.value = true;
+  layoutDirty.value = true;
+  layoutError.value = "";
+}
+
+function createDraftStage({ stage } = {}) {
+  if (!stage?.id) return;
+  updateDraftStages(graphScopeId.value, (stages) => [...stages, { ...stage }]);
+}
+
+function updateDraftStageLayout({ stageId, layout } = {}) {
+  if (!stageId || !layout) return;
+  updateDraftStages(graphScopeId.value, (stages) => stages.map((stage) => (
+    stage.id === stageId
+      ? {
+          ...stage,
+          x: layout.x,
+          y: layout.y,
+          width: layout.width,
+          height: layout.height,
+        }
+      : stage
+  )));
+}
+
+function updateDraftStageMeta({ stageId, patch } = {}) {
+  if (!stageId || !patch) return;
+  updateDraftStages(graphScopeId.value, (stages) => stages.map((stage) => (
+    stage.id === stageId ? { ...stage, ...patch } : stage
+  )));
+}
+
+function deleteDraftStage(stageId) {
+  if (!stageId) return;
+  updateDraftStages(graphScopeId.value, (stages) => stages.filter((stage) => stage.id !== stageId));
 }
 
 function updateDraftNodeLayout({ nodeId, layout }) {
@@ -1177,6 +1240,7 @@ function toggleRelationSidebar() {
       :relation-saving="relationSaving"
       :selected-node-id="selectedNodeId"
       :sidebar-collapsed="sidebarCollapsed"
+      :stage-create-mode="stageCreateMode"
       :ui-font-scale="uiFontScale"
       @add-link="createLink"
       @ai-import-applied="handleAiImportApplied"
@@ -1205,6 +1269,12 @@ function toggleRelationSidebar() {
       @save-entity-edit="saveEntityEdit"
       @save-relation-edit="saveEditedRelation"
       @select-node="selectedNodeId = $event"
+      @stage-created="createDraftStage"
+      @stage-deleted="deleteDraftStage"
+      @stage-layout-changed="updateDraftStageLayout"
+      @stage-meta-changed="updateDraftStageMeta"
+      @start-stage-create="startStageCreateMode"
+      @stop-stage-create="stopStageCreateMode"
       @set-note-dirty="noteDirty = $event"
       @set-note-find-visible="noteFindVisible = $event"
       @set-note-mode="setNoteMode"

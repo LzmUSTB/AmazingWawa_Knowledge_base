@@ -814,6 +814,20 @@ export async function replaceGraphLink(vaultRootPath, oldEdgeId, payload) {
   return loadVaultFromPath(vaultRootPath);
 }
 
+function serializeStageForYaml(stage) {
+  return {
+    id: stage.id,
+    order: Number.isFinite(Number(stage.order)) ? Number(stage.order) : 999,
+    title: stage.title || "",
+    comment: stage.comment || "",
+    x: stage.x,
+    y: stage.y,
+    w: stage.width ?? stage.w,
+    h: stage.height ?? stage.h,
+    flow: stage.flow || "free",
+  };
+}
+
 function serializeBoardForYaml(board, preservedRoutes = {}) {
   const nodes = Object.fromEntries(
     Object.entries(board.nodes || {}).map(([nodeId, box]) => [
@@ -827,6 +841,9 @@ function serializeBoardForYaml(board, preservedRoutes = {}) {
     grid: board.grid || 32,
     nodes,
     ...(Object.keys(preservedRoutes).length ? { routes: preservedRoutes } : {}),
+    ...(Array.isArray(board.stages) && board.stages.length
+      ? { stages: board.stages.map(serializeStageForYaml) }
+      : {}),
   };
 }
 

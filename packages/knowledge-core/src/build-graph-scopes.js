@@ -19,6 +19,8 @@ function edgeTouches(edge, nodeId) {
   return edge.source === nodeId || edge.target === nodeId;
 }
 
+const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
+
 export function buildGraphScopes({ domains = [], nodes = [], edges = [] }) {
   const nodeMap = byId(nodes);
   const domainIds = domains.map((domain) => domain.id);
@@ -34,10 +36,23 @@ export function buildGraphScopes({ domains = [], nodes = [], edges = [] }) {
   };
 
   domains.forEach((domain) => {
-    const childIds = edges
+    const directChildIds = edges
       .filter((edge) => edge.relation === "contains" && edge.source === domain.id)
       .map((edge) => edge.target);
-    const scopeNodeIds = unique([domain.id, ...childIds]);
+    const directChildIdSet = new Set(directChildIds);
+    const semanticEdges = edges.filter(
+      (edge) => LINK_RELATIONS.has(edge.relation) &&
+        (directChildIdSet.has(edge.source) || directChildIdSet.has(edge.target)),
+    );
+    const externalNeighborIds = unique(
+      semanticEdges
+        .flatMap((edge) => [edge.source, edge.target])
+        .filter((id) => id !== domain.id && !directChildIdSet.has(id)),
+    );
+    const scopeNodeIds = unique([domain.id, ...directChildIds, ...externalNeighborIds]);
+    const containsEdges = edges.filter(
+      (edge) => edge.source === domain.id && edge.relation === "contains" && directChildIdSet.has(edge.target),
+    );
 
     scopes[domain.id] = {
       id: domain.id,
@@ -45,13 +60,10 @@ export function buildGraphScopes({ domains = [], nodes = [], edges = [] }) {
       breadcrumb: ["Global Graph", domain.titleLocale || domain.title || domain.id],
       centerNodeId: domain.id,
       selectedNodeId: domain.id,
+      directChildIds,
+      externalNodeIds: externalNeighborIds,
       nodes: pickNodes(nodeMap, scopeNodeIds),
-      edges: edges.filter(
-        (edge) =>
-          edge.source === domain.id &&
-          edge.relation === "contains" &&
-          scopeNodeIds.includes(edge.target),
-      ),
+      edges: [...containsEdges, ...semanticEdges],
     };
   });
 

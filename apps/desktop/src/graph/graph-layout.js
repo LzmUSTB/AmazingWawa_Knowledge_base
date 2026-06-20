@@ -198,6 +198,50 @@ export function getNodeLayout(id, scopeId = "graphics", size = "desktop") {
   );
 }
 
+export function getStageLayout(stage = {}) {
+  const finiteOr = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  return {
+    ...stage,
+    x: finiteOr(stage.x, 0),
+    y: finiteOr(stage.y, 0),
+    width: finiteOr(stage.width ?? stage.w, 360),
+    height: finiteOr(stage.height ?? stage.h, 220),
+  };
+}
+
+export function getBoardStages(scopeId = "root", boardOverride = null) {
+  const board = boardOverride || getActiveVault().layouts?.boards?.[scopeId];
+  return Array.isArray(board?.stages) ? board.stages.map(getStageLayout) : [];
+}
+
+export function isPointInsideStage(point, stage) {
+  const box = getStageLayout(stage);
+  return (
+    Number(point?.x) >= box.x &&
+    Number(point?.x) <= box.x + box.width &&
+    Number(point?.y) >= box.y &&
+    Number(point?.y) <= box.y + box.height
+  );
+}
+
+export function getStageForNode(nodeId, scopeId = "root", boardOverride = null) {
+  const nodeBox = boardOverride?.nodes?.[nodeId] || getNodeLayout(nodeId, scopeId);
+  if (!nodeBox) return null;
+  const center = {
+    x: nodeBox.x + nodeBox.width / 2,
+    y: nodeBox.y + nodeBox.height / 2,
+  };
+  return getBoardStages(scopeId, boardOverride)
+    .map((stage, index) => ({ stage, index }))
+    .filter(({ stage }) => isPointInsideStage(center, stage))
+    .sort((left, right) => {
+      const orderDelta = Number(left.stage.order || 0) - Number(right.stage.order || 0);
+      if (orderDelta) return orderDelta;
+      const areaDelta = left.stage.width * left.stage.height - right.stage.width * right.stage.height;
+      return areaDelta || right.index - left.index;
+    })[0]?.stage || null;
+}
+
 export function getManualTracePoints(edgeId, scopeId = "graphics") {
   const route = getActiveVault().layouts?.boards?.[scopeId]?.routes?.[edgeId];
   return route?.points?.length ? route.points : undefined;
