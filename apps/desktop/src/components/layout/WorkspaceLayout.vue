@@ -13,6 +13,7 @@ import NoteView from "../note/NoteView.vue";
 import EditRelationDialog from "../relation/EditRelationDialog.vue";
 import RelationSidebar from "../relation/RelationSidebar.vue";
 import SourceSnapshotView from "../source/SourceSnapshotView.vue";
+import ToolsView from "../tools/ToolsView.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
 import { getScopeLayoutMode } from "../../graph/graph-layout.js";
@@ -269,7 +270,7 @@ function fitGraphView() {
           :current-exercise-node-id="currentExerciseNodeId"
           @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
           @open-scope="relayOpenScope"
-          @show-graph="$emit('show-graph', $event)" />
+          @show-graph="$emit('show-graph', $event)" @show-view="$emit('show-view', $event)" />
 
         <template v-if="currentView === 'graph'">
           <GraphToolbar :edge-count="currentScope.edges.length" :can-save-layout="canSaveLayout"
@@ -298,6 +299,8 @@ function fitGraphView() {
           :exporting="contextExporting" @close="$emit('show-view', 'graph')" @export="$emit('export-context')" />
 
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
+
+        <ToolsView v-else-if="currentView === 'tools'" @show-view="$emit('show-view', $event)" />
 
         <ExercisesView v-else-if="currentView === 'exercises'" :exercise-node-id="currentExerciseNodeId"
           :can-save="canSaveNote" @import-exercise-set="$emit('import-exercise-set', $event)"

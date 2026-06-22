@@ -107,7 +107,7 @@ export async function exportContext(vaultRootPath) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting context.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const files = buildAiContextFiles(currentVault);
-  await invoke("create_dir_all", { vaultRootPath, relativePath: ".kb-ai/context" });
+  await invoke("reset_context_export_dir", { vaultRootPath });
   await Promise.all(
     Object.entries(files).map(([fileName, contents]) =>
       invoke("write_text_file", {

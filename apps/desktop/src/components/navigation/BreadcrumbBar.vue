@@ -27,7 +27,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["open-domain", "open-scope", "show-graph"]);
+const emit = defineEmits(["open-domain", "open-scope", "show-graph", "show-view"]);
 
 const accent = computed(() => getDomainColor(props.currentDomain));
 const scope = computed(() => getGraphScope(props.graphScopeId));
@@ -93,7 +93,12 @@ const crumbItems = computed(() => {
     items.push({ id: "context-export", kind: "view", label: "Export Context" });
     return items;
   }
+  if (props.currentView === "tools") {
+    items.push({ id: "tools", kind: "view", label: "Tools" });
+    return items;
+  }
   if (props.currentView === "source-snapshot") {
+    items.push({ id: "tools", kind: "view-link", label: "Tools" });
     items.push({ id: "source-snapshot", kind: "view", label: "Capture" });
     return items;
   }
@@ -125,6 +130,10 @@ function openCrumb(crumb) {
     return;
   }
   if (crumb.kind === "view") return;
+  if (crumb.kind === "view-link") {
+    emit("show-view", crumb.id);
+    return;
+  }
   if (hasGraphScope(crumb.id)) {
     emit("open-scope", crumb.id, crumb.id);
   }

@@ -1,0 +1,1143 @@
+version: 1
+nodeId: linear-algebra-determinant
+title: Phase 1 総合演習：行列式までの線形代数
+locale: ja-JP
+summary: |
+  行列式ノードに付属する Phase 1 末尾の総合 ExerciseSet。線形独立、部分空間、基と次元、ガウス消去、線形写像、核と像、階数、逆行列、行列式を横断し、難関大学レベルの計算力・証明力・運用力を鍛える。
+scope:
+  coverageNodeIds:
+    - linear-algebra-linear-independence
+    - linear-algebra-vector-space
+    - linear-algebra-basis-dimension
+    - gaussian-elimination-linear-systems
+    - linear-algebra-linear-map
+    - linear-algebra-kernel-image
+    - linear-algebra-rank
+    - linear-algebra-inverse-matrix
+    - linear-algebra-determinant
+  prerequisiteNodeIds:
+    - linear-algebra
+  relatedNodeIds:
+    - linear-algebra-orthogonality
+    - linear-algebra-projection-matrix
+problems:
+  - id: la-det-p1-001
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 線形結合と生成空間の計算
+    prompt: |
+      次の \(\mathbb{R}^3\) のベクトルを考える。
+      \[
+      \mathbf{v}_1=(1,1,0),\quad
+      \mathbf{v}_2=(2,0,1),\quad
+      \mathbf{v}_3=(3,1,1),\quad
+      \mathbf{v}_4=(1,-1,1)
+      \]
+
+      1. \(\{\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3,\mathbf{v}_4\}\) から極大一次独立部分集合を一つ求めよ。
+      2. 生成空間 \(\operatorname{span}\{\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3,\mathbf{v}_4\}\) の次元を求めよ。
+      3. \(\mathbf{v}_3,\mathbf{v}_4\) をその基で表せ。
+    hints:
+      - まず \(\mathbf{v}_3\) が \(\mathbf{v}_1,\mathbf{v}_2\) の線形結合か確認する。
+      - 列ベクトルを並べた行列を行基本変形してもよい。
+    answer: |
+      極大一次独立部分集合の一例は \(\{\mathbf{v}_1,\mathbf{v}_2\}\)。生成空間の次元は \(2\)。
+      \[
+      \mathbf{v}_3=\mathbf{v}_1+\mathbf{v}_2,\qquad
+      \mathbf{v}_4=-\mathbf{v}_1+\mathbf{v}_2
+      \]
+    solution: >
+      まず
+
+      \[
+
+      \mathbf{v}_1+\mathbf{v}_2=(1,1,0)+(2,0,1)=(3,1,1)=\mathbf{v}_3
+
+      \]
+
+      である。また
+
+      \[
+
+      -\mathbf{v}_1+\mathbf{v}_2=-(1,1,0)+(2,0,1)=(1,-1,1)=\mathbf{v}_4
+
+      \]
+
+      である。したがって \(\mathbf{v}_3,\mathbf{v}_4\) はどちらも
+      \(\mathbf{v}_1,\mathbf{v}_2\) の線形結合である。
+
+
+      一方、\(\mathbf{v}_1\) と \(\mathbf{v}_2\) は互いに定数倍ではないため一次独立である。よって
+
+      \[
+
+      \{\mathbf{v}_1,\mathbf{v}_2\}
+
+      \]
+
+      は生成空間の基になり、次元は \(2\) である。
+  - id: la-det-p1-002
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 部分空間の基と次元
+    prompt: |
+      \(\mathbb{R}^4\) の部分集合
+      \[
+      W=\{(x_1,x_2,x_3,x_4)\in\mathbb{R}^4
+      \mid x_1+x_2+x_3+x_4=0,
+      \ x_1-x_2+x_3-x_4=0\}
+      \]
+      を考える。
+
+      1. \(W\) が部分空間であることを確認せよ。
+      2. \(W\) の基を一つ求めよ。
+      3. \(\dim W\) を求めよ。
+    hints: []
+    answer: |
+      \(W\) は同次線形方程式の解集合なので部分空間である。
+      \[
+      W=\operatorname{span}\{(-1,0,1,0),(0,-1,0,1)\}
+      \]
+      したがって \(\dim W=2\)。
+    solution: |
+      二つの条件式を加えると
+      \[
+      2x_1+2x_3=0
+      \]
+      なので \(x_1=-x_3\)。また二つの条件式を引くと
+      \[
+      2x_2+2x_4=0
+      \]
+      なので \(x_2=-x_4\)。
+
+      \(x_3=s, x_4=t\) とおくと
+      \[
+      (x_1,x_2,x_3,x_4)=(-s,-t,s,t)
+      =s(-1,0,1,0)+t(0,-1,0,1)
+      \]
+      である。二つのベクトルは明らかに一次独立なので、これらは \(W\) の基である。
+
+      また、同次線形方程式の解集合は和とスカラー倍で閉じているため部分空間である。
+  - id: la-det-p1-003
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 基に関する座標表示
+    prompt: >
+      \(\mathbb{R}^3\) のベクトル
+
+      \[
+
+      \mathbf{b}_1=(1,1,0),\quad
+
+      \mathbf{b}_2=(0,1,1),\quad
+
+      \mathbf{b}_3=(1,0,1)
+
+      \]
+
+      を考える。
+
+
+      1. \(B=\{\mathbf{b}_1,\mathbf{b}_2,\mathbf{b}_3\}\) が \(\mathbb{R}^3\)
+      の基であることを示せ。
+
+      2. \(\mathbf{x}=(2,3,4)\) の \(B\) に関する座標を求めよ。
+    hints: []
+    answer: |
+      列行列
+      \[
+      M=\begin{bmatrix}1&0&1\\1&1&0\\0&1&1\end{bmatrix}
+      \]
+      の行列式は \(2\) なので、\(B\) は基である。
+      \[
+      [\mathbf{x}]_B=\begin{bmatrix}1/2\\5/2\\3/2\end{bmatrix}
+      \]
+    solution: |
+      \(\mathbf{b}_1,\mathbf{b}_2,\mathbf{b}_3\) を列に並べると
+      \[
+      M=\begin{bmatrix}
+      1&0&1\\
+      1&1&0\\
+      0&1&1
+      \end{bmatrix}
+      \]
+      である。
+      \[
+      \det M
+      =1\cdot(1\cdot1-0\cdot1)+1\cdot(1\cdot1-1\cdot0)=2
+      \]
+      であり、\(\det M\neq0\) なので列ベクトルは一次独立であり、\(\mathbb{R}^3\) の基である。
+
+      座標 \(c_1,c_2,c_3\) は
+      \[
+      M\begin{bmatrix}c_1\\c_2\\c_3\end{bmatrix}
+      =\begin{bmatrix}2\\3\\4\end{bmatrix}
+      \]
+      の解である。連立方程式は
+      \[
+      c_1+c_3=2,
+      \quad c_1+c_2=3,
+      \quad c_2+c_3=4
+      \]
+      である。解くと
+      \[
+      c_1=\frac12,
+      \quad c_2=\frac52,
+      \quad c_3=\frac32
+      \]
+      となる。
+  - id: la-det-p1-004
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: パラメータ付き連立一次方程式
+    prompt: |
+      次の連立一次方程式を考える。
+      \[
+      \begin{cases}
+      x+y+z=1,\\
+      2x+3y+az=4,\\
+      x+2y+3z=b.
+      \end{cases}
+      \]
+
+      1. 係数行列の行列式を求めよ。
+      2. \(a,b\) の値によって、解が一意に存在する場合、解が無限に存在する場合、解が存在しない場合を分類せよ。
+    hints: []
+    answer: |
+      係数行列の行列式は
+      \[
+      4-a
+      \]
+      である。
+
+      - \(a\neq4\)：解は一意に存在する。
+      - \(a=4,b=3\)：解は無限に存在する。
+      - \(a=4,b\neq3\)：解は存在しない。
+    solution: |
+      係数行列は
+      \[
+      A=\begin{bmatrix}1&1&1\\2&3&a\\1&2&3\end{bmatrix}
+      \]
+      である。行列式を計算すると
+      \[
+      \det A
+      =1(9-2a)-1(6-a)+1(4-3)
+      =4-a
+      \]
+      となる。
+
+      したがって \(a\neq4\) のとき \(\det A\neq0\) で、解は一意に存在する。
+
+      \(a=4\) のとき、拡大係数行列を消去する。第 2 式から第 1 式の 2 倍を引くと
+      \[
+      y+2z=2
+      \]
+      第 3 式から第 1 式を引くと
+      \[
+      y+2z=b-1
+      \]
+      である。したがって整合性の条件は
+      \[
+      2=b-1
+      \]
+      すなわち \(b=3\) である。
+
+      \(b=3\) なら独立な方程式は 2 本なので自由変数が 1 個あり、解は無限に存在する。\(b\neq3\) なら矛盾が生じ、解は存在しない。
+  - id: la-det-p1-005
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 線形写像の核・像・階数
+    prompt: |
+      線形写像 \(T:\mathbb{R}^3\to\mathbb{R}^2\) を
+      \[
+      T(x,y,z)=(x+2y-z,\ 3x-y+z)
+      \]
+      で定める。
+
+      1. 標準基に関する行列表現を求めよ。
+      2. \(\ker T\) の基を求めよ。
+      3. \(\operatorname{im}T\) の基を求めよ。
+      4. 階数・退化次数定理を確認せよ。
+    hints: []
+    answer: |
+      行列表現は
+      \[
+      A=\begin{bmatrix}1&2&-1\\3&-1&1\end{bmatrix}
+      \]
+      である。
+      \[
+      \ker T=\operatorname{span}\{(1,-4,-7)\}
+      \]
+      \[
+      \operatorname{im}T=\operatorname{span}\{(1,3),(2,-1)\}
+      \]
+      階数は \(2\)、核の次元は \(1\) で、\(3=2+1\) が成り立つ。
+    solution: >
+      標準基に関する行列は、各成分の係数を並べて
+
+      \[
+
+      A=\begin{bmatrix}1&2&-1\\3&-1&1\end{bmatrix}
+
+      \]
+
+      である。
+
+
+      核は \(A\mathbf{x}=0\) の解集合である。
+
+      \[
+
+      x+2y-z=0,
+
+      \qquad
+
+      3x-y+z=0
+
+      \]
+
+      第 1 式から \(z=x+2y\)。これを第 2 式に代入すると
+
+      \[
+
+      3x-y+x+2y=4x+y=0
+
+      \]
+
+      よって \(y=-4x\)、\(z=-7x\)。したがって
+
+      \[
+
+      \ker T=\operatorname{span}\{(1,-4,-7)\}
+
+      \]
+
+      である。
+
+
+      像は列ベクトル
+
+      \[
+
+      (1,3),\quad (2,-1),\quad (-1,1)
+
+      \]
+
+      の生成空間である。最初の二つは一次独立なので、像の基として
+
+      \[
+
+      (1,3),\quad(2,-1)
+
+      \]
+
+      を取れる。したがって \(\operatorname{rank}T=2\)、\(\dim\ker T=1\)
+      であり、\(\dim\mathbb{R}^3=3=2+1\) となる。
+  - id: la-det-p1-006
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 階数・核・像の総合計算
+    prompt: |
+      行列
+      \[
+      A=\begin{bmatrix}
+      1&2&0&1\\
+      0&0&1&-1\\
+      2&4&1&1
+      \end{bmatrix}
+      \]
+      について、次を求めよ。
+
+      1. \(\operatorname{rank}A\)
+      2. \(\operatorname{Null}(A)\) の基
+      3. \(\operatorname{Col}(A)\) の基
+      4. 階数・退化次数定理の確認
+    hints: []
+    answer: |
+      \[
+      \operatorname{rank}A=2
+      \]
+      \[
+      \operatorname{Null}(A)=
+      \operatorname{span}\{(-2,1,0,0),\ (-1,0,1,1)\}
+      \]
+      列空間の基の一例は
+      \[
+      \left\{
+      \begin{bmatrix}1\\0\\2\end{bmatrix},
+      \begin{bmatrix}0\\1\\1\end{bmatrix}
+      \right\}
+      \]
+      である。核の次元は \(2\) なので \(4=2+2\)。
+    solution: |
+      第 3 行は
+      \[
+      2\cdot(第1行)+(第2行)
+      \]
+      である。したがって独立な行は 2 本で、\(\operatorname{rank}A=2\) である。
+
+      核を求める。方程式は
+      \[
+      x_1+2x_2+x_4=0,
+      \qquad
+      x_3-x_4=0
+      \]
+      である。\(x_2=s, x_4=t\) とおくと
+      \[
+      x_1=-2s-t,
+      \qquad
+      x_3=t
+      \]
+      となる。したがって
+      \[
+      \mathbf{x}
+      =s(-2,1,0,0)+t(-1,0,1,1)
+      \]
+      である。
+
+      列空間については、ピボット列に対応する第 1 列と第 3 列を選べる：
+      \[
+      \begin{bmatrix}1\\0\\2\end{bmatrix},
+      \quad
+      \begin{bmatrix}0\\1\\1\end{bmatrix}
+      \]
+      これらは一次独立であり、階数 2 に一致する。
+  - id: la-det-p1-007
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: パラメータ付き行列の階数と核
+    prompt: |
+      \[
+      A(a)=
+      \begin{bmatrix}
+      1&1&a\\
+      1&a&1\\
+      a&1&1
+      \end{bmatrix}
+      \]
+      とする。
+
+      1. \(\det A(a)\) を因数分解せよ。
+      2. \(a\) の値によって \(\operatorname{rank}A(a)\) を分類せよ。
+      3. \(a=1\) と \(a=-2\) のとき、それぞれ \(\operatorname{Null}(A(a))\) の基を求めよ。
+    hints: []
+    answer: |
+      \[
+      \det A(a)=-(a-1)^2(a+2)
+      \]
+
+      - \(a\neq1,-2\)：階数 \(3\)
+      - \(a=1\)：階数 \(1\)
+      - \(a=-2\)：階数 \(2\)
+
+      \[
+      \operatorname{Null}(A(1))=
+      \operatorname{span}\{(-1,1,0),(-1,0,1)\}
+      \]
+      \[
+      \operatorname{Null}(A(-2))=
+      \operatorname{span}\{(1,1,1)\}
+      \]
+    solution: |
+      行列式を計算すると
+      \[
+      \det A(a)=-(a-1)^2(a+2)
+      \]
+      である。したがって \(a\neq1,-2\) では行列式が非零なので階数は 3 である。
+
+      \(a=1\) のとき
+      \[
+      A(1)=\begin{bmatrix}1&1&1\\1&1&1\\1&1&1\end{bmatrix}
+      \]
+      であり、すべての行が同じなので階数は 1。核は
+      \[
+      x+y+z=0
+      \]
+      の解であり、
+      \[
+      \operatorname{Null}(A(1))=
+      \operatorname{span}\{(-1,1,0),(-1,0,1)\}
+      \]
+      となる。
+
+      \(a=-2\) のとき、行列式は 0 だが全行が定数倍ではないため階数は 2。実際に解くと
+      \[
+      x=y=z
+      \]
+      が得られるので
+      \[
+      \operatorname{Null}(A(-2))=\operatorname{span}\{(1,1,1)\}
+      \]
+      である。
+  - id: la-det-p1-008
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 逆行列と連立方程式
+    prompt: |
+      \[
+      A=\begin{bmatrix}
+      2&1&0\\
+      1&1&1\\
+      0&2&1
+      \end{bmatrix},
+      \qquad
+      \mathbf{b}=\begin{bmatrix}1\\0\\3\end{bmatrix}
+      \]
+      とする。
+
+      1. \(\det A\) を求め、\(A\) が可逆か判定せよ。
+      2. \(A^{-1}\) を求めよ。
+      3. \(A\mathbf{x}=\mathbf{b}\) を解け。
+    hints: []
+    answer: |
+      \[
+      \det A=-3
+      \]
+      なので \(A\) は可逆。
+      \[
+      A^{-1}=\begin{bmatrix}
+      1/3&1/3&-1/3\\
+      1/3&-2/3&2/3\\
+      -2/3&4/3&-1/3
+      \end{bmatrix}
+      \]
+      \[
+      \mathbf{x}=A^{-1}\mathbf{b}
+      =\begin{bmatrix}-2/3\\7/3\\-5/3\end{bmatrix}
+      \]
+    solution: |
+      余因子展開または行基本変形により
+      \[
+      \det A=-3
+      \]
+      である。行列式が非零なので \(A\) は可逆である。
+
+      掃き出し法で \([A\mid I]\) を \([I\mid A^{-1}]\) に変形すると
+      \[
+      A^{-1}=\begin{bmatrix}
+      1/3&1/3&-1/3\\
+      1/3&-2/3&2/3\\
+      -2/3&4/3&-1/3
+      \end{bmatrix}
+      \]
+      を得る。
+
+      したがって
+      \[
+      \mathbf{x}=A^{-1}\mathbf{b}
+      =\begin{bmatrix}
+      1/3&1/3&-1/3\\
+      1/3&-2/3&2/3\\
+      -2/3&4/3&-1/3
+      \end{bmatrix}
+      \begin{bmatrix}1\\0\\3\end{bmatrix}
+      =\begin{bmatrix}-2/3\\7/3\\-5/3\end{bmatrix}
+      \]
+      である。
+  - id: la-det-p1-009
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 行基本変形による 4 次行列式
+    prompt: |
+      行基本変形を用いて、次の行列式を計算せよ。行の交換、行の定数倍、行への倍数加算が行列式に与える影響を明記すること。
+      \[
+      \det
+      \begin{bmatrix}
+      1&2&3&4\\
+      0&1&2&3\\
+      2&4&7&10\\
+      1&1&0&1
+      \end{bmatrix}
+      \]
+    hints: []
+    answer: |
+      行列式は
+      \[
+      2
+      \]
+      である。
+    solution: |
+      \(R_i\leftarrow R_i+cR_j\) は行列式を変えない。まず
+      \[
+      R_3\leftarrow R_3-2R_1,
+      \quad
+      R_4\leftarrow R_4-R_1
+      \]
+      とすると
+      \[
+      \begin{bmatrix}
+      1&2&3&4\\
+      0&1&2&3\\
+      0&0&1&2\\
+      0&-1&-3&-3
+      \end{bmatrix}
+      \]
+      である。次に
+      \[
+      R_4\leftarrow R_4+R_2
+      \]
+      により
+      \[
+      \begin{bmatrix}
+      1&2&3&4\\
+      0&1&2&3\\
+      0&0&1&2\\
+      0&0&-1&0
+      \end{bmatrix}
+      \]
+      を得る。さらに
+      \[
+      R_4\leftarrow R_4+R_3
+      \]
+      とすると
+      \[
+      \begin{bmatrix}
+      1&2&3&4\\
+      0&1&2&3\\
+      0&0&1&2\\
+      0&0&0&2
+      \end{bmatrix}
+      \]
+      となる。上三角行列なので行列式は対角成分の積：
+      \[
+      1\cdot1\cdot1\cdot2=2
+      \]
+      である。
+  - id: la-det-p1-010
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: パラメータ付き行列式と可逆性
+    prompt: |
+      \[
+      A(t)=
+      \begin{bmatrix}
+      1&t&0\\
+      0&1&t\\
+      t&0&1
+      \end{bmatrix}
+      \]
+      について、次を求めよ。
+
+      1. \(\det A(t)\)
+      2. 実数 \(t\) に対して \(A(t)\) が可逆でない値
+      3. 可逆でないときの核の基
+    hints: []
+    answer: |
+      \[
+      \det A(t)=1+t^3=(t+1)(t^2-t+1)
+      \]
+      実数で可逆でないのは \(t=-1\) のみ。
+      \[
+      \operatorname{Null}(A(-1))=\operatorname{span}\{(1,1,1)\}
+      \]
+    solution: |
+      行列式を展開すると
+      \[
+      \det A(t)=1+t^3
+      \]
+      である。実数では
+      \[
+      1+t^3=0
+      \]
+      の解は \(t=-1\) のみである。
+
+      \(t=-1\) のとき
+      \[
+      A(-1)=\begin{bmatrix}1&-1&0\\0&1&-1\\-1&0&1\end{bmatrix}
+      \]
+      である。方程式 \(A(-1)\mathbf{x}=0\) は
+      \[
+      x-y=0,
+      \quad y-z=0,
+      \quad -x+z=0
+      \]
+      なので
+      \[
+      x=y=z
+      \]
+      である。したがって核は
+      \[
+      \operatorname{span}\{(1,1,1)\}
+      \]
+      である。
+  - id: la-det-p1-011
+    type: application
+    difficulty: undergraduate-advanced
+    title: 行列式と体積倍率
+    prompt: |
+      四面体の頂点を
+      \[
+      P_0=(1,0,2),\quad
+      P_1=(3,1,1),\quad
+      P_2=(0,2,4),\quad
+      P_3=(2,-1,3)
+      \]
+      とする。
+
+      1. \(P_0\) を基準にした 3 本の辺ベクトルを列に持つ行列を作れ。
+      2. その行列式を計算せよ。
+      3. 対応する平行六面体の体積と、四面体の体積を求めよ。
+    hints: []
+    answer: |
+      辺ベクトルを列に持つ行列は
+      \[
+      M=\begin{bmatrix}
+      2&-1&1\\
+      1&2&-1\\
+      -1&2&1
+      \end{bmatrix}
+      \]
+      であり、
+      \[
+      \det M=12
+      \]
+      である。平行六面体の体積は \(12\)、四面体の体積は \(12/6=2\)。
+    solution: |
+      基準点 \(P_0\) からの辺ベクトルは
+      \[
+      P_1-P_0=(2,1,-1),
+      \quad
+      P_2-P_0=(-1,2,2),
+      \quad
+      P_3-P_0=(1,-1,1)
+      \]
+      である。したがって
+      \[
+      M=\begin{bmatrix}
+      2&-1&1\\
+      1&2&-1\\
+      -1&2&1
+      \end{bmatrix}
+      \]
+      である。
+
+      計算すると
+      \[
+      \det M=12
+      \]
+      である。行列式の絶対値は、3 本の辺ベクトルが張る平行六面体の体積を表すので、平行六面体の体積は
+      \[
+      |12|=12
+      \]
+      である。四面体はその \(1/6\) なので
+      \[
+      \frac{12}{6}=2
+      \]
+      である。
+  - id: la-det-p1-012
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: クラメルの公式による連立方程式
+    prompt: |
+      次の連立一次方程式をクラメルの公式で解け。
+      \[
+      \begin{bmatrix}
+      2&1&-1\\
+      1&3&1\\
+      0&1&1
+      \end{bmatrix}
+      \begin{bmatrix}x\\y\\z\end{bmatrix}
+      =\begin{bmatrix}1\\4\\2\end{bmatrix}
+      \]
+      各変数に対応する行列式も明記せよ。
+    hints: []
+    answer: |
+      係数行列の行列式は \(2\)。置換行列式は
+      \[
+      D_x=2,
+      \quad D_y=1,
+      \quad D_z=3
+      \]
+      したがって
+      \[
+      (x,y,z)=\left(1,\frac12,\frac32\right)
+      \]
+      である。
+    solution: |
+      係数行列を \(A\)、右辺を \(\mathbf{b}\) とする。
+      \[
+      D=\det A=2
+      \]
+      である。第 1 列、第 2 列、第 3 列をそれぞれ \(\mathbf{b}\) で置き換えた行列式を計算すると
+      \[
+      D_x=2,
+      \quad D_y=1,
+      \quad D_z=3
+      \]
+      となる。クラメルの公式より
+      \[
+      x=\frac{D_x}{D}=1,
+      \quad
+      y=\frac{D_y}{D}=\frac12,
+      \quad
+      z=\frac{D_z}{D}=\frac32
+      \]
+      である。
+  - id: la-det-p1-013
+    type: derivation
+    difficulty: graduate
+    title: ブロック上三角行列の行列式
+    prompt: |
+      正方行列 \(B\) と \(D\) に対して、ブロック行列
+      \[
+      M=\begin{bmatrix}
+      B&C\\
+      0&D
+      \end{bmatrix}
+      \]
+      を考える。
+
+      1. \(\det M=\det B\det D\) である理由を説明せよ。
+      2. 次を計算せよ。
+      \[
+      \det
+      \begin{bmatrix}
+      2&0&1&0\\
+      0&3&0&1\\
+      1&0&2&0\\
+      0&1&0&2
+      \end{bmatrix}
+      \]
+    hints: []
+    answer: |
+      ブロック上三角行列の行列式は対角ブロックの行列式の積である。
+      与えられた行列式の値は
+      \[
+      15
+      \]
+      である。
+    solution: >
+      ブロック上三角行列では、下左ブロックがゼロであるため、行列式の展開に寄与する項は対角ブロック \(B\) と \(D\)
+      の中で選ばれる項に限られる。したがって
+
+      \[
+
+      \det\begin{bmatrix}B&C\\0&D\end{bmatrix}=\det B\det D
+
+      \]
+
+      である。
+
+
+      具体例では、行と列を \(1,3,2,4\) の順に同時に並べ替えると
+
+      \[
+
+      \begin{bmatrix}
+
+      2&1&0&0\\
+
+      1&2&0&0\\
+
+      0&0&3&1\\
+
+      0&0&1&2
+
+      \end{bmatrix}
+
+      \]
+
+      となる。同じ置換を行と列に施すので行列式の符号は変わらない。
+
+      よって
+
+      \[
+
+      \det=\det\begin{bmatrix}2&1\\1&2\end{bmatrix}
+
+      \det\begin{bmatrix}3&1\\1&2\end{bmatrix}
+
+      =(4-1)(6-1)=3\cdot5=15
+
+      \]
+
+      である。
+  - id: la-det-p1-014
+    type: proof
+    difficulty: graduate
+    title: 行列式ゼロと列ベクトルの一次従属性
+    prompt: |
+      \(A\) を \(n\times n\) 行列とする。次を証明せよ。
+      \[
+      \det A=0
+      \quad\Longleftrightarrow\quad
+      A\text{ の列ベクトルは一次従属である}
+      \]
+      また、この命題が「\(A\) が可逆でない」ことと同値である理由を述べよ。
+    hints:
+      - 階数と行列式の関係を用いる。
+      - 列ベクトルが一次独立なら列ランクは \(n\)。
+    answer: >
+      \(\det A=0\) は \(\operatorname{rank}A<n\)
+      と同値であり、これは列ベクトルが一次従属であることと同値である。さらに、正方行列では \(\operatorname{rank}A=n\)
+      と可逆性が同値なので、\(\det A=0\) は不可逆性とも同値である。
+    solution: >
+      正方行列 \(A\) について、行基本変形により上三角行列にできる。ピボットが全て存在すれば階数は \(n\)
+      であり、上三角形の対角成分はすべて非零にできるため行列式は非零である。
+
+
+      一方、ピボットが不足すれば階数は \(n\) 未満であり、上三角形の対角に 0 が現れるため行列式は 0 である。したがって
+
+      \[
+
+      \det A=0
+
+      \quad\Longleftrightarrow\quad
+
+      \operatorname{rank}A<n
+
+      \]
+
+      である。
+
+
+      列ベクトルが一次独立であることは列ランクが \(n\) であることと同値である。よって
+
+      \[
+
+      \operatorname{rank}A<n
+
+      \quad\Longleftrightarrow\quad
+
+      \text{列ベクトルは一次従属}
+
+      \]
+
+      である。
+
+
+      また、正方行列では
+
+      \[
+
+      A\text{ が可逆}
+
+      \quad\Longleftrightarrow\quad
+
+      \operatorname{rank}A=n
+
+      \]
+
+      なので、\(\det A=0\) は \(A\) が可逆でないことと同値である。
+  - id: la-det-p1-015
+    type: application
+    difficulty: undergraduate-advanced
+    title: 線形変換・可逆性・体積倍率
+    prompt: |
+      線形変換 \(T:\mathbb{R}^3\to\mathbb{R}^3\) を
+      \[
+      T(x,y,z)=(x+y,\ y+z,\ z+x)
+      \]
+      で定める。
+
+      1. 標準基に関する行列 \(A\) を求めよ。
+      2. \(\det A\) を求め、\(T\) が可逆か判定せよ。
+      3. \(T\) は体積を何倍にするか。
+      4. \(T(x,y,z)=(1,2,3)\) を満たす \((x,y,z)\) を求めよ。
+    hints: []
+    answer: |
+      \[
+      A=\begin{bmatrix}1&1&0\\0&1&1\\1&0&1\end{bmatrix},
+      \qquad
+      \det A=2
+      \]
+      よって \(T\) は可逆で、体積を \(2\) 倍する。
+      \[
+      T(x,y,z)=(1,2,3)
+      \]
+      の解は
+      \[
+      (x,y,z)=(1,0,2)
+      \]
+      である。
+    solution: |
+      各成分の係数を並べると
+      \[
+      A=\begin{bmatrix}1&1&0\\0&1&1\\1&0&1\end{bmatrix}
+      \]
+      である。行列式は
+      \[
+      \det A
+      =1(1\cdot1-1\cdot0)-1(0\cdot1-1\cdot1)=1+1=2
+      \]
+      である。したがって可逆である。
+
+      行列式の絶対値は有向体積倍率の絶対値なので、体積は \(2\) 倍になる。
+
+      方程式は
+      \[
+      x+y=1,
+      \quad y+z=2,
+      \quad z+x=3
+      \]
+      である。第 1 式より \(y=1-x\)、第 3 式より \(z=3-x\)。第 2 式に代入すると
+      \[
+      1-x+3-x=2
+      \]
+      より \(x=1\)。したがって \(y=0,z=2\)。
+  - id: la-det-p1-016
+    type: diagnostic
+    difficulty: undergraduate-advanced
+    title: 命題の真偽判定：Phase 1 総合
+    prompt: >
+      次の各命題について、真なら理由を述べ、偽なら反例または修正版を示せ。
+
+
+      1. \(n\times n\) 行列 \(A\) について、\(\det A\neq0\) なら
+      \(A\mathbf{x}=\mathbf{b}\) は任意の \(\mathbf{b}\) に対して一意解をもつ。
+
+      2. \(A\) の核が \(\{\mathbf{0}\}\) なら、\(A\) の列ベクトルは一次独立である。
+
+      3. 行列のある行に別の行の定数倍を加えると、行列式はその定数倍だけ変化する。
+
+      4. \(\operatorname{rank}A=\dim\operatorname{im}A\)。
+
+      5. \(\det A=0\) なら \(A\) の像は必ず \(\mathbb{R}^n\) 全体である。
+    hints: []
+    answer: |
+      1. 真。
+      2. 真。
+      3. 偽。行への倍数加算は行列式を変えない。
+      4. 真。
+      5. 偽。\(\det A=0\) なら正方行列の像は \(\mathbb{R}^n\) 全体ではない。
+    solution: >
+      1. \(\det A\neq0\) なら \(A\) は可逆であり、解は \(\mathbf{x}=A^{-1}\mathbf{b}\)
+      と一意に書ける。
+
+
+      2. \(\ker A=\{0\}\) は \(A\mathbf{x}=0\)
+      が自明解しかもたないことを意味する。これは列ベクトルの一次独立性と同値である。
+
+
+      3. 偽。操作 \(R_i\leftarrow R_i+cR_j\) は行列式を変えない。行列式が \(c\) 倍になるのは、ある行そのものを
+      \(c\) 倍したときである。
+
+
+      4. 真。階数は像空間の次元として定義できる。
+
+
+      5. 偽。\(n\times n\) 行列で \(\det A=0\) なら階数は \(n\) 未満であり、像の次元も \(n\)
+      未満である。したがって像は \(\mathbb{R}^n\) 全体ではない。
+  - id: la-det-p1-017
+    type: application
+    difficulty: graduate
+    title: 補間問題と Vandermonde 型行列式
+    prompt: |
+      相異なる実数 \(t_1,t_2,t_3\) に対して、二次多項式
+      \[
+      p(t)=a+bt+ct^2
+      \]
+      が 3 点
+      \[
+      p(t_1)=y_1,
+      \quad p(t_2)=y_2,
+      \quad p(t_3)=y_3
+      \]
+      を通る条件を考える。
+
+      1. 係数 \(a,b,c\) に関する線形方程式を行列で表せ。
+      2. 係数行列の行列式を求めよ。
+      3. \(t_1,t_2,t_3\) が相異なるとき、任意の \(y_1,y_2,y_3\) に対して二次多項式が一意に存在する理由を述べよ。
+    hints: []
+    answer: |
+      係数行列は
+      \[
+      V=\begin{bmatrix}
+      1&t_1&t_1^2\\
+      1&t_2&t_2^2\\
+      1&t_3&t_3^2
+      \end{bmatrix}
+      \]
+      である。
+      \[
+      \det V=(t_2-t_1)(t_3-t_1)(t_3-t_2)
+      \]
+      相異なる \(t_i\) ではこの行列式が非零なので、係数 \(a,b,c\) は一意に定まる。
+    solution: >
+      条件 \(p(t_i)=y_i\) は
+
+      \[
+
+      a+bt_i+ct_i^2=y_i
+
+      \]
+
+      である。したがって
+
+      \[
+
+      \begin{bmatrix}
+
+      1&t_1&t_1^2\\
+
+      1&t_2&t_2^2\\
+
+      1&t_3&t_3^2
+
+      \end{bmatrix}
+
+      \begin{bmatrix}a\\b\\c\end{bmatrix}
+
+      =
+
+      \begin{bmatrix}y_1\\y_2\\y_3\end{bmatrix}
+
+      \]
+
+      と書ける。
+
+
+      この係数行列は Vandermonde 型行列であり、行列式は
+
+      \[
+
+      \det V=(t_2-t_1)(t_3-t_1)(t_3-t_2)
+
+      \]
+
+      である。
+
+
+      \(t_1,t_2,t_3\) が相異なるなら、どの差も 0 ではないため \(\det V\neq0\)。したがって \(V\)
+      は可逆であり、任意の右辺 \(\mathbf{y}\) に対して係数ベクトル \((a,b,c)^T\) が一意に存在する。
+  - id: la-det-p1-018
+    type: proof
+    difficulty: graduate
+    title: 行列式・可逆性・線形写像の同値条件
+    prompt: >
+      \(A\) を \(n\times n\) 行列とし、線形写像 \(T_A:\mathbb{R}^n\to\mathbb{R}^n\) を
+      \(T_A(\mathbf{x})=A\mathbf{x}\) で定める。次の条件がすべて同値であることを、Phase 1 の概念を用いて説明せよ。
+
+
+      1. \(\det A\neq0\)
+
+      2. \(A\) は可逆である。
+
+      3. \(\ker T_A=\{\mathbf{0}\}\)
+
+      4. \(\operatorname{im}T_A=\mathbb{R}^n\)
+
+      5. \(\operatorname{rank}A=n\)
+
+      6. \(A\) の列ベクトルは \(\mathbb{R}^n\) の基である。
+    hints: []
+    answer: |
+      これらはすべて、正方行列が情報を失わずに \(\mathbb{R}^n\) 全体を一対一に写すことを表す同値条件である。
+    solution: >
+      \(\det A\neq0\) であることは、行基本変形によりすべての列にピボットがあることと同値である。これは
+      \(\operatorname{rank}A=n\) と同値である。
+
+
+      階数が \(n\) なら列ベクトルは \(n\) 本の一次独立なベクトルであり、\(\mathbb{R}^n\)
+      の基である。逆に列ベクトルが基なら階数は \(n\) である。
+
+
+      列ベクトルが一次独立であることは \(A\mathbf{x}=0\) が自明解しかもたないこと、すなわち \(\ker T_A=\{0\}\)
+      と同値である。
+
+
+      また、列ベクトルが \(\mathbb{R}^n\) を張ることは \(\operatorname{im}T_A=\mathbb{R}^n\)
+      と同値である。
+
+
+      正方行列において、階数が \(n\) であることは逆行列が存在することとも同値である。したがって 1 から 6 はすべて同値である。

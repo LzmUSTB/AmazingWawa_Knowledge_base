@@ -1524,6 +1524,7 @@ function toggleRelationSidebar() {
   --simulation: #7c5cff;
   --language: #00e5a8;
   --dcc-tools: #ff8a00;
+  --tools: #ff7a45;
   --relation-contains: #dcdcdc;
   --relation-depends-on: #ffd500;
   --relation-used-in: #7c5cff;

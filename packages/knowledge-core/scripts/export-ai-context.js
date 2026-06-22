@@ -60,12 +60,15 @@ function readVault(vaultRoot) {
     graphLayoutYaml: readText(path.join(vaultRoot, "graph-layout.yaml")),
     metaFiles: readContentFiles(vaultRoot, "meta.yaml"),
     noteFiles: readContentFiles(vaultRoot, "note.md"),
+    noteHtmlFiles: readContentFiles(vaultRoot, "note.html"),
+    exerciseFiles: readContentFiles(vaultRoot, "exercises.yaml"),
     blockTypeFiles: readBlockTypeFiles(vaultRoot),
   });
 }
 
 function writeContextFiles(vaultRoot, vault) {
   const contextRoot = path.join(vaultRoot, ".kb-ai", "context");
+  fs.rmSync(contextRoot, { recursive: true, force: true });
   fs.mkdirSync(contextRoot, { recursive: true });
   const files = buildAiContextFiles(vault);
 
@@ -94,4 +97,5 @@ console.log(`Context exported to ${contextRoot}`);
 console.log(`Nodes: ${vault.nodes.filter((node) => node.type !== "domain").length}`);
 console.log(`Edges: ${vault.edges.length}`);
 console.log(`Domains: ${vault.domains.length}`);
+console.log(`ExerciseSets: ${Object.keys(vault.exercises?.byNodeId || {}).length}`);
 console.log(`Custom block types: ${Object.keys(vault.blockTypes || {}).length}`);

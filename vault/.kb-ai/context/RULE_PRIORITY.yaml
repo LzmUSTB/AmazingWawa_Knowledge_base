@@ -1,25 +1,23 @@
 rulePriority:
   - AI_CONTEXT.yaml
-  - AI_KB_GUIDE.md
+  - WORKFLOW_GUIDE.md
+  - FORMAT_CONTRACT.md
+  - schema-specific files
   - SOURCE_TO_NOTE_GUIDE.md
-  - PACKAGE_AND_RELATION_GUIDE.md
-  - NOTE_AND_BLOCK_GUIDE.md
-  - NOTE_QUALITY_RUBRIC.md
+  - QUALITY_RUBRIC.md
   - BLOCK_REGISTRY.md
   - dynamic indexes
 conflictResolution:
-  sourceSnapshotRulesOverrideIframeRules: true
-  sourcePortedInteractionOverridesGenericJsReproduction: true
-  learnerFacingVoiceOverridesImplementationDescription: true
-  noGeneratedImagesOverridesAllFallbacks: true
-  flatEdgeShapeIsMandatory: true
-  addNodeNestedNodeObjectOverridesFlatAmbiguousExamples: true
-  topLevelTypeIsOperationOnly: true
-  nodeKnowledgeTypeGoesInNodeDotTypeOrFlatNodeType: true
+  mechanicalFormatOverridesStylePreference: true
+  explicitUserTaskOverridesDefaultTaskQuestion: true
+  packageGenerationRequiresExplicitRequestOrApprovedPlan: true
+  stepwiseAuthoringOverridesOneShotGeneration: true
+  addNodeUsesNestedNodeObject: true
+  patchTopLevelMustBeObject: true
+  addEdgeMustBeFlat: true
   contentFormatNoneMeansNoNoteFile: true
   localeTitleRecommendedButOptional: true
   sourceBlocksConditional: true
-  noDirectOriginalSourceMediaWarningDisabled: true
-  visibleInteractiveElementWarningKept: true
   assetPathWhitelistMandatory: true
-  unreferencedPackagedAssetsWarn: true
+  stagesAreLayoutOnly: true
+  exerciseSetsBelongToNodes: true

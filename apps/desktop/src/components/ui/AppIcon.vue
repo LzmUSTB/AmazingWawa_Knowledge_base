@@ -36,6 +36,7 @@ import resize from "../../assets/icons/resize.svg?raw";
 import stage from "../../assets/icons/stage.svg?raw";
 import check from "../../assets/icons/check.svg?raw";
 import exercise from "../../assets/icons/exercise.svg?raw";
+import tools from "../../assets/icons/tools.svg?raw";
 
 const icons = {
   "arrow-swap": arrowSwap,
@@ -73,6 +74,7 @@ const icons = {
   stage,
   check,
   exercise,
+  tools,
 };
 
 const props = defineProps({

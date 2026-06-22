@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
           <code>snapshot/</code> folder, which is ignored by Git.
         </p>
       </div>
-      <button class="hud-button snapshot-folder-button button-with-icon" type="button" style="--button-color: var(--shader)"
+      <button class="hud-button snapshot-folder-button button-with-icon" type="button" style="--button-color: var(--tools)"
         @click="openSnapshotDirectory">
         <AppIcon name="folder-open" />
         <span class="button-icon-label">Open snapshot folder</span>
@@ -137,7 +137,7 @@ onBeforeUnmount(() => {
           placeholder="https://ciechanow.ski/cameras-and-lenses/"
           :disabled="capturing"
         />
-        <button class="hud-button snapshot-submit" style="--button-color: var(--shader)" :disabled="!canCapture">
+        <button class="hud-button snapshot-submit" style="--button-color: var(--tools)" :disabled="!canCapture">
           {{ capturing ? "Capturing..." : "Start Capture" }}
         </button>
       </div>
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--shader);
+  color: var(--tools);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   font-size: var(--font-size-small);
   font-weight: 900;
@@ -319,7 +319,7 @@ dt {
 }
 
 .snapshot-input:focus {
-  box-shadow: 0 0 0 2px var(--shader);
+  box-shadow: 0 0 0 2px var(--tools);
 }
 
 .snapshot-submit {
@@ -352,7 +352,7 @@ dt {
 .snapshot-progress-fill {
   height: 100%;
   width: 0;
-  background: var(--shader);
+  background: var(--tools);
   transition: width 260ms ease;
 }
 
@@ -405,7 +405,7 @@ dd {
 }
 
 code {
-  color: var(--shader);
+  color: var(--tools);
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
 }
 

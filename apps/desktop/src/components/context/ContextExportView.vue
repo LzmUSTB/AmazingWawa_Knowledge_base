@@ -33,19 +33,27 @@ function fileCategory(name) {
   if (name.endsWith("_INDEX.yaml")) return "Index";
   if (name.endsWith(".yaml")) return "Contract";
   if (name === "README.md") return "Start";
+  if (name === "WORKFLOW_GUIDE.md" || name === "SOURCE_TO_NOTE_GUIDE.md") return "Workflow";
+  if (name.endsWith("_SCHEMA.md") || name === "FORMAT_CONTRACT.md" || name === "ASSET_RULES.md") return "Format";
+  if (name === "QUALITY_RUBRIC.md") return "Quality";
   return "Guide";
 }
 
 function fileDescription(name) {
   const descriptions = {
     "README.md": "Entry point and recommended reading order for an AI agent.",
-    "AI_CONTEXT.yaml": "Machine-readable vault snapshot: domains, nodes, relations, block support, package rules, and counts.",
+    "WORKFLOW_GUIDE.md": "Interactive task routing for architecture, notes, ExerciseSets, source plans, and explicit package work.",
+    "FORMAT_CONTRACT.md": "Mechanical plain-file rules and separation between content, ExerciseSets, relations, and Stage layout.",
+    "WAWAPKG_SCHEMA.md": "Complete package trees and canonical manifest, source, patch, node, note, ExerciseSet, and edge examples.",
+    "NODE_SCHEMA.md": "Node ids, metadata fields, types, statuses, locale fields, and content-format rules.",
+    "NOTE_SCHEMA.md": "Markdown and HTML note formats, source attribution, LaTeX, assets, and interactive-note constraints.",
+    "EXERCISE_SCHEMA.md": "ExerciseSet ownership, paths, legal problem fields, types, difficulties, and a complete example.",
+    "RELATION_SCHEMA.md": "Frozen relation semantics and canonical flat add_edge operations.",
+    "ASSET_RULES.md": "Allowed asset roots, source preservation, reference requirements, and package exclusions.",
+    "QUALITY_RUBRIC.md": "Quality checks for one-node-at-a-time notes, ExerciseSets, sources, and package reliability.",
+    "AI_CONTEXT.yaml": "Machine-readable stepwise workflow policy, content capabilities, vault counts, and constraints.",
     "RULE_PRIORITY.yaml": "Conflict-resolution order for AI generation rules.",
-    "AI_KB_GUIDE.md": "Main authoring contract for generating valid .wawapkg packages.",
-    "SOURCE_TO_NOTE_GUIDE.md": "Rules for converting source material, snapshots, assets, demos, and citations into notes.",
-    "PACKAGE_AND_RELATION_GUIDE.md": "Package structure, patch operations, and relation-type guidance.",
-    "NOTE_AND_BLOCK_GUIDE.md": "Markdown, HTML note, and content-block authoring guidance.",
-    "NOTE_QUALITY_RUBRIC.md": "Quality checklist for note completeness, visual fidelity, source use, and package reliability.",
+    "SOURCE_TO_NOTE_GUIDE.md": "Source analysis and import-plan workflow with an approval gate before package generation.",
     "BLOCK_REGISTRY.md": "Readable list of custom declarative content blocks available in this vault.",
     "CUSTOM_BLOCK_INDEX.yaml": "Machine-readable custom block registry index.",
     "DOMAIN_INDEX.yaml": "Machine-readable list of existing domains and their display metadata.",
@@ -112,8 +120,9 @@ function formatBytes(value) {
         <section class="ai-panel">
           <div class="section-label">What This Is For</div>
           <p class="quiet-copy">
-            These files are a compact AI handoff for creating future .wawapkg imports. They describe the vault schema,
-            current graph inventory, relation rules, content quality bar, and supported note/block formats.
+            These files are a compact AI handoff for interactive, stepwise knowledge authoring. They route the task
+            before generation, separate strict formats from workflow guidance, and reserve .wawapkg output for an
+            explicit request or an approved plan.
           </p>
         </section>
       </aside>

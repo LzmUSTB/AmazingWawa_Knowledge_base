@@ -1584,6 +1584,31 @@ fn create_dir_all(vault_root_path: String, relative_path: String) -> Result<(), 
 }
 
 #[tauri::command]
+fn reset_context_export_dir(vault_root_path: String) -> Result<(), String> {
+    let relative_path = ".kb-ai/context";
+    let target = safe_vault_path(&vault_root_path, relative_path)?;
+    if target.exists() {
+        let canonical_root = PathBuf::from(&vault_root_path)
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+        let canonical_target = target
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve context export path: {error}"))?;
+        if !canonical_target.starts_with(&canonical_root) {
+            return Err("Refusing to reset a context directory outside the vault root".into());
+        }
+        if canonical_target.is_dir() {
+            fs::remove_dir_all(&canonical_target)
+                .map_err(|error| format!("Failed to reset context export directory: {error}"))?;
+        } else {
+            return Err("Context export path exists but is not a directory".into());
+        }
+    }
+    fs::create_dir_all(&target)
+        .map_err(|error| format!("Failed to create context export directory: {error}"))
+}
+
+#[tauri::command]
 fn remove_file(vault_root_path: String, relative_path: String) -> Result<(), String> {
     let normalized = relative_path.replace('\\', "/");
     let parts: Vec<&str> = normalized.split('/').collect();
@@ -1675,6 +1700,7 @@ pub fn run() {
             read_wawapkg_file,
             read_text_file,
             read_vault_files,
+            reset_context_export_dir,
             remove_node_note_files,
             remove_file,
             remove_vault_path,

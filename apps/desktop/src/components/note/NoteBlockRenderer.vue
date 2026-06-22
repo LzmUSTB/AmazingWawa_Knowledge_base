@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { convertFileSrc, isTauri } from "@tauri-apps/api/core";
 import { parseMarkdownTokens, parseNoteBlocks } from "../../content/note-block-parser.js";
+import { clearTypesetMath, hasMathDelimiters, typesetMath } from "../../content/mathjax-renderer.js";
 import ExpressionVisualizerBlock from "./blocks/ExpressionVisualizerBlock.vue";
 import GenericVisualBlock from "./blocks/GenericVisualBlock.vue";
 import ProcessFlowBlock from "./blocks/ProcessFlowBlock.vue";
@@ -18,7 +19,9 @@ const props = defineProps({
 
 const revealedQuiz = ref({});
 const activeCodeLine = ref({});
+const rendererRoot = ref(null);
 const blocks = computed(() => parseNoteBlocks(props.markdown, { blockRegistry: props.blockRegistry }));
+let mathRenderKey = 0;
 
 function escapeHtml(value = "") { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 function inlineMarkdown(value = "") { return escapeHtml(value).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>"); }
@@ -84,10 +87,28 @@ watch(() => [props.searchQuery, blocks.value], ([query]) => {
     if (block.type === "quiz" && includesQuery(block.data.answer, query)) revealedQuiz.value = { ...revealedQuiz.value, [blockIndex]: true };
   });
 }, { immediate: true });
+
+watch(() => props.markdown, async (markdown) => {
+  const renderKey = ++mathRenderKey;
+  await nextTick();
+  const root = rendererRoot.value;
+  if (!root) return;
+  if (!hasMathDelimiters(markdown)) {
+    clearTypesetMath(root);
+    return;
+  }
+  try {
+    await typesetMath(root);
+  } catch (error) {
+    if (renderKey === mathRenderKey) console.warn("[markdown] MathJax typeset failed.", error);
+  }
+}, { immediate: true, flush: "post" });
+
+onBeforeUnmount(() => clearTypesetMath(rendererRoot.value));
 </script>
 
 <template>
-  <div class="note-renderer">
+  <div ref="rendererRoot" class="note-renderer tex2jax_process">
     <template v-for="(block, blockIndex) in blocks" :key="`${block.type}-${blockIndex}`">
       <section v-if="block.type === 'markdown'" class="markdown-document">
         <template v-for="(token, tokenIndex) in markdownTokens(block.markdown)" :key="tokenIndex">
@@ -115,6 +136,8 @@ watch(() => [props.searchQuery, blocks.value], ([query]) => {
 
 <style scoped>
 .note-renderer { display: grid; gap: 24px; width: min(980px, 100%); margin: 0 auto; }
+.note-renderer :deep(mjx-container[display="true"]) { overflow-x: auto; overflow-y: hidden; max-width: 100%; margin: 1em 0; padding: 2px 0; }
+.note-renderer :deep(mjx-container svg) { max-width: none; }
 .markdown-document { display: grid; gap: 14px; }
 .doc-heading { margin: 12px 0 0; border-bottom: 1px solid var(--border-muted); border-left: 5px solid var(--note-color, var(--graphics)); color: var(--text-primary); line-height: 1.2; padding: 0 0 8px 12px; }
 h1.doc-heading { display: none; }

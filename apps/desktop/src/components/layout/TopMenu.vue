@@ -73,10 +73,10 @@ function handleTitlebarDoubleClick(event) {
         <AppIcon name="export" />
         <span class="button-icon-label">Export Context</span>
       </button>
-      <button class="hud-button top-action-button button-with-icon" title="Capture" style="--button-color: var(--shader)"
-        @click="$emit('show-view', 'source-snapshot')">
-        <AppIcon name="capture" />
-        <span class="button-icon-label">Capture</span>
+      <button class="hud-button top-action-button button-with-icon" title="Tools" style="--button-color: var(--tools)"
+        @click="$emit('show-view', 'tools')">
+        <AppIcon name="tools" />
+        <span class="button-icon-label">Tools</span>
       </button>
       <button class="hud-button top-action-button button-with-icon" disabled title="Git panel is not implemented yet">
         <AppIcon name="git-branch" />
