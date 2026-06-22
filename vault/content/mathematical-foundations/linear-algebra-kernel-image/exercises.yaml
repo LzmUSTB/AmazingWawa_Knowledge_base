@@ -1,0 +1,135 @@
+version: 1
+nodeId: linear-algebra-kernel-image
+title: 核と像：階数へ進むための計算演習
+locale: ja-JP
+summary: |
+  核・像・単射・全射を計算し、階数と逆行列の判断に接続する。
+scope:
+  coverageNodeIds:
+    - linear-algebra-linear-map
+    - linear-algebra-kernel-image
+  prerequisiteNodeIds:
+    - linear-algebra-linear-map
+  relatedNodeIds:
+    - linear-algebra-rank
+    - linear-algebra-inverse-matrix
+problems:
+  - id: la-ki-s-001
+    type: calculation
+    difficulty: introductory
+    title: 核を求める
+    prompt: |
+      \(T:\mathbb{R}^3\to\mathbb{R}^2\) を
+      \[
+      T(x,y,z)=(x+z,y-z)
+      \]
+      で定める。\(\ker T\) を求めよ。
+    hints: []
+    answer: |
+      \[
+      \ker T=\operatorname{span}\{(-1,1,1)\}
+      \]
+      である。
+    solution: |
+      \(T(x,y,z)=(0,0)\) より
+      \[
+      x+z=0,\quad y-z=0
+      \]
+      である。\(z=t\) とおくと \((x,y,z)=t(-1,1,1)\)。
+  - id: la-ki-s-002
+    type: calculation
+    difficulty: undergraduate
+    title: 像の基底
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&2\\0&1\\1&3\end{bmatrix}
+      \]
+      が定める写像の像の基底と次元を求めよ。
+    hints: []
+    answer: >
+      \[
+
+      \operatorname{im}A=\operatorname{span}\{(1,0,1)^T,(2,1,3)^T\},\quad
+      \dim\operatorname{im}A=2
+
+      \]
+
+      である。
+    solution: >
+      像は列空間である。二つの列 \((1,0,1)^T\) と \((2,1,3)^T\) は定数倍ではないので一次独立。よってその二本が基底で、次元は
+      \(2\)。
+  - id: la-ki-s-003
+    type: calculation
+    difficulty: undergraduate
+    title: 核と像を同時に求める
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&1&0\\0&1&1\\1&2&1\end{bmatrix}
+      \]
+      について、\(\ker A\) と \(\operatorname{im}A\) の基底を求めよ。
+    hints: []
+    answer: |
+      \[
+      \ker A=\operatorname{span}\{(1,-1,1)^T\}
+      \]
+      であり、像の基底の一つは
+      \[
+      \{(1,0,1)^T,(1,1,2)^T\}
+      \]
+      である。
+    solution: >
+      \(Ax=0\) は
+
+      \[
+
+      x+y=0,\quad y+z=0,\quad x+2y+z=0
+
+      \]
+
+      を与える。最初の二式から \(x=-y,\ z=-y\)。よって核は
+      \(t(1,-1,1)\)。列については第三列が第二列から第一列を引いたものなので、第一列と第二列で像を張る。
+  - id: la-ki-s-004
+    type: conceptual
+    difficulty: undergraduate
+    title: 核と単射
+    prompt: >
+      線形写像 \(T:\mathbb{R}^3\to\mathbb{R}^3\) について、\(\dim\ker T=1\) とする。\(T\)
+      は単射か。理由も述べよ。
+    hints: []
+    answer: |
+      単射ではない。
+    solution: >
+      核の次元が \(1\) ということは、\(T(x)=0\) となる非零ベクトルが存在する。したがって \(0\)
+      とその非零ベクトルが同じ出力に写るため、単射ではない。
+  - id: la-ki-s-005
+    type: proof
+    difficulty: undergraduate
+    title: 核は部分空間
+    prompt: |
+      線形写像 \(T:V\to W\) について、\(\ker T\) が \(V\) の部分空間であることを証明せよ。
+    hints: []
+    answer: |
+      \(\ker T\) は部分空間である。
+    solution: |
+      \(T(0)=0\) なので \(0\in\ker T\)。また \(u,v\in\ker T\) なら
+      \[
+      T(u+v)=T(u)+T(v)=0
+      \]
+      である。さらにスカラー \(c\) について
+      \[
+      T(cu)=cT(u)=0
+      \]
+      である。よって和とスカラー倍で閉じている。
+  - id: la-ki-s-006
+    type: application
+    difficulty: undergraduate-advanced
+    title: 逆行列への接続
+    prompt: >
+      \(3\times3\) 行列 \(A\) について、\(\ker A\neq\{0\}\) であると分かっている。\(A\)
+      が逆行列を持たないことを説明せよ。
+    hints: []
+    answer: |
+      核が非自明なので写像は単射ではなく、逆行列を持たない。
+    solution: >
+      \(\ker A\neq\{0\}\) なら、\(Ac=0\) を満たす非零ベクトル \(c\) がある。したがって \(A0=Ac\)
+      となり、線形写像は単射でない。逆行列を持つなら単射でなければならないため、\(A\) は逆行列を持たない。

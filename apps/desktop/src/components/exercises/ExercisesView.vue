@@ -15,7 +15,7 @@ const props = defineProps({
   canSave: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["delete-exercise-set", "import-exercise-set", "open-exercises", "open-note", "open-scope", "save-progress"]);
+const emit = defineEmits(["delete-exercise-problem", "delete-exercise-set", "import-exercise-set", "open-exercises", "open-note", "open-scope", "save-progress"]);
 const activeVault = useActiveVault();
 const expandedProblems = ref(new Set());
 const revealedHints = ref({});
@@ -187,7 +187,13 @@ function dueLabel(value) {
         <article v-for="(problem, index) in currentExerciseSet.problems" :key="problem.id" class="problem-panel">
           <header class="problem-header">
             <div><span>Problem {{ String(index + 1).padStart(2, "0") }}</span><h2>{{ problem.title || problem.id }}</h2></div>
-            <div class="problem-tags"><span>{{ problem.type }}</span><span>{{ problem.difficulty }}</span></div>
+            <div class="problem-header-actions">
+              <div class="problem-tags"><span>{{ problem.type }}</span><span>{{ problem.difficulty }}</span></div>
+              <button class="problem-delete" type="button" :disabled="!canSave" title="Delete problem"
+                @click="$emit('delete-exercise-problem', { nodeId: exerciseNodeId, problemId: problem.id })">
+                <AppIcon name="delete" :size="15" />
+              </button>
+            </div>
           </header>
           <NoteBlockRenderer :markdown="problem.prompt" :block-registry="activeVault.blockRegistry"
             :node="ownerNode" :vault-root-path="activeVault.vaultRootPath" />
@@ -263,6 +269,10 @@ function dueLabel(value) {
 .problem-panel { border: 1px solid var(--border-primary); background: var(--background-main); padding: 18px; }
 .problem-header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border-muted); margin-bottom: 18px; padding-bottom: 12px; }
 .problem-header h2 { margin: 5px 0 0; color: var(--text-primary); font-size: var(--font-size-subtitle); }
+.problem-header-actions { display: flex; align-items: flex-start; gap: 8px; }
+.problem-delete { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid var(--game-dev); border-radius: 0; background: transparent; color: var(--game-dev); cursor: pointer; padding: 0; }
+.problem-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--game-dev) 14%, transparent); }
+.problem-delete:disabled { opacity: .4; cursor: not-allowed; }
 .problem-tags, .rating-row > div, .rating-actions, .reveal-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .problem-tags span { border: 1px solid var(--border-muted); padding: 5px 7px; color: var(--text-muted); font-size: var(--font-size-small); text-transform: uppercase; }
 .reveal-actions { margin-top: 16px; }

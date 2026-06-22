@@ -302,6 +302,33 @@ export async function deleteExerciseSetFromNode(vaultRootPath, node) {
   return writeExerciseProgress(vaultRootPath, { version: 1, problems });
 }
 
+export async function deleteExerciseProblemFromNode(vaultRootPath, node, problemId) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting an exercise problem.");
+  if (!node?.id || node.type === "domain") throw new Error("Exercise problems require a non-domain owner node.");
+  const normalizedProblemId = String(problemId || "").trim();
+  if (!normalizedProblemId) throw new Error("Exercise problem id is required.");
+
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const exerciseSet = currentVault.exercises?.byNodeId?.[node.id];
+  if (!exerciseSet) throw new Error("This node does not have an ExerciseSet.");
+  if (!exerciseSet.problems.some((problem) => problem.id === normalizedProblemId)) {
+    throw new Error(`Exercise problem "${normalizedProblemId}" was not found.`);
+  }
+  if (exerciseSet.problems.length <= 1) {
+    throw new Error("The final problem cannot be deleted individually. Delete the ExerciseSet instead.");
+  }
+
+  await writeExerciseSet(vaultRootPath, node, {
+    ...exerciseSet,
+    problems: exerciseSet.problems.filter((problem) => problem.id !== normalizedProblemId),
+  });
+  const progressKey = `${node.id}/${normalizedProblemId}`;
+  const problems = Object.fromEntries(
+    Object.entries(currentVault.exerciseProgress?.problems || {}).filter(([key]) => key !== progressKey),
+  );
+  return writeExerciseProgress(vaultRootPath, { version: 1, problems });
+}
+
 export async function writeExerciseProgress(vaultRootPath, progress) {
   if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving exercise progress.");
   await invoke("create_dir_all", { vaultRootPath, relativePath: ".kinjito" });

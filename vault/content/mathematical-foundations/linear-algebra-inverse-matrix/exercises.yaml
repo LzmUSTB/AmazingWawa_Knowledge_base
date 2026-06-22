@@ -1,0 +1,137 @@
+version: 1
+nodeId: linear-algebra-inverse-matrix
+title: 逆行列：行列式への最終橋渡し演習
+locale: ja-JP
+summary: |
+  逆行列、可逆性、連立方程式、階数との関係を練習し、行列式の可逆性判定へ接続する。
+scope:
+  coverageNodeIds:
+    - linear-algebra-inverse-matrix
+    - linear-algebra-rank
+  prerequisiteNodeIds:
+    - linear-algebra-rank
+    - linear-algebra-kernel-image
+  relatedNodeIds:
+    - linear-algebra-determinant
+problems:
+  - id: la-inv-s-001
+    type: calculation
+    difficulty: introductory
+    title: 2次行列の逆行列
+    prompt: |
+      \[
+      A=\begin{bmatrix}2&1\\1&1\end{bmatrix}
+      \]
+      の逆行列を求めよ。
+    hints: []
+    answer: |
+      \[
+      A^{-1}=\begin{bmatrix}1&-1\\-1&2\end{bmatrix}
+      \]
+      である。
+    solution: |
+      積を確認すると
+      \[
+      \begin{bmatrix}2&1\\1&1\end{bmatrix}\begin{bmatrix}1&-1\\-1&2\end{bmatrix}=I
+      \]
+      であるため、これが逆行列である。
+  - id: la-inv-s-002
+    type: calculation
+    difficulty: undergraduate
+    title: 逆行列で連立方程式を解く
+    prompt: >
+      \[
+
+      A=\begin{bmatrix}1&2\\3&5\end{bmatrix},\quad
+      b=\begin{bmatrix}4\\11\end{bmatrix}
+
+      \]
+
+      について、\(A^{-1}\) を求め、\(Ax=b\) を解け。
+    hints: []
+    answer: >
+      \[
+
+      A^{-1}=\begin{bmatrix}-5&2\\3&-1\end{bmatrix},\quad
+      x=\begin{bmatrix}2\\1\end{bmatrix}
+
+      \]
+
+      である。
+    solution: |
+      直接計算またはガウス・ジョルダン法により
+      \[
+      A^{-1}=\begin{bmatrix}-5&2\\3&-1\end{bmatrix}
+      \]
+      を得る。したがって
+      \[
+      x=A^{-1}b=\begin{bmatrix}-5&2\\3&-1\end{bmatrix}\begin{bmatrix}4\\11\end{bmatrix}=\begin{bmatrix}2\\1\end{bmatrix}
+      \]
+      である。
+  - id: la-inv-s-003
+    type: calculation
+    difficulty: undergraduate
+    title: 3次行列の逆行列
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&1&0\\0&1&1\\1&0&1\end{bmatrix}
+      \]
+      の逆行列を求めよ。
+    hints: []
+    answer: |
+      \[
+      A^{-1}=\frac12\begin{bmatrix}1&-1&1\\1&1&-1\\-1&1&1\end{bmatrix}
+      \]
+      である。
+    solution: >
+      候補を \(B=\frac12\begin{bmatrix}1&-1&1\\1&1&-1\\-1&1&1\end{bmatrix}\)
+      とする。計算すると \(AB=I\) である。したがって \(B=A^{-1}\)。ガウス・ジョルダン法では \([A|I]\) を
+      \([I|A^{-1}]\) へ変形する。
+  - id: la-inv-s-004
+    type: conceptual
+    difficulty: undergraduate
+    title: 可逆性の同値条件
+    prompt: |
+      \(n\times n\) 行列 \(A\) について、次を結びつけて説明せよ。
+
+      1. \(A\) は可逆である。
+      2. \(Ax=0\) は自明解しか持たない。
+      3. \(\operatorname{rank}A=n\)。
+    hints: []
+    answer: |
+      三条件は同値である。
+    solution: >
+      可逆なら \(Ax=0\) に左から \(A^{-1}\) を掛けて
+      \(x=0\)。これは核が零であることを意味する。核が零なら列は一次独立で、正方行列では階数が \(n\)。階数が \(n\)
+      なら線形変換は情報を失わず、逆行列を持つ。
+  - id: la-inv-s-005
+    type: diagnostic
+    difficulty: undergraduate-advanced
+    title: パラメータ付き可逆性
+    prompt: |
+      \[
+      A_t=\begin{bmatrix}1&1&1\\0&1&t\\0&1&1\end{bmatrix}
+      \]
+      が可逆となる \(t\) の条件を、階数で判定せよ。
+    hints: []
+    answer: |
+      \[
+      t\neq1
+      \]
+      のとき可逆である。
+    solution: >
+      第3行から第2行を引くと \((0,0,1-t)\) が得られる。\(t\neq1\) なら第三列にも主元があり階数は3。\(t=1\)
+      なら第2行と第3行が同じになり階数が3未満なので可逆でない。
+  - id: la-inv-s-006
+    type: application
+    difficulty: undergraduate-advanced
+    title: 行列式への接続
+    prompt: >
+      \(3\times3\) 行列 \(A\) について、\(\operatorname{rank}A<3\) である。このとき \(A\)
+      が逆行列を持たず、後で学ぶ行列式も \(0\) になることを説明せよ。
+    hints: []
+    answer: |
+      階数が3未満なので可逆でなく、列ベクトルが三次元体積を作れないため行列式は \(0\) になる。
+    solution: >
+      正方行列が可逆であるためには満階数である必要がある。\(\operatorname{rank}A<3\)
+      なので逆行列は存在しない。また三つの列ベクトルは一次従属で、平行六面体が退化する。行列式は有向体積を表すため \(0\) になる。

@@ -1,0 +1,151 @@
+version: 1
+nodeId: linear-algebra-linear-map
+title: 線形写像：行列表示と変換視点の演習
+locale: ja-JP
+summary: |
+  線形性判定、標準基底の像、行列表示、合成を扱い、核・像・階数の準備をする。
+scope:
+  coverageNodeIds:
+    - linear-algebra-linear-map
+  prerequisiteNodeIds:
+    - linear-algebra-basis-dimension
+  relatedNodeIds:
+    - linear-algebra-kernel-image
+    - linear-algebra-rank
+problems:
+  - id: la-lm-s-001
+    type: diagnostic
+    difficulty: introductory
+    title: 線形写像の判定
+    prompt: |
+      次の写像が線形か判定せよ。
+      \[
+      T(x,y)=(2x-y,x+3y),\quad S(x,y)=(x+1,y),\quad R(x,y)=(x^2,y)
+      \]
+    hints: []
+    answer: |
+      \(T\) は線形、\(S,R\) は線形ではない。
+    solution: >
+      \(T\) は各成分が一次斉次式である。\(S(0,0)=(1,0)\) なので \(S\) は線形でない。\(R\) は二乗項を含み、例えば
+      \(R(2,0)\neq 2R(1,0)\) なので線形でない。
+  - id: la-lm-s-002
+    type: calculation
+    difficulty: undergraduate
+    title: 標準基底から行列を作る
+    prompt: |
+      \(T:\mathbb{R}^3\to\mathbb{R}^2\) が
+      \[
+      T(e_1)=(1,2),\quad T(e_2)=(0,-1),\quad T(e_3)=(3,1)
+      \]
+      を満たす。表現行列を求め、\(T(2,-1,4)\) を計算せよ。
+    hints: []
+    answer: |
+      \[
+      A=\begin{bmatrix}1&0&3\\2&-1&1\end{bmatrix},\quad T(2,-1,4)=(14,9)
+      \]
+      である。
+    solution: |
+      標準基底の像を列に並べるので
+      \[
+      A=\begin{bmatrix}1&0&3\\2&-1&1\end{bmatrix}
+      \]
+      である。したがって
+      \[
+      A\begin{bmatrix}2\\-1\\4\end{bmatrix}
+      =\begin{bmatrix}14\\9\end{bmatrix}
+      \]
+      となる。
+  - id: la-lm-s-003
+    type: calculation
+    difficulty: undergraduate
+    title: 像の生成ベクトルを読む
+    prompt: >
+      \[
+
+      A=\begin{bmatrix}
+
+      1&2\\
+
+      0&1\\
+
+      1&-1
+
+      \end{bmatrix}
+
+      \]
+
+      が定める \(T:\mathbb{R}^2\to\mathbb{R}^3\) について、\(T(3,-1)\) と
+      \(\operatorname{im}T\) を求めよ。
+    hints: []
+    answer: |
+      \[
+      T(3,-1)=(1,-1,4)^T
+      \]
+      であり、
+      \[
+      \operatorname{im}T=\operatorname{span}\{(1,0,1)^T,(2,1,-1)^T\}
+      \]
+      である。
+    solution: |
+      \[
+      A\begin{bmatrix}3\\-1\end{bmatrix}=3\begin{bmatrix}1\\0\\1\end{bmatrix}-\begin{bmatrix}2\\1\\-1\end{bmatrix}=\begin{bmatrix}1\\-1\\4\end{bmatrix}
+      \]
+      である。像は列ベクトルの線形結合全体なので、列空間として表せる。
+  - id: la-lm-s-004
+    type: calculation
+    difficulty: undergraduate
+    title: 合成写像の順序
+    prompt: >
+      \[
+
+      A=\begin{bmatrix}1&2\\0&1\end{bmatrix},\quad
+      B=\begin{bmatrix}2&0\\1&3\end{bmatrix}
+
+      \]
+
+      について、\(S(x)=Ax,\ T(x)=Bx\) とする。\(S\circ T\) と \(T\circ S\) の行列を求めよ。
+    hints: []
+    answer: |
+      \[
+      S\circ T:\ AB=\begin{bmatrix}4&6\\1&3\end{bmatrix},\quad
+      T\circ S:\ BA=\begin{bmatrix}2&4\\1&5\end{bmatrix}
+      \]
+      である。
+    solution: |
+      合成の順序に注意する。
+      \[
+      S(T(x))=A(Bx)=(AB)x,\quad T(S(x))=B(Ax)=(BA)x
+      \]
+      である。実際に掛け算すると答えの二つの行列が得られる。
+  - id: la-lm-s-005
+    type: proof
+    difficulty: undergraduate
+    title: 線形写像と零ベクトル
+    prompt: |
+      線形写像 \(T:V\to W\) は必ず \(T(0)=0\) を満たすことを証明せよ。
+    hints: []
+    answer: |
+      \(T(0)=0\) である。
+    solution: |
+      線形性より
+      \[
+      T(0)=T(0+0)=T(0)+T(0)
+      \]
+      である。両辺から \(T(0)\) を引くと \(T(0)=0\) が得られる。
+  - id: la-lm-s-006
+    type: application
+    difficulty: undergraduate-advanced
+    title: 単射性の判定
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&0&1\\0&1&1\end{bmatrix}
+      \]
+      が定める \(T:\mathbb{R}^3\to\mathbb{R}^2\) が単射でないことを示せ。
+    hints: []
+    answer: |
+      例えば \(T(0,0,0)=T(1,1,-1)=(0,0)\) なので単射ではない。
+    solution: |
+      \[
+      A\begin{bmatrix}x\\y\\z\end{bmatrix}=\begin{bmatrix}x+z\\y+z\end{bmatrix}
+      \]
+      である。\((1,1,-1)\) を代入すると出力は \((0,0)\)。これは零ベクトルと同じ出力なので単射ではない。

@@ -1,0 +1,142 @@
+version: 1
+nodeId: linear-algebra-linear-independence
+title: 一次独立：行列計算への基礎演習
+locale: ja-JP
+summary: |
+  線形結合・生成空間・一次独立を、行基本変形に接続できる水準まで練習する。
+scope:
+  coverageNodeIds:
+    - linear-algebra-linear-independence
+  prerequisiteNodeIds:
+    - linear-algebra
+  relatedNodeIds:
+    - linear-algebra-basis-dimension
+    - linear-algebra-rank
+problems:
+  - id: la-li-s-001
+    type: calculation
+    difficulty: introductory
+    title: 線形結合の係数を求める
+    prompt: |
+      \bar v_1=(1,2,0),\bar v_2=(0,1,1) とする。\(\bar w=(3,10,4)\) を
+      \[
+      \bar w=a\bar v_1+b\bar v_2
+      \]
+      の形で表せ。
+    hints: []
+    answer: |
+      \[
+      a=3,\quad b=4
+      \]
+      である。
+    solution: >
+      \[
+
+      a\bar v_1+b\bar v_2=(a,2a+b,b)
+
+      \]
+
+      である。これが \((3,10,4)\) に等しいので、第1成分から \(a=3\)、第3成分から \(b=4\)。第2成分も
+      \(2a+b=10\) となり一致する。
+  - id: la-li-s-002
+    type: calculation
+    difficulty: introductory
+    title: 一次従属関係を見つける
+    prompt: |
+      \[
+      v_1=(1,0,2),\quad v_2=(0,1,1),\quad v_3=(2,1,5)
+      \]
+      が一次独立か一次従属か判定せよ。一次従属なら関係式を一つ与えよ。
+    hints: []
+    answer: |
+      一次従属であり、
+      \[
+      2v_1+v_2-v_3=0
+      \]
+      である。
+    solution: |
+      \[
+      2v_1+v_2=2(1,0,2)+(0,1,1)=(2,1,5)=v_3
+      \]
+      である。したがって非自明な関係式 \(2v_1+v_2-v_3=0\) があるので一次従属である。
+  - id: la-li-s-003
+    type: calculation
+    difficulty: undergraduate
+    title: 行列にして一次独立を判定する
+    prompt: |
+      次の3本のベクトルが \(\mathbb{R}^3\) で一次独立か判定せよ。
+      \[
+      v_1=(1,1,0),\quad v_2=(1,0,1),\quad v_3=(2,1,t)
+      \]
+    hints: []
+    answer: |
+      \[
+      t\neq 1
+      \]
+      のとき一次独立、\(t=1\) のとき一次従属である。
+    solution: |
+      \(v_3=a v_1+b v_2\) と仮定すると
+      \[
+      a(1,1,0)+b(1,0,1)=(a+b,a,b)
+      \]
+      である。これが \((2,1,t)\) に等しいためには
+      \[
+      a+b=2,\quad a=1,\quad b=t
+      \]
+      が必要である。すると \(1+t=2\)、すなわち \(t=1\)。よって \(t=1\) のときだけ一次従属で、それ以外は一次独立である。
+  - id: la-li-s-004
+    type: calculation
+    difficulty: undergraduate
+    title: 極大一次独立部分集合
+    prompt: |
+      \[
+      a_1=(1,0,1,0),
+      \quad a_2=(0,1,1,0),
+      \quad a_3=(1,1,2,0),
+      \quad a_4=(1,2,3,1)
+      \]
+      から極大一次独立部分集合を一つ選び、不要なベクトルを線形結合で表せ。
+    hints: []
+    answer: |
+      一例は \(\{a_1,a_2,a_4\}\)。不要なベクトルは
+      \[
+      a_3=a_1+a_2
+      \]
+      である。
+    solution: >
+      まず \(a_3=a_1+a_2\) なので、\(a_3\) は生成空間を広げない。一方、\(c_1a_1+c_2a_2+c_4a_4=0\)
+      とすると第4成分から \(c_4=0\)、さらに第1・第2成分から \(c_1=c_2=0\)。したがって \(a_1,a_2,a_4\)
+      は一次独立である。
+  - id: la-li-s-005
+    type: proof
+    difficulty: undergraduate
+    title: 列の一次独立と同次方程式
+    prompt: >
+      行列 \(A=[a_1\ a_2\ \cdots\ a_n]\) について、列ベクトルが一次独立であることと、\(Ax=0\)
+      が自明解しか持たないことが同値であることを示せ。
+    hints: []
+    answer: |
+      同値である。
+    solution: >
+      \(x=(x_1,\ldots,x_n)^T\) とすると
+
+      \[
+
+      Ax=x_1a_1+x_2a_2+\cdots+x_na_n
+
+      \]
+
+      である。したがって \(Ax=0\) は列ベクトルの線形結合が零ベクトルになることを意味する。これが \(x=0\)
+      のときだけ起こることは、列ベクトルが一次独立であるという定義そのものである。
+  - id: la-li-s-006
+    type: application
+    difficulty: undergraduate-advanced
+    title: 行列式への接続
+    prompt: >
+      \(3\times3\) 行列 \(A\) の列ベクトルが一次従属であるとする。線形写像 \(x\mapsto Ax\) が可逆でないことを説明せよ。
+    hints: []
+    answer: |
+      列が一次従属なら \(Ac=0\) となる非零ベクトル \(c\) が存在するため、写像は単射でなく可逆でない。
+    solution: >
+      列の一次従属性より、ある \(c\neq0\) が存在して \(Ac=0\) となる。すると \(A0=Ac=0\)
+      であり、異なる入力が同じ出力を持つ。したがって写像は単射ではなく、逆写像も逆行列も存在しない。

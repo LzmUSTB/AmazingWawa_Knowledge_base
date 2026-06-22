@@ -1,0 +1,117 @@
+version: 1
+nodeId: linear-algebra-rank
+title: 階数：行基本変形と整合性判定演習
+locale: ja-JP
+summary: |
+  階数を計算し、核・像・逆行列・行列式の判断へつなげる。
+scope:
+  coverageNodeIds:
+    - linear-algebra-rank
+    - linear-algebra-kernel-image
+  prerequisiteNodeIds:
+    - linear-algebra-kernel-image
+  relatedNodeIds:
+    - linear-algebra-inverse-matrix
+    - linear-algebra-determinant
+problems:
+  - id: la-rank-s-001
+    type: calculation
+    difficulty: introductory
+    title: 階数の基本計算
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&2&1\\2&4&2\\1&3&2\end{bmatrix}
+      \]
+      の階数を求めよ。
+    hints: []
+    answer: |
+      \[
+      \operatorname{rank}A=2
+      \]
+      である。
+    solution: |
+      第2行は第1行の2倍である。第3行から第1行を引くと \((0,1,1)\) が得られる。第1行とこの行は一次独立なので階数は \(2\)。
+  - id: la-rank-s-002
+    type: calculation
+    difficulty: undergraduate
+    title: 列空間の基底と階数
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&0&1&2\\0&1&1&1\\1&1&2&3\end{bmatrix}
+      \]
+      の階数を求め、列空間の基底を元の列から選べ。
+    hints: []
+    answer: |
+      階数は \(2\)。列空間の基底は第1列と第2列でよい。
+    solution: |
+      第3列は第1列と第2列の和、第4列は第1列の2倍と第2列の和である。第1列と第2列は一次独立なので階数は \(2\)。
+  - id: la-rank-s-003
+    type: calculation
+    difficulty: undergraduate
+    title: 拡大係数行列による分類
+    prompt: |
+      \[
+      \begin{cases}
+      x+y+z=1,\\
+      2x+2y+2z=2,\\
+      x-y+z=0
+      \end{cases}
+      \]
+      の解の個数を階数で分類せよ。
+    hints: []
+    answer: |
+      解は無限に存在する。
+    solution: |
+      第2式は第1式の2倍なので独立ではない。第1式と第3式は独立で、拡大係数行列にも矛盾行はない。したがって
+      \[
+      \operatorname{rank}A=\operatorname{rank}[A|b]=2<3
+      \]
+      となり、自由変数が一つあるため解は無限に存在する。
+  - id: la-rank-s-004
+    type: diagnostic
+    difficulty: undergraduate-advanced
+    title: パラメータ付き階数分類
+    prompt: |
+      \[
+      A_t=\begin{bmatrix}1&1&1\\1&t&1\\1&1&t\end{bmatrix}
+      \]
+      の階数を \(t\) によって分類せよ。
+    hints: []
+    answer: |
+      \(t\neq1\) のとき階数は \(3\)、\(t=1\) のとき階数は \(1\) である。
+    solution: |
+      第2行から第1行、第3行から第1行を引くと
+      \[
+      \begin{bmatrix}1&1&1\\0&t-1&0\\0&0&t-1\end{bmatrix}
+      \]
+      になる。\(t\neq1\) なら主元が3つある。\(t=1\) なら全行が \((1,1,1)\) になり、階数は \(1\)。
+  - id: la-rank-s-005
+    type: calculation
+    difficulty: undergraduate-advanced
+    title: 階数と核の次元
+    prompt: |
+      \[
+      A=\begin{bmatrix}1&2&0&1\\0&1&1&1\\1&3&1&2\end{bmatrix}
+      \]
+      について、\(\operatorname{rank}A\) と \(\dim\ker A\) を求めよ。
+    hints: []
+    answer: |
+      \[
+      \operatorname{rank}A=2,\quad \dim\ker A=2
+      \]
+      である。
+    solution: >
+      第3行は第1行と第2行の和である。第1行と第2行は一次独立なので階数は \(2\)。列数は \(4\) だから、階数・零化度定理より
+      \(\dim\ker A=4-2=2\)。
+  - id: la-rank-s-006
+    type: application
+    difficulty: undergraduate-advanced
+    title: 行列式直前の体積判断
+    prompt: >
+      \(3\times3\) 行列 \(A\) が \(\operatorname{rank}A<3\)
+      を満たすとする。列ベクトルが作る平行六面体の体積が \(0\) になる理由を説明せよ。
+    hints: []
+    answer: |
+      列空間の次元が3未満なので、三つの列ベクトルは三次元の体積を張らず、平面または直線に退化する。したがって体積は \(0\)。
+    solution: |
+      三次元で非零体積を作るには、三つの列ベクトルが一次独立でなければならない。階数が3未満なら列ベクトルは一次従属であり、三次元全体を張らない。よって平行六面体は退化し、体積は \(0\)。

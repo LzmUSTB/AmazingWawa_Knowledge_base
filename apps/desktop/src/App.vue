@@ -8,6 +8,7 @@ import SearchOverlay from "./components/search/SearchOverlay.vue";
 import {
   chooseVaultRoot,
   addNoteToNode,
+  deleteExerciseProblemFromNode,
   deleteExerciseSetFromNode,
   createGraphLink,
   createDomain,
@@ -841,6 +842,39 @@ async function deleteExerciseSet(nodeId) {
   }
 }
 
+async function deleteExerciseProblem({ nodeId, problemId }) {
+  if (!confirmDiscardDirty()) return false;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before deleting an exercise problem.");
+    return false;
+  }
+  const node = findGraphNode(nodeId);
+  const exerciseSet = useActiveVault().value.exercises?.byNodeId?.[nodeId];
+  const problem = exerciseSet?.problems?.find((item) => item.id === problemId);
+  if (!node || node.type === "domain" || !problem) return false;
+  if (exerciseSet.problems.length <= 1) {
+    window.alert("This is the final problem. Use Delete ExerciseSet to remove it and the ExerciseSet file.");
+    return false;
+  }
+  const confirmed = window.confirm(
+    `Delete problem "${problem.title || problem.id}"?\n\nThis removes the problem and its progress record. The remaining ExerciseSet is preserved.`,
+  );
+  if (!confirmed) return false;
+  try {
+    const updatedVault = await deleteExerciseProblemFromNode(activeVaultRootPath.value, node, problem.id);
+    replaceVaultWithoutNavigation(updatedVault);
+    currentExerciseNodeId.value = node.id;
+    selectedNodeId.value = node.id;
+    currentDomain.value = node.domain;
+    currentView.value = "exercises";
+    return true;
+  } catch (error) {
+    console.error("[exercises] Failed to delete exercise problem.", error);
+    window.alert(`Failed to delete exercise problem: ${error?.message || error}`);
+    return false;
+  }
+}
+
 async function saveExerciseProgress(progress) {
   if (!canSaveNote.value) return false;
   const vaultRootPath = activeVaultRootPath.value;
@@ -1430,6 +1464,7 @@ function toggleRelationSidebar() {
       @close-relation-edit="closeRelationEdit"
       @add-note="addNote"
       @import-exercise-set="importExerciseSet"
+      @delete-exercise-problem="deleteExerciseProblem"
       @delete-exercise-set="deleteExerciseSet"
       @create-node="createNode"
       @delete-entity="requestDeleteEntity"

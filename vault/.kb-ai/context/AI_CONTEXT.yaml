@@ -15,7 +15,7 @@ vault:
     knowledge, and review.
   language: zh-CN
   defaultDomain: optics
-generatedAt: 2026-06-22T09:33:07.154Z
+generatedAt: 2026-06-22T14:24:42.250Z
 contentCapabilities:
   notes:
     markdown: true
@@ -101,5 +101,5 @@ counts:
   edges: 231
   markdownNotes: 0
   htmlNotes: 16
-  exerciseSets: 0
+  exerciseSets: 7
   customBlockTypes: 0
