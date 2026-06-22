@@ -22,7 +22,7 @@ import {
 import { generateOrthogonalRoute } from "../../graph/graph-route-generator.js";
 import { getGraphScope, hasContainsChildren, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor, nodeClass, relationTheme } from "../../graph/graph-theme.js";
-import { getActiveVault } from "../../graph/graph-data-store.js";
+import { useActiveVault } from "../../graph/graph-data-store.js";
 import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
@@ -66,6 +66,7 @@ const emit = defineEmits([
 ]);
 
 const viewportRef = ref(null);
+const activeVault = useActiveVault();
 const hoveredNodeId = ref("");
 const isPanning = ref(false);
 const panStart = ref({ pointerId: 0, x: 0, y: 0, cameraX: 0, cameraY: 0 });
@@ -460,8 +461,12 @@ function nodeHierarchyMarkerCount(node) {
 }
 
 function hasNodeNote(node) {
-  const note = getActiveVault().notes?.[node.id];
+  const note = activeVault.value.notes?.[node.id];
   return Boolean(note?.markdown?.trim() || note?.html?.trim());
+}
+
+function hasNodeExerciseSet(node) {
+  return Boolean(activeVault.value.exercises?.byNodeId?.[node.id]);
 }
 
 function nodeDisplayTitle(node) {
@@ -805,6 +810,10 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
             <span v-if="hasNodeNote(node)" class="node-note-badge" title="This node has a note"
               aria-label="This node has a note">
               <AppIcon name="file-text" :size="11" />
+            </span>
+            <span v-if="hasNodeExerciseSet(node)" class="node-exercise-badge" title="This node has exercises"
+              aria-label="This node has exercises">
+              <AppIcon name="exercise" :size="11" />
             </span>
 
             <span class="node-corner-markers" aria-hidden="true">
@@ -1156,6 +1165,20 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 .node-note-badge {
   position: absolute;
   left: 8px;
+  top: 7px;
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--node-color);
+  background: var(--background-main);
+  color: var(--node-color);
+  line-height: 0;
+}
+
+.node-exercise-badge {
+  position: absolute;
+  left: 29px;
   top: 7px;
   display: inline-grid;
   place-items: center;

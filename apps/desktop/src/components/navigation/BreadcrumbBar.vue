@@ -13,6 +13,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  currentExerciseNodeId: {
+    type: String,
+    default: "",
+  },
   currentView: {
     type: String,
     required: true,
@@ -93,10 +97,21 @@ const crumbItems = computed(() => {
     items.push({ id: "source-snapshot", kind: "view", label: "Capture" });
     return items;
   }
+  if (props.currentView === "exercises" && !props.currentExerciseNodeId) {
+    items.push({ id: "exercises", kind: "view", label: "Exercises" });
+    return items;
+  }
 
-  const targetId = props.currentView === "graph" ? graphCenterNodeId.value : props.currentView === "note" ? props.currentNoteId : "";
+  const targetId = props.currentView === "graph"
+    ? graphCenterNodeId.value
+    : props.currentView === "note"
+      ? props.currentNoteId
+      : props.currentView === "exercises"
+        ? props.currentExerciseNodeId
+        : "";
   if (!targetId) return items;
   containsPathIds(targetId).forEach((id) => items.push(crumbForId(id)));
+  if (props.currentView === "exercises") items.push({ id: "exercises", kind: "view", label: "Exercises" });
   return items;
 });
 

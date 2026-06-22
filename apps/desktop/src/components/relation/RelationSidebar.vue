@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import NodeFilterList from "../common/NodeFilterList.vue";
 import AppIcon from "../ui/AppIcon.vue";
 import RelationContextMenu from "./RelationContextMenu.vue";
-import { findGraphNode, getActiveVault } from "../../graph/graph-data-store.js";
+import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
 import { getStageForNode } from "../../graph/graph-layout.js";
 import {
   getDirectRelationsForNode,
@@ -67,8 +67,10 @@ const props = defineProps({
 
 const emit = defineEmits([
   "add-link",
+  "add-exercises",
   "open-domain",
   "open-note",
+  "open-exercises",
   "open-scope",
   "request-add-link",
   "request-delete-note",
@@ -83,6 +85,7 @@ const direction = ref("out");
 const relation = ref("depends-on");
 const targetId = ref("");
 const contextMenu = ref({ edge: null, x: 0, y: 0 });
+const activeVault = useActiveVault();
 
 const node = computed(() => findGraphNode(props.nodeId));
 const nodeColor = computed(() => getDomainColor(node.value?.domain));
@@ -96,9 +99,12 @@ const nodeStage = computed(() => {
 const domainSelected = computed(() => Boolean(node.value && isDomainNode(node.value.id)));
 const nodeHasNote = computed(() => {
   if (!node.value || domainSelected.value) return false;
-  const note = getActiveVault().notes?.[node.value.id] || null;
+  const note = activeVault.value.notes?.[node.value.id] || null;
   return Boolean(note?.markdown || note?.html);
 });
+const nodeHasExerciseSet = computed(() => Boolean(
+  node.value && !domainSelected.value && activeVault.value.exercises?.byNodeId?.[node.value.id],
+));
 const hierarchy = computed(() => (node.value ? getHierarchyForNode(node.value.id) : { parentEdges: [], childEdges: [] }));
 const directRelations = computed(() => (node.value ? getDirectRelationsForNode(node.value.id) : []));
 
@@ -304,6 +310,12 @@ function requestDeleteNote() {
                 @click="$emit('open-scope', node.id, node.id)">
                 <AppIcon name="graph" />
                 <span class="button-icon-label">Show Local Graph</span>
+              </button>
+              <button class="hud-button button-with-icon" style="--button-color: var(--career)"
+                :disabled="!nodeHasExerciseSet && !canSaveNote"
+                @click="$emit(nodeHasExerciseSet ? 'open-exercises' : 'add-exercises', node.id)">
+                <AppIcon name="exercise" />
+                <span class="button-icon-label">{{ nodeHasExerciseSet ? "Open Exercises" : "Add Exercises" }}</span>
               </button>
               <button v-if="canSaveNote && nodeHasNote" class="hud-button button-with-icon"
                 style="--button-color: var(--game-dev)" @click="requestDeleteNote">

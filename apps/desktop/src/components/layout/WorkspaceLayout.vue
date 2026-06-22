@@ -7,6 +7,7 @@ import EditKnowledgeItemDialog from "../dialogs/EditKnowledgeItemDialog.vue";
 import NewNodeDialog from "../dialogs/NewNodeDialog.vue";
 import GraphToolbar from "../graph/GraphToolbar.vue";
 import GraphView from "../graph/GraphView.vue";
+import ExercisesView from "../exercises/ExercisesView.vue";
 import BreadcrumbBar from "../navigation/BreadcrumbBar.vue";
 import NoteView from "../note/NoteView.vue";
 import EditRelationDialog from "../relation/EditRelationDialog.vue";
@@ -49,6 +50,14 @@ const props = defineProps({
   currentDomain: {
     type: String,
     required: true,
+  },
+  currentExerciseNodeId: {
+    type: String,
+    default: "",
+  },
+  currentNoteHasExerciseSet: {
+    type: Boolean,
+    default: false,
   },
   currentNoteId: {
     type: String,
@@ -174,6 +183,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   "add-link",
+  "add-exercises",
   "ai-import-applied",
   "close-dialog",
   "close-relation-edit",
@@ -181,6 +191,7 @@ const emit = defineEmits([
   "open-dialog",
   "open-domain",
   "open-note",
+  "open-exercises",
   "open-vault",
   "open-scope",
   "add-note",
@@ -196,6 +207,7 @@ const emit = defineEmits([
   "request-delete-relation",
   "request-edit-relation",
   "save-note",
+  "save-exercise-progress",
   "save-entity-edit",
   "save-layout",
   "save-relation-edit",
@@ -253,6 +265,7 @@ function fitGraphView() {
 
       <main class="workspace">
         <BreadcrumbBar :current-domain="currentDomain" :current-note-id="currentNoteId" :current-view="currentView"
+          :current-exercise-node-id="currentExerciseNodeId"
           @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
           @open-scope="relayOpenScope"
           @show-graph="$emit('show-graph', $event)" />
@@ -285,12 +298,19 @@ function fitGraphView() {
 
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 
+        <ExercisesView v-else-if="currentView === 'exercises'" :exercise-node-id="currentExerciseNodeId"
+          :can-save="canSaveNote" @add-exercises="$emit('add-exercises', $event)"
+          @open-exercises="$emit('open-exercises', $event)" @open-note="$emit('open-note', $event)"
+          @open-scope="$emit('open-scope', $event, $event)" @save-progress="$emit('save-exercise-progress', $event)" />
+
         <NoteView v-else :can-save-note="canSaveNote" :mode="noteMode" :note-find-close-key="noteFindCloseKey"
+          :has-exercise-set="currentNoteHasExerciseSet" :can-add-exercises="canSaveNote"
           :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
           :saving="noteSaving" @dirty-change="$emit('set-note-dirty', $event)"
           @delete-note="$emit('delete-note', $event)"
           @find-visible-change="$emit('set-note-find-visible', $event)" @save-note="$emit('save-note', $event)"
-          @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)" />
+          @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
+          @open-exercises="$emit('open-exercises', $event)" @add-exercises="$emit('add-exercises', $event)" />
       </main>
 
       <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"
@@ -299,6 +319,7 @@ function fitGraphView() {
         :can-save-note="canSaveNote" :graph-scope-id="graphScopeId" :layout-board="draftLayoutBoard"
         :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
         @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
+        @open-exercises="$emit('open-exercises', $event)" @add-exercises="$emit('add-exercises', $event)"
         @request-add-link="$emit('request-add-link')"
         @request-delete-note="$emit('delete-note', $event)"
         @request-delete-relation="$emit('request-delete-relation', $event)"

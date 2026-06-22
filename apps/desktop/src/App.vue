@@ -8,6 +8,7 @@ import SearchOverlay from "./components/search/SearchOverlay.vue";
 import {
   chooseVaultRoot,
   addNoteToNode,
+  createExerciseSetForNode,
   createGraphLink,
   createDomain,
   createKnowledgeNode,
@@ -25,6 +26,7 @@ import {
   updateDomain,
   updateKnowledgeNodeMeta,
   writeNoteMarkdown,
+  writeExerciseProgress,
 } from "./data/desktop-vault-adapter.js";
 import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
@@ -49,6 +51,7 @@ setActiveVault(initialVault);
 const currentView = ref("graph");
 const currentDomain = ref("");
 const currentNoteId = ref("");
+const currentExerciseNodeId = ref("");
 const selectedNodeId = ref("");
 const graphScopeId = ref("root");
 const noteMode = ref("read");
@@ -94,6 +97,7 @@ const backStack = ref([]);
 const forwardStack = ref([]);
 const historySuppressed = ref(false);
 let globalWheelListenerActive = false;
+let exerciseProgressSaveQueue = Promise.resolve();
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -104,6 +108,8 @@ const canAddNote = computed(() => getGraphNodes().some((node) => {
   const note = useActiveVault().value.notes?.[node.id] || null;
   return node.type !== "domain" && !note?.markdown && !note?.html && (node.contentFormat === "none" || node.contentFormat === "auto" || !node.contentFormat);
 }));
+const currentExerciseSet = computed(() => useActiveVault().value.exercises?.byNodeId?.[currentExerciseNodeId.value] || null);
+const currentNoteHasExerciseSet = computed(() => Boolean(useActiveVault().value.exercises?.byNodeId?.[currentNoteId.value]));
 const activeVaultTitle = computed(() => useActiveVault().value?.vault?.title || "Knowledge Base");
 const currentDraftLayoutBoard = computed(() => layoutDraftBoards.value[graphScopeId.value] || null);
 const currentDraftMovedNodeIds = computed(() => layoutMovedNodeIds.value[graphScopeId.value] || []);
@@ -111,6 +117,7 @@ const hasRealVault = computed(() => Boolean(activeVaultRootPath.value) && useAct
 const hasDomains = computed(() => Boolean(useActiveVault().value.domains?.length));
 const currentRelationNodeId = computed(() => {
   if (currentView.value === "note") return currentNoteId.value;
+  if (currentView.value === "exercises") return currentExerciseNodeId.value;
   if (currentView.value !== "graph") return "";
   return selectedNodeId.value || "";
 });
@@ -184,6 +191,10 @@ function applyVault(vault, { reset = false } = {}) {
   if (!findGraphNode(currentNoteId.value)) {
     currentNoteId.value = getGraphNodes().find((node) => node.type !== "domain")?.id || selectedNodeId.value;
   }
+  if (!findGraphNode(currentExerciseNodeId.value) || isDomainNode(currentExerciseNodeId.value)) {
+    currentExerciseNodeId.value = "";
+    if (currentView.value === "exercises") selectedNodeId.value = "";
+  }
   if (!hasGraphScope(graphScopeId.value)) {
     graphScopeId.value = "root";
   }
@@ -200,6 +211,7 @@ function snapshotNavigation() {
     scopeId: graphScopeId.value,
     selectedNodeId: selectedNodeId.value,
     currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: currentExerciseNodeId.value,
     currentDomain: currentDomain.value,
   };
 }
@@ -210,6 +222,7 @@ function isSameNavigationEntry(a, b) {
     a?.scopeId === b?.scopeId &&
     a?.selectedNodeId === b?.selectedNodeId &&
     a?.currentNoteId === b?.currentNoteId &&
+    (a?.currentExerciseNodeId || "") === (b?.currentExerciseNodeId || "") &&
     a?.currentDomain === b?.currentDomain
   );
 }
@@ -226,15 +239,19 @@ function validatedNavigationEntry(entry) {
   const scopeId = hasGraphScope(entry.scopeId) ? entry.scopeId : "root";
   const selectedId = findGraphNode(entry.selectedNodeId) ? entry.selectedNodeId : "";
   const noteId = findGraphNode(entry.currentNoteId) ? entry.currentNoteId : selectedId;
+  const exerciseNodeId = findGraphNode(entry.currentExerciseNodeId) && !isDomainNode(entry.currentExerciseNodeId)
+    ? entry.currentExerciseNodeId
+    : "";
   const domain = hasDomain(entry.currentDomain)
     ? entry.currentDomain
     : findGraphNode(selectedId)?.domain || getFallbackDomain();
   return {
     ...entry,
-    view: entry.view === "note" ? "note" : "graph",
+    view: ["note", "exercises"].includes(entry.view) ? entry.view : "graph",
     scopeId,
     selectedNodeId: selectedId,
     currentNoteId: noteId,
+    currentExerciseNodeId: exerciseNodeId,
     currentDomain: domain,
   };
 }
@@ -246,6 +263,7 @@ function applyNavigationEntry(entry) {
   graphScopeId.value = nextEntry.scopeId;
   selectedNodeId.value = nextEntry.selectedNodeId;
   currentNoteId.value = nextEntry.currentNoteId;
+  currentExerciseNodeId.value = nextEntry.currentExerciseNodeId;
   currentDomain.value = nextEntry.currentDomain;
   noteMode.value = "read";
   historySuppressed.value = false;
@@ -279,6 +297,7 @@ function restoreNavigation(snapshot, fallbackNodeId = "") {
   graphScopeId.value = targetScopeId;
   selectedNodeId.value = nextSelectedId;
   currentNoteId.value = findGraphNode(snapshot.currentNoteId) ? snapshot.currentNoteId : nextSelectedId;
+  currentExerciseNodeId.value = findGraphNode(snapshot.currentExerciseNodeId) ? snapshot.currentExerciseNodeId : "";
   currentDomain.value = hasDomain(snapshot.currentDomain)
     ? snapshot.currentDomain
     : findGraphNode(nextSelectedId)?.domain || getFallbackDomain();
@@ -288,6 +307,7 @@ function resetNavigationForVault(vault) {
   const defaultDomain = vault.vault.defaultDomain || vault.domains[0]?.id || "root";
   currentDomain.value = defaultDomain;
   currentNoteId.value = vault.nodes.find((node) => node.type !== "domain")?.id || defaultDomain;
+  currentExerciseNodeId.value = "";
   selectedNodeId.value = "";
   graphScopeId.value = "root";
   currentView.value = "graph";
@@ -699,6 +719,7 @@ function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) 
     currentDomain: scope.type === "domain" ? scope.id : scope.type === "focus" ? findGraphNode(scope.centerNodeId)?.domain || currentDomain.value : currentDomain.value,
   });
   graphScopeId.value = nextScopeId;
+  currentExerciseNodeId.value = "";
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
   selectedNodeId.value = nextSelectedNodeId;
@@ -719,12 +740,92 @@ function openNote(nodeId) {
     currentDomain: node.domain,
   });
   currentDomain.value = node.domain;
+  currentExerciseNodeId.value = "";
   currentNoteId.value = node.id;
   selectedNodeId.value = node.id;
   noteMode.value = "read";
   currentView.value = "note";
   recordRecentNode(nodeId);
   return true;
+}
+
+function openExercises(nodeId) {
+  if (!confirmDiscardDirty()) return false;
+  const node = findGraphNode(nodeId);
+  if (!node || node.type === "domain") return false;
+  pushNavigationHistory({
+    view: "exercises",
+    scopeId: graphScopeId.value,
+    selectedNodeId: node.id,
+    currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: node.id,
+    currentDomain: node.domain,
+  });
+  currentExerciseNodeId.value = node.id;
+  selectedNodeId.value = node.id;
+  currentDomain.value = node.domain;
+  currentView.value = "exercises";
+  recordRecentNode(nodeId);
+  return true;
+}
+
+function openExercisesOverview() {
+  if (!confirmDiscardDirty()) return false;
+  pushNavigationHistory({
+    view: "exercises",
+    scopeId: graphScopeId.value,
+    selectedNodeId: "",
+    currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: "",
+    currentDomain: currentDomain.value,
+  });
+  currentExerciseNodeId.value = "";
+  selectedNodeId.value = "";
+  currentView.value = "exercises";
+  return true;
+}
+
+async function addExercises(nodeId) {
+  if (!confirmDiscardDirty()) return false;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before creating exercises.");
+    return false;
+  }
+  const node = findGraphNode(nodeId);
+  if (!node || node.type === "domain") return false;
+  if (useActiveVault().value.exercises?.byNodeId?.[node.id]) return openExercises(node.id);
+  try {
+    const updatedVault = await createExerciseSetForNode(activeVaultRootPath.value, node);
+    replaceVaultWithoutNavigation(updatedVault);
+    currentExerciseNodeId.value = node.id;
+    selectedNodeId.value = node.id;
+    currentDomain.value = node.domain;
+    currentView.value = "exercises";
+    return true;
+  } catch (error) {
+    console.error("[exercises] Failed to create ExerciseSet.", error);
+    window.alert(`Failed to create exercises: ${error}`);
+    return false;
+  }
+}
+
+async function saveExerciseProgress(progress) {
+  if (!canSaveNote.value) return false;
+  const vaultRootPath = activeVaultRootPath.value;
+  const snapshot = structuredClone(progress);
+  exerciseProgressSaveQueue = exerciseProgressSaveQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const updatedVault = await writeExerciseProgress(vaultRootPath, snapshot);
+      replaceVaultWithoutNavigation(updatedVault);
+      return true;
+    })
+    .catch((error) => {
+      console.error("[exercises] Failed to save progress.", error);
+      window.alert(`Failed to save exercise progress: ${error}`);
+      return false;
+    });
+  return exerciseProgressSaveQueue;
 }
 
 function openDomain(domain) {
@@ -738,6 +839,7 @@ function openDomain(domain) {
     currentDomain: domain,
   });
   currentDomain.value = domain;
+  currentExerciseNodeId.value = "";
   selectedNodeId.value = domain;
   graphScopeId.value = nextScopeId;
   currentView.value = "graph";
@@ -762,6 +864,7 @@ function openScope(scopeId, selectedId = scopeId) {
     currentDomain: nextDomain,
   });
   graphScopeId.value = scopeId;
+  currentExerciseNodeId.value = "";
   selectedNodeId.value = selectedId;
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
@@ -851,8 +954,13 @@ function showView(viewName) {
     showGraph("root", "");
     return;
   }
+  if (viewName === "exercises") {
+    openExercisesOverview();
+    return;
+  }
   if (!confirmDiscardDirty()) return;
   if (viewName === "context-export") contextExportError.value = "";
+  currentExerciseNodeId.value = "";
   selectedNodeId.value = "";
   currentView.value = viewName;
 }
@@ -862,9 +970,13 @@ function handleAiImportApplied(updatedVault) {
   const targetScopeId = hasGraphScope(graphScopeId.value) ? graphScopeId.value : "root";
   const nextSelectedNodeId = findGraphNode(selectedNodeId.value) ? selectedNodeId.value : "";
   const nextNoteId = findGraphNode(currentNoteId.value) ? currentNoteId.value : "";
+  const nextExerciseNodeId = findGraphNode(currentExerciseNodeId.value) && !isDomainNode(currentExerciseNodeId.value)
+    ? currentExerciseNodeId.value
+    : "";
   graphScopeId.value = targetScopeId;
   selectedNodeId.value = nextSelectedNodeId;
   currentNoteId.value = nextNoteId;
+  currentExerciseNodeId.value = nextExerciseNodeId;
   currentDomain.value = hasDomain(currentDomain.value)
     ? currentDomain.value
     : findGraphNode(nextSelectedNodeId)?.domain || getFallbackDomain();
@@ -1253,7 +1365,9 @@ function toggleRelationSidebar() {
       :context-export-error="contextExportError"
       :context-exporting="contextExporting"
       :current-domain="currentDomain"
+      :current-exercise-node-id="currentExerciseNodeId"
       :current-note-id="currentNoteId"
+      :current-note-has-exercise-set="currentNoteHasExerciseSet"
       :current-relation-node-id="currentRelationNodeId"
       :current-view="currentView"
       :draft-layout-board="currentDraftLayoutBoard"
@@ -1283,6 +1397,7 @@ function toggleRelationSidebar() {
       @close-dialog="closeDialog"
       @close-relation-edit="closeRelationEdit"
       @add-note="addNote"
+      @add-exercises="addExercises"
       @create-node="createNode"
       @delete-entity="requestDeleteEntity"
       @delete-note="requestDeleteNote"
@@ -1294,6 +1409,7 @@ function toggleRelationSidebar() {
       @open-dialog="openDialog"
       @open-domain="openDomain"
       @open-note="openNote"
+      @open-exercises="openExercises"
       @open-scope="openScope"
       @open-vault="openVault"
       @request-add-link="requestAddLink"
@@ -1301,6 +1417,7 @@ function toggleRelationSidebar() {
       @request-edit-relation="requestEditRelation"
       @save-layout="saveLayout"
       @save-note="saveNote"
+      @save-exercise-progress="saveExerciseProgress"
       @save-entity-edit="saveEntityEdit"
       @save-relation-edit="saveEditedRelation"
       @select-node="selectedNodeId = $event"

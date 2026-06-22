@@ -14,6 +14,8 @@ struct VaultRawFiles {
     meta_files: HashMap<String, String>,
     note_files: HashMap<String, String>,
     note_html_files: HashMap<String, String>,
+    exercise_files: HashMap<String, String>,
+    exercise_progress_yaml: String,
     block_type_files: HashMap<String, String>,
 }
 
@@ -1302,10 +1304,12 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
     let mut meta_files = HashMap::new();
     let mut note_files = HashMap::new();
     let mut note_html_files = HashMap::new();
+    let mut exercise_files = HashMap::new();
     let mut block_type_files = HashMap::new();
     read_content_files(&root, &root.join("content"), "meta.yaml", &mut meta_files)?;
     read_content_files(&root, &root.join("content"), "note.md", &mut note_files)?;
     read_content_files(&root, &root.join("content"), "note.html", &mut note_html_files)?;
+    read_content_files(&root, &root.join("content"), "exercises.yaml", &mut exercise_files)?;
     read_yaml_files_in_directory(&root, "block-types", &mut block_type_files)?;
 
     Ok(VaultRawFiles {
@@ -1316,6 +1320,8 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
         meta_files,
         note_files,
         note_html_files,
+        exercise_files,
+        exercise_progress_yaml: fs::read_to_string(root.join(".kinjito/exercise-progress.yaml")).unwrap_or_default(),
         block_type_files,
     })
 }

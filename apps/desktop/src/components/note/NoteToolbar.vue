@@ -22,9 +22,11 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  hasExerciseSet: { type: Boolean, default: false },
+  canAddExercises: { type: Boolean, default: false },
 });
 
-defineEmits(["cancel-edit", "delete-note", "edit", "save", "show-graph"]);
+defineEmits(["add-exercises", "cancel-edit", "delete-note", "edit", "open-exercises", "save", "show-graph"]);
 </script>
 
 <template>
@@ -51,6 +53,12 @@ defineEmits(["cancel-edit", "delete-note", "edit", "save", "show-graph"]);
       <button class="hud-button button-with-icon" style="--button-color: var(--simulation)" @click="$emit('show-graph')">
         <AppIcon name="graph" />
         <span class="button-icon-label">Show in Graph</span>
+      </button>
+      <button class="hud-button button-with-icon" style="--button-color: var(--career)"
+        :disabled="!hasExerciseSet && !canAddExercises"
+        @click="$emit(hasExerciseSet ? 'open-exercises' : 'add-exercises')">
+        <AppIcon name="exercise" />
+        <span class="button-icon-label">{{ hasExerciseSet ? "Open Exercises" : "Add Exercises" }}</span>
       </button>
       <div class="note-meta">
         {{ canSaveNote ? "desktop vault / writable" : "static sample / read only" }}

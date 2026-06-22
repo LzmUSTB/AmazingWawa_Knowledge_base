@@ -23,6 +23,8 @@ function normalizeFromRaw(rawFiles, vaultRootPath) {
     metaFiles: rawFiles.meta_files || {},
     noteFiles: rawFiles.note_files || {},
     noteHtmlFiles: rawFiles.note_html_files || {},
+    exerciseFiles: rawFiles.exercise_files || {},
+    exerciseProgressYaml: rawFiles.exercise_progress_yaml || "",
     blockTypeFiles: rawFiles.block_type_files || {},
   });
   return { ...normalizedVault, vaultRootPath, source: "desktop" };
@@ -158,6 +160,78 @@ export function getNoteRelativePath(node) {
 
 export function getHtmlNoteRelativePath(node) {
   return `content/${node.domain}/${node.id}/note.html`;
+}
+
+export function getExercisesRelativePath(node) {
+  return `content/${node.domain}/${node.id}/exercises.yaml`;
+}
+
+export function getExerciseProgressRelativePath() {
+  return ".kinjito/exercise-progress.yaml";
+}
+
+export async function writeExerciseSet(vaultRootPath, node, exerciseSet) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving exercises.");
+  if (!node?.id || node.type === "domain") throw new Error("Exercises require a non-domain owner node.");
+  const payload = {
+    version: Number(exerciseSet?.version) || 1,
+    nodeId: node.id,
+    title: exerciseSet?.title || `${node.titleLocale || node.title || node.id} Exercises`,
+    locale: exerciseSet?.locale || "zh-CN",
+    summary: exerciseSet?.summary || "",
+    scope: exerciseSet?.scope || { coverageNodeIds: [node.id], prerequisiteNodeIds: [], relatedNodeIds: [] },
+    problems: Array.isArray(exerciseSet?.problems) ? exerciseSet.problems : [],
+  };
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: getExercisesRelativePath(node),
+    contents: YAML.stringify(payload),
+  });
+}
+
+export async function createExerciseSetForNode(vaultRootPath, node) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating exercises.");
+  if (!node?.id || node.type === "domain") throw new Error("Exercises require a non-domain owner node.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  if (currentVault.exercises?.byNodeId?.[node.id]) throw new Error("This node already has an ExerciseSet.");
+  const relativePath = getExercisesRelativePath(node);
+  try {
+    await invoke("read_text_file", { vaultRootPath, relativePath });
+    throw new Error("This node already has an ExerciseSet.");
+  } catch (error) {
+    if (String(error?.message || error) === "This node already has an ExerciseSet.") throw error;
+  }
+  await invoke("create_dir_all", { vaultRootPath, relativePath: `content/${node.domain}/${node.id}` });
+  await writeExerciseSet(vaultRootPath, node, {
+    version: 1,
+    nodeId: node.id,
+    title: `${node.titleLocale || node.title || node.id} Exercises`,
+    locale: "zh-CN",
+    summary: "",
+    scope: { coverageNodeIds: [node.id], prerequisiteNodeIds: [], relatedNodeIds: [] },
+    problems: [{
+      id: `${node.id}-001`,
+      type: "conceptual",
+      difficulty: "undergraduate",
+      title: "",
+      prompt: "TODO\n",
+      hints: [],
+      answer: "TODO\n",
+      solution: "TODO\n",
+    }],
+  });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function writeExerciseProgress(vaultRootPath, progress) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving exercise progress.");
+  await invoke("create_dir_all", { vaultRootPath, relativePath: ".kinjito" });
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: getExerciseProgressRelativePath(),
+    contents: YAML.stringify({ version: Number(progress?.version) || 1, problems: progress?.problems || {} }),
+  });
+  return loadVaultFromPath(vaultRootPath);
 }
 
 export function getNoteAbsolutePath(vaultRootPath, node) {

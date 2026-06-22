@@ -58,6 +58,11 @@ function handleTitlebarDoubleClick(event) {
         <AppIcon name="file-plus" />
         <span class="button-icon-label">New Note</span>
       </button>
+      <button class="hud-button top-action-button button-with-icon" title="Exercises" style="--button-color: var(--career)"
+        @click="$emit('show-view', 'exercises')">
+        <AppIcon name="exercise" />
+        <span class="button-icon-label">Exercises</span>
+      </button>
       <button class="hud-button top-action-button button-with-icon" title="Import" style="--button-color: var(--career)"
         @click="$emit('show-view', 'ai-import')">
         <AppIcon name="import" />
