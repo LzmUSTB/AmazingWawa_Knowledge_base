@@ -15,7 +15,7 @@ const props = defineProps({
   canSave: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["add-exercises", "open-exercises", "open-note", "open-scope", "save-progress"]);
+const emit = defineEmits(["delete-exercise-set", "import-exercise-set", "open-exercises", "open-note", "open-scope", "save-progress"]);
 const activeVault = useActiveVault();
 const expandedProblems = ref(new Set());
 const revealedHints = ref({});
@@ -142,18 +142,22 @@ function dueLabel(value) {
           <p v-if="currentExerciseSet?.summary">{{ currentExerciseSet.summary }}</p>
         </div>
       </div>
-      <button v-if="nodeSpecific && currentExerciseSet" class="hud-button button-with-icon" type="button"
-        style="--button-color: var(--simulation)" @click="$emit('open-note', exerciseNodeId)">
-        <AppIcon name="file-text" /><span class="button-icon-label">Open Note</span>
-      </button>
+      <div v-if="nodeSpecific && currentExerciseSet" class="header-actions">
+        <button class="hud-button button-with-icon" type="button" style="--button-color: var(--simulation)" @click="$emit('open-note', exerciseNodeId)">
+          <AppIcon name="file-text" /><span class="button-icon-label">Open Note</span>
+        </button>
+        <button class="hud-button button-with-icon" type="button" style="--button-color: var(--game-dev)" @click="$emit('delete-exercise-set', exerciseNodeId)">
+          <AppIcon name="delete" /><span class="button-icon-label">Delete ExerciseSet</span>
+        </button>
+      </div>
     </header>
 
     <div v-if="nodeSpecific && !currentExerciseSet" class="exercise-empty">
       <h2>No ExerciseSet for this node.</h2>
-      <p>Exercises are stored beside the note in a single exercises.yaml file.</p>
+      <p>Import an exercises.yaml file to attach an ExerciseSet to this node.</p>
       <button class="hud-button button-with-icon" type="button" :disabled="!canSave"
-        style="--button-color: var(--career)" @click="$emit('add-exercises', exerciseNodeId)">
-        <AppIcon name="exercise" /><span class="button-icon-label">Add Exercises</span>
+        style="--button-color: var(--career)" @click="$emit('import-exercise-set', exerciseNodeId)">
+        <AppIcon name="import" /><span class="button-icon-label">Import ExerciseSet</span>
       </button>
     </div>
 
@@ -245,6 +249,7 @@ function dueLabel(value) {
 .exercises-heading { display: flex; align-items: flex-start; gap: 14px; min-width: 0; color: var(--career); }
 .exercises-heading h1 { margin: 4px 0 0; color: var(--text-primary); font-size: var(--font-size-title); }
 .exercises-heading p { margin: 8px 0 0; color: var(--text-secondary); }
+.header-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .section-kicker, .problem-header span, label > span { color: var(--text-muted); font-size: var(--font-size-small); font-weight: 800; text-transform: uppercase; }
 .exercise-empty, .exercise-errors { margin-top: 18px; border: 1px solid var(--border-primary); background: var(--background-panel); padding: 22px; }
 .exercise-scope { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 18px; border: 1px solid var(--border-primary); background: var(--background-panel); }

@@ -17,10 +17,9 @@ const props = defineProps({
   noteFindOpenKey: { type: Number, default: 0 },
   noteFindQuery: { type: String, default: "" },
   hasExerciseSet: { type: Boolean, default: false },
-  canAddExercises: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["add-exercises", "delete-note", "dirty-change", "find-visible-change", "open-exercises", "save-note", "set-mode", "show-graph"]);
+const emit = defineEmits(["delete-note", "dirty-change", "find-visible-change", "open-exercises", "save-note", "set-mode", "show-graph"]);
 
 const readSurfaceRef = ref(null);
 const fallbackNode = { id: "", title: "Untitled", domain: "root", type: "note", status: "draft", summary: "" };
@@ -182,14 +181,12 @@ function handleHtmlFindResults(payload) {
       :mode="mode"
       :saving="saving"
       :has-exercise-set="hasExerciseSet"
-      :can-add-exercises="canAddExercises"
       @cancel-edit="cancelEdit"
       @delete-note="$emit('delete-note', node.id)"
       @edit="startEdit"
       @save="saveNote"
       @show-graph="$emit('show-graph')"
       @open-exercises="$emit('open-exercises', node.id)"
-      @add-exercises="$emit('add-exercises', node.id)"
     />
     <article class="note-content technical-grid" :class="{ 'is-html-note': hasHtmlNote }" :style="{ '--note-color': accent }">
       <NoteFindBar v-model:query="findQuery" :current-index="activeFindIndex" :total="findTotal" :visible="findOpen && mode === 'read'" @close="closeFind" @next="moveFind(1)" @previous="moveFind(-1)" />

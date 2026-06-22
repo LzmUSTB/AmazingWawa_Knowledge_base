@@ -67,7 +67,6 @@ const props = defineProps({
 
 const emit = defineEmits([
   "add-link",
-  "add-exercises",
   "open-domain",
   "open-note",
   "open-exercises",
@@ -312,10 +311,10 @@ function requestDeleteNote() {
                 <span class="button-icon-label">Show Local Graph</span>
               </button>
               <button class="hud-button button-with-icon" style="--button-color: var(--career)"
-                :disabled="!nodeHasExerciseSet && !canSaveNote"
-                @click="$emit(nodeHasExerciseSet ? 'open-exercises' : 'add-exercises', node.id)">
+                :title="nodeHasExerciseSet ? 'Open ExerciseSet' : 'Open empty ExerciseSet page'"
+                @click="$emit('open-exercises', node.id)">
                 <AppIcon name="exercise" />
-                <span class="button-icon-label">{{ nodeHasExerciseSet ? "Open Exercises" : "Add Exercises" }}</span>
+                <span class="button-icon-label">ExerciseSet</span>
               </button>
               <button v-if="canSaveNote && nodeHasNote" class="hud-button button-with-icon"
                 style="--button-color: var(--game-dev)" @click="requestDeleteNote">

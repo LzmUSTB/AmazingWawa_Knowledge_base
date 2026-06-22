@@ -1075,6 +1075,60 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 }
 
 #[tauri::command]
+fn choose_exercise_set_file() -> Result<Option<String>, String> {
+    if !cfg!(target_os = "windows") {
+        return Err("File picker command is currently implemented for Windows only".into());
+    }
+    let script = r#"
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.OpenFileDialog
+$dialog.Title = 'Import ExerciseSet'
+$dialog.Filter = 'YAML Files (*.yaml;*.yml)|*.yaml;*.yml'
+$dialog.Multiselect = $false
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  [Console]::Out.Write($dialog.FileName)
+}
+"#;
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-STA", "-Command", script])
+        .output()
+        .map_err(|error| format!("Failed to open ExerciseSet file picker: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let selected_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let lower = selected_path.to_ascii_lowercase();
+    if selected_path.is_empty() {
+        Ok(None)
+    } else if lower.ends_with(".yaml") || lower.ends_with(".yml") {
+        Ok(Some(selected_path))
+    } else {
+        Err("Selected file must use .yaml or .yml extension".into())
+    }
+}
+
+#[tauri::command]
+fn read_external_text_file(file_path: String) -> Result<String, String> {
+    let path = PathBuf::from(&file_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve selected file: {error}"))?;
+    if !path.is_file() {
+        return Err("Selected path is not a file".into());
+    }
+    let lower = path.to_string_lossy().to_ascii_lowercase();
+    if !(lower.ends_with(".yaml") || lower.ends_with(".yml")) {
+        return Err("Selected file must use .yaml or .yml extension".into());
+    }
+    let metadata = fs::metadata(&path)
+        .map_err(|error| format!("Failed to read selected file metadata: {error}"))?;
+    if metadata.len() > 2 * 1024 * 1024 {
+        return Err("ExerciseSet file exceeds 2 MB limit".into());
+    }
+    fs::read_to_string(&path)
+        .map_err(|error| format!("Failed to read selected file: {error}"))
+}
+
+#[tauri::command]
 fn choose_html_note_file() -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
         return Err("File picker command is currently implemented for Windows only".into());
@@ -1530,6 +1584,29 @@ fn create_dir_all(vault_root_path: String, relative_path: String) -> Result<(), 
 }
 
 #[tauri::command]
+fn remove_file(vault_root_path: String, relative_path: String) -> Result<(), String> {
+    let normalized = relative_path.replace('\\', "/");
+    let parts: Vec<&str> = normalized.split('/').collect();
+    if parts.len() != 4
+        || parts[0] != "content"
+        || !is_safe_content_id(parts[1])
+        || !is_safe_content_id(parts[2])
+        || parts[3] != "exercises.yaml"
+    {
+        return Err("Only a node exercises.yaml file can be removed by this command".into());
+    }
+    let target = safe_vault_path(&vault_root_path, &relative_path)?;
+    if !target.exists() {
+        return Ok(());
+    }
+    if !target.is_file() {
+        return Err("Selected vault path is not a file".into());
+    }
+    fs::remove_file(&target)
+        .map_err(|error| format!("Failed to remove {relative_path}: {error}"))
+}
+
+#[tauri::command]
 fn open_vault_relative_dir(vault_root_path: String, relative_path: String) -> Result<String, String> {
     if relative_path != ".kb-ai/context" {
         return Err("Only the exported context directory can be opened from the vault.".into());
@@ -1585,6 +1662,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             apply_ai_import_plan,
             capture_source_snapshot,
+            choose_exercise_set_file,
             choose_html_note_file,
             choose_html_note_folder,
             choose_vault_root,
@@ -1593,10 +1671,12 @@ pub fn run() {
             import_html_note_files,
             read_ai_import_history,
             read_binary_file_base64,
+            read_external_text_file,
             read_wawapkg_file,
             read_text_file,
             read_vault_files,
             remove_node_note_files,
+            remove_file,
             remove_vault_path,
             open_snapshot_output_dir,
             open_vault_relative_dir,

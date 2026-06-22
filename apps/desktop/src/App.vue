@@ -8,7 +8,7 @@ import SearchOverlay from "./components/search/SearchOverlay.vue";
 import {
   chooseVaultRoot,
   addNoteToNode,
-  createExerciseSetForNode,
+  deleteExerciseSetFromNode,
   createGraphLink,
   createDomain,
   createKnowledgeNode,
@@ -17,6 +17,7 @@ import {
   deleteNoteFromNode,
   exportContext,
   importHtmlNoteToNode,
+  importExerciseSetForNode,
   loadInitialVault,
   loadVaultFromPath,
   openVaultContextFolder,
@@ -785,17 +786,21 @@ function openExercisesOverview() {
   return true;
 }
 
-async function addExercises(nodeId) {
+async function importExerciseSet(nodeId) {
   if (!confirmDiscardDirty()) return false;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before creating exercises.");
+    window.alert("Open a desktop vault folder before importing ExerciseSet.");
     return false;
   }
   const node = findGraphNode(nodeId);
   if (!node || node.type === "domain") return false;
-  if (useActiveVault().value.exercises?.byNodeId?.[node.id]) return openExercises(node.id);
+  if (useActiveVault().value.exercises?.byNodeId?.[node.id]) {
+    window.alert("This node already has an ExerciseSet. Delete it before importing a new one.");
+    return false;
+  }
   try {
-    const updatedVault = await createExerciseSetForNode(activeVaultRootPath.value, node);
+    const updatedVault = await importExerciseSetForNode(activeVaultRootPath.value, node);
+    if (!updatedVault) return false;
     replaceVaultWithoutNavigation(updatedVault);
     currentExerciseNodeId.value = node.id;
     selectedNodeId.value = node.id;
@@ -803,8 +808,35 @@ async function addExercises(nodeId) {
     currentView.value = "exercises";
     return true;
   } catch (error) {
-    console.error("[exercises] Failed to create ExerciseSet.", error);
-    window.alert(`Failed to create exercises: ${error}`);
+    console.error("[exercises] Failed to import ExerciseSet.", error);
+    window.alert(`Failed to import ExerciseSet: ${error?.message || error}`);
+    return false;
+  }
+}
+
+async function deleteExerciseSet(nodeId) {
+  if (!confirmDiscardDirty()) return false;
+  if (!canSaveNote.value) {
+    window.alert("Open a desktop vault folder before deleting ExerciseSet.");
+    return false;
+  }
+  const node = findGraphNode(nodeId);
+  if (!node || node.type === "domain") return false;
+  const confirmed = window.confirm(
+    `Delete ExerciseSet for "${displayTitle(node)}"?\n\nThis removes exercises.yaml and its progress records. The node and note are not changed.`,
+  );
+  if (!confirmed) return false;
+  try {
+    const updatedVault = await deleteExerciseSetFromNode(activeVaultRootPath.value, node);
+    replaceVaultWithoutNavigation(updatedVault);
+    currentExerciseNodeId.value = node.id;
+    selectedNodeId.value = node.id;
+    currentDomain.value = node.domain;
+    currentView.value = "exercises";
+    return true;
+  } catch (error) {
+    console.error("[exercises] Failed to delete ExerciseSet.", error);
+    window.alert(`Failed to delete ExerciseSet: ${error?.message || error}`);
     return false;
   }
 }
@@ -1397,7 +1429,8 @@ function toggleRelationSidebar() {
       @close-dialog="closeDialog"
       @close-relation-edit="closeRelationEdit"
       @add-note="addNote"
-      @add-exercises="addExercises"
+      @import-exercise-set="importExerciseSet"
+      @delete-exercise-set="deleteExerciseSet"
       @create-node="createNode"
       @delete-entity="requestDeleteEntity"
       @delete-note="requestDeleteNote"

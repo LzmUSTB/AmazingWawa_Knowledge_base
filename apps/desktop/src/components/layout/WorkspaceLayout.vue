@@ -183,7 +183,8 @@ const props = defineProps({
 
 const emit = defineEmits([
   "add-link",
-  "add-exercises",
+  "delete-exercise-set",
+  "import-exercise-set",
   "ai-import-applied",
   "close-dialog",
   "close-relation-edit",
@@ -299,18 +300,19 @@ function fitGraphView() {
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 
         <ExercisesView v-else-if="currentView === 'exercises'" :exercise-node-id="currentExerciseNodeId"
-          :can-save="canSaveNote" @add-exercises="$emit('add-exercises', $event)"
+          :can-save="canSaveNote" @import-exercise-set="$emit('import-exercise-set', $event)"
+          @delete-exercise-set="$emit('delete-exercise-set', $event)"
           @open-exercises="$emit('open-exercises', $event)" @open-note="$emit('open-note', $event)"
           @open-scope="$emit('open-scope', $event, $event)" @save-progress="$emit('save-exercise-progress', $event)" />
 
         <NoteView v-else :can-save-note="canSaveNote" :mode="noteMode" :note-find-close-key="noteFindCloseKey"
-          :has-exercise-set="currentNoteHasExerciseSet" :can-add-exercises="canSaveNote"
+          :has-exercise-set="currentNoteHasExerciseSet"
           :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
           :saving="noteSaving" @dirty-change="$emit('set-note-dirty', $event)"
           @delete-note="$emit('delete-note', $event)"
           @find-visible-change="$emit('set-note-find-visible', $event)" @save-note="$emit('save-note', $event)"
           @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
-          @open-exercises="$emit('open-exercises', $event)" @add-exercises="$emit('add-exercises', $event)" />
+          @open-exercises="$emit('open-exercises', $event)" />
       </main>
 
       <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"
@@ -319,7 +321,7 @@ function fitGraphView() {
         :can-save-note="canSaveNote" :graph-scope-id="graphScopeId" :layout-board="draftLayoutBoard"
         :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
         @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
-        @open-exercises="$emit('open-exercises', $event)" @add-exercises="$emit('add-exercises', $event)"
+        @open-exercises="$emit('open-exercises', $event)"
         @request-add-link="$emit('request-add-link')"
         @request-delete-note="$emit('delete-note', $event)"
         @request-delete-relation="$emit('request-delete-relation', $event)"

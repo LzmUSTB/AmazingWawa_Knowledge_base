@@ -4,6 +4,8 @@ import {
   buildAiPackageApplyPlan,
   buildAiContextFiles,
   diffAiPackage,
+  EXERCISE_DIFFICULTIES,
+  EXERCISE_TYPES,
   normalizeAiPackageFiles,
   normalizeVault,
   validateAiPackage,
@@ -67,6 +69,16 @@ export async function loadInitialVault() {
 export async function chooseWawaPackageFile() {
   if (!isTauri()) return null;
   return invoke("choose_wawapkg_file");
+}
+
+export async function chooseExerciseSetFile() {
+  if (!isTauri()) return null;
+  return invoke("choose_exercise_set_file");
+}
+
+export async function readExternalTextFile(filePath) {
+  if (!filePath) return "";
+  return invoke("read_external_text_file", { filePath });
 }
 
 export async function chooseHtmlNoteFile() {
@@ -189,38 +201,105 @@ export async function writeExerciseSet(vaultRootPath, node, exerciseSet) {
   });
 }
 
-export async function createExerciseSetForNode(vaultRootPath, node) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating exercises.");
-  if (!node?.id || node.type === "domain") throw new Error("Exercises require a non-domain owner node.");
-  const currentVault = await loadVaultFromPath(vaultRootPath);
-  if (currentVault.exercises?.byNodeId?.[node.id]) throw new Error("This node already has an ExerciseSet.");
-  const relativePath = getExercisesRelativePath(node);
+export function normalizeImportedExerciseSet(raw, targetNode) {
+  let parsed;
+  try {
+    parsed = YAML.parse(raw);
+  } catch (error) {
+    throw new Error(`Failed to parse ExerciseSet YAML: ${error.message}`);
+  }
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+    throw new Error("ExerciseSet YAML must contain an object.");
+  }
+  const declaredNodeId = String(parsed.nodeId || "").trim();
+  if (declaredNodeId && declaredNodeId !== targetNode.id) {
+    throw new Error(`ExerciseSet nodeId "${declaredNodeId}" does not match target node "${targetNode.id}".`);
+  }
+  if (!Array.isArray(parsed.problems) || parsed.problems.length === 0) {
+    throw new Error("ExerciseSet must contain at least one problem.");
+  }
+  const seen = new Set();
+  const problems = parsed.problems.map((problem, index) => {
+    if (!problem || Array.isArray(problem) || typeof problem !== "object") {
+      throw new Error(`Problem at index ${index} must be an object.`);
+    }
+    const id = String(problem.id || "").trim();
+    if (!id) throw new Error(`Problem at index ${index} is missing id.`);
+    if (seen.has(id)) throw new Error(`Duplicate problem id "${id}".`);
+    seen.add(id);
+    ["title", "prompt", "answer", "solution"].forEach((field) => {
+      if (!String(problem[field] || "").trim()) throw new Error(`Problem "${id}" is missing ${field}.`);
+    });
+    const type = problem.type || "conceptual";
+    const difficulty = problem.difficulty || "undergraduate";
+    if (!EXERCISE_TYPES.includes(type)) throw new Error(`Problem "${id}" has unsupported type "${type}".`);
+    if (!EXERCISE_DIFFICULTIES.includes(difficulty)) throw new Error(`Problem "${id}" has unsupported difficulty "${difficulty}".`);
+    return {
+      id,
+      type,
+      difficulty,
+      title: String(problem.title),
+      prompt: String(problem.prompt),
+      hints: Array.isArray(problem.hints) ? problem.hints.map((hint) => String(hint || "")).filter(Boolean) : [],
+      answer: String(problem.answer),
+      solution: String(problem.solution),
+    };
+  });
+  const stringArray = (value, fallback = []) => Array.isArray(value) ? value.map((item) => String(item || "").trim()).filter(Boolean) : fallback;
+  return {
+    version: Number(parsed.version) || 1,
+    nodeId: targetNode.id,
+    title: String(parsed.title || `${targetNode.titleLocale || targetNode.title || targetNode.id} ExerciseSet`),
+    locale: String(parsed.locale || "zh-CN"),
+    summary: String(parsed.summary || ""),
+    scope: {
+      coverageNodeIds: stringArray(parsed.scope?.coverageNodeIds, [targetNode.id]),
+      prerequisiteNodeIds: stringArray(parsed.scope?.prerequisiteNodeIds),
+      relatedNodeIds: stringArray(parsed.scope?.relatedNodeIds),
+    },
+    problems,
+  };
+}
+
+async function assertExerciseSetMissing(vaultRootPath, relativePath) {
   try {
     await invoke("read_text_file", { vaultRootPath, relativePath });
-    throw new Error("This node already has an ExerciseSet.");
   } catch (error) {
-    if (String(error?.message || error) === "This node already has an ExerciseSet.") throw error;
+    const message = String(error?.message || error);
+    if (/os error 2|cannot find the (?:file|path)|no such file or directory/i.test(message)) return;
+    throw error;
   }
+  throw new Error("This node already has an ExerciseSet. Delete it before importing a new one.");
+}
+
+export async function importExerciseSetForNode(vaultRootPath, node) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before importing ExerciseSet.");
+  if (!node?.id || node.type === "domain") throw new Error("ExerciseSet requires a non-domain owner node.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  if (currentVault.exercises?.byNodeId?.[node.id]) {
+    throw new Error("This node already has an ExerciseSet. Delete it before importing a new one.");
+  }
+  const relativePath = getExercisesRelativePath(node);
+  await assertExerciseSetMissing(vaultRootPath, relativePath);
+  const filePath = await chooseExerciseSetFile();
+  if (!filePath) return null;
+  const exerciseSet = normalizeImportedExerciseSet(await readExternalTextFile(filePath), node);
   await invoke("create_dir_all", { vaultRootPath, relativePath: `content/${node.domain}/${node.id}` });
-  await writeExerciseSet(vaultRootPath, node, {
-    version: 1,
-    nodeId: node.id,
-    title: `${node.titleLocale || node.title || node.id} Exercises`,
-    locale: "zh-CN",
-    summary: "",
-    scope: { coverageNodeIds: [node.id], prerequisiteNodeIds: [], relatedNodeIds: [] },
-    problems: [{
-      id: `${node.id}-001`,
-      type: "conceptual",
-      difficulty: "undergraduate",
-      title: "",
-      prompt: "TODO\n",
-      hints: [],
-      answer: "TODO\n",
-      solution: "TODO\n",
-    }],
-  });
+  await assertExerciseSetMissing(vaultRootPath, relativePath);
+  await writeExerciseSet(vaultRootPath, node, exerciseSet);
   return loadVaultFromPath(vaultRootPath);
+}
+
+export async function deleteExerciseSetFromNode(vaultRootPath, node) {
+  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting ExerciseSet.");
+  if (!node?.id || node.type === "domain") throw new Error("ExerciseSet requires a non-domain owner node.");
+  await invoke("remove_file", { vaultRootPath, relativePath: getExercisesRelativePath(node) });
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const prefix = `${node.id}/`;
+  const problems = Object.fromEntries(
+    Object.entries(currentVault.exerciseProgress?.problems || {}).filter(([key]) => !key.startsWith(prefix)),
+  );
+  return writeExerciseProgress(vaultRootPath, { version: 1, problems });
 }
 
 export async function writeExerciseProgress(vaultRootPath, progress) {
