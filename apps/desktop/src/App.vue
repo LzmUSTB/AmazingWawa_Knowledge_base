@@ -2,12 +2,13 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import NoVaultView from "./components/layout/NoVaultView.vue";
 import WorkspaceLayout from "./components/layout/WorkspaceLayout.vue";
+import VaultSetupView from "./components/vault/VaultSetupView.vue";
 import MobileLocalGraphView from "./components/mobile/MobileLocalGraphView.vue";
 import MobileNoteView from "./components/mobile/MobileNoteView.vue";
 import SearchOverlay from "./components/search/SearchOverlay.vue";
 import {
-  chooseVaultRoot,
   addNoteToNode,
+  deleteOldVaultAfterMove,
   deleteExerciseProblemFromNode,
   deleteExerciseSetFromNode,
   createGraphLink,
@@ -21,6 +22,7 @@ import {
   importExerciseSetForNode,
   loadInitialVault,
   loadVaultFromPath,
+  moveActiveVault,
   openVaultContextFolder,
   removeGraphLink,
   replaceGraphLink,
@@ -29,6 +31,7 @@ import {
   updateKnowledgeNodeMeta,
   writeNoteMarkdown,
   writeExerciseProgress,
+  vaultGit,
 } from "./data/desktop-vault-adapter.js";
 import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
@@ -61,6 +64,8 @@ const activeDialog = ref("");
 const activeVaultRootPath = ref("");
 const vaultLoading = ref(true);
 const vaultLoadError = ref("");
+const vaultMoveBusy = ref(false);
+const vaultMoveError = ref("");
 const noteDirty = ref(false);
 const noteSaving = ref(false);
 const addLinkOpenKey = ref(0);
@@ -1070,25 +1075,51 @@ async function handleExportContext() {
   }
 }
 
-async function openVault() {
-  if (!confirmDiscardDirty()) return;
+function activateConfiguredVault(vault) {
+  applyVault(vault, { reset: true });
+  vaultLoadError.value = "";
+  vaultMoveError.value = "";
+  vaultLoading.value = false;
+  currentView.value = "graph";
+}
+
+async function reloadActiveVault() {
+  if (!activeVaultRootPath.value) return;
+  const updatedVault = await loadVaultFromPath(activeVaultRootPath.value);
+  replaceVaultWithoutNavigation(updatedVault);
+}
+
+async function moveVault(destinationPath) {
+  if (vaultMoveBusy.value) return;
+  if (noteDirty.value || layoutDirty.value || noteSaving.value || layoutSaveInProgress.value) {
+    window.alert("Save or cancel note and layout changes before moving the vault.");
+    return;
+  }
+  vaultMoveBusy.value = true;
+  vaultMoveError.value = "";
+  const oldVaultPath = activeVaultRootPath.value;
   try {
-    const vaultRoot = await chooseVaultRoot();
-    if (!vaultRoot) return;
-    const vault = await loadVaultFromPath(vaultRoot);
-    applyVault(vault, { reset: true });
-    vaultLoadError.value = "";
-    vaultLoading.value = false;
-    console.log("[vault] Opened desktop vault:", vaultRoot);
-  } catch (error) {
-    console.error("[vault] Failed to open vault.", error);
-    const message = String(error);
-    vaultLoadError.value = message;
-    window.alert(
-      message.includes("missing vault.yaml")
-        ? "Please select the vault folder that contains vault.yaml."
-        : `Failed to open vault: ${message}`,
+    if (await vaultGit.isRepo()) {
+      const status = await vaultGit.status();
+      if (!status.clean) {
+        if (!window.confirm("The Git working tree is dirty. Create a checkpoint before moving the vault?")) return;
+        await vaultGit.checkpoint("vault move");
+      }
+    }
+    const vault = await moveActiveVault(oldVaultPath, destinationPath);
+    activateConfiguredVault(vault);
+    const deleteOld = window.confirm(
+      `Vault moved successfully.\n\nThe old vault remains at:\n${oldVaultPath}\n\nDelete the old vault now?`,
     );
+    if (deleteOld) {
+      if (window.confirm("Permanently delete the old vault folder? This cannot be undone.")) {
+        await deleteOldVaultAfterMove(oldVaultPath);
+      }
+    }
+  } catch (error) {
+    vaultMoveError.value = String(error?.message || error);
+  } finally {
+    vaultMoveBusy.value = false;
   }
 }
 
@@ -1410,11 +1441,11 @@ function toggleRelationSidebar() {
 <template>
   <div class="prototype-shell" :style="uiScaleStyle">
     <NoVaultView
-      v-if="vaultLoading || !hasRealVault"
+      v-if="vaultLoading"
       :error="vaultLoadError"
-      :loading="vaultLoading"
-      @open-vault="openVault"
+      :loading="true"
     />
+    <VaultSetupView v-else-if="!hasRealVault" :error="vaultLoadError" @activated="activateConfiguredVault" />
     <WorkspaceLayout
       v-else
       :active-dialog="activeDialog"
@@ -1443,6 +1474,8 @@ function toggleRelationSidebar() {
       :is-layout-editing="isLayoutEditing"
       :layout-dirty="layoutDirty"
       :layout-save-in-progress="layoutSaveInProgress"
+      :vault-move-busy="vaultMoveBusy"
+      :vault-move-error="vaultMoveError"
       :note-mode="noteMode"
       :note-saving="noteSaving"
       :note-find-close-key="noteFindCloseKey"
@@ -1479,7 +1512,9 @@ function toggleRelationSidebar() {
       @open-note="openNote"
       @open-exercises="openExercises"
       @open-scope="openScope"
-      @open-vault="openVault"
+      @move-vault="moveVault"
+      @vault-activated="activateConfiguredVault"
+      @vault-changed="reloadActiveVault"
       @request-add-link="requestAddLink"
       @request-delete-relation="requestDeleteRelation"
       @request-edit-relation="requestEditRelation"

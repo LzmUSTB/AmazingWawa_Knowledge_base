@@ -97,6 +97,19 @@ const crumbItems = computed(() => {
     items.push({ id: "tools", kind: "view", label: "Tools" });
     return items;
   }
+  if (props.currentView === "vault-settings") {
+    items.push({ id: "vault-settings", kind: "view", label: "Vault Settings" });
+    return items;
+  }
+  if (props.currentView === "vault-setup") {
+    items.push({ id: "vault-settings", kind: "view-link", label: "Vault Settings" });
+    items.push({ id: "vault-setup", kind: "view", label: "Vault Setup" });
+    return items;
+  }
+  if (props.currentView === "vault-git") {
+    items.push({ id: "vault-git", kind: "view", label: "Vault Git" });
+    return items;
+  }
   if (props.currentView === "source-snapshot") {
     items.push({ id: "tools", kind: "view-link", label: "Tools" });
     items.push({ id: "source-snapshot", kind: "view", label: "Capture" });

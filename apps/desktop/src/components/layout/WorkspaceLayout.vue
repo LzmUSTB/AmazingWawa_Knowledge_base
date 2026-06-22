@@ -14,6 +14,9 @@ import EditRelationDialog from "../relation/EditRelationDialog.vue";
 import RelationSidebar from "../relation/RelationSidebar.vue";
 import SourceSnapshotView from "../source/SourceSnapshotView.vue";
 import ToolsView from "../tools/ToolsView.vue";
+import VaultGitView from "../vault/VaultGitView.vue";
+import VaultSettingsView from "../vault/VaultSettingsView.vue";
+import VaultSetupView from "../vault/VaultSetupView.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
 import { getScopeLayoutMode } from "../../graph/graph-layout.js";
@@ -180,6 +183,14 @@ const props = defineProps({
     type: Number,
     default: 1,
   },
+  vaultMoveBusy: {
+    type: Boolean,
+    default: false,
+  },
+  vaultMoveError: {
+    type: String,
+    default: "",
+  },
 });
 
 const emit = defineEmits([
@@ -195,7 +206,6 @@ const emit = defineEmits([
   "open-domain",
   "open-note",
   "open-exercises",
-  "open-vault",
   "open-scope",
   "add-note",
   "cancel-layout",
@@ -206,6 +216,7 @@ const emit = defineEmits([
   "edit-layout",
   "ensure-layout-draft",
   "layout-node-dragged",
+  "move-vault",
   "request-add-link",
   "request-delete-relation",
   "request-edit-relation",
@@ -230,6 +241,8 @@ const emit = defineEmits([
   "toggle-sidebar",
   "toggle-pin-node",
   "toggle-relation-sidebar",
+  "vault-activated",
+  "vault-changed",
 ]);
 
 const graphViewRef = ref(null);
@@ -252,7 +265,7 @@ function fitGraphView() {
   }">
     <TopMenu :app-title="appTitle" :can-add-note="canAddNote" :can-export-context="Boolean(activeVaultRootPath)"
       :ui-font-scale="uiFontScale" @export-context="$emit('show-view', 'context-export')" @open-dialog="$emit('open-dialog', $event)"
-      @open-vault="$emit('open-vault')" @show-view="$emit('show-view', $event)" />
+      @show-view="$emit('show-view', $event)" />
     <div class="app-body" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
       <aside class="sidebar-region">
         <FileTree v-if="!sidebarCollapsed" :active-domain="currentDomain" :active-note-id="currentNoteId"
@@ -302,6 +315,15 @@ function fitGraphView() {
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 
         <ToolsView v-else-if="currentView === 'tools'" @show-view="$emit('show-view', $event)" />
+
+        <VaultSettingsView v-else-if="currentView === 'vault-settings'" :vault-path="activeVaultRootPath"
+          :busy="vaultMoveBusy" :error="vaultMoveError" @move-vault="$emit('move-vault', $event)"
+          @show-setup="$emit('show-view', 'vault-setup')" />
+
+        <VaultSetupView v-else-if="currentView === 'vault-setup'" replacement
+          @activated="$emit('vault-activated', $event)" @close="$emit('show-view', 'vault-settings')" />
+
+        <VaultGitView v-else-if="currentView === 'vault-git'" @vault-changed="$emit('vault-changed')" />
 
         <ExercisesView v-else-if="currentView === 'exercises'" :exercise-node-id="currentExerciseNodeId"
           :can-save="canSaveNote" @import-exercise-set="$emit('import-exercise-set', $event)"

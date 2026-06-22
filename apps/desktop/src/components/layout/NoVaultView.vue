@@ -10,7 +10,6 @@ defineProps({
   },
 });
 
-defineEmits(["open-vault"]);
 </script>
 
 <template>
@@ -25,10 +24,6 @@ defineEmits(["open-vault"]);
       <p v-if="!loading" class="body-text">
         The desktop app could not load a vault folder.
       </p>
-
-      <button v-if="!loading" class="hud-button" style="--button-color: var(--graphics)" @click="$emit('open-vault')">
-        Open Vault
-      </button>
 
       <pre v-if="error" class="error-block">{{ error }}</pre>
     </div>
@@ -59,7 +54,6 @@ defineEmits(["open-vault"]);
 
 header,
 .body-text,
-.hud-button,
 .error-block {
   margin-inline: 28px;
 }
@@ -83,11 +77,6 @@ h1 {
   color: var(--text-secondary);
   font-size: var(--font-size-ui);
   line-height: 1.6;
-}
-
-.hud-button {
-  width: max-content;
-  margin-top: 18px;
 }
 
 .error-block {

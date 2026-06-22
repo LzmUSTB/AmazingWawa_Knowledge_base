@@ -11,8 +11,8 @@ import {
   validateAiPackage,
 } from "../../../../packages/knowledge-core/src/index.js";
 
-const LAST_VAULT_KEY = "amazingwawa.lastVaultRootPath";
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
+const LEGACY_VAULT_KEY = "amazingwawa.lastVaultRootPath";
 const EDITABLE_DOMAIN_FIELDS = ["title", "titleLocale", "description", "descriptionLocale", "color", "order"];
 const EDITABLE_NODE_FIELDS = ["title", "titleLocale", "summary", "summaryLocale", "type", "status", "tags", "aliases"];
 
@@ -39,32 +39,95 @@ export async function chooseVaultRoot() {
 
 export async function loadVaultFromPath(vaultRootPath) {
   const rawFiles = await invoke("read_vault_files", { vaultRootPath });
-  const normalizedVault = normalizeFromRaw(rawFiles, vaultRootPath);
-  localStorage.setItem(LAST_VAULT_KEY, vaultRootPath);
-  return normalizedVault;
+  return normalizeFromRaw(rawFiles, vaultRootPath);
 }
 
 export async function loadInitialVault() {
   if (!isTauri()) throw new Error("Desktop filesystem access is required to load a vault.");
-
-  const lastVaultPath = localStorage.getItem(LAST_VAULT_KEY);
-  if (lastVaultPath) {
-    try {
-      return await loadVaultFromPath(lastVaultPath);
-    } catch (error) {
-      console.warn("[vault] Failed to load last opened vault path.", error);
+  const settings = await invoke("read_app_settings");
+  const activeVaultPath = String(settings?.activeVaultPath || "").trim();
+  if (!activeVaultPath) {
+    const legacyPath = String(localStorage.getItem(LEGACY_VAULT_KEY) || "").trim();
+    if (legacyPath) {
+      try {
+        const migratedVault = await activateVaultPath(legacyPath);
+        localStorage.removeItem(LEGACY_VAULT_KEY);
+        return migratedVault;
+      } catch (error) {
+        console.warn("[vault] Legacy vault path migration failed.", error);
+      }
     }
+    throw new Error("No active vault is configured.");
   }
-
-  try {
-    const defaultVaultPath = await invoke("resolve_default_vault_root");
-    if (defaultVaultPath) return await loadVaultFromPath(defaultVaultPath);
-  } catch (error) {
-    console.warn("[vault] Failed to load default development vault.", error);
-  }
-
-  throw new Error("No vault could be loaded. Please open a vault folder.");
+  await invoke("verify_vault_path", { vaultPath: activeVaultPath });
+  return loadVaultFromPath(activeVaultPath);
 }
+
+export async function readAppSettings() {
+  if (!isTauri()) return { version: 1, activeVaultPath: "" };
+  return invoke("read_app_settings");
+}
+
+export async function activateVaultPath(vaultPath) {
+  const verifiedPath = await invoke("verify_vault_path", { vaultPath });
+  const settings = await invoke("write_app_settings", {
+    settings: { version: 1, activeVaultPath: verifiedPath },
+  });
+  return loadVaultFromPath(settings.activeVaultPath);
+}
+
+export async function resolveDefaultVaultPath() {
+  return invoke("resolve_default_vault_path");
+}
+
+export async function createNewVaultAt(vaultPath) {
+  const createdPath = await invoke("create_new_vault", { vaultPath });
+  return activateVaultPath(createdPath);
+}
+
+export async function cloneVaultFromRemote(remoteUrl, destinationPath) {
+  const clonedPath = await invoke("clone_vault_from_remote", { remoteUrl, destinationPath });
+  return activateVaultPath(clonedPath);
+}
+
+export async function importVaultToActiveLocation(sourcePath, destinationPath) {
+  const copiedPath = await invoke("copy_vault_to_path", { sourcePath, destinationPath });
+  return activateVaultPath(copiedPath);
+}
+
+export async function moveActiveVault(sourcePath, destinationPath) {
+  const copiedPath = await invoke("copy_vault_to_path", { sourcePath, destinationPath });
+  return activateVaultPath(copiedPath);
+}
+
+export async function deleteOldVaultAfterMove(oldVaultPath) {
+  return invoke("delete_old_vault_after_move", { oldVaultPath });
+}
+
+export async function openActiveVaultInExplorer() {
+  return invoke("open_path_in_file_explorer");
+}
+
+export const vaultGit = {
+  isAvailable: () => invoke("git_is_available"),
+  isRepo: () => invoke("git_is_repo"),
+  init: () => invoke("git_init_vault"),
+  status: () => invoke("git_status"),
+  branch: () => invoke("git_branch"),
+  remoteGet: () => invoke("git_remote_get"),
+  remoteSet: (remoteUrl) => invoke("git_remote_set", { remoteUrl }),
+  remoteTest: () => invoke("git_remote_test"),
+  addSelected: (paths) => invoke("git_add_selected", { paths }),
+  commit: (message) => invoke("git_commit", { message }),
+  pull: () => invoke("git_pull_rebase"),
+  push: () => invoke("git_push"),
+  sync: () => invoke("git_sync"),
+  log: () => invoke("git_log"),
+  restore: (commit) => invoke("git_restore_commit", { commit }),
+  checkpoint: (reason) => invoke("git_create_checkpoint", { reason }),
+  stashLayout: () => invoke("git_stash_layout"),
+  unstash: () => invoke("git_unstash"),
+};
 
 export async function chooseWawaPackageFile() {
   if (!isTauri()) return null;

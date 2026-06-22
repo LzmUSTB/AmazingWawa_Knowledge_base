@@ -4,6 +4,61 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::Manager;
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppSettings {
+    version: u32,
+    active_vault_path: String,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            active_vault_path: String::new(),
+        }
+    }
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GitFileChange {
+    path: String,
+    status: String,
+    staged: bool,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GitChangeGroups {
+    knowledge: Vec<GitFileChange>,
+    layout: Vec<GitFileChange>,
+    progress: Vec<GitFileChange>,
+    ignored_or_generated: Vec<GitFileChange>,
+    other: Vec<GitFileChange>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GitStatusPayload {
+    is_repo: bool,
+    branch: String,
+    remote_url: String,
+    clean: bool,
+    groups: GitChangeGroups,
+    conflicts: Vec<GitFileChange>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GitLogEntry {
+    hash: String,
+    short_hash: String,
+    message: String,
+    date: String,
+}
 
 #[derive(Serialize)]
 struct VaultRawFiles {
@@ -547,11 +602,228 @@ fn looks_like_vault(path: &Path) -> bool {
         && path.join("content").is_dir()
 }
 
-fn push_vault_candidates(base: &Path, candidates: &mut Vec<PathBuf>) {
-    candidates.push(base.join("vault"));
-    candidates.push(base.join("..").join("vault"));
-    candidates.push(base.join("..").join("..").join("vault"));
-    candidates.push(base.join("..").join("..").join("..").join("vault"));
+fn settings_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|error| format!("Failed to resolve app config directory: {error}"))?;
+    Ok(config_dir.join("kinjito-settings.yaml"))
+}
+
+fn parse_app_settings(raw: &str) -> AppSettings {
+    let mut settings = AppSettings::default();
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        if let Some(value) = trimmed.strip_prefix("version:") {
+            settings.version = value.trim().parse().unwrap_or(1);
+        } else if let Some(value) = trimmed.strip_prefix("activeVaultPath:") {
+            settings.active_vault_path = value
+                .trim()
+                .trim_matches('"')
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\");
+        }
+    }
+    settings
+}
+
+fn read_settings_file(app: &tauri::AppHandle) -> Result<AppSettings, String> {
+    let path = settings_path(app)?;
+    if !path.is_file() {
+        return Ok(AppSettings::default());
+    }
+    let raw = fs::read_to_string(&path)
+        .map_err(|error| format!("Failed to read {}: {error}", path.to_string_lossy()))?;
+    Ok(parse_app_settings(&raw))
+}
+
+fn write_settings_file(app: &tauri::AppHandle, settings: &AppSettings) -> Result<(), String> {
+    let path = settings_path(app)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Failed to create app config directory: {error}"))?;
+    }
+    let normalized_path = settings
+        .active_vault_path
+        .replace('\\', "/")
+        .replace('"', "\\\"");
+    fs::write(
+        &path,
+        format!("version: {}\nactiveVaultPath: \"{}\"\n", settings.version.max(1), normalized_path),
+    )
+    .map_err(|error| format!("Failed to write {}: {error}", path.to_string_lossy()))
+}
+
+fn active_vault_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let settings = read_settings_file(app)?;
+    if settings.active_vault_path.trim().is_empty() {
+        return Err("No active vault is configured.".into());
+    }
+    let path = PathBuf::from(&settings.active_vault_path);
+    let canonical = path
+        .canonicalize()
+        .map_err(|error| format!("Active vault path is unavailable: {error}"))?;
+    if !looks_like_vault(&canonical) {
+        return Err("The configured active vault is invalid.".into());
+    }
+    Ok(canonical)
+}
+
+fn validate_destination(path: &Path) -> Result<(), String> {
+    if path.exists() {
+        if !path.is_dir() {
+            return Err("Destination path exists and is not a directory.".into());
+        }
+        if fs::read_dir(path)
+            .map_err(|error| format!("Failed to inspect destination: {error}"))?
+            .next()
+            .is_some()
+        {
+            return Err("Destination directory must be empty.".into());
+        }
+    }
+    Ok(())
+}
+
+fn paths_overlap(source: &Path, destination: &Path) -> Result<bool, String> {
+    let source = source
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve source path: {error}"))?;
+    let destination_base = if destination.exists() {
+        destination.canonicalize().map_err(|error| format!("Failed to resolve destination: {error}"))?
+    } else {
+        let parent = destination.parent().ok_or("Destination path has no parent directory.")?;
+        let canonical_parent = parent
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve destination parent: {error}"))?;
+        canonical_parent.join(destination.file_name().ok_or("Destination path has no folder name.")?)
+    };
+    Ok(destination_base.starts_with(&source) || source.starts_with(&destination_base))
+}
+
+fn copy_directory_recursive(source: &Path, destination: &Path) -> Result<(), String> {
+    fs::create_dir_all(destination)
+        .map_err(|error| format!("Failed to create {}: {error}", destination.to_string_lossy()))?;
+    for entry in fs::read_dir(source)
+        .map_err(|error| format!("Failed to read {}: {error}", source.to_string_lossy()))?
+    {
+        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
+        let file_type = entry.file_type().map_err(|error| format!("Failed to inspect directory entry: {error}"))?;
+        if file_type.is_symlink() {
+            return Err(format!("Vault copy does not follow symbolic links: {}", entry.path().to_string_lossy()));
+        }
+        let target = destination.join(entry.file_name());
+        if file_type.is_dir() {
+            copy_directory_recursive(&entry.path(), &target)?;
+        } else if file_type.is_file() {
+            fs::copy(entry.path(), &target)
+                .map_err(|error| format!("Failed to copy {}: {error}", entry.path().to_string_lossy()))?;
+        }
+    }
+    Ok(())
+}
+
+fn run_git_at(root: &Path, args: &[&str]) -> Result<String, String> {
+    let output = Command::new("git")
+        .current_dir(root)
+        .args(args)
+        .output()
+        .map_err(|error| format!("Git is not installed or not available in PATH. Details: {error}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Err(if stderr.is_empty() { stdout } else { stderr });
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).trim_end().to_string())
+}
+
+fn is_git_repo_at(root: &Path) -> bool {
+    run_git_at(root, &["rev-parse", "--is-inside-work-tree"])
+        .map(|value| value == "true")
+        .unwrap_or(false)
+}
+
+fn git_branch_at(root: &Path) -> String {
+    run_git_at(root, &["symbolic-ref", "--quiet", "--short", "HEAD"])
+        .or_else(|_| run_git_at(root, &["rev-parse", "--short", "HEAD"]))
+        .unwrap_or_default()
+}
+
+fn git_remote_at(root: &Path) -> String {
+    run_git_at(root, &["remote", "get-url", "origin"]).unwrap_or_default()
+}
+
+fn classify_git_path(path: &str) -> &'static str {
+    let normalized = path.replace('\\', "/");
+    if normalized == "graph-layout.yaml" {
+        "layout"
+    } else if normalized == ".kinjito/exercise-progress.yaml" {
+        "progress"
+    } else if normalized == "vault.yaml"
+        || normalized == "domains.yaml"
+        || normalized == "graph.yaml"
+        || normalized.starts_with("content/")
+        || normalized.starts_with("assets/")
+    {
+        "knowledge"
+    } else if normalized.starts_with(".kb-ai/")
+        || normalized.starts_with(".tmp/")
+        || normalized.starts_with(".cache/")
+        || normalized.ends_with(".wawapkg")
+    {
+        "ignored"
+    } else {
+        "other"
+    }
+}
+
+fn git_status_at(root: &Path) -> Result<GitStatusPayload, String> {
+    if !is_git_repo_at(root) {
+        return Ok(GitStatusPayload {
+            is_repo: false,
+            branch: String::new(),
+            remote_url: String::new(),
+            clean: true,
+            groups: GitChangeGroups::default(),
+            conflicts: Vec::new(),
+        });
+    }
+    let raw = run_git_at(root, &["-c", "core.quotepath=false", "status", "--porcelain=v1", "--untracked-files=all"])?;
+    let mut groups = GitChangeGroups::default();
+    let mut conflicts = Vec::new();
+    for line in raw.lines().filter(|line| line.len() >= 3) {
+        let status = line[..2].to_string();
+        let raw_path = line[3..].trim().trim_matches('"');
+        let path = raw_path.rsplit(" -> ").next().unwrap_or(raw_path).replace("\\\"", "\"");
+        let change = GitFileChange {
+            path: path.clone(),
+            status: status.clone(),
+            staged: status.as_bytes().first().copied().unwrap_or(b' ') != b' ' && !status.starts_with("??"),
+        };
+        if matches!(status.as_str(), "DD" | "AU" | "UD" | "UA" | "DU" | "AA" | "UU") {
+            conflicts.push(change.clone());
+        }
+        match classify_git_path(&path) {
+            "knowledge" => groups.knowledge.push(change),
+            "layout" => groups.layout.push(change),
+            "progress" => groups.progress.push(change),
+            "ignored" => groups.ignored_or_generated.push(change),
+            _ => groups.other.push(change),
+        }
+    }
+    let clean = groups.knowledge.is_empty()
+        && groups.layout.is_empty()
+        && groups.progress.is_empty()
+        && groups.ignored_or_generated.is_empty()
+        && groups.other.is_empty();
+    Ok(GitStatusPayload {
+        is_repo: true,
+        branch: git_branch_at(root),
+        remote_url: git_remote_at(root),
+        clean,
+        groups,
+        conflicts,
+    })
 }
 
 fn read_content_files(
@@ -907,6 +1179,388 @@ fn open_snapshot_output_dir() -> Result<String, String> {
         .map_err(|error| format!("Failed to resolve snapshot output directory: {error}"))?;
     open_directory(&canonical_output_dir)?;
     Ok(canonical_output_dir.to_string_lossy().to_string())
+}
+
+const KINJITO_GITIGNORE: &str = r#"# --- Kinjito defaults ---
+# Kinjito generated AI context exports
+.kb-ai/
+
+# Kinjito temporary/cache files
+.tmp/
+.cache/
+temp/
+.cache-*/
+*.tmp
+*.temp
+*.log
+
+# Import/export artifacts
+*.wawapkg
+*.wawapkg.tmp
+*.zip.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local backup folders
+.backups/
+backup/
+# --- End Kinjito defaults ---
+"#;
+
+fn merge_kinjito_gitignore(root: &Path) -> Result<(), String> {
+    let path = root.join(".gitignore");
+    let existing = fs::read_to_string(&path).unwrap_or_default();
+    if existing.contains("# --- Kinjito defaults ---") {
+        return Ok(());
+    }
+    let separator = if existing.is_empty() || existing.ends_with('\n') { "" } else { "\n" };
+    fs::write(&path, format!("{existing}{separator}{KINJITO_GITIGNORE}"))
+        .map_err(|error| format!("Failed to merge .gitignore: {error}"))
+}
+
+fn validate_remote_url(remote_url: &str) -> Result<String, String> {
+    let value = remote_url.trim();
+    if value.is_empty()
+        || value.starts_with('-')
+        || value.chars().any(char::is_whitespace)
+        || !(value.starts_with("https://") || value.starts_with("ssh://") || (value.starts_with("git@") && value.contains(':')))
+    {
+        return Err("Remote URL must be a valid HTTPS or SSH Git URL.".into());
+    }
+    Ok(value.to_string())
+}
+
+fn validate_commit_hash(commit: &str) -> Result<&str, String> {
+    let value = commit.trim();
+    if value.len() < 7 || value.len() > 40 || !value.chars().all(|character| character.is_ascii_hexdigit()) {
+        return Err("Invalid commit hash.".into());
+    }
+    Ok(value)
+}
+
+fn checkpoint_timestamp() -> String {
+    let output = if cfg!(target_os = "windows") {
+        Command::new("powershell")
+            .args(["-NoProfile", "-Command", "Get-Date -Format 'yyyy-MM-dd HH:mm'"])
+            .output()
+    } else {
+        Command::new("date").arg("+%Y-%m-%d %H:%M").output()
+    };
+    output
+        .ok()
+        .filter(|result| result.status.success())
+        .map(|result| String::from_utf8_lossy(&result.stdout).trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs().to_string())
+}
+
+#[tauri::command]
+fn read_app_settings(app: tauri::AppHandle) -> Result<AppSettings, String> {
+    read_settings_file(&app)
+}
+
+#[tauri::command]
+fn write_app_settings(app: tauri::AppHandle, settings: AppSettings) -> Result<AppSettings, String> {
+    let mut normalized = settings;
+    normalized.version = normalized.version.max(1);
+    if !normalized.active_vault_path.trim().is_empty() {
+        let path = PathBuf::from(normalized.active_vault_path.trim());
+        let canonical = path
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve active vault path: {error}"))?;
+        if !looks_like_vault(&canonical) {
+            return Err("Cannot activate an invalid vault path.".into());
+        }
+        normalized.active_vault_path = canonical.to_string_lossy().to_string();
+    }
+    write_settings_file(&app, &normalized)?;
+    Ok(normalized)
+}
+
+#[tauri::command]
+fn resolve_default_vault_path(app: tauri::AppHandle) -> Result<String, String> {
+    let documents = app
+        .path()
+        .document_dir()
+        .map_err(|error| format!("Failed to resolve Documents directory: {error}"))?;
+    Ok(documents.join("Kinjito").join("vault").to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn verify_vault_path(vault_path: String) -> Result<String, String> {
+    let path = PathBuf::from(vault_path.trim());
+    let canonical = path
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault path: {error}"))?;
+    if !looks_like_vault(&canonical) {
+        return Err("Invalid vault: vault.yaml, domains.yaml, graph.yaml, or content/ is missing.".into());
+    }
+    Ok(canonical.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn create_new_vault(vault_path: String) -> Result<String, String> {
+    let path = PathBuf::from(vault_path.trim());
+    validate_destination(&path)?;
+    fs::create_dir_all(path.join("content")).map_err(|error| format!("Failed to create content directory: {error}"))?;
+    fs::create_dir_all(path.join(".kinjito")).map_err(|error| format!("Failed to create .kinjito directory: {error}"))?;
+    fs::write(path.join("vault.yaml"), "schemaVersion: 1\ntitle: Kinjito Vault\ndescription: Local-first knowledge graph vault.\nlanguage: zh-CN\n")
+        .map_err(|error| format!("Failed to create vault.yaml: {error}"))?;
+    fs::write(path.join("domains.yaml"), "schemaVersion: 1\ndomains: []\n")
+        .map_err(|error| format!("Failed to create domains.yaml: {error}"))?;
+    fs::write(path.join("graph.yaml"), "schemaVersion: 1\nedges: []\n")
+        .map_err(|error| format!("Failed to create graph.yaml: {error}"))?;
+    fs::write(path.join("graph-layout.yaml"), "schemaVersion: 1\nboards: {}\n")
+        .map_err(|error| format!("Failed to create graph-layout.yaml: {error}"))?;
+    verify_vault_path(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn copy_vault_to_path(source_path: String, destination_path: String) -> Result<String, String> {
+    let source = PathBuf::from(source_path.trim());
+    let destination = PathBuf::from(destination_path.trim());
+    if !looks_like_vault(&source) {
+        return Err("Source path is not a valid vault.".into());
+    }
+    validate_destination(&destination)?;
+    if let Some(parent) = destination.parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("Failed to create destination parent: {error}"))?;
+    }
+    if paths_overlap(&source, &destination)? {
+        return Err("Source and destination vault paths cannot contain one another.".into());
+    }
+    copy_directory_recursive(&source, &destination)?;
+    let verified = verify_vault_path(destination.to_string_lossy().to_string())?;
+    let verified_path = PathBuf::from(&verified);
+    if verified_path.join(".git").is_dir() {
+        run_git_at(&verified_path, &["status", "--porcelain=v1"])?;
+    }
+    Ok(verified)
+}
+
+#[tauri::command]
+fn delete_old_vault_after_move(app: tauri::AppHandle, old_vault_path: String) -> Result<(), String> {
+    let active = active_vault_path(&app)?;
+    let old = PathBuf::from(old_vault_path.trim())
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve old vault path: {error}"))?;
+    if !looks_like_vault(&old) || old == active || old.starts_with(&active) || active.starts_with(&old) {
+        return Err("Refusing to delete an invalid, active, or overlapping vault path.".into());
+    }
+    fs::remove_dir_all(&old)
+        .map_err(|error| format!("Failed to delete old vault {}: {error}", old.to_string_lossy()))
+}
+
+#[tauri::command]
+fn clone_vault_from_remote(remote_url: String, destination_path: String) -> Result<String, String> {
+    let remote = validate_remote_url(&remote_url)?;
+    let destination = PathBuf::from(destination_path.trim());
+    validate_destination(&destination)?;
+    if let Some(parent) = destination.parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("Failed to create destination parent: {error}"))?;
+    }
+    let output = Command::new("git")
+        .args(["clone", remote.as_str(), destination.to_string_lossy().as_ref()])
+        .output()
+        .map_err(|error| format!("Git is not installed or not available in PATH. Details: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    verify_vault_path(destination.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn open_path_in_file_explorer(app: tauri::AppHandle) -> Result<String, String> {
+    let path = active_vault_path(&app)?;
+    open_directory(&path)?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn git_is_available() -> bool {
+    Command::new("git").arg("--version").output().map(|output| output.status.success()).unwrap_or(false)
+}
+
+#[tauri::command]
+fn git_is_repo(app: tauri::AppHandle) -> Result<bool, String> {
+    Ok(is_git_repo_at(&active_vault_path(&app)?))
+}
+
+#[tauri::command]
+fn git_init_vault(app: tauri::AppHandle) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    run_git_at(&root, &["init"])?;
+    merge_kinjito_gitignore(&root)?;
+    run_git_at(&root, &["add", "."])?;
+    run_git_at(&root, &["commit", "-m", "initial vault"]).map_err(|error| {
+        if error.contains("user.email") || error.contains("user.name") || error.contains("Author identity unknown") {
+            "Git was initialized and .gitignore was created, but the initial commit failed. Configure git user.name and user.email, then commit again.".to_string()
+        } else {
+            error
+        }
+    })
+}
+
+#[tauri::command]
+fn git_status(app: tauri::AppHandle) -> Result<GitStatusPayload, String> {
+    git_status_at(&active_vault_path(&app)?)
+}
+
+#[tauri::command]
+fn git_branch(app: tauri::AppHandle) -> Result<String, String> {
+    Ok(git_branch_at(&active_vault_path(&app)?))
+}
+
+#[tauri::command]
+fn git_remote_get(app: tauri::AppHandle) -> Result<String, String> {
+    Ok(git_remote_at(&active_vault_path(&app)?))
+}
+
+#[tauri::command]
+fn git_remote_set(app: tauri::AppHandle, remote_url: String) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    let remote = validate_remote_url(&remote_url)?;
+    if git_remote_at(&root).is_empty() {
+        run_git_at(&root, &["remote", "add", "origin", &remote])?;
+    } else {
+        run_git_at(&root, &["remote", "set-url", "origin", &remote])?;
+    }
+    Ok(remote)
+}
+
+#[tauri::command]
+fn git_remote_test(app: tauri::AppHandle) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    run_git_at(&root, &["ls-remote", "origin"])?;
+    Ok("Remote is reachable.".into())
+}
+
+#[tauri::command]
+fn git_add_selected(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String> {
+    let root = active_vault_path(&app)?;
+    if paths.is_empty() {
+        return Err("Select at least one changed file group.".into());
+    }
+    run_git_at(&root, &["reset"])?;
+    let mut command = Command::new("git");
+    command.current_dir(&root).arg("add").arg("--");
+    for path in &paths {
+        let relative = Path::new(path);
+        if relative.is_absolute() || relative.components().any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_))) {
+            return Err("Refusing to stage a path outside the active vault.".into());
+        }
+        command.arg(path);
+    }
+    let output = command.output().map_err(|error| format!("Failed to run git add: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn git_commit(app: tauri::AppHandle, message: String) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    let message = message.trim();
+    if message.is_empty() {
+        return Err("Commit message is required.".into());
+    }
+    run_git_at(&root, &["commit", "-m", message])
+}
+
+#[tauri::command]
+fn git_pull_rebase(app: tauri::AppHandle) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    if !git_status_at(&root)?.clean {
+        return Err("Working tree is dirty. Commit or stash changes before pulling.".into());
+    }
+    run_git_at(&root, &["pull", "--rebase"])
+}
+
+#[tauri::command]
+fn git_push(app: tauri::AppHandle) -> Result<String, String> {
+    run_git_at(&active_vault_path(&app)?, &["push"])
+}
+
+#[tauri::command]
+fn git_sync(app: tauri::AppHandle) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    if !git_status_at(&root)?.clean {
+        return Err("Working tree is dirty. Commit or stash changes before syncing.".into());
+    }
+    let pull = run_git_at(&root, &["pull", "--rebase"])?;
+    let push = run_git_at(&root, &["push"])?;
+    Ok(format!("{pull}\n{push}").trim().to_string())
+}
+
+#[tauri::command]
+fn git_log(app: tauri::AppHandle) -> Result<Vec<GitLogEntry>, String> {
+    let root = active_vault_path(&app)?;
+    let raw = run_git_at(&root, &["log", "-n", "50", "--date=iso-strict", "--pretty=format:%H%x1f%h%x1f%s%x1f%ad%x1e"])?;
+    Ok(raw
+        .split('\u{1e}')
+        .filter_map(|record| {
+            let fields: Vec<&str> = record.trim().split('\u{1f}').collect();
+            (fields.len() == 4).then(|| GitLogEntry {
+                hash: fields[0].to_string(),
+                short_hash: fields[1].to_string(),
+                message: fields[2].to_string(),
+                date: fields[3].to_string(),
+            })
+        })
+        .collect())
+}
+
+#[tauri::command]
+fn git_restore_commit(app: tauri::AppHandle, commit: String) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    if !git_status_at(&root)?.clean {
+        return Err("Working tree is dirty. Create a checkpoint or commit before restoring.".into());
+    }
+    let commit = validate_commit_hash(&commit)?;
+    run_git_at(&root, &["checkout", commit, "--", "."])?;
+    Ok(format!("Restored vault files from {commit}."))
+}
+
+#[tauri::command]
+fn git_create_checkpoint(app: tauri::AppHandle, reason: String) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    let status = git_status_at(&root)?;
+    let mut paths = Vec::new();
+    for change in status.groups.knowledge.iter().chain(status.groups.layout.iter()).chain(status.groups.progress.iter()) {
+        paths.push(change.path.clone());
+    }
+    if paths.is_empty() {
+        return Err("There are no knowledge, layout, or progress changes to checkpoint.".into());
+    }
+    let mut command = Command::new("git");
+    command.current_dir(&root).arg("add").arg("--").args(&paths);
+    let output = command.output().map_err(|error| format!("Failed to stage checkpoint: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let timestamp = checkpoint_timestamp();
+    let message = format!("checkpoint: before {} {}", reason.trim().to_lowercase(), timestamp);
+    run_git_at(&root, &["commit", "-m", &message])
+}
+
+#[tauri::command]
+fn git_stash_layout(app: tauri::AppHandle) -> Result<String, String> {
+    run_git_at(&active_vault_path(&app)?, &["stash", "push", "-m", "kinjito-layout-sync", "--", "graph-layout.yaml"])
+}
+
+#[tauri::command]
+fn git_unstash(app: tauri::AppHandle) -> Result<String, String> {
+    run_git_at(&active_vault_path(&app)?, &["stash", "pop"])
 }
 
 fn parse_snapshot_result(raw_json: &str, fallback_url: &str, fallback_zip_path: &Path) -> Result<SourceSnapshotResult, String> {
@@ -1491,33 +2145,6 @@ fn apply_ai_import_plan(vault_root_path: String, plan: AiImportApplyPlan) -> Res
 }
 
 #[tauri::command]
-fn resolve_default_vault_root() -> Result<Option<String>, String> {
-    let mut candidates = Vec::new();
-
-    if let Ok(env_path) = std::env::var("AMAZINGWAWA_DEFAULT_VAULT") {
-        candidates.push(PathBuf::from(env_path));
-    }
-
-    if let Ok(current_dir) = std::env::current_dir() {
-        push_vault_candidates(&current_dir, &mut candidates);
-    }
-
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    push_vault_candidates(&manifest_dir, &mut candidates);
-
-    for candidate in candidates {
-        let normalized_candidate = candidate
-            .canonicalize()
-            .unwrap_or(candidate.clone());
-        if looks_like_vault(&normalized_candidate) {
-            return Ok(Some(normalized_candidate.to_string_lossy().to_string()));
-        }
-    }
-
-    Ok(None)
-}
-
-#[tauri::command]
 fn write_text_file(
     vault_root_path: String,
     relative_path: String,
@@ -1680,6 +2307,67 @@ fn remove_vault_path(vault_root_path: String, relative_path: String) -> Result<(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_directory(name: &str) -> PathBuf {
+        let nonce = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        std::env::temp_dir().join(format!("kinjito-{name}-{nonce}"))
+    }
+
+    #[test]
+    fn classifies_vault_changes() {
+        assert_eq!(classify_git_path("content/math/note.html"), "knowledge");
+        assert_eq!(classify_git_path("graph-layout.yaml"), "layout");
+        assert_eq!(classify_git_path(".kinjito/exercise-progress.yaml"), "progress");
+        assert_eq!(classify_git_path(".kb-ai/context/README.md"), "ignored");
+        assert_eq!(classify_git_path("custom.txt"), "other");
+    }
+
+    #[test]
+    fn merges_gitignore_without_overwriting_existing_rules() {
+        let root = test_directory("gitignore");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join(".gitignore"), "private.local\n").unwrap();
+        merge_kinjito_gitignore(&root).unwrap();
+        merge_kinjito_gitignore(&root).unwrap();
+        let result = fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert!(result.contains("private.local"));
+        assert!(result.contains(".kb-ai/"));
+        assert_eq!(result.matches("# --- Kinjito defaults ---").count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn git_status_groups_real_worktree_and_ignores_generated_files() {
+        if Command::new("git").arg("--version").output().is_err() {
+            return;
+        }
+        let root = test_directory("git-status");
+        fs::create_dir_all(root.join("content/math/example")).unwrap();
+        fs::create_dir_all(root.join(".kinjito")).unwrap();
+        fs::create_dir_all(root.join(".kb-ai/context")).unwrap();
+        run_git_at(&root, &["init"]).unwrap();
+        merge_kinjito_gitignore(&root).unwrap();
+        fs::write(root.join("content/math/example/note.html"), "<p>note</p>").unwrap();
+        fs::write(root.join("graph-layout.yaml"), "schemaVersion: 1\n").unwrap();
+        fs::write(root.join(".kinjito/exercise-progress.yaml"), "version: 1\n").unwrap();
+        fs::write(root.join(".kb-ai/context/README.md"), "generated").unwrap();
+        fs::write(root.join("export.wawapkg"), "generated").unwrap();
+
+        let status = git_status_at(&root).unwrap();
+        assert_eq!(status.groups.knowledge.len(), 1);
+        assert_eq!(status.groups.layout.len(), 1);
+        assert_eq!(status.groups.progress.len(), 1);
+        assert!(status.groups.ignored_or_generated.is_empty());
+        assert!(run_git_at(&root, &["check-ignore", ".kb-ai/context/README.md"]).is_ok());
+        assert!(run_git_at(&root, &["check-ignore", "export.wawapkg"]).is_ok());
+        assert!(run_git_at(&root, &["check-ignore", "content/math/example/note.html"]).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1687,14 +2375,38 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             apply_ai_import_plan,
             capture_source_snapshot,
+            clone_vault_from_remote,
             choose_exercise_set_file,
             choose_html_note_file,
             choose_html_note_folder,
             choose_vault_root,
             choose_wawapkg_file,
+            copy_vault_to_path,
+            create_new_vault,
             create_dir_all,
+            delete_old_vault_after_move,
+            git_add_selected,
+            git_branch,
+            git_commit,
+            git_create_checkpoint,
+            git_init_vault,
+            git_is_available,
+            git_is_repo,
+            git_log,
+            git_pull_rebase,
+            git_push,
+            git_remote_get,
+            git_remote_set,
+            git_remote_test,
+            git_restore_commit,
+            git_status,
+            git_stash_layout,
+            git_sync,
+            git_unstash,
             import_html_note_files,
+            open_path_in_file_explorer,
             read_ai_import_history,
+            read_app_settings,
             read_binary_file_base64,
             read_external_text_file,
             read_wawapkg_file,
@@ -1706,7 +2418,9 @@ pub fn run() {
             remove_vault_path,
             open_snapshot_output_dir,
             open_vault_relative_dir,
-            resolve_default_vault_root,
+            resolve_default_vault_path,
+            verify_vault_path,
+            write_app_settings,
             write_text_file
         ])
         .run(tauri::generate_context!())

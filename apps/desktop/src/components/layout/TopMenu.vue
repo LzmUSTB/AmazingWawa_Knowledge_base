@@ -21,7 +21,7 @@ defineProps({
   },
 });
 
-defineEmits(["export-context", "open-dialog", "open-vault", "show-view"]);
+defineEmits(["export-context", "open-dialog", "show-view"]);
 
 const appWindow = getCurrentWindow();
 
@@ -48,9 +48,9 @@ function handleTitlebarDoubleClick(event) {
     <div class="app-mark" data-tauri-drag-region>{{ appTitle || "Knowledge Base" }}</div>
     <nav class="top-actions" aria-label="Application actions">
       <span class="font-scale-indicator">FONT {{ Math.round(uiFontScale * 100) }}%</span>
-      <button class="hud-button top-action-button button-with-icon" title="Open Vault" @click="$emit('open-vault')">
+      <button class="hud-button top-action-button button-with-icon" title="Vault Settings" @click="$emit('show-view', 'vault-settings')">
         <AppIcon name="folder-open" />
-        <span class="button-icon-label">Open Vault</span>
+        <span class="button-icon-label">Vault</span>
       </button>
       <button class="hud-button top-action-button button-with-icon" style="--button-color: var(--graphics)" :disabled="!canAddNote"
         :title="canAddNote ? '' : 'No empty node is available. Create a node first.'"
@@ -78,7 +78,7 @@ function handleTitlebarDoubleClick(event) {
         <AppIcon name="tools" />
         <span class="button-icon-label">Tools</span>
       </button>
-      <button class="hud-button top-action-button button-with-icon" disabled title="Git panel is not implemented yet">
+      <button class="hud-button top-action-button button-with-icon" title="Vault Git" @click="$emit('show-view', 'vault-git')">
         <AppIcon name="git-branch" />
         <span class="button-icon-label">Git</span>
       </button>
