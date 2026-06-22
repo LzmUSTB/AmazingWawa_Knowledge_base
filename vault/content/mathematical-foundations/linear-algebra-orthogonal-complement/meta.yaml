@@ -4,20 +4,21 @@ titleLocale: 正交补空间
 domain: mathematical-foundations
 type: concept
 status: seed
-summary: 'Priority: P2. The subspace of all vectors orthogonal to a given subspace,
-  important for decompositions and projection theory.'
-summaryLocale: '优先级：P2。中文：正交补空间；日本語：直交補空間；English: Orthogonal Complement。该节点当前仅建立结构，后续再生成中文主体笔记。'
-contentFormat: none
+summary: "Priority: P2. The subspace of all vectors orthogonal to a given
+  subspace, important for decompositions and projection theory."
+summaryLocale: "优先级：P2。中文：正交补空间；日本語：直交補空間；English: Orthogonal
+  Complement。该节点当前仅建立结构，后续再生成中文主体笔记。"
+contentFormat: html
 aliases:
-- 直交補空間
-- orthogonal complement
-- perpendicular subspace
+  - 直交補空間
+  - orthogonal complement
+  - perpendicular subspace
 tags:
-- tokyo-science-cs-exam
-- mathematics
-- linear-algebra
-- p2
+  - tokyo-science-cs-exam
+  - mathematics
+  - linear-algebra
+  - p2
 sourceIds:
-- tokyo-science-cs-exam-kb-node-plan-no-practice
-createdAt: '2026-06-15T00:00:00+09:00'
-updatedAt: '2026-06-15T00:00:00+09:00'
+  - tokyo-science-cs-exam-kb-node-plan-no-practice
+createdAt: 2026-06-15T00:00:00+09:00
+updatedAt: 2026-06-22
