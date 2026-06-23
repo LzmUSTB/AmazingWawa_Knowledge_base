@@ -738,9 +738,24 @@ fn run_git_at(root: &Path, args: &[&str]) -> Result<String, String> {
 }
 
 fn is_git_repo_at(root: &Path) -> bool {
-    run_git_at(root, &["rev-parse", "--is-inside-work-tree"])
-        .map(|value| value == "true")
+    let Ok(top_level) = run_git_at(root, &["rev-parse", "--show-toplevel"]) else {
+        return false;
+    };
+    let Ok(canonical_root) = root.canonicalize() else {
+        return false;
+    };
+    PathBuf::from(top_level)
+        .canonicalize()
+        .map(|repository_root| repository_root == canonical_root)
         .unwrap_or(false)
+}
+
+fn require_local_git_repo(root: &Path) -> Result<(), String> {
+    if is_git_repo_at(root) {
+        Ok(())
+    } else {
+        Err("The active vault does not have its own Git repository. Initialize Git inside the vault first.".into())
+    }
 }
 
 fn git_branch_at(root: &Path) -> String {
@@ -751,6 +766,20 @@ fn git_branch_at(root: &Path) -> String {
 
 fn git_remote_at(root: &Path) -> String {
     run_git_at(root, &["remote", "get-url", "origin"]).unwrap_or_default()
+}
+
+fn git_push_at(root: &Path) -> Result<String, String> {
+    if run_git_at(root, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"]).is_ok() {
+        return run_git_at(root, &["push"]);
+    }
+    if git_remote_at(root).is_empty() {
+        return Err("Set the origin remote before pushing.".into());
+    }
+    let branch = git_branch_at(root);
+    if branch.is_empty() {
+        return Err("Create the initial commit before pushing.".into());
+    }
+    run_git_at(root, &["push", "--set-upstream", "origin", &branch])
 }
 
 fn classify_git_path(path: &str) -> &'static str {
@@ -1398,7 +1427,8 @@ fn git_is_repo(app: tauri::AppHandle) -> Result<bool, String> {
 #[tauri::command]
 fn git_init_vault(app: tauri::AppHandle) -> Result<String, String> {
     let root = active_vault_path(&app)?;
-    run_git_at(&root, &["init"])?;
+    run_git_at(&root, &["init", "."])?;
+    require_local_git_repo(&root)?;
     merge_kinjito_gitignore(&root)?;
     run_git_at(&root, &["add", "."])?;
     run_git_at(&root, &["commit", "-m", "initial vault"]).map_err(|error| {
@@ -1417,17 +1447,22 @@ fn git_status(app: tauri::AppHandle) -> Result<GitStatusPayload, String> {
 
 #[tauri::command]
 fn git_branch(app: tauri::AppHandle) -> Result<String, String> {
-    Ok(git_branch_at(&active_vault_path(&app)?))
+    let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
+    Ok(git_branch_at(&root))
 }
 
 #[tauri::command]
 fn git_remote_get(app: tauri::AppHandle) -> Result<String, String> {
-    Ok(git_remote_at(&active_vault_path(&app)?))
+    let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
+    Ok(git_remote_at(&root))
 }
 
 #[tauri::command]
 fn git_remote_set(app: tauri::AppHandle, remote_url: String) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     let remote = validate_remote_url(&remote_url)?;
     if git_remote_at(&root).is_empty() {
         run_git_at(&root, &["remote", "add", "origin", &remote])?;
@@ -1440,6 +1475,7 @@ fn git_remote_set(app: tauri::AppHandle, remote_url: String) -> Result<String, S
 #[tauri::command]
 fn git_remote_test(app: tauri::AppHandle) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     run_git_at(&root, &["ls-remote", "origin"])?;
     Ok("Remote is reachable.".into())
 }
@@ -1447,6 +1483,7 @@ fn git_remote_test(app: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 fn git_add_selected(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     if paths.is_empty() {
         return Err("Select at least one changed file group.".into());
     }
@@ -1470,6 +1507,7 @@ fn git_add_selected(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), Str
 #[tauri::command]
 fn git_commit(app: tauri::AppHandle, message: String) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     let message = message.trim();
     if message.is_empty() {
         return Err("Commit message is required.".into());
@@ -1480,6 +1518,7 @@ fn git_commit(app: tauri::AppHandle, message: String) -> Result<String, String> 
 #[tauri::command]
 fn git_pull_rebase(app: tauri::AppHandle) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     if !git_status_at(&root)?.clean {
         return Err("Working tree is dirty. Commit or stash changes before pulling.".into());
     }
@@ -1488,23 +1527,27 @@ fn git_pull_rebase(app: tauri::AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 fn git_push(app: tauri::AppHandle) -> Result<String, String> {
-    run_git_at(&active_vault_path(&app)?, &["push"])
+    let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
+    git_push_at(&root)
 }
 
 #[tauri::command]
 fn git_sync(app: tauri::AppHandle) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     if !git_status_at(&root)?.clean {
         return Err("Working tree is dirty. Commit or stash changes before syncing.".into());
     }
     let pull = run_git_at(&root, &["pull", "--rebase"])?;
-    let push = run_git_at(&root, &["push"])?;
+    let push = git_push_at(&root)?;
     Ok(format!("{pull}\n{push}").trim().to_string())
 }
 
 #[tauri::command]
 fn git_log(app: tauri::AppHandle) -> Result<Vec<GitLogEntry>, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     let raw = run_git_at(&root, &["log", "-n", "50", "--date=iso-strict", "--pretty=format:%H%x1f%h%x1f%s%x1f%ad%x1e"])?;
     Ok(raw
         .split('\u{1e}')
@@ -1523,6 +1566,7 @@ fn git_log(app: tauri::AppHandle) -> Result<Vec<GitLogEntry>, String> {
 #[tauri::command]
 fn git_restore_commit(app: tauri::AppHandle, commit: String) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     if !git_status_at(&root)?.clean {
         return Err("Working tree is dirty. Create a checkpoint or commit before restoring.".into());
     }
@@ -1534,6 +1578,7 @@ fn git_restore_commit(app: tauri::AppHandle, commit: String) -> Result<String, S
 #[tauri::command]
 fn git_create_checkpoint(app: tauri::AppHandle, reason: String) -> Result<String, String> {
     let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
     let status = git_status_at(&root)?;
     let mut paths = Vec::new();
     for change in status.groups.knowledge.iter().chain(status.groups.layout.iter()).chain(status.groups.progress.iter()) {
@@ -1555,12 +1600,16 @@ fn git_create_checkpoint(app: tauri::AppHandle, reason: String) -> Result<String
 
 #[tauri::command]
 fn git_stash_layout(app: tauri::AppHandle) -> Result<String, String> {
-    run_git_at(&active_vault_path(&app)?, &["stash", "push", "-m", "kinjito-layout-sync", "--", "graph-layout.yaml"])
+    let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
+    run_git_at(&root, &["stash", "push", "-m", "kinjito-layout-sync", "--", "graph-layout.yaml"])
 }
 
 #[tauri::command]
 fn git_unstash(app: tauri::AppHandle) -> Result<String, String> {
-    run_git_at(&active_vault_path(&app)?, &["stash", "pop"])
+    let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
+    run_git_at(&root, &["stash", "pop"])
 }
 
 fn parse_snapshot_result(raw_json: &str, fallback_url: &str, fallback_zip_path: &Path) -> Result<SourceSnapshotResult, String> {
@@ -2364,6 +2413,21 @@ mod tests {
         assert!(run_git_at(&root, &["check-ignore", ".kb-ai/context/README.md"]).is_ok());
         assert!(run_git_at(&root, &["check-ignore", "export.wawapkg"]).is_ok());
         assert!(run_git_at(&root, &["check-ignore", "content/math/example/note.html"]).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn nested_vault_does_not_inherit_parent_repository() {
+        if Command::new("git").arg("--version").output().is_err() {
+            return;
+        }
+        let root = test_directory("nested-repo");
+        let vault = root.join("vault");
+        fs::create_dir_all(&vault).unwrap();
+        run_git_at(&root, &["init", "."]).unwrap();
+        assert!(!is_git_repo_at(&vault));
+        run_git_at(&vault, &["init", "."]).unwrap();
+        assert!(is_git_repo_at(&vault));
         fs::remove_dir_all(root).unwrap();
     }
 }
