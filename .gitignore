@@ -57,3 +57,7 @@ public-export/
 
 # Local source snapshots
 /snapshot/
+
+# --- Kinjito local active vault ---
+/vault/
+# --- End Kinjito local active vault ---

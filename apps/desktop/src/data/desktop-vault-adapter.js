@@ -34,7 +34,17 @@ function normalizeFromRaw(rawFiles, vaultRootPath) {
 
 export async function chooseVaultRoot() {
   if (!isTauri()) return null;
-  return invoke("choose_vault_root");
+  return invoke("choose_existing_vault_folder");
+}
+
+export async function chooseExistingVaultFolder() {
+  if (!isTauri()) return null;
+  return invoke("choose_existing_vault_folder");
+}
+
+export async function chooseVaultDestinationFolder() {
+  if (!isTauri()) return null;
+  return invoke("choose_vault_destination_folder");
 }
 
 export async function loadVaultFromPath(vaultRootPath) {
@@ -57,7 +67,16 @@ export async function loadInitialVault() {
         console.warn("[vault] Legacy vault path migration failed.", error);
       }
     }
-    throw new Error("No active vault is configured.");
+    const defaultPath = await resolveDefaultVaultPath();
+    try {
+      await invoke("verify_vault_path", { vaultPath: defaultPath });
+      const settings = await invoke("write_app_settings", {
+        settings: { version: 1, activeVaultPath: defaultPath },
+      });
+      return loadVaultFromPath(settings.activeVaultPath);
+    } catch {
+      throw new Error("No active vault is configured.");
+    }
   }
   await invoke("verify_vault_path", { vaultPath: activeVaultPath });
   return loadVaultFromPath(activeVaultPath);
@@ -126,7 +145,8 @@ export const vaultGit = {
   restore: (commit) => invoke("git_restore_commit", { commit }),
   checkpoint: (reason) => invoke("git_create_checkpoint", { reason }),
   stashLayout: () => invoke("git_stash_layout"),
-  unstash: () => invoke("git_unstash"),
+  unstash: (stashRef) => invoke("git_unstash", { stashRef }),
+  ensureAppRepoIgnore: () => invoke("ensure_app_repo_ignores_active_vault"),
 };
 
 export async function chooseWawaPackageFile() {
@@ -167,7 +187,7 @@ export async function readAiImportHistory(vaultRootPath, packageId) {
 }
 
 export async function exportContext(vaultRootPath) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before exporting context.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before exporting context.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const files = buildAiContextFiles(currentVault);
   await invoke("reset_context_export_dir", { vaultRootPath });
@@ -219,7 +239,7 @@ export async function inspectWawaPackage(vaultRootPath, packageFilePath) {
 }
 
 export async function applyWawaPackage(vaultRootPath, packageFilePath) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before applying packages.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before applying packages.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const packageFiles = await readWawaPackageFile(packageFilePath);
   const history = await readAiImportHistory(vaultRootPath, packageFiles.packageId);
@@ -246,7 +266,7 @@ export function getExerciseProgressRelativePath() {
 }
 
 export async function writeExerciseSet(vaultRootPath, node, exerciseSet) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving exercises.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before saving exercises.");
   if (!node?.id || node.type === "domain") throw new Error("Exercises require a non-domain owner node.");
   const payload = {
     version: Number(exerciseSet?.version) || 1,
@@ -336,7 +356,7 @@ async function assertExerciseSetMissing(vaultRootPath, relativePath) {
 }
 
 export async function importExerciseSetForNode(vaultRootPath, node) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before importing ExerciseSet.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before importing ExerciseSet.");
   if (!node?.id || node.type === "domain") throw new Error("ExerciseSet requires a non-domain owner node.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   if (currentVault.exercises?.byNodeId?.[node.id]) {
@@ -354,7 +374,7 @@ export async function importExerciseSetForNode(vaultRootPath, node) {
 }
 
 export async function deleteExerciseSetFromNode(vaultRootPath, node) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting ExerciseSet.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before deleting ExerciseSet.");
   if (!node?.id || node.type === "domain") throw new Error("ExerciseSet requires a non-domain owner node.");
   await invoke("remove_file", { vaultRootPath, relativePath: getExercisesRelativePath(node) });
   const currentVault = await loadVaultFromPath(vaultRootPath);
@@ -366,7 +386,7 @@ export async function deleteExerciseSetFromNode(vaultRootPath, node) {
 }
 
 export async function deleteExerciseProblemFromNode(vaultRootPath, node, problemId) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting an exercise problem.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before deleting an exercise problem.");
   if (!node?.id || node.type === "domain") throw new Error("Exercise problems require a non-domain owner node.");
   const normalizedProblemId = String(problemId || "").trim();
   if (!normalizedProblemId) throw new Error("Exercise problem id is required.");
@@ -393,7 +413,7 @@ export async function deleteExerciseProblemFromNode(vaultRootPath, node, problem
 }
 
 export async function writeExerciseProgress(vaultRootPath, progress) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving exercise progress.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before saving exercise progress.");
   await invoke("create_dir_all", { vaultRootPath, relativePath: ".kinjito" });
   await invoke("write_text_file", {
     vaultRootPath,
@@ -739,7 +759,7 @@ function buildGraphYamlWithReplacedLink(graphYaml, oldEdgeId, payload, nodeIds) 
 }
 
 export async function createDomain(vaultRootPath, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating domains.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before creating domains.");
   if (!payload.title?.trim()) throw new Error("Title is required.");
   if (!payload.id?.trim()) throw new Error("ID is required.");
   if (!assertKebabId(payload.id)) throw new Error("ID must be lowercase kebab-case.");
@@ -758,7 +778,7 @@ export async function createDomain(vaultRootPath, payload) {
 }
 
 export async function createKnowledgeNode(vaultRootPath, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating notes.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before creating notes.");
   if (!payload.title?.trim()) throw new Error("Title is required.");
   if (!payload.id?.trim()) throw new Error("ID is required.");
   if (!assertKebabId(payload.id)) throw new Error("ID must be lowercase kebab-case.");
@@ -805,7 +825,7 @@ export async function createKnowledgeItem(vaultRootPath, payload) {
 }
 
 export async function addNoteToNode(vaultRootPath, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating notes.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before creating notes.");
   if (!payload?.nodeId) throw new Error("Target node is required.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const node = currentVault.nodes.find((item) => item.id === payload.nodeId && item.type !== "domain");
@@ -842,7 +862,7 @@ export async function addNoteToNode(vaultRootPath, payload) {
 }
 
 export async function importHtmlNoteToNode(vaultRootPath, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before importing HTML notes.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before importing HTML notes.");
   if (!payload?.nodeId) throw new Error("Target node is required.");
   if (!payload?.sourcePath) throw new Error("Choose an HTML file or folder first.");
   if (!["file", "folder"].includes(payload.sourceKind)) throw new Error("HTML import sourceKind must be file or folder.");
@@ -885,7 +905,7 @@ export async function importHtmlNoteToNode(vaultRootPath, payload) {
 }
 
 export async function deleteNoteFromNode(vaultRootPath, nodeId) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting notes.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before deleting notes.");
   if (!nodeId) throw new Error("Target node is required.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const node = currentVault.nodes.find((item) => item.id === nodeId && item.type !== "domain");
@@ -910,7 +930,7 @@ export async function deleteNoteFromNode(vaultRootPath, nodeId) {
 }
 
 export async function updateDomain(vaultRootPath, domainId, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing domains.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before editing domains.");
   if (!domainId) throw new Error("Domain ID is required.");
   const domainsYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "domains.yaml" });
   await invoke("write_text_file", {
@@ -922,7 +942,7 @@ export async function updateDomain(vaultRootPath, domainId, payload) {
 }
 
 export async function updateKnowledgeNodeMeta(vaultRootPath, nodeId, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing nodes.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before editing nodes.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const node = currentVault.nodes.find((item) => item.id === nodeId && item.type !== "domain");
   if (!node) throw new Error(`Node "${nodeId}" does not exist.`);
@@ -971,7 +991,7 @@ function buildVaultYamlAfterDomainDelete(vaultYaml, domainId, remainingDomains) 
 }
 
 export async function deleteKnowledgeNode(vaultRootPath, nodeId) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting nodes.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before deleting nodes.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const node = currentVault.nodes.find((item) => item.id === nodeId && item.type !== "domain");
   if (!node) throw new Error(`Node "${nodeId}" does not exist.`);
@@ -989,7 +1009,7 @@ export async function deleteKnowledgeNode(vaultRootPath, nodeId) {
 }
 
 export async function deleteDomain(vaultRootPath, domainId) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting domains.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before deleting domains.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const domain = currentVault.domains.find((item) => item.id === domainId);
   if (!domain) throw new Error(`Domain "${domainId}" does not exist.`);
@@ -1013,7 +1033,7 @@ export async function deleteDomain(vaultRootPath, domainId) {
 }
 
 export async function createGraphLink(vaultRootPath, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before creating links.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before creating links.");
   if (!payload?.sourceId) throw new Error("Source node is required.");
   if (!payload?.targetId) throw new Error("Target node is required.");
 
@@ -1029,7 +1049,7 @@ export async function createGraphLink(vaultRootPath, payload) {
 }
 
 export async function removeGraphLink(vaultRootPath, edgeId) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before deleting links.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before deleting links.");
   if (!edgeId) throw new Error("Edge ID is required.");
   const graphYaml = await invoke("read_text_file", { vaultRootPath, relativePath: "graph.yaml" });
   await invoke("write_text_file", {
@@ -1041,7 +1061,7 @@ export async function removeGraphLink(vaultRootPath, edgeId) {
 }
 
 export async function replaceGraphLink(vaultRootPath, oldEdgeId, payload) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before editing links.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before editing links.");
   if (!oldEdgeId) throw new Error("Existing edge ID is required.");
   if (!payload?.sourceId) throw new Error("Source node is required.");
   if (!payload?.targetId) throw new Error("Target node is required.");
@@ -1109,7 +1129,7 @@ function getPreservedManualRoutes(existingBoard, graphYaml, movedNodeIds = []) {
 }
 
 export async function saveGraphLayoutBoard(vaultRootPath, scopeId, board, options = {}) {
-  if (!vaultRootPath) throw new Error("Open a desktop vault folder before saving layout.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before saving layout.");
   if (!scopeId) throw new Error("Cannot save layout without a scope id.");
   if (!board?.nodes) throw new Error("Cannot save an empty layout board.");
 

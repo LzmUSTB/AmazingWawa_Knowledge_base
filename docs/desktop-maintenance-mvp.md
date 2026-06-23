@@ -26,10 +26,10 @@ If no real vault can be loaded, the app shows `No Vault Loaded`.
 
 There is no static sample vault and no mock graph fallback.
 
-## Open Vault Flow
+## Active Vault Setup Flow
 
 ```txt
-Open Vault
+Vault Setup
 -> choose local folder
 -> validate required files
 -> load vault files

@@ -27,6 +27,8 @@ const statusFilter = ref("all");
 const difficultyFilter = ref("all");
 const typeFilter = ref("all");
 const localProgress = ref({ version: 1, problems: {}, errors: [] });
+const LOOSE_TEX_RUN = /\\(?:bar|vec|hat|tilde|overline|underline|mathbf|mathrm|mathit|mathbb|mathcal|frac|sqrt|sum|prod|int|lim|begin|end|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|phi|omega|cdot|times|leq|geq|neq|infty)(?:\s*[A-Za-z0-9_{}^=+\-*/(),.\\]+)*/g;
+const MATH_SPAN = /(\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g;
 
 watch(
   () => activeVault.value.exerciseProgress,
@@ -129,6 +131,30 @@ function dueLabel(value) {
   if (!value) return "New";
   return new Date(value).toLocaleString();
 }
+
+function normalizeLooseExerciseMath(markdown = "") {
+  let inCodeFence = false;
+  return String(markdown || "").split(/\r?\n/).map((line) => {
+    if (/^\s*```/.test(line)) {
+      inCodeFence = !inCodeFence;
+      return line;
+    }
+    if (inCodeFence || !line.includes("\\") || MATH_SPAN.test(line)) {
+      MATH_SPAN.lastIndex = 0;
+      return line;
+    }
+    MATH_SPAN.lastIndex = 0;
+    return line.split(MATH_SPAN).map((part, index) => {
+      if (index % 2) return part;
+      return part.replace(LOOSE_TEX_RUN, (match) => {
+        const leading = match.match(/^\s*/)?.[0] || "";
+        const trailing = match.match(/\s*$/)?.[0] || "";
+        const body = match.trim();
+        return body ? `${leading}\\(${body}\\)${trailing}` : match;
+      });
+    }).join("");
+  }).join("\n");
+}
 </script>
 
 <template>
@@ -195,23 +221,23 @@ function dueLabel(value) {
               </button>
             </div>
           </header>
-          <NoteBlockRenderer :markdown="problem.prompt" :block-registry="activeVault.blockRegistry"
+          <NoteBlockRenderer :markdown="normalizeLooseExerciseMath(problem.prompt)" :block-registry="activeVault.blockRegistry"
             :node="ownerNode" :vault-root-path="activeVault.vaultRootPath" />
           <div class="reveal-actions">
             <button v-if="problem.hints.length" class="hud-button" type="button" @click="toggleReveal('hints', problem.id)">{{ revealedHints[problem.id] ? "Hide Hint" : "Show Hint" }}</button>
             <button class="hud-button" type="button" @click="toggleReveal('answers', problem.id)">{{ revealedAnswers[problem.id] ? "Hide Answer" : "Show Answer" }}</button>
             <button class="hud-button" type="button" @click="toggleReveal('solutions', problem.id)">{{ revealedSolutions[problem.id] ? "Hide Solution" : "Show Solution" }}</button>
           </div>
-          <section v-if="revealedHints[problem.id]" class="reveal-panel"><strong>Hints</strong><NoteBlockRenderer v-for="(hint, hintIndex) in problem.hints" :key="hintIndex" :markdown="hint" /></section>
-          <section v-if="revealedAnswers[problem.id]" class="reveal-panel"><strong>Answer</strong><NoteBlockRenderer :markdown="problem.answer" /></section>
-          <section v-if="revealedSolutions[problem.id]" class="reveal-panel"><strong>Solution</strong><NoteBlockRenderer :markdown="problem.solution" /></section>
+          <section v-if="revealedHints[problem.id]" class="reveal-panel"><strong>Hints</strong><NoteBlockRenderer v-for="(hint, hintIndex) in problem.hints" :key="hintIndex" :markdown="normalizeLooseExerciseMath(hint)" /></section>
+          <section v-if="revealedAnswers[problem.id]" class="reveal-panel"><strong>Answer</strong><NoteBlockRenderer :markdown="normalizeLooseExerciseMath(problem.answer)" /></section>
+          <section v-if="revealedSolutions[problem.id]" class="reveal-panel"><strong>Solution</strong><NoteBlockRenderer :markdown="normalizeLooseExerciseMath(problem.solution)" /></section>
           <footer class="rating-row">
             <div><span>Mastery {{ percent(progressFor(currentExerciseSet, problem)?.mastery) }}</span><span>Accuracy {{ accuracy(progressFor(currentExerciseSet, problem)) }}</span></div>
             <div class="rating-actions">
-              <button type="button" :disabled="!canSave" class="rate-wrong" @click="rate(currentExerciseSet, problem, 'wrong')">Wrong</button>
-              <button type="button" :disabled="!canSave" @click="rate(currentExerciseSet, problem, 'hard')">Hard</button>
-              <button type="button" :disabled="!canSave" @click="rate(currentExerciseSet, problem, 'good')"><AppIcon name="check" :size="12" />Good</button>
-              <button type="button" :disabled="!canSave" @click="rate(currentExerciseSet, problem, 'easy')"><AppIcon name="check" :size="12" />Easy</button>
+              <button type="button" :disabled="!canSave" class="rate-wrong" @click="rate(currentExerciseSet, problem, 'wrong')"><AppIcon name="emoji-wrong" :size="14" />Wrong</button>
+              <button type="button" :disabled="!canSave" class="rate-hard" @click="rate(currentExerciseSet, problem, 'hard')"><AppIcon name="emoji-hard" :size="14" />Hard</button>
+              <button type="button" :disabled="!canSave" class="rate-good" @click="rate(currentExerciseSet, problem, 'good')"><AppIcon name="emoji-good" :size="14" />Good</button>
+              <button type="button" :disabled="!canSave" class="rate-easy" @click="rate(currentExerciseSet, problem, 'easy')"><AppIcon name="emoji-easy" :size="14" />Easy</button>
             </div>
           </footer>
         </article>
@@ -239,7 +265,7 @@ function dueLabel(value) {
           </button>
           <div class="overview-meta"><span>{{ row.owner?.domain || '-' }}</span><span>{{ row.problem.type }}</span><span>{{ row.problem.difficulty }}</span><span>{{ percent(row.progress?.mastery) }}</span><span>{{ accuracy(row.progress) }}</span><span>{{ dueLabel(row.progress?.dueAt) }}</span><span>{{ row.progress?.lastResult || 'new' }}</span></div>
           <div v-if="expandedProblems.has(row.key)" class="overview-expanded">
-            <NoteBlockRenderer :markdown="row.problem.prompt" />
+            <NoteBlockRenderer :markdown="normalizeLooseExerciseMath(row.problem.prompt)" />
             <button class="hud-button button-with-icon" type="button" @click="$emit('open-exercises', row.exerciseSet.nodeId)"><AppIcon name="exercise" /><span class="button-icon-label">Open ExerciseSet</span></button>
           </div>
         </article>
@@ -278,8 +304,14 @@ function dueLabel(value) {
 .reveal-actions { margin-top: 16px; }
 .reveal-panel { margin-top: 10px; border-left: 4px solid var(--career); background: var(--background-panel); padding: 14px; }
 .rating-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border-muted); margin-top: 16px; padding-top: 14px; }
-.rating-actions button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--career); border-radius: 0; background: var(--background-panel); color: var(--text-primary); cursor: pointer; padding: 7px 10px; }
-.rating-actions .rate-wrong { border-color: var(--game-dev); color: var(--game-dev); }
+.rating-actions { gap: 0; }
+.rating-actions button { display: inline-flex; align-items: center; gap: 5px; border: 0; border-left: 1px solid var(--border-muted); border-radius: 0; background: transparent; color: var(--text-muted); cursor: pointer; padding: 7px 10px; }
+.rating-actions button:first-child { border-left: 0; }
+.rating-actions button:hover:not(:disabled) { color: var(--exercise-rate-color, var(--career)); background: color-mix(in srgb, var(--exercise-rate-color, var(--career)) 10%, transparent); }
+.rating-actions .rate-wrong { --exercise-rate-color: #ff3b30; }
+.rating-actions .rate-hard { --exercise-rate-color: #ff8f1f; }
+.rating-actions .rate-good { --exercise-rate-color: #b8ff12; }
+.rating-actions .rate-easy { --exercise-rate-color: #39ff14; }
 .rating-actions button:disabled { cursor: not-allowed; opacity: .4; }
 .stats-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 18px; border: 1px solid var(--border-primary); background: var(--background-panel); }
 .stats-grid div { display: grid; gap: 4px; border-right: 1px solid var(--border-muted); padding: 14px; }

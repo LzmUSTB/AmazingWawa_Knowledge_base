@@ -94,7 +94,7 @@ function cancelEdit() {
 }
 function saveNote() {
   if (!dirty.value || props.saving) return;
-  if (!props.canSaveNote) { window.alert("Open a desktop vault folder before saving."); return; }
+  if (!props.canSaveNote) { window.alert("Configure an active vault before saving."); return; }
   emit("save-note", { node: node.value, markdown: draftMarkdown.value });
 }
 function openFind(query = findQuery.value) { if (props.mode !== "read") return; findOpen.value = true; if (query !== undefined) findQuery.value = query; findCurrentIndex.value = 0; scheduleHighlight(); }

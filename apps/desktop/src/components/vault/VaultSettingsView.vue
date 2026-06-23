@@ -1,15 +1,25 @@
 <script setup>
 import { ref } from "vue";
-import { chooseVaultRoot, openActiveVaultInExplorer } from "../../data/desktop-vault-adapter.js";
+import { chooseVaultDestinationFolder, openActiveVaultInExplorer } from "../../data/desktop-vault-adapter.js";
 import AppIcon from "../ui/AppIcon.vue";
 
-defineProps({ vaultPath: { type: String, default: "" }, busy: { type: Boolean, default: false }, error: { type: String, default: "" } });
+const props = defineProps({ vaultPath: { type: String, default: "" }, busy: { type: Boolean, default: false }, error: { type: String, default: "" } });
 const emit = defineEmits(["move-vault", "show-setup"]);
 const destinationPath = ref("");
+const localError = ref("");
 
 async function browseDestination() {
-  const path = await chooseVaultRoot();
+  const path = await chooseVaultDestinationFolder();
   if (path) destinationPath.value = path;
+}
+
+async function handleOpenActiveVaultInExplorer() {
+  localError.value = "";
+  try {
+    await openActiveVaultInExplorer();
+  } catch (error) {
+    localError.value = `Failed to open vault folder: ${error?.message || error}`;
+  }
 }
 </script>
 
@@ -18,7 +28,7 @@ async function browseDestination() {
     <header><div class="section-kicker">Vault Settings</div><h1>Active Vault</h1><p>Kinjito maintains one active vault. Location changes use copy, verify, then switch.</p></header>
     <section class="settings-band">
       <div><strong>Current Vault Path</strong><code>{{ vaultPath }}</code></div>
-      <button class="hud-button button-with-icon" type="button" @click="openActiveVaultInExplorer"><AppIcon name="folder-open" /><span>Open in Explorer</span></button>
+      <button class="hud-button button-with-icon" type="button" @click="handleOpenActiveVaultInExplorer"><AppIcon name="folder-open" /><span>Open in Explorer</span></button>
     </section>
     <section class="settings-band settings-band--stack">
       <div><strong>Move Vault</strong><p>The old vault is retained after the verified copy becomes active.</p></div>
@@ -28,7 +38,7 @@ async function browseDestination() {
       <div><strong>Replace Active Vault</strong><p>Create, clone, or import another vault into a new active location.</p></div>
       <button class="hud-button" type="button" @click="$emit('show-setup')">OPEN SETUP</button>
     </section>
-    <pre v-if="error" class="error-block">{{ error }}</pre>
+    <pre v-if="localError || props.error" class="error-block">{{ localError || props.error }}</pre>
   </section>
 </template>
 

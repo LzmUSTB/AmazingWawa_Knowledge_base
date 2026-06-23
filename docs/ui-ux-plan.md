@@ -53,7 +53,7 @@ The top menu is for application-level actions.
 Recommended first-version menu items:
 
 ```txt
-Open Vault
+Vault Setup
 New Note
 New Link
 Search
@@ -65,7 +65,7 @@ Settings
 
 | Item | Purpose |
 |---|---|
-| Open Vault | Select or reopen a vault folder |
+| Vault Setup | Configure or replace the active vault |
 | New Note | Create a new knowledge node |
 | New Link | Create a graph relation between two nodes |
 | Search | Open global search |
@@ -139,7 +139,7 @@ Open app
 Check whether a recent vault exists
 ↓
 If no vault exists:
-  show Open Vault screen
+  show Vault Setup screen
 If vault exists:
   load vault
 ↓

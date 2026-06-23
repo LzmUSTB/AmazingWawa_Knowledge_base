@@ -42,6 +42,18 @@ struct GitChangeGroups {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct VaultLocationStatus {
+    active_vault_path: String,
+    app_repo_root: String,
+    inside_app_repo: bool,
+    standard_repo_vault: bool,
+    ignored_by_app_git: bool,
+    tracked_by_app_git_count: usize,
+    warning: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct GitStatusPayload {
     is_repo: bool,
     branch: String,
@@ -49,6 +61,7 @@ struct GitStatusPayload {
     clean: bool,
     groups: GitChangeGroups,
     conflicts: Vec<GitFileChange>,
+    vault_location: VaultLocationStatus,
 }
 
 #[derive(Serialize)]
@@ -326,6 +339,133 @@ fn is_safe_content_id(value: &str) -> bool {
 fn allowed_html_import_file(path: &Path) -> bool {
     let value = path.to_string_lossy();
     allowed_asset_extension(&value)
+}
+
+fn normalize_display_path(value: &str) -> String {
+    let normalized = value.replace('\\', "/");
+    if let Some(stripped) = normalized.strip_prefix("//?/UNC/") {
+        format!("//{stripped}")
+    } else if let Some(stripped) = normalized.strip_prefix("//?/") {
+        stripped.to_string()
+    } else {
+        normalized
+    }
+}
+
+fn path_to_display_string(path: &Path) -> String {
+    normalize_display_path(path.to_string_lossy().as_ref())
+}
+
+fn canonical_or_existing_parent(path: &Path) -> Result<PathBuf, String> {
+    if path.exists() {
+        return path
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve path: {error}"));
+    }
+    let parent = path.parent().ok_or("Path has no parent directory.")?;
+    let canonical_parent = parent
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve parent path: {error}"))?;
+    Ok(canonical_parent.join(path.file_name().ok_or("Path has no folder name.")?))
+}
+
+fn resolve_software_root() -> Option<PathBuf> {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    for ancestor in manifest_dir.ancestors() {
+        if ancestor.join("package.json").is_file() && ancestor.join("apps").is_dir() {
+            return ancestor.canonicalize().ok();
+        }
+    }
+    std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(Path::to_path_buf))
+        .and_then(|path| path.canonicalize().ok())
+}
+
+fn gitignore_has_root_vault_rule(raw: &str) -> bool {
+    raw.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .any(|line| line == "/vault/" || line == "vault/" || line == "/vault")
+}
+
+fn ensure_software_repo_ignores_vault(repo_root: &Path) -> Result<(), String> {
+    if !repo_root.join(".git").exists() {
+        return Ok(());
+    }
+    let path = repo_root.join(".gitignore");
+    let existing = fs::read_to_string(&path).unwrap_or_default();
+    if gitignore_has_root_vault_rule(&existing) {
+        return Ok(());
+    }
+    let separator = if existing.is_empty() || existing.ends_with('\n') { "" } else { "\n" };
+    let section = "# --- Kinjito local active vault ---\n/vault/\n# --- End Kinjito local active vault ---\n";
+    fs::write(&path, format!("{existing}{separator}{section}"))
+        .map_err(|error| format!("Failed to update application .gitignore: {error}"))
+}
+
+fn app_repo_tracked_vault_count(repo_root: &Path) -> usize {
+    run_git_at(repo_root, &["ls-files", "vault"])
+        .map(|raw| raw.lines().filter(|line| !line.trim().is_empty()).count())
+        .unwrap_or(0)
+}
+
+fn software_vault_location_status(active_vault: &Path) -> VaultLocationStatus {
+    let active = active_vault.canonicalize().unwrap_or_else(|_| active_vault.to_path_buf());
+    let Some(repo_root) = resolve_software_root() else {
+        return VaultLocationStatus {
+            active_vault_path: path_to_display_string(&active),
+            app_repo_root: String::new(),
+            inside_app_repo: false,
+            standard_repo_vault: false,
+            ignored_by_app_git: false,
+            tracked_by_app_git_count: 0,
+            warning: String::new(),
+        };
+    };
+    let standard_vault = repo_root.join("vault");
+    let standard = canonical_or_existing_parent(&standard_vault)
+        .map(|path| path == active)
+        .unwrap_or(false);
+    let inside = active.starts_with(&repo_root);
+    let ignored = fs::read_to_string(repo_root.join(".gitignore"))
+        .map(|raw| gitignore_has_root_vault_rule(&raw))
+        .unwrap_or(false);
+    let tracked = if repo_root.join(".git").exists() {
+        app_repo_tracked_vault_count(&repo_root)
+    } else {
+        0
+    };
+    let warning = if standard && !ignored {
+        "The active vault is inside the application repository but /vault/ is not ignored. The app repository may accidentally track vault files.".to_string()
+    } else if standard && tracked > 0 {
+        "Some vault files are already tracked by the application repository. Run: git rm -r --cached vault && git commit -m \"stop tracking local vault\"".to_string()
+    } else if inside && !standard {
+        "Active vault is inside the application repository but not at /vault. This may be tracked by the app repository.".to_string()
+    } else {
+        String::new()
+    };
+    VaultLocationStatus {
+        active_vault_path: path_to_display_string(&active),
+        app_repo_root: path_to_display_string(&repo_root),
+        inside_app_repo: inside,
+        standard_repo_vault: standard,
+        ignored_by_app_git: ignored,
+        tracked_by_app_git_count: tracked,
+        warning,
+    }
+}
+
+fn ensure_software_repo_ignores_active_vault(active_vault: &Path) -> Result<VaultLocationStatus, String> {
+    let Some(repo_root) = resolve_software_root() else {
+        return Ok(software_vault_location_status(active_vault));
+    };
+    let active = canonical_or_existing_parent(active_vault)?;
+    let standard_vault = canonical_or_existing_parent(&repo_root.join("vault"))?;
+    if active == standard_vault {
+        ensure_software_repo_ignores_vault(&repo_root)?;
+    }
+    Ok(software_vault_location_status(&active))
 }
 
 fn normalize_relative_file_path(path: &Path) -> Result<String, String> {
@@ -617,11 +757,13 @@ fn parse_app_settings(raw: &str) -> AppSettings {
         if let Some(value) = trimmed.strip_prefix("version:") {
             settings.version = value.trim().parse().unwrap_or(1);
         } else if let Some(value) = trimmed.strip_prefix("activeVaultPath:") {
-            settings.active_vault_path = value
-                .trim()
-                .trim_matches('"')
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
+            settings.active_vault_path = normalize_display_path(
+                &value
+                    .trim()
+                    .trim_matches('"')
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\"),
+            );
         }
     }
     settings
@@ -643,10 +785,7 @@ fn write_settings_file(app: &tauri::AppHandle, settings: &AppSettings) -> Result
         fs::create_dir_all(parent)
             .map_err(|error| format!("Failed to create app config directory: {error}"))?;
     }
-    let normalized_path = settings
-        .active_vault_path
-        .replace('\\', "/")
-        .replace('"', "\\\"");
+    let normalized_path = normalize_display_path(&settings.active_vault_path).replace('"', "\\\"");
     fs::write(
         &path,
         format!("version: {}\nactiveVaultPath: \"{}\"\n", settings.version.max(1), normalized_path),
@@ -798,6 +937,7 @@ fn classify_git_path(path: &str) -> &'static str {
     } else if normalized.starts_with(".kb-ai/")
         || normalized.starts_with(".tmp/")
         || normalized.starts_with(".cache/")
+        || normalized.starts_with("snapshot/")
         || normalized.ends_with(".wawapkg")
     {
         "ignored"
@@ -807,6 +947,7 @@ fn classify_git_path(path: &str) -> &'static str {
 }
 
 fn git_status_at(root: &Path) -> Result<GitStatusPayload, String> {
+    let vault_location = software_vault_location_status(root);
     if !is_git_repo_at(root) {
         return Ok(GitStatusPayload {
             is_repo: false,
@@ -815,6 +956,7 @@ fn git_status_at(root: &Path) -> Result<GitStatusPayload, String> {
             clean: true,
             groups: GitChangeGroups::default(),
             conflicts: Vec::new(),
+            vault_location,
         });
     }
     let raw = run_git_at(root, &["-c", "core.quotepath=false", "status", "--porcelain=v1", "--untracked-files=all"])?;
@@ -852,6 +994,7 @@ fn git_status_at(root: &Path) -> Result<GitStatusPayload, String> {
         clean,
         groups,
         conflicts,
+        vault_location,
     })
 }
 
@@ -1207,7 +1350,7 @@ fn open_snapshot_output_dir() -> Result<String, String> {
         .canonicalize()
         .map_err(|error| format!("Failed to resolve snapshot output directory: {error}"))?;
     open_directory(&canonical_output_dir)?;
-    Ok(canonical_output_dir.to_string_lossy().to_string())
+    Ok(path_to_display_string(&canonical_output_dir))
 }
 
 const KINJITO_GITIGNORE: &str = r#"# --- Kinjito defaults ---
@@ -1222,6 +1365,9 @@ temp/
 *.tmp
 *.temp
 *.log
+
+# Capture / snapshot temporary outputs
+snapshot/
 
 # Import/export artifacts
 *.wawapkg
@@ -1309,7 +1455,8 @@ fn write_app_settings(app: tauri::AppHandle, settings: AppSettings) -> Result<Ap
         if !looks_like_vault(&canonical) {
             return Err("Cannot activate an invalid vault path.".into());
         }
-        normalized.active_vault_path = canonical.to_string_lossy().to_string();
+        ensure_software_repo_ignores_active_vault(&canonical)?;
+        normalized.active_vault_path = path_to_display_string(&canonical);
     }
     write_settings_file(&app, &normalized)?;
     Ok(normalized)
@@ -1317,11 +1464,18 @@ fn write_app_settings(app: tauri::AppHandle, settings: AppSettings) -> Result<Ap
 
 #[tauri::command]
 fn resolve_default_vault_path(app: tauri::AppHandle) -> Result<String, String> {
+    if cfg!(debug_assertions) {
+        if let Some(root) = resolve_software_root() {
+            let vault = root.join("vault");
+            let _ = ensure_software_repo_ignores_active_vault(&vault);
+            return Ok(path_to_display_string(&vault));
+        }
+    }
     let documents = app
         .path()
         .document_dir()
         .map_err(|error| format!("Failed to resolve Documents directory: {error}"))?;
-    Ok(documents.join("Kinjito").join("vault").to_string_lossy().to_string())
+    Ok(path_to_display_string(&documents.join("Kinjito").join("vault")))
 }
 
 #[tauri::command]
@@ -1333,7 +1487,8 @@ fn verify_vault_path(vault_path: String) -> Result<String, String> {
     if !looks_like_vault(&canonical) {
         return Err("Invalid vault: vault.yaml, domains.yaml, graph.yaml, or content/ is missing.".into());
     }
-    Ok(canonical.to_string_lossy().to_string())
+    ensure_software_repo_ignores_active_vault(&canonical)?;
+    Ok(path_to_display_string(&canonical))
 }
 
 #[tauri::command]
@@ -1411,7 +1566,7 @@ fn clone_vault_from_remote(remote_url: String, destination_path: String) -> Resu
 fn open_path_in_file_explorer(app: tauri::AppHandle) -> Result<String, String> {
     let path = active_vault_path(&app)?;
     open_directory(&path)?;
-    Ok(path.to_string_lossy().to_string())
+    Ok(path_to_display_string(&path))
 }
 
 #[tauri::command]
@@ -1422,6 +1577,12 @@ fn git_is_available() -> bool {
 #[tauri::command]
 fn git_is_repo(app: tauri::AppHandle) -> Result<bool, String> {
     Ok(is_git_repo_at(&active_vault_path(&app)?))
+}
+
+#[tauri::command]
+fn ensure_app_repo_ignores_active_vault(app: tauri::AppHandle) -> Result<VaultLocationStatus, String> {
+    let root = active_vault_path(&app)?;
+    ensure_software_repo_ignores_active_vault(&root)
 }
 
 #[tauri::command]
@@ -1487,7 +1648,6 @@ fn git_add_selected(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), Str
     if paths.is_empty() {
         return Err("Select at least one changed file group.".into());
     }
-    run_git_at(&root, &["reset"])?;
     let mut command = Command::new("git");
     command.current_dir(&root).arg("add").arg("--");
     for path in &paths {
@@ -1602,14 +1762,37 @@ fn git_create_checkpoint(app: tauri::AppHandle, reason: String) -> Result<String
 fn git_stash_layout(app: tauri::AppHandle) -> Result<String, String> {
     let root = active_vault_path(&app)?;
     require_local_git_repo(&root)?;
-    run_git_at(&root, &["stash", "push", "-m", "kinjito-layout-sync", "--", "graph-layout.yaml"])
+    let before = run_git_at(&root, &["stash", "list", "--format=%gd"])?;
+    let before_refs: std::collections::HashSet<String> = before.lines().map(|line| line.trim().to_string()).collect();
+    run_git_at(&root, &["stash", "push", "-m", "kinjito-layout-sync", "--", "graph-layout.yaml"])?;
+    let after = run_git_at(&root, &["stash", "list", "--format=%gd:%s"])?;
+    for line in after.lines() {
+        let mut parts = line.splitn(2, ':');
+        let reference = parts.next().unwrap_or("").trim();
+        let message = parts.next().unwrap_or("").trim();
+        if !reference.is_empty() && !before_refs.contains(reference) && message.contains("kinjito-layout-sync") {
+            return Ok(reference.to_string());
+        }
+    }
+    Ok(String::new())
 }
 
 #[tauri::command]
-fn git_unstash(app: tauri::AppHandle) -> Result<String, String> {
+fn git_unstash(app: tauri::AppHandle, stash_ref: String) -> Result<String, String> {
     let root = active_vault_path(&app)?;
     require_local_git_repo(&root)?;
-    run_git_at(&root, &["stash", "pop"])
+    let value = stash_ref.trim();
+    if !value.starts_with("stash@{") || !value.ends_with('}') {
+        return Err("Refusing to apply an unknown stash reference.".into());
+    }
+    let list = run_git_at(&root, &["stash", "list", "--format=%gd:%s"])?;
+    let expected = list
+        .lines()
+        .any(|line| line.starts_with(&format!("{value}:")) && line.contains("kinjito-layout-sync"));
+    if !expected {
+        return Err("Refusing to apply a stash that was not created by Kinjito layout sync.".into());
+    }
+    run_git_at(&root, &["stash", "pop", value])
 }
 
 fn parse_snapshot_result(raw_json: &str, fallback_url: &str, fallback_zip_path: &Path) -> Result<SourceSnapshotResult, String> {
@@ -1712,8 +1895,7 @@ fn capture_source_snapshot(url: String) -> Result<SourceSnapshotResult, String> 
     parse_snapshot_result(&raw_json, &trimmed_url, &output_zip_path)
 }
 
-#[tauri::command]
-fn choose_vault_root() -> Result<Option<String>, String> {
+fn choose_folder_with_dialog(description: &str, show_new_folder_button: bool) -> Result<Option<String>, String> {
     if !cfg!(target_os = "windows") {
         return Err("Folder picker command is currently implemented for Windows only".into());
     }
@@ -1721,15 +1903,17 @@ fn choose_vault_root() -> Result<Option<String>, String> {
     let script = r#"
 Add-Type -AssemblyName System.Windows.Forms
 $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = 'Open Knowledge Vault'
-$dialog.ShowNewFolderButton = $false
+$dialog.Description = '__KINJITO_DESCRIPTION__'
+$dialog.ShowNewFolderButton = $__KINJITO_SHOW_NEW_FOLDER__
 if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
   [Console]::Out.Write($dialog.SelectedPath)
 }
-"#;
+"#
+    .replace("__KINJITO_DESCRIPTION__", description)
+    .replace("__KINJITO_SHOW_NEW_FOLDER__", if show_new_folder_button { "true" } else { "false" });
 
     let output = Command::new("powershell")
-        .args(["-NoProfile", "-STA", "-Command", script])
+        .args(["-NoProfile", "-STA", "-Command", &script])
         .output()
         .map_err(|error| format!("Failed to open folder picker: {error}"))?;
 
@@ -1743,6 +1927,21 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     } else {
         Ok(Some(selected_path))
     }
+}
+
+#[tauri::command]
+fn choose_existing_vault_folder() -> Result<Option<String>, String> {
+    choose_folder_with_dialog("Select Existing Vault", false)
+}
+
+#[tauri::command]
+fn choose_vault_destination_folder() -> Result<Option<String>, String> {
+    choose_folder_with_dialog("Select Vault Destination", true)
+}
+
+#[tauri::command]
+fn choose_vault_root() -> Result<Option<String>, String> {
+    choose_existing_vault_folder()
 }
 
 #[tauri::command]
@@ -2325,7 +2524,7 @@ fn open_vault_relative_dir(vault_root_path: String, relative_path: String) -> Re
         return Err("Refusing to open a path outside the vault root".into());
     }
     open_directory(&canonical_target)?;
-    Ok(canonical_target.to_string_lossy().to_string())
+    Ok(path_to_display_string(&canonical_target))
 }
 
 #[tauri::command]
@@ -2430,6 +2629,35 @@ mod tests {
         assert!(is_git_repo_at(&vault));
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn software_repo_ignore_vault_rule_is_idempotent() {
+        let root = test_directory("software-ignore");
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(root.join(".git")).unwrap();
+        fs::write(root.join(".gitignore"), "node_modules/\n").unwrap();
+        ensure_software_repo_ignores_vault(&root).unwrap();
+        ensure_software_repo_ignores_vault(&root).unwrap();
+        let result = fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert!(result.contains("node_modules/"));
+        assert!(result.contains("/vault/"));
+        assert_eq!(result.matches("# --- Kinjito local active vault ---").count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn app_repo_tracked_vault_files_are_detected() {
+        if Command::new("git").arg("--version").output().is_err() {
+            return;
+        }
+        let root = test_directory("tracked-vault");
+        fs::create_dir_all(root.join("vault")).unwrap();
+        run_git_at(&root, &["init", "."]).unwrap();
+        fs::write(root.join("vault/graph.yaml"), "schemaVersion: 1\n").unwrap();
+        run_git_at(&root, &["add", "vault/graph.yaml"]).unwrap();
+        assert_eq!(app_repo_tracked_vault_count(&root), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -2441,14 +2669,17 @@ pub fn run() {
             capture_source_snapshot,
             clone_vault_from_remote,
             choose_exercise_set_file,
+            choose_existing_vault_folder,
             choose_html_note_file,
             choose_html_note_folder,
+            choose_vault_destination_folder,
             choose_vault_root,
             choose_wawapkg_file,
             copy_vault_to_path,
             create_new_vault,
             create_dir_all,
             delete_old_vault_after_move,
+            ensure_app_repo_ignores_active_vault,
             git_add_selected,
             git_branch,
             git_commit,

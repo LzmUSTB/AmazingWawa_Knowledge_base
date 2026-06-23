@@ -90,7 +90,7 @@ defineEmits([
         class="hud-button button-with-icon"
         :disabled="!canSaveLayout || !layoutDirty || layoutSaveInProgress"
         style="--button-color: var(--language)"
-        :title="canSaveLayout ? '' : 'Open a desktop vault folder before saving layout.'"
+        :title="canSaveLayout ? '' : 'Configure an active vault before saving layout.'"
         @click="$emit('save-layout')"
       >
         <AppIcon name="layout-save" />

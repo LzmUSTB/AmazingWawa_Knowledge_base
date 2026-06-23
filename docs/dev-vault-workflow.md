@@ -14,7 +14,7 @@ On startup, the desktop app tries:
 2. the repository `./vault` resolved by the Tauri `resolve_default_vault_root` command;
 3. if neither can be loaded, the app shows `No Vault Loaded`.
 
-Users can choose another real vault folder with `Open Vault`. The selected folder must contain `vault.yaml`.
+Users configure one active vault through Vault Setup or Move Vault. The selected folder must contain `vault.yaml`.
 
 ## Frontend Boundary
 

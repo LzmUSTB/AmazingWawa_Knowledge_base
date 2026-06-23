@@ -679,7 +679,7 @@ function updateDraftNodeLayout({ nodeId, layout }) {
 async function saveLayout() {
   if (layoutSaveInProgress.value) return;
   if (!canSaveLayout.value) {
-    window.alert("Open a desktop vault folder before saving layout.");
+    window.alert("Configure an active vault before saving layout.");
     return;
   }
   const scopeId = activeLayoutScopeId.value || graphScopeId.value;
@@ -795,7 +795,7 @@ function openExercisesOverview() {
 async function importExerciseSet(nodeId) {
   if (!confirmDiscardDirty()) return false;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before importing ExerciseSet.");
+    window.alert("Configure an active vault before importing ExerciseSet.");
     return false;
   }
   const node = findGraphNode(nodeId);
@@ -823,7 +823,7 @@ async function importExerciseSet(nodeId) {
 async function deleteExerciseSet(nodeId) {
   if (!confirmDiscardDirty()) return false;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before deleting ExerciseSet.");
+    window.alert("Configure an active vault before deleting ExerciseSet.");
     return false;
   }
   const node = findGraphNode(nodeId);
@@ -850,7 +850,7 @@ async function deleteExerciseSet(nodeId) {
 async function deleteExerciseProblem({ nodeId, problemId }) {
   if (!confirmDiscardDirty()) return false;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before deleting an exercise problem.");
+    window.alert("Configure an active vault before deleting an exercise problem.");
     return false;
   }
   const node = findGraphNode(nodeId);
@@ -1059,7 +1059,7 @@ function handleAiImportApplied(updatedVault) {
 async function handleExportContext() {
   if (contextExporting.value) return;
   if (!activeVaultRootPath.value) {
-    contextExportError.value = "Open a desktop vault folder before exporting context.";
+    contextExportError.value = "Configure an active vault before exporting context.";
     return;
   }
   contextExporting.value = true;
@@ -1126,7 +1126,7 @@ async function moveVault(destinationPath) {
 async function saveNote({ node, markdown }) {
   if (!node || noteSaving.value) return;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before saving.");
+    window.alert("Configure an active vault before saving.");
     return;
   }
   noteSaving.value = true;
@@ -1167,7 +1167,7 @@ function closeDialog() {
 async function createNode(payload) {
   if (!confirmDiscardDirty()) return;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before creating nodes.");
+    window.alert("Configure an active vault before creating nodes.");
     return;
   }
 
@@ -1200,7 +1200,7 @@ async function createNode(payload) {
 async function addNote(payload) {
   if (!confirmDiscardDirty()) return;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before creating notes.");
+    window.alert("Configure an active vault before creating notes.");
     return;
   }
 
@@ -1290,7 +1290,7 @@ async function requestDeleteEntity(target) {
 async function requestDeleteNote(nodeId) {
   if (!nodeId || !confirmDiscardDirty()) return;
   if (!canSaveNote.value) {
-    window.alert("Open a desktop vault folder before deleting notes.");
+    window.alert("Configure an active vault before deleting notes.");
     return;
   }
   const node = findGraphNode(nodeId);
@@ -1325,7 +1325,7 @@ function requestAddLink() {
 async function createLink(payload) {
   if (addLinkSaving.value) return;
   if (!activeVaultRootPath.value) {
-    addLinkError.value = "Open a desktop vault folder before creating links.";
+    addLinkError.value = "Configure an active vault before creating links.";
     return;
   }
 

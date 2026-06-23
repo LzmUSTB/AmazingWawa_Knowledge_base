@@ -18,6 +18,7 @@ const includeKnowledge = ref(true);
 const includeLayout = ref(true);
 const includeProgress = ref(true);
 const includeOther = ref(false);
+const layoutStashRef = ref("");
 
 const groups = computed(() => ({
   knowledge: status.value.groups?.knowledge || [],
@@ -85,6 +86,10 @@ function initGit() {
   run(() => vaultGit.init(), "Git repository initialized.");
 }
 
+function addAppVaultIgnore() {
+  run(() => vaultGit.ensureAppRepoIgnore(), "Application repository now ignores /vault/.");
+}
+
 function commitSelected() {
   const message = commitMessage.value.trim();
   run(async () => {
@@ -121,12 +126,16 @@ function sync() {
   }
   if (!window.confirm("You have layout-only changes. Temporarily stash layout during sync?")) return;
   run(async () => {
-    await vaultGit.stashLayout();
+    layoutStashRef.value = await vaultGit.stashLayout();
+    if (!layoutStashRef.value) throw new Error("No layout stash was created. Sync was cancelled to avoid touching existing stashes.");
     try {
-      await vaultGit.sync();
+      await vaultGit.pull();
     } finally {
-      await vaultGit.unstash();
+      const stashRef = layoutStashRef.value;
+      layoutStashRef.value = "";
+      await vaultGit.unstash(stashRef);
     }
+    await vaultGit.push();
   }, "Sync completed and layout changes were reapplied.", { reloadVault: true });
 }
 
@@ -140,7 +149,7 @@ async function restore(entry) {
     await run(() => vaultGit.checkpoint("restore"), "Checkpoint created.");
     if (!status.value.clean) return;
   }
-  if (!window.confirm(`This will replace current vault files with snapshot ${entry.shortHash}. Continue?`)) return;
+  if (!window.confirm(`Restore tracked vault files to snapshot ${entry.shortHash}. Untracked files may remain. Continue?`)) return;
   run(() => vaultGit.restore(entry.hash), `Restored snapshot ${entry.shortHash}.`, { reloadVault: true });
 }
 
@@ -171,6 +180,23 @@ onMounted(refresh);
         <button v-else class="hud-button" type="button" :disabled="busy || status.clean" @click="checkpoint()">CREATE CHECKPOINT</button>
       </section>
 
+      <section v-if="status.vaultLocation?.insideAppRepo" class="git-band location-band">
+        <div class="band-heading">
+          <div><span>Vault Location</span><strong>{{ status.vaultLocation.standardRepoVault ? "APP REPO / VAULT" : "INSIDE APP REPO" }}</strong></div>
+        </div>
+        <div class="location-grid">
+          <div><span>Path</span><code>{{ status.vaultLocation.activeVaultPath }}</code></div>
+          <div><span>Ignored by app Git</span><strong>{{ status.vaultLocation.ignoredByAppGit ? "YES" : "NO" }}</strong></div>
+          <div><span>Tracked by app Git</span><strong>{{ status.vaultLocation.trackedByAppGitCount || 0 }} FILES</strong></div>
+        </div>
+        <div v-if="status.vaultLocation.warning" class="git-message git-message--warning">{{ status.vaultLocation.warning }}</div>
+        <button v-if="status.vaultLocation.standardRepoVault && !status.vaultLocation.ignoredByAppGit" class="hud-button" type="button" :disabled="busy" @click="addAppVaultIgnore">ADD /vault/ TO APP .gitignore</button>
+        <pre v-if="status.vaultLocation.trackedByAppGitCount" class="git-message git-message--error">Some vault files are already tracked by the application repository.
+Run manually from the app repository:
+git rm -r --cached vault
+git commit -m "stop tracking local vault"</pre>
+      </section>
+
       <template v-if="status.isRepo">
         <section class="git-band changes-band">
           <div class="band-heading"><div><span>Changes</span><strong>{{ allChanges.length }} FILES</strong></div><strong v-if="status.conflicts?.length" class="conflict-label">{{ status.conflicts.length }} CONFLICTS</strong></div>
@@ -189,6 +215,7 @@ onMounted(refresh);
 
         <section class="git-band commit-band">
           <div class="band-heading"><div><span>Commit</span><strong>SELECT GROUPS</strong></div></div>
+          <p class="commit-note">Kinjito stages the selected files. Already staged vault files are also included in the commit.</p>
           <div class="commit-controls">
             <input v-model="commitMessage" placeholder="Commit message" />
             <div class="group-checks">
@@ -213,6 +240,7 @@ onMounted(refresh);
 
         <section class="git-band history-band">
           <div class="band-heading"><div><span>History / Danger</span><strong>RESTORE SNAPSHOT</strong></div></div>
+          <p class="commit-note">Restore tracked vault files to a snapshot. Untracked files may remain.</p>
           <div class="history-list">
             <article v-for="entry in history" :key="entry.hash" class="history-row"><code>{{ entry.shortHash }}</code><div><strong>{{ entry.message }}</strong><span>{{ entry.date }}</span></div><button class="hud-button" :disabled="busy" @click="restore(entry)">RESTORE SNAPSHOT</button></article>
             <p v-if="!history.length">No commits yet.</p>
@@ -238,6 +266,10 @@ p { color: var(--text-secondary); }
 .status-band > div { display: grid; gap: 6px; min-width: 0; }
 .status-band strong { overflow: hidden; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; }
 .init-button, .commit-button, .sync-button { --button-color: var(--career); }
+.location-band { display: grid; gap: 12px; }
+.location-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(140px, .5fr) minmax(140px, .5fr); gap: 10px; }
+.location-grid > div { min-width: 0; border: 1px solid var(--border-muted); background: var(--background-panel); padding: 10px; }
+.location-grid code, .location-grid strong { display: block; overflow: hidden; margin-top: 5px; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; }
 .change-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
 .change-group { min-width: 0; border: 1px solid var(--border-muted); background: var(--background-panel); padding: 12px; }
 .change-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; margin-top: 8px; color: var(--text-secondary); }
@@ -247,6 +279,7 @@ p { color: var(--text-secondary); }
 input { min-width: 0; border: 1px solid var(--border-primary); border-radius: 0; background: var(--background-panel); color: var(--text-primary); font: inherit; padding: 11px; }
 .group-checks { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .group-checks label { color: var(--text-secondary); font-size: var(--font-size-small); text-transform: uppercase; }
+.commit-note { margin: 10px 0 0; color: var(--text-muted); font-size: var(--font-size-small); }
 .remote-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto; gap: 10px; margin-top: 14px; }
 .sync-actions { display: flex; gap: 10px; margin-top: 14px; }
 .history-list { display: grid; gap: 8px; margin-top: 14px; }
@@ -254,6 +287,7 @@ input { min-width: 0; border: 1px solid var(--border-primary); border-radius: 0;
 .history-row > div { display: grid; min-width: 0; }
 .history-row strong { overflow: hidden; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; }
 .git-message { margin-top: 14px; border: 1px solid var(--career); color: var(--text-secondary); background: var(--background-panel); padding: 12px; white-space: pre-wrap; }
+.git-message--warning { border-color: var(--career); color: var(--career); }
 .git-message--error { border-color: var(--game-dev); color: var(--game-dev); }
-@media (max-width: 980px) { .status-band, .commit-controls, .remote-row { grid-template-columns: 1fr; } .history-row { grid-template-columns: 72px minmax(0, 1fr); } .history-row button { grid-column: 1 / -1; } }
+@media (max-width: 980px) { .status-band, .commit-controls, .remote-row, .location-grid { grid-template-columns: 1fr; } .history-row { grid-template-columns: 72px minmax(0, 1fr); } .history-row button { grid-column: 1 / -1; } }
 </style>

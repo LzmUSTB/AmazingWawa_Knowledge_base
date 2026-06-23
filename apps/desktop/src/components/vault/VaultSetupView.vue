@@ -2,7 +2,8 @@
 import { onMounted, ref } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  chooseVaultRoot,
+  chooseExistingVaultFolder,
+  chooseVaultDestinationFolder,
   cloneVaultFromRemote,
   createNewVaultAt,
   importVaultToActiveLocation,
@@ -33,7 +34,7 @@ onMounted(async () => {
 });
 
 async function browse(target) {
-  const path = await chooseVaultRoot();
+  const path = target === "source" ? await chooseExistingVaultFolder() : await chooseVaultDestinationFolder();
   if (!path) return;
   if (target === "source") sourcePath.value = path;
   else destinationPath.value = path;
@@ -92,11 +93,11 @@ async function submit() {
         <input v-model.trim="remoteUrl" type="text" placeholder="https://github.com/owner/vault.git" required />
       </label>
       <label v-if="mode === 'import'">
-        <span>Source Vault</span>
+        <span>Source Vault Folder</span>
         <div class="path-input"><input v-model.trim="sourcePath" type="text" required /><button class="hud-button" type="button" @click="browse('source')">Browse</button></div>
       </label>
       <label>
-        <span>{{ mode === 'import' ? 'Active Vault Destination' : 'Local Vault Path' }}</span>
+        <span>{{ mode === 'import' ? 'Destination Vault Folder' : 'Destination Vault Folder' }}</span>
         <div class="path-input"><input v-model.trim="destinationPath" type="text" required /><button class="hud-button" type="button" @click="browse('destination')">Browse</button></div>
         <small>The selected folder must be empty or not yet exist.</small>
       </label>

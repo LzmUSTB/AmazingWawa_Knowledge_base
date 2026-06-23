@@ -37,6 +37,10 @@ import stage from "../../assets/icons/stage.svg?raw";
 import check from "../../assets/icons/check.svg?raw";
 import exercise from "../../assets/icons/exercise.svg?raw";
 import tools from "../../assets/icons/tools.svg?raw";
+import emojiEasy from "../../assets/icons/emoji-easy.svg?raw";
+import emojiGood from "../../assets/icons/emoji-good.svg?raw";
+import emojiHard from "../../assets/icons/emoji-hard.svg?raw";
+import emojiWrong from "../../assets/icons/emoji-wrong.svg?raw";
 
 const icons = {
   "arrow-swap": arrowSwap,
@@ -75,6 +79,10 @@ const icons = {
   check,
   exercise,
   tools,
+  "emoji-easy": emojiEasy,
+  "emoji-good": emojiGood,
+  "emoji-hard": emojiHard,
+  "emoji-wrong": emojiWrong,
 };
 
 const props = defineProps({
