@@ -5,6 +5,7 @@ import {
   buildAiContextFiles,
   diffAiPackage,
   EXERCISE_DIFFICULTIES,
+  EXERCISE_MODES,
   EXERCISE_TYPES,
   normalizeAiPackageFiles,
   normalizeVault,
@@ -209,6 +210,12 @@ export async function openVaultContextFolder(vaultRootPath) {
   await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/context" });
 }
 
+export async function openWrongPracticeFolder(vaultRootPath) {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to open folders.");
+  if (!vaultRootPath) return;
+  await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/wrong-practice" });
+}
+
 export async function openSnapshotFolder() {
   if (!isTauri()) throw new Error("Desktop filesystem access is required to open the snapshot folder.");
   return invoke("open_snapshot_output_dir");
@@ -284,6 +291,36 @@ export async function writeExerciseSet(vaultRootPath, node, exerciseSet) {
   });
 }
 
+function modeFromLegacyProblem(problem = {}) {
+  if (problem.type !== "conceptual") return "practice";
+  const text = `${problem.title || ""}\n${problem.prompt || ""}`.toLowerCase();
+  return /定义|公式|术语|名词|规则|是什么|definition|formula|term|rule/.test(text) ? "recall" : "practice";
+}
+
+function migrateLegacyExerciseSet(exerciseSet) {
+  return {
+    ...exerciseSet,
+    problems: (exerciseSet?.problems || []).map((problem) => ({
+      ...problem,
+      mode: EXERCISE_MODES.includes(problem.mode) ? problem.mode : modeFromLegacyProblem(problem),
+    })),
+  };
+}
+
+function comparableProblem(problem) {
+  return JSON.stringify({
+    id: problem.id,
+    mode: problem.mode,
+    type: problem.type,
+    difficulty: problem.difficulty,
+    title: problem.title,
+    prompt: problem.prompt,
+    hints: problem.hints || [],
+    answer: problem.answer,
+    solution: problem.solution,
+  });
+}
+
 export function normalizeImportedExerciseSet(raw, targetNode) {
   let parsed;
   try {
@@ -310,6 +347,9 @@ export function normalizeImportedExerciseSet(raw, targetNode) {
     if (!id) throw new Error(`Problem at index ${index} is missing id.`);
     if (seen.has(id)) throw new Error(`Duplicate problem id "${id}".`);
     seen.add(id);
+    const mode = String(problem.mode || "").trim();
+    if (!mode) throw new Error(`Problem "${id}" is missing mode.`);
+    if (!EXERCISE_MODES.includes(mode)) throw new Error(`Problem "${id}" has unsupported mode "${mode}".`);
     ["title", "prompt", "answer", "solution"].forEach((field) => {
       if (!String(problem[field] || "").trim()) throw new Error(`Problem "${id}" is missing ${field}.`);
     });
@@ -319,6 +359,7 @@ export function normalizeImportedExerciseSet(raw, targetNode) {
     if (!EXERCISE_DIFFICULTIES.includes(difficulty)) throw new Error(`Problem "${id}" has unsupported difficulty "${difficulty}".`);
     return {
       id,
+      mode,
       type,
       difficulty,
       title: String(problem.title),
@@ -352,25 +393,50 @@ async function assertExerciseSetMissing(vaultRootPath, relativePath) {
     if (/os error 2|cannot find the (?:file|path)|no such file or directory/i.test(message)) return;
     throw error;
   }
-  throw new Error("This node already has an ExerciseSet. Delete it before importing a new one.");
+  throw new Error("This node gained an ExerciseSet before import completed. Re-run Import ExerciseSet to append into it.");
 }
 
 export async function importExerciseSetForNode(vaultRootPath, node) {
   if (!vaultRootPath) throw new Error("Configure an active vault before importing ExerciseSet.");
   if (!node?.id || node.type === "domain") throw new Error("ExerciseSet requires a non-domain owner node.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
-  if (currentVault.exercises?.byNodeId?.[node.id]) {
-    throw new Error("This node already has an ExerciseSet. Delete it before importing a new one.");
-  }
   const relativePath = getExercisesRelativePath(node);
-  await assertExerciseSetMissing(vaultRootPath, relativePath);
   const filePath = await chooseExerciseSetFile();
   if (!filePath) return null;
-  const exerciseSet = normalizeImportedExerciseSet(await readExternalTextFile(filePath), node);
+  const incomingExerciseSet = normalizeImportedExerciseSet(await readExternalTextFile(filePath), node);
   await invoke("create_dir_all", { vaultRootPath, relativePath: `content/${node.domain}/${node.id}` });
-  await assertExerciseSetMissing(vaultRootPath, relativePath);
-  await writeExerciseSet(vaultRootPath, node, exerciseSet);
-  return loadVaultFromPath(vaultRootPath);
+  const existingExerciseSet = currentVault.exercises?.byNodeId?.[node.id];
+  if (!existingExerciseSet) {
+    await assertExerciseSetMissing(vaultRootPath, relativePath);
+    await writeExerciseSet(vaultRootPath, node, incomingExerciseSet);
+    return { vault: await loadVaultFromPath(vaultRootPath), summary: { appended: incomingExerciseSet.problems.length, skipped: 0, conflicts: [] } };
+  }
+
+  const migratedExisting = migrateLegacyExerciseSet(existingExerciseSet);
+  const existingById = Object.fromEntries(migratedExisting.problems.map((problem) => [problem.id, problem]));
+  const conflicts = [];
+  const appended = [];
+  let skipped = 0;
+  incomingExerciseSet.problems.forEach((problem) => {
+    const existing = existingById[problem.id];
+    if (!existing) {
+      appended.push(problem);
+      return;
+    }
+    if (comparableProblem(existing) === comparableProblem(problem)) {
+      skipped += 1;
+      return;
+    }
+    conflicts.push(problem.id);
+  });
+  if (conflicts.length) {
+    throw new Error(`ExerciseSet import conflicts with existing problem ids: ${conflicts.join(", ")}`);
+  }
+  await writeExerciseSet(vaultRootPath, node, {
+    ...migratedExisting,
+    problems: [...migratedExisting.problems, ...appended],
+  });
+  return { vault: await loadVaultFromPath(vaultRootPath), summary: { appended: appended.length, skipped, conflicts } };
 }
 
 export async function deleteExerciseSetFromNode(vaultRootPath, node) {
@@ -382,7 +448,7 @@ export async function deleteExerciseSetFromNode(vaultRootPath, node) {
   const problems = Object.fromEntries(
     Object.entries(currentVault.exerciseProgress?.problems || {}).filter(([key]) => !key.startsWith(prefix)),
   );
-  return writeExerciseProgress(vaultRootPath, { version: 1, problems });
+  return writeExerciseProgress(vaultRootPath, { version: 2, problems }, { mergeExisting: false });
 }
 
 export async function deleteExerciseProblemFromNode(vaultRootPath, node, problemId) {
@@ -409,18 +475,52 @@ export async function deleteExerciseProblemFromNode(vaultRootPath, node, problem
   const problems = Object.fromEntries(
     Object.entries(currentVault.exerciseProgress?.problems || {}).filter(([key]) => key !== progressKey),
   );
-  return writeExerciseProgress(vaultRootPath, { version: 1, problems });
+  return writeExerciseProgress(vaultRootPath, { version: 2, problems }, { mergeExisting: false });
 }
 
-export async function writeExerciseProgress(vaultRootPath, progress) {
+export async function writeExerciseProgress(vaultRootPath, progress, options = {}) {
   if (!vaultRootPath) throw new Error("Configure an active vault before saving exercise progress.");
+  const mergeExisting = options.mergeExisting !== false;
+  let problems = progress?.problems || {};
+  if (mergeExisting) {
+    const currentVault = await loadVaultFromPath(vaultRootPath);
+    problems = {
+      ...(currentVault.exerciseProgress?.problems || {}),
+      ...problems,
+    };
+  }
   await invoke("create_dir_all", { vaultRootPath, relativePath: ".kinjito" });
   await invoke("write_text_file", {
     vaultRootPath,
     relativePath: getExerciseProgressRelativePath(),
-    contents: YAML.stringify({ version: Number(progress?.version) || 1, problems: progress?.problems || {} }),
+    contents: YAML.stringify({ version: 2, problems }),
   });
   return loadVaultFromPath(vaultRootPath);
+}
+
+export async function writeWrongPracticeExport(vaultRootPath, yamlContent, markdownContent, timestamp) {
+  if (!vaultRootPath) throw new Error("Configure an active vault before exporting wrong practice.");
+  const safeTimestamp = String(timestamp || new Date().toISOString())
+    .replace(/[-:]/g, "")
+    .replace(/[TZ.]/g, "")
+    .slice(0, 13);
+  const dir = ".kb-ai/wrong-practice";
+  const baseName = `wrong-practice-${safeTimestamp}`;
+  await invoke("create_dir_all", { vaultRootPath, relativePath: dir });
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: `${dir}/${baseName}.yaml`,
+    contents: yamlContent,
+  });
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: `${dir}/${baseName}.md`,
+    contents: markdownContent,
+  });
+  return {
+    yamlPath: `${dir}/${baseName}.yaml`,
+    markdownPath: `${dir}/${baseName}.md`,
+  };
 }
 
 export function getNoteAbsolutePath(vaultRootPath, node) {

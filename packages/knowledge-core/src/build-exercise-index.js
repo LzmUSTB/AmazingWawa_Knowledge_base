@@ -19,6 +19,8 @@ export const EXERCISE_DIFFICULTIES = [
   "research-oriented",
 ];
 
+export const EXERCISE_MODES = ["recall", "practice"];
+
 function asStringArray(value, fieldName, errors) {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) {
@@ -36,9 +38,12 @@ export function idFromExercisePath(filePath = "") {
 function normalizeProblem(problem = {}, index, seenIds, errors) {
   const problemErrors = [];
   const id = String(problem?.id || "").trim();
+  const mode = String(problem?.mode || "").trim();
   if (!id) problemErrors.push(`problems[${index}].id is required.`);
   if (id && seenIds.has(id)) problemErrors.push(`Duplicate problem id "${id}".`);
   if (id) seenIds.add(id);
+  if (!mode) problemErrors.push(`Problem "${id || index}" mode is required.`);
+  else if (!EXERCISE_MODES.includes(mode)) problemErrors.push(`Problem "${id || index}" has unsupported mode "${mode}".`);
   if (!EXERCISE_TYPES.includes(problem?.type)) problemErrors.push(`Problem "${id || index}" has unsupported type "${problem?.type || ""}".`);
   if (!EXERCISE_DIFFICULTIES.includes(problem?.difficulty)) problemErrors.push(`Problem "${id || index}" has unsupported difficulty "${problem?.difficulty || ""}".`);
   if (!String(problem?.title || "").trim()) problemErrors.push(`Problem "${id || index}" title is required.`);
@@ -48,6 +53,7 @@ function normalizeProblem(problem = {}, index, seenIds, errors) {
   errors.push(...problemErrors);
   return {
     id,
+    mode,
     type: problem?.type || "conceptual",
     difficulty: problem?.difficulty || "undergraduate",
     title: String(problem?.title || ""),
@@ -116,15 +122,81 @@ export function buildExerciseIndex(exerciseFiles = {}) {
   };
 }
 
-export function parseExerciseProgress(raw = "") {
-  if (!String(raw || "").trim()) return { version: 1, problems: {}, errors: [] };
+function exerciseModeByProgressKey(exercises = {}) {
+  const modes = {};
+  (exercises.all || []).forEach((exerciseSet) => {
+    (exerciseSet.problems || []).forEach((problem) => {
+      modes[`${exerciseSet.nodeId}/${problem.id}`] = problem.mode;
+    });
+  });
+  return modes;
+}
+
+function normalizePracticeProgress(key, entry = {}, mode) {
+  const [exerciseSetNodeId = "", problemId = ""] = key.split("/");
+  const oldLastResult = String(entry.result || entry.lastResult || "");
+  const result = oldLastResult === "wrong"
+    ? "wrong"
+    : ["correct", "hard", "good", "easy"].includes(oldLastResult)
+      ? "correct"
+      : "";
+  const legacyAttempts = Array.isArray(entry.attemptsLog) ? entry.attemptsLog : [];
+  const latestLegacyAttempt = [...legacyAttempts].reverse().find((attempt) => attempt?.result === "wrong" || attempt?.result === "correct") || {};
+  const userAnswer = entry.userAnswer ?? latestLegacyAttempt.userAnswer ?? "";
+  const answeredAt = entry.answeredAt || latestLegacyAttempt.at || entry.lastAttemptAt || "";
+  return {
+    mode,
+    exerciseSetNodeId: String(entry.exerciseSetNodeId || exerciseSetNodeId),
+    problemId: String(entry.problemId || problemId),
+    result,
+    lastResult: result,
+    userAnswer: String(userAnswer || ""),
+    answeredAt: String(answeredAt || ""),
+    updatedAt: String(entry.updatedAt || answeredAt || ""),
+  };
+}
+
+function normalizeRecallProgress(key, entry = {}, mode) {
+  const [exerciseSetNodeId = "", problemId = ""] = key.split("/");
+  return {
+    mode,
+    exerciseSetNodeId: String(entry.exerciseSetNodeId || exerciseSetNodeId),
+    problemId: String(entry.problemId || problemId),
+    attempts: Number(entry.attempts) || 0,
+    correctCount: Number(entry.correctCount) || 0,
+    wrongCount: Number(entry.wrongCount) || 0,
+    ease: Number.isFinite(Number(entry.ease)) ? Number(entry.ease) : 2.3,
+    intervalDays: Number(entry.intervalDays) || 0,
+    mastery: Number(entry.mastery) || 0,
+    lastResult: String(entry.lastResult || ""),
+    recentResults: Array.isArray(entry.recentResults) ? entry.recentResults.map(String).slice(-10) : [],
+    dueAt: String(entry.dueAt || ""),
+    lastAttemptAt: String(entry.lastAttemptAt || ""),
+  };
+}
+
+export function parseExerciseProgress(raw = "", exercises = {}) {
+  if (!String(raw || "").trim()) return { version: 2, problems: {}, errors: [] };
   try {
     const parsed = parseYaml(raw, ".kinjito/exercise-progress.yaml");
+    const sourceVersion = Number(parsed?.version) || 1;
+    const modesByKey = exerciseModeByProgressKey(exercises);
     const problems = parsed?.problems && typeof parsed.problems === "object" && !Array.isArray(parsed.problems)
       ? parsed.problems
       : {};
-    return { version: Number(parsed?.version) || 1, problems, errors: [] };
+    const normalizedProblems = Object.fromEntries(
+      Object.entries(problems).map(([key, entry]) => {
+        const mode = EXERCISE_MODES.includes(entry?.mode) ? entry.mode : modesByKey[key] || "recall";
+        return [
+          key,
+          mode === "practice"
+            ? normalizePracticeProgress(key, entry, mode)
+            : normalizeRecallProgress(key, entry, "recall"),
+        ];
+      }),
+    );
+    return { version: 2, problems: normalizedProblems, errors: [] };
   } catch (error) {
-    return { version: 1, problems: {}, errors: [error.message] };
+    return { version: 2, problems: {}, errors: [error.message] };
   }
 }

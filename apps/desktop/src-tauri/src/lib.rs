@@ -2508,8 +2508,8 @@ fn remove_file(vault_root_path: String, relative_path: String) -> Result<(), Str
 
 #[tauri::command]
 fn open_vault_relative_dir(vault_root_path: String, relative_path: String) -> Result<String, String> {
-    if relative_path != ".kb-ai/context" {
-        return Err("Only the exported context directory can be opened from the vault.".into());
+    if relative_path != ".kb-ai/context" && relative_path != ".kb-ai/wrong-practice" {
+        return Err("Only exported AI context directories can be opened from the vault.".into());
     }
     let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
     fs::create_dir_all(&target_path)

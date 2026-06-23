@@ -800,18 +800,17 @@ async function importExerciseSet(nodeId) {
   }
   const node = findGraphNode(nodeId);
   if (!node || node.type === "domain") return false;
-  if (useActiveVault().value.exercises?.byNodeId?.[node.id]) {
-    window.alert("This node already has an ExerciseSet. Delete it before importing a new one.");
-    return false;
-  }
   try {
-    const updatedVault = await importExerciseSetForNode(activeVaultRootPath.value, node);
-    if (!updatedVault) return false;
-    replaceVaultWithoutNavigation(updatedVault);
+    const result = await importExerciseSetForNode(activeVaultRootPath.value, node);
+    if (!result?.vault) return false;
+    replaceVaultWithoutNavigation(result.vault);
     currentExerciseNodeId.value = node.id;
     selectedNodeId.value = node.id;
     currentDomain.value = node.domain;
     currentView.value = "exercises";
+    if (result.summary) {
+      window.alert(`ExerciseSet import complete.\n\nAppended: ${result.summary.appended}\nSkipped unchanged: ${result.summary.skipped}\nConflicts: ${result.summary.conflicts?.length || 0}`);
+    }
     return true;
   } catch (error) {
     console.error("[exercises] Failed to import ExerciseSet.", error);

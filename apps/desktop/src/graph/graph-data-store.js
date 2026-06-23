@@ -15,7 +15,7 @@ export function createEmptyVault() {
     layouts: { boards: {} },
     notes: {},
     exercises: { byNodeId: {}, all: [] },
-    exerciseProgress: { version: 1, problems: {}, errors: [] },
+    exerciseProgress: { version: 2, problems: {}, errors: [] },
     blockTypes: {},
     blockTypeErrors: [],
     blockTypeWarnings: [],

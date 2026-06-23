@@ -1,6 +1,7 @@
 import { EXERCISE_DIFFICULTIES } from "./build-exercise-index.js";
 
 const RESULTS = new Set(["wrong", "hard", "good", "easy"]);
+const PRACTICE_RESULTS = new Set(["correct", "wrong"]);
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -50,6 +51,7 @@ export function rateExerciseProblem(current = {}, result, now = new Date()) {
   const due = new Date(timestamp.getTime() + next.intervalDays * 86400000);
   return {
     ...current,
+    mode: "recall",
     ...next,
     ease: rounded(next.ease),
     mastery: rounded(next.mastery),
@@ -60,7 +62,27 @@ export function rateExerciseProblem(current = {}, result, now = new Date()) {
   };
 }
 
+export function savePracticeAnswer(current = {}, result, userAnswer = "", now = new Date()) {
+  if (!PRACTICE_RESULTS.has(result)) throw new Error(`Unsupported practice result "${result}".`);
+  const timestamp = now instanceof Date ? now : new Date(now);
+  const nowIso = timestamp.toISOString();
+  return {
+    mode: "practice",
+    exerciseSetNodeId: String(current.exerciseSetNodeId || ""),
+    problemId: String(current.problemId || ""),
+    lastResult: result,
+    result,
+    userAnswer: String(userAnswer || ""),
+    answeredAt: current.answeredAt || nowIso,
+    updatedAt: nowIso,
+  };
+}
+
 export function exerciseStatus(progress, now = new Date()) {
+  if (progress?.mode === "practice") {
+    if (!progress?.result) return "new";
+    return progress.result === "wrong" ? "wrong" : "completed";
+  }
   if (!progress?.attempts) return "new";
   if (progress.dueAt && new Date(progress.dueAt).getTime() <= new Date(now).getTime()) return "due";
   if ((Number(progress.mastery) || 0) < 0.5 || progress.lastResult === "wrong") return "weak";
@@ -69,9 +91,9 @@ export function exerciseStatus(progress, now = new Date()) {
 
 export function exercisePriority(problem, progress, now = new Date()) {
   const status = exerciseStatus(progress, now);
-  const statusWeight = { due: 500, weak: 400, new: 300, completed: 100 }[status] || 0;
-  const masteryWeight = Math.round((1 - (Number(progress?.mastery) || 0)) * 100);
-  const wrongWeight = progress?.lastResult === "wrong" ? 50 : 0;
+  const statusWeight = { due: 500, weak: 400, wrong: 450, new: 300, completed: 100 }[status] || 0;
+  const masteryWeight = problem?.mode === "practice" ? 0 : Math.round((1 - (Number(progress?.mastery) || 0)) * 100);
+  const wrongWeight = progress?.lastResult === "wrong" || progress?.result === "wrong" ? 50 : 0;
   const difficultyWeight = Math.max(0, EXERCISE_DIFFICULTIES.indexOf(problem?.difficulty)) * 5;
   return statusWeight + masteryWeight + wrongWeight + difficultyWeight;
 }
