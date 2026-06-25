@@ -6,9 +6,11 @@ import { validateAiPackage } from "./validate-ai-package.js";
 function generatedMetaPath(operation) { return `generated/content/${operation.domain}/${operation.id}/meta.yaml`; }
 function generatedMarkdownNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.md`; }
 function generatedHtmlNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.html`; }
+function generatedExercisePath(operation) { return `generated/content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
 function targetMetaPath(operation) { return `content/${operation.domain}/${operation.id}/meta.yaml`; }
 function targetMarkdownNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.md`; }
 function targetHtmlNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.html`; }
+function targetExercisePath(operation) { return `content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
 function edgeId(from, relation, to) { return `${from}-${relation}-${to}`; }
 function normalizeFormat(value = "") { const format = String(value || "").trim().toLowerCase(); return ["markdown", "html", "none"].includes(format) ? format : ""; }
 function noteFormatForOperation(operation, packageFiles) {
@@ -44,6 +46,51 @@ function mergeMarkdown(currentMarkdown = "", operation = {}) {
 function currentGraphYaml(currentVault = {}) { return YAML.stringify({ schemaVersion: 1, edges: (currentVault.edges || []).map((edge) => ({ id: edge.id || edgeId(edge.from, edge.relation, edge.to), from: edge.from || edge.source, to: edge.to || edge.target, relation: edge.relation })) }); }
 function graphYamlWithAddedEdges(currentVault, addedEdges) { const graph = parseYaml(currentVault.rawGraphYaml || currentGraphYaml(currentVault), "graph.yaml"); const edges = Array.isArray(graph.edges) ? graph.edges : []; return YAML.stringify({ ...graph, schemaVersion: graph.schemaVersion || 1, edges: [...edges, ...addedEdges] }); }
 function notePathForNode(currentVault, nodeId) { const node = (currentVault.nodes || []).find((item) => item.id === nodeId); if (!node) return ""; return `content/${node.domain}/${node.id}/note.md`; }
+function nodeForOperationTarget(currentVault, createdNodes, targetId) { return [...(currentVault.nodes || []), ...createdNodes].find((node) => node.id === targetId); }
+function comparableProblem(problem) {
+  return JSON.stringify({
+    id: problem.id,
+    mode: problem.mode,
+    type: problem.type,
+    difficulty: problem.difficulty,
+    title: problem.title,
+    prompt: problem.prompt,
+    hints: problem.hints || [],
+    answer: problem.answer,
+    solution: problem.solution,
+  });
+}
+function normalizeExerciseSetForWrite(exerciseSet, targetId, fallbackTitle = "") {
+  return {
+    version: Number(exerciseSet?.version) || 1,
+    nodeId: targetId,
+    title: exerciseSet?.title || fallbackTitle || `${targetId} ExerciseSet`,
+    locale: exerciseSet?.locale || "zh-CN",
+    summary: exerciseSet?.summary || "",
+    scope: exerciseSet?.scope || { coverageNodeIds: [targetId], prerequisiteNodeIds: [], relatedNodeIds: [] },
+    problems: Array.isArray(exerciseSet?.problems) ? exerciseSet.problems : [],
+  };
+}
+function mergeExerciseSet(currentExerciseSet, incomingExerciseSet, targetId, fallbackTitle = "") {
+  const normalizedIncoming = normalizeExerciseSetForWrite(incomingExerciseSet, targetId, fallbackTitle);
+  if (!currentExerciseSet) return normalizedIncoming;
+  const normalizedCurrent = normalizeExerciseSetForWrite(currentExerciseSet, targetId, fallbackTitle);
+  const existingById = new Map(normalizedCurrent.problems.map((problem) => [problem.id, problem]));
+  const appended = [];
+  normalizedIncoming.problems.forEach((problem) => {
+    const existing = existingById.get(problem.id);
+    if (!existing) appended.push(problem);
+    else if (comparableProblem(existing) !== comparableProblem(problem)) throw new Error(`ExerciseSet problem conflict: ${targetId}/${problem.id}`);
+  });
+  return {
+    ...normalizedCurrent,
+    title: normalizedCurrent.title || normalizedIncoming.title,
+    locale: normalizedCurrent.locale || normalizedIncoming.locale,
+    summary: normalizedCurrent.summary || normalizedIncoming.summary,
+    scope: normalizedCurrent.scope || normalizedIncoming.scope,
+    problems: [...normalizedCurrent.problems, ...appended],
+  };
+}
 
 export function buildAiPackageApplyPlan(currentVault, packageFiles) {
   const validation = validateAiPackage(currentVault, packageFiles);
@@ -57,6 +104,7 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
   const addedDomains = [];
   const created = [];
   const createdDomains = [];
+  const createdNodes = [];
   const modified = [];
 
   validation.normalizedOperations.forEach((operation) => {
@@ -71,8 +119,28 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
       if (format === "html") { const notePath = targetHtmlNotePath(operation); writes.push({ relativePath: notePath, contents: packageFiles.generatedHtmlNoteFiles[generatedHtmlNotePath(operation)], createOnly: true }); created.push(notePath); }
       createDirs.add(`content/${operation.domain}/${operation.id}/assets`);
       addedEdges.push({ id: edgeId(operation.parentId, "contains", operation.id), from: operation.parentId, to: operation.id, relation: "contains" });
+      createdNodes.push({ id: operation.id, title: operation.title, titleLocale: operation.titleLocale || "", domain: operation.domain, type: operation.nodeType, status: operation.status, contentFormat: format });
     }
     if (operation.type === "append_note_section") { const targetId = operation.targetId || operation.id; const notePath = notePathForNode(currentVault, targetId); const currentMarkdown = currentVault.notes?.[targetId]?.markdown || ""; writes.push({ relativePath: notePath, contents: mergeMarkdown(currentMarkdown, operation), createOnly: false }); backupPaths.add(notePath); modified.push(notePath); }
+    if (operation.type === "append_exercise_set") {
+      const targetId = operation.targetId || operation.id;
+      const owner = nodeForOperationTarget(currentVault, createdNodes, targetId);
+      const domain = operation.domain || owner?.domain || "";
+      const packagePath = generatedExercisePath({ ...operation, targetId, domain });
+      const targetPath = targetExercisePath({ ...operation, targetId, domain });
+      const incoming = parseYaml(packageFiles.generatedExerciseFiles[packagePath] || "", packagePath);
+      const existing = currentVault.exercises?.byNodeId?.[targetId] || null;
+      const merged = mergeExerciseSet(existing, incoming, targetId, `${owner?.titleLocale || owner?.title || targetId} ExerciseSet`);
+      if (existing) {
+        backupPaths.add(targetPath);
+        writes.push({ relativePath: targetPath, contents: YAML.stringify(merged), createOnly: false });
+        modified.push(targetPath);
+      } else {
+        writes.push({ relativePath: targetPath, contents: YAML.stringify(merged), createOnly: true });
+        created.push(targetPath);
+      }
+      createDirs.add(`content/${domain}/${targetId}`);
+    }
     if (operation.type === "add_edge") addedEdges.push({ id: edgeId(operation.from, operation.relation, operation.to), from: operation.from, to: operation.to, relation: operation.relation });
   });
 

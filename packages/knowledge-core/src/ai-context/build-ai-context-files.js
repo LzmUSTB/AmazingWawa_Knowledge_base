@@ -123,9 +123,11 @@ function contextSummary(vault, domains, nodes, edges, customBlocks) {
       contentFormats: ["markdown", "html", "none"],
       patchShape: {
         topLevel: "object-with-operations-array",
+        supportedOperations: ["add_domain", "add_node", "append_note_section", "append_exercise_set", "add_edge", "add_block_type", "propose_native_block"],
         addNode: "nested-node-object",
         addDomain: "nested-domain-object",
         addEdge: "flat-top-level-from-to-relation",
+        appendExerciseSet: "one-operation-per-owner-node",
       },
       localeTitle: {
         titleRequired: true,

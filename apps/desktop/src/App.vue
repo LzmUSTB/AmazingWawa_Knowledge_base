@@ -981,7 +981,9 @@ function executeSearchResult({ result, localGraph = false, query = "" }) {
   let didOpen = false;
   const nodeLikeKinds = new Set(["node", "full-text", "pinned", "recent"]);
 
-  if (nodeLikeKinds.has(result.kind)) {
+  if (result.kind === "full-text" && result.targetView === "exercises") {
+    didOpen = openExercises(result.targetId);
+  } else if (nodeLikeKinds.has(result.kind)) {
     didOpen = openSearchNode(result, localGraph);
   } else if (result.kind === "domain") {
     didOpen = openDomain(result.targetId);
@@ -994,7 +996,7 @@ function executeSearchResult({ result, localGraph = false, query = "" }) {
   if (didOpen) {
     closeSearchOverlay();
 
-    if (result.kind === "full-text" && !localGraph) {
+    if (result.kind === "full-text" && result.targetView !== "exercises" && !localGraph) {
       noteFindQuery.value = query;
       noteFindOpenKey.value += 1;
     }

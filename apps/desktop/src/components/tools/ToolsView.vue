@@ -25,6 +25,15 @@ defineEmits(["show-view"]);
         </span>
         <AppIcon class="tool-card__arrow" name="chevron-right" :size="16" />
       </button>
+
+      <button class="tool-card" type="button" @click="$emit('show-view', 'vault-package-export')">
+        <span class="tool-card__icon"><AppIcon name="export" :size="24" /></span>
+        <span class="tool-card__body">
+          <strong>Export Vault Package</strong>
+          <span>Export all domains, nodes, notes, assets, relations, and ExerciseSets as a shareable .wawapkg.</span>
+        </span>
+        <AppIcon class="tool-card__arrow" name="chevron-right" :size="16" />
+      </button>
     </main>
   </section>
 </template>

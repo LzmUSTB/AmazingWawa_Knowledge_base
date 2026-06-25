@@ -207,6 +207,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
     patchRaw: textFiles["patch.yaml"] || "",
     generatedMetaFiles: {},
     generatedNoteFiles: {},
+    generatedExerciseFiles: {},
     assetFiles: [],
     blockTypeFiles: {},
     reviewFiles: {},
@@ -214,6 +215,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
   Object.entries(textFiles).forEach(([entryPath, contents]) => {
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/meta.yaml")) packageFiles.generatedMetaFiles[entryPath] = contents;
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/note.md")) packageFiles.generatedNoteFiles[entryPath] = contents;
+    if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/exercises.yaml")) packageFiles.generatedExerciseFiles[entryPath] = contents;
     if (isAssetPath(entryPath)) {
       packageFiles.assetFiles.push({
         vaultRelativePath: assetVaultRelativePath(entryPath),

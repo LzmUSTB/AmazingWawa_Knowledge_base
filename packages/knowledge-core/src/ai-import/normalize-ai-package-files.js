@@ -21,6 +21,7 @@ export function normalizeAiPackageFiles(rawPackage = {}) {
     generatedMetaFiles: rawPackage.generatedMetaFiles || rawPackage.generated_meta_files || {},
     generatedNoteFiles: rawPackage.generatedNoteFiles || rawPackage.generated_note_files || {},
     generatedHtmlNoteFiles: rawPackage.generatedHtmlNoteFiles || rawPackage.generated_html_note_files || {},
+    generatedExerciseFiles: rawPackage.generatedExerciseFiles || rawPackage.generated_exercise_files || {},
     assetFiles: rawPackage.assetFiles || rawPackage.asset_files || [],
     blockTypeFiles: rawPackage.blockTypeFiles || rawPackage.block_type_files || {},
     reviewFiles: rawPackage.reviewFiles || rawPackage.review_files || {},

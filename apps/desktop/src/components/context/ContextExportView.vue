@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { buildAiContextFiles } from "../../../../../packages/knowledge-core/src/index.js";
 import { useActiveVault } from "../../graph/graph-data-store.js";
 import AppIcon from "../ui/AppIcon.vue";
@@ -18,6 +18,130 @@ const props = defineProps({
 const emit = defineEmits(["close", "export"]);
 
 const activeVault = useActiveVault();
+const activePurposeId = ref("wawapkg");
+const purposePresets = [
+  {
+    id: "wawapkg",
+    label: "Generate .wawapkg",
+    brief: "Use when AI should produce an importable package with nodes, notes, ExerciseSets, relations, assets, and review files.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "WORKFLOW_GUIDE.md",
+      "FORMAT_CONTRACT.md",
+      "WAWAPKG_SCHEMA.md",
+      "NODE_SCHEMA.md",
+      "NOTE_SCHEMA.md",
+      "EXERCISE_SCHEMA.md",
+      "RELATION_SCHEMA.md",
+      "ASSET_RULES.md",
+      "QUALITY_RUBRIC.md",
+      "SOURCE_TO_NOTE_GUIDE.md",
+      "BLOCK_REGISTRY.md",
+      "CUSTOM_BLOCK_INDEX.yaml",
+      "DOMAIN_INDEX.yaml",
+      "NODE_INDEX.yaml",
+      "RELATION_INDEX.yaml",
+    ],
+  },
+  {
+    id: "exercise-set",
+    label: "Only ExerciseSet",
+    brief: "Use when AI should write or append `exercises.yaml` for one existing node, with correct recall/practice mode choices.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "WORKFLOW_GUIDE.md",
+      "FORMAT_CONTRACT.md",
+      "EXERCISE_SCHEMA.md",
+      "QUALITY_RUBRIC.md",
+      "DOMAIN_INDEX.yaml",
+      "NODE_INDEX.yaml",
+      "RELATION_INDEX.yaml",
+    ],
+  },
+  {
+    id: "node-only",
+    label: "Only Node",
+    brief: "Use when AI should propose graph structure or node metadata without writing a long-form note.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "WORKFLOW_GUIDE.md",
+      "FORMAT_CONTRACT.md",
+      "NODE_SCHEMA.md",
+      "RELATION_SCHEMA.md",
+      "QUALITY_RUBRIC.md",
+      "DOMAIN_INDEX.yaml",
+      "NODE_INDEX.yaml",
+      "RELATION_INDEX.yaml",
+    ],
+  },
+  {
+    id: "html-note",
+    label: "One HTML Note",
+    brief: "Use when AI should generate or revise a source-rich HTML note for one existing node, including assets and custom blocks.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "WORKFLOW_GUIDE.md",
+      "FORMAT_CONTRACT.md",
+      "NOTE_SCHEMA.md",
+      "SOURCE_TO_NOTE_GUIDE.md",
+      "ASSET_RULES.md",
+      "QUALITY_RUBRIC.md",
+      "BLOCK_REGISTRY.md",
+      "CUSTOM_BLOCK_INDEX.yaml",
+      "DOMAIN_INDEX.yaml",
+      "NODE_INDEX.yaml",
+    ],
+  },
+  {
+    id: "note-revision",
+    label: "Revise Existing Note",
+    brief: "Use when AI should improve an existing Markdown or HTML note while preserving node identity and current graph structure.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "FORMAT_CONTRACT.md",
+      "NOTE_SCHEMA.md",
+      "SOURCE_TO_NOTE_GUIDE.md",
+      "ASSET_RULES.md",
+      "QUALITY_RUBRIC.md",
+      "BLOCK_REGISTRY.md",
+      "CUSTOM_BLOCK_INDEX.yaml",
+      "NODE_INDEX.yaml",
+    ],
+  },
+  {
+    id: "relations",
+    label: "Relations / Index",
+    brief: "Use when AI should audit or propose important graph relations without changing note content.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "FORMAT_CONTRACT.md",
+      "NODE_SCHEMA.md",
+      "RELATION_SCHEMA.md",
+      "QUALITY_RUBRIC.md",
+      "DOMAIN_INDEX.yaml",
+      "NODE_INDEX.yaml",
+      "RELATION_INDEX.yaml",
+    ],
+  },
+  {
+    id: "all",
+    label: "All Files",
+    brief: "Use when the task is ambiguous or spans multiple output types. This mirrors the full exported folder.",
+    files: null,
+  },
+];
 const outputFiles = computed(() => buildAiContextFiles(activeVault.value || {}));
 const fileRows = computed(() =>
   Object.entries(outputFiles.value).map(([name, contents]) => ({
@@ -27,7 +151,16 @@ const fileRows = computed(() =>
     description: fileDescription(name),
   })),
 );
+const selectedPurpose = computed(() => purposePresets.find((preset) => preset.id === activePurposeId.value) || purposePresets[0]);
+const recommendedFileNames = computed(() => {
+  if (!selectedPurpose.value.files) return new Set(fileRows.value.map((file) => file.name));
+  return new Set(selectedPurpose.value.files);
+});
+const visibleFileRows = computed(() => fileRows.value.filter((file) => recommendedFileNames.value.has(file.name)));
+const hiddenFileCount = computed(() => Math.max(0, fileRows.value.length - visibleFileRows.value.length));
+const selectedPurposeFileCount = computed(() => visibleFileRows.value.length);
 const totalBytes = computed(() => fileRows.value.reduce((sum, file) => sum + file.bytes, 0));
+const visibleBytes = computed(() => visibleFileRows.value.reduce((sum, file) => sum + file.bytes, 0));
 
 function fileCategory(name) {
   if (name.endsWith("_INDEX.yaml")) return "Index";
@@ -104,11 +237,19 @@ function formatBytes(value) {
         <section class="ai-panel stats-panel">
           <div class="section-label">Export Plan</div>
           <div class="stat-row">
-            <span>Files</span>
+            <span>Total files</span>
             <strong>{{ fileRows.length }}</strong>
           </div>
           <div class="stat-row">
-            <span>Estimated size</span>
+            <span>Recommended</span>
+            <strong>{{ selectedPurposeFileCount }}</strong>
+          </div>
+          <div class="stat-row">
+            <span>Recommended size</span>
+            <strong>{{ formatBytes(visibleBytes) }}</strong>
+          </div>
+          <div class="stat-row">
+            <span>Total size</span>
             <strong>{{ formatBytes(totalBytes) }}</strong>
           </div>
           <div class="stat-row">
@@ -125,26 +266,47 @@ function formatBytes(value) {
             explicit request or an approved plan.
           </p>
         </section>
+
+        <section class="ai-panel purpose-panel">
+          <div class="section-label">AI Handoff Purpose</div>
+          <div class="purpose-list">
+            <button v-for="preset in purposePresets" :key="preset.id" class="purpose-button" type="button"
+              :class="{ 'is-active': activePurposeId === preset.id }" @click="activePurposeId = preset.id">
+              <strong>{{ preset.label }}</strong>
+              <span>{{ preset.files ? `${preset.files.length} docs` : "full folder" }}</span>
+            </button>
+          </div>
+        </section>
       </aside>
 
       <section class="file-plan-panel">
         <div v-if="error" class="error-banner">{{ error }}</div>
+        <section class="purpose-summary">
+          <div>
+            <div class="section-label">Selected Purpose</div>
+            <h2>{{ selectedPurpose.label }}</h2>
+            <p>{{ selectedPurpose.brief }}</p>
+          </div>
+          <span v-if="hiddenFileCount">{{ hiddenFileCount }} non-essential files hidden</span>
+          <span v-else>Showing full export set</span>
+        </section>
         <div class="file-plan-header">
           <div>
-            <div class="section-label">Files To Output</div>
+            <div class="section-label">Recommended Files For AI</div>
             <h2>.kb-ai/context</h2>
           </div>
-          <span>{{ fileRows.length }} files</span>
+          <span>{{ visibleFileRows.length }} / {{ fileRows.length }} files</span>
         </div>
 
         <div class="file-list">
-          <article v-for="file in fileRows" :key="file.name" class="file-row">
+          <article v-for="file in visibleFileRows" :key="file.name" class="file-row">
             <div class="file-name">
               <strong>{{ file.name }}</strong>
               <span>{{ file.category }} / {{ formatBytes(file.bytes) }}</span>
             </div>
             <p>{{ file.description }}</p>
           </article>
+          <p v-if="!visibleFileRows.length" class="empty-file-list">No files match this purpose.</p>
         </div>
       </section>
     </main>
@@ -242,13 +404,100 @@ function formatBytes(value) {
   text-transform: uppercase;
 }
 
+.purpose-panel {
+  min-height: 0;
+}
+
+.purpose-list {
+  display: grid;
+  gap: 8px;
+}
+
+.purpose-button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid var(--border-muted);
+  border-left: 4px solid transparent;
+  border-radius: 0;
+  background: var(--background-main);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 10px;
+  text-align: left;
+}
+
+.purpose-button strong,
+.purpose-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purpose-button strong {
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.purpose-button span {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.purpose-button:hover,
+.purpose-button.is-active {
+  border-color: var(--language);
+  border-left-color: var(--language);
+  background: color-mix(in srgb, var(--language) 9%, var(--background-main));
+}
+
 .file-plan-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.purpose-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  border: 1px solid var(--border-muted);
+  border-left: 5px solid var(--language);
+  background: var(--background-panel);
+  padding: 14px;
+}
+
+.purpose-summary h2 {
+  margin: 6px 0 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-subtitle);
+  text-transform: uppercase;
+}
+
+.purpose-summary p {
+  max-width: 880px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  line-height: 1.55;
+}
+
+.purpose-summary > span {
+  color: var(--text-muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  text-align: right;
+  text-transform: uppercase;
 }
 
 .file-plan-header {
@@ -329,6 +578,15 @@ function formatBytes(value) {
   line-height: 1.5;
 }
 
+.empty-file-list {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px solid var(--border-muted);
+  background: var(--background-panel);
+  color: var(--text-muted);
+  padding: 18px;
+}
+
 .error-banner {
   border: 1px solid var(--game-dev);
   background: var(--background-main);
@@ -342,6 +600,14 @@ function formatBytes(value) {
   .context-export-grid {
     grid-template-columns: 1fr;
     overflow: auto;
+  }
+
+  .purpose-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .purpose-summary > span {
+    text-align: left;
   }
 }
 </style>

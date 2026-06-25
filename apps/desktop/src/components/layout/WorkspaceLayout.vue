@@ -14,6 +14,7 @@ import EditRelationDialog from "../relation/EditRelationDialog.vue";
 import RelationSidebar from "../relation/RelationSidebar.vue";
 import SourceSnapshotView from "../source/SourceSnapshotView.vue";
 import ToolsView from "../tools/ToolsView.vue";
+import VaultPackageExportView from "../tools/VaultPackageExportView.vue";
 import VaultGitView from "../vault/VaultGitView.vue";
 import VaultSettingsView from "../vault/VaultSettingsView.vue";
 import VaultSetupView from "../vault/VaultSetupView.vue";
@@ -313,6 +314,8 @@ function fitGraphView() {
           :exporting="contextExporting" @close="$emit('show-view', 'graph')" @export="$emit('export-context')" />
 
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
+
+        <VaultPackageExportView v-else-if="currentView === 'vault-package-export'" />
 
         <ToolsView v-else-if="currentView === 'tools'" @show-view="$emit('show-view', $event)" />
 

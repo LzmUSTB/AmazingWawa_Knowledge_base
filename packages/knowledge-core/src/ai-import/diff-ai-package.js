@@ -4,9 +4,11 @@ import { validateAiPackage } from "./validate-ai-package.js";
 function generatedMetaPath(operation) { return `generated/content/${operation.domain}/${operation.id}/meta.yaml`; }
 function generatedMarkdownNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.md`; }
 function generatedHtmlNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.html`; }
+function generatedExercisePath(operation) { return `generated/content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
 function targetMetaPath(operation) { return `content/${operation.domain}/${operation.id}/meta.yaml`; }
 function targetMarkdownNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.md`; }
 function targetHtmlNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.html`; }
+function targetExercisePath(operation) { return `content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
 function edgeId(from, relation, to) { return `${from}-${relation}-${to}`; }
 function lineHeadingText(line = "") { return line.match(/^#{1,6}\s+(.+)$/)?.[1]?.trim() || ""; }
 function normalizeFormat(value = "") { const format = String(value || "").trim().toLowerCase(); return ["markdown", "html", "none"].includes(format) ? format : ""; }
@@ -80,6 +82,21 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
       const currentMarkdown = currentVault.notes?.[targetId]?.markdown || "";
       filesToModify.push({ path: notePath, kind: "note", operation: "append_note_section" });
       notePreviews.push({ nodeId: targetId, domain, title: node?.title || targetId, mode: "modify", contentFormat: "markdown", markdown: mergeMarkdown(currentMarkdown, operation), html: "" });
+    }
+    if (operation.type === "append_exercise_set") {
+      const targetId = operation.targetId || operation.id;
+      const node = (currentVault.nodes || []).find((item) => item.id === targetId);
+      const domain = operation.domain || node?.domain || "";
+      const path = targetExercisePath({ ...operation, domain, targetId });
+      const existing = currentVault.exercises?.byNodeId?.[targetId];
+      const file = { path, sourcePath: generatedExercisePath({ ...operation, domain, targetId }), kind: "exercises", operation: "append_exercise_set" };
+      if (existing) filesToModify.push(file);
+      else filesToCreate.push(file);
+      reviewItems.push({
+        type: "append_exercise_set",
+        title: `${node?.title || targetId} ExerciseSet`,
+        message: existing ? "Append new problems to the existing ExerciseSet." : "Create a new ExerciseSet for this node.",
+      });
     }
     if (operation.type === "add_edge") {
       const edge = { id: edgeId(operation.from, operation.relation, operation.to), from: operation.from, to: operation.to, relation: operation.relation };

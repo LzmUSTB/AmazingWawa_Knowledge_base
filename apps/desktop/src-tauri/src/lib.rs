@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -100,6 +101,7 @@ struct AiImportPackageFiles {
     generated_meta_files: HashMap<String, String>,
     generated_note_files: HashMap<String, String>,
     generated_html_note_files: HashMap<String, String>,
+    generated_exercise_files: HashMap<String, String>,
     asset_files: Vec<AiImportAssetFile>,
     block_type_files: HashMap<String, String>,
     review_files: HashMap<String, String>,
@@ -182,6 +184,16 @@ struct SourceSnapshotResult {
 struct HtmlNoteImportResult {
     note_relative_path: String,
     copied_asset_relative_paths: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct VaultWawaPackageExportResult {
+    package_id: String,
+    package_path: String,
+    output_dir: String,
+    file_count: u64,
+    total_size: u64,
 }
 
 fn is_safe_package_id(package_id: &str) -> bool {
@@ -1067,6 +1079,280 @@ fn read_yaml_files_in_directory(
     Ok(())
 }
 
+fn should_export_content_file(relative_path: &str) -> bool {
+    let normalized = relative_path.replace('\\', "/");
+    if normalized.contains("/assets/") {
+        return allowed_asset_extension(&format!("generated/{normalized}"));
+    }
+    normalized.ends_with("/meta.yaml")
+        || normalized.ends_with("/note.md")
+        || normalized.ends_with("/note.html")
+        || normalized.ends_with("/exercises.yaml")
+}
+
+fn copy_export_content_files(root: &Path, current: &Path, staging: &Path, file_count: &mut u64) -> Result<(), String> {
+    if !current.is_dir() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(current).map_err(|error| format!("Failed to read directory {}: {error}", current.to_string_lossy()))? {
+        let entry = entry.map_err(|error| format!("Failed to read directory entry: {error}"))?;
+        let path = entry.path();
+        if path.is_dir() {
+            copy_export_content_files(root, &path, staging, file_count)?;
+            continue;
+        }
+        let relative_path = path
+            .strip_prefix(root)
+            .map_err(|error| format!("Failed to make export path relative: {error}"))?
+            .to_string_lossy()
+            .replace('\\', "/");
+        if !should_export_content_file(&relative_path) {
+            continue;
+        }
+        let target = staging.join("generated").join(&relative_path);
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Failed to create export staging directory: {error}"))?;
+        }
+        fs::copy(&path, &target)
+            .map_err(|error| format!("Failed to stage {}: {error}", relative_path))?;
+        *file_count += 1;
+    }
+    Ok(())
+}
+
+fn copy_export_block_types(root: &Path, staging: &Path, file_count: &mut u64) -> Result<(), String> {
+    let source = root.join("block-types");
+    if !source.is_dir() {
+        return Ok(());
+    }
+    let target_dir = staging.join("block-types");
+    fs::create_dir_all(&target_dir)
+        .map_err(|error| format!("Failed to create block-types export directory: {error}"))?;
+    for entry in fs::read_dir(&source).map_err(|error| format!("Failed to read block-types: {error}"))? {
+        let entry = entry.map_err(|error| format!("Failed to read block-types entry: {error}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else { continue; };
+        if !(file_name.ends_with(".yaml") || file_name.ends_with(".yml")) {
+            continue;
+        }
+        fs::copy(&path, target_dir.join(file_name))
+            .map_err(|error| format!("Failed to stage block type {file_name}: {error}"))?;
+        *file_count += 1;
+    }
+    Ok(())
+}
+
+fn staging_size_and_count(current: &Path) -> Result<(u64, u64), String> {
+    let mut total_size = 0;
+    let mut file_count = 0;
+    if !current.is_dir() {
+        return Ok((0, 0));
+    }
+    for entry in fs::read_dir(current).map_err(|error| format!("Failed to inspect staging directory: {error}"))? {
+        let entry = entry.map_err(|error| format!("Failed to inspect staging entry: {error}"))?;
+        let path = entry.path();
+        if path.is_dir() {
+            let (child_count, child_size) = staging_size_and_count(&path)?;
+            file_count += child_count;
+            total_size += child_size;
+        } else if path.is_file() {
+            file_count += 1;
+            total_size += fs::metadata(&path).map(|metadata| metadata.len()).unwrap_or(0);
+        }
+    }
+    Ok((file_count, total_size))
+}
+
+struct ZipCentralEntry {
+    name: String,
+    crc32: u32,
+    size: u32,
+    local_header_offset: u32,
+}
+
+fn write_u16_le(writer: &mut File, value: u16) -> Result<(), String> {
+    writer
+        .write_all(&value.to_le_bytes())
+        .map_err(|error| format!("Failed to write .wawapkg: {error}"))
+}
+
+fn write_u32_le(writer: &mut File, value: u32) -> Result<(), String> {
+    writer
+        .write_all(&value.to_le_bytes())
+        .map_err(|error| format!("Failed to write .wawapkg: {error}"))
+}
+
+fn crc32(bytes: &[u8]) -> u32 {
+    let mut crc = 0xffff_ffffu32;
+    for byte in bytes {
+        crc ^= *byte as u32;
+        for _ in 0..8 {
+            if crc & 1 == 1 {
+                crc = (crc >> 1) ^ 0xedb8_8320;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    !crc
+}
+
+fn collect_zip_files(base: &Path, current: &Path, files: &mut Vec<(PathBuf, String)>) -> Result<(), String> {
+    for entry in fs::read_dir(current).map_err(|error| format!("Failed to inspect package staging directory: {error}"))? {
+        let entry = entry.map_err(|error| format!("Failed to inspect package staging entry: {error}"))?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_zip_files(base, &path, files)?;
+        } else if path.is_file() {
+            let relative = path
+                .strip_prefix(base)
+                .map_err(|error| format!("Failed to build package entry path: {error}"))?;
+            let entry_name = relative
+                .components()
+                .map(|component| component.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/");
+            if entry_name.is_empty() {
+                return Err("Failed to build package entry path: empty entry".into());
+            }
+            files.push((path, entry_name));
+        }
+    }
+    Ok(())
+}
+
+fn write_zip_local_entry(
+    writer: &mut File,
+    name: &str,
+    data: &[u8],
+    local_header_offset: u32,
+) -> Result<ZipCentralEntry, String> {
+    let name_bytes = name.as_bytes();
+    if name_bytes.len() > u16::MAX as usize {
+        return Err(format!("Package entry path is too long: {name}"));
+    }
+    if data.len() > u32::MAX as usize {
+        return Err(format!("Package entry is too large: {name}"));
+    }
+
+    let crc = crc32(data);
+    let size = data.len() as u32;
+    let utf8_flag = 0x0800u16;
+    let method_stored = 0u16;
+    let dos_time = 0u16;
+    let dos_date = 33u16; // 1980-01-01
+
+    write_u32_le(writer, 0x0403_4b50)?;
+    write_u16_le(writer, 20)?;
+    write_u16_le(writer, utf8_flag)?;
+    write_u16_le(writer, method_stored)?;
+    write_u16_le(writer, dos_time)?;
+    write_u16_le(writer, dos_date)?;
+    write_u32_le(writer, crc)?;
+    write_u32_le(writer, size)?;
+    write_u32_le(writer, size)?;
+    write_u16_le(writer, name_bytes.len() as u16)?;
+    write_u16_le(writer, 0)?;
+    writer
+        .write_all(name_bytes)
+        .map_err(|error| format!("Failed to write .wawapkg entry name: {error}"))?;
+    writer
+        .write_all(data)
+        .map_err(|error| format!("Failed to write .wawapkg entry data: {error}"))?;
+
+    Ok(ZipCentralEntry {
+        name: name.to_string(),
+        crc32: crc,
+        size,
+        local_header_offset,
+    })
+}
+
+fn write_zip_central_entry(writer: &mut File, entry: &ZipCentralEntry) -> Result<(), String> {
+    let name_bytes = entry.name.as_bytes();
+    let utf8_flag = 0x0800u16;
+    let method_stored = 0u16;
+    let dos_time = 0u16;
+    let dos_date = 33u16;
+
+    write_u32_le(writer, 0x0201_4b50)?;
+    write_u16_le(writer, 20)?;
+    write_u16_le(writer, 20)?;
+    write_u16_le(writer, utf8_flag)?;
+    write_u16_le(writer, method_stored)?;
+    write_u16_le(writer, dos_time)?;
+    write_u16_le(writer, dos_date)?;
+    write_u32_le(writer, entry.crc32)?;
+    write_u32_le(writer, entry.size)?;
+    write_u32_le(writer, entry.size)?;
+    write_u16_le(writer, name_bytes.len() as u16)?;
+    write_u16_le(writer, 0)?;
+    write_u16_le(writer, 0)?;
+    write_u16_le(writer, 0)?;
+    write_u16_le(writer, 0)?;
+    write_u32_le(writer, 0)?;
+    write_u32_le(writer, entry.local_header_offset)?;
+    writer
+        .write_all(name_bytes)
+        .map_err(|error| format!("Failed to write .wawapkg central entry: {error}"))
+}
+
+fn zip_staging_directory(staging_dir: &Path, output_path: &Path) -> Result<(), String> {
+    if output_path.exists() {
+        fs::remove_file(output_path)
+            .map_err(|error| format!("Failed to replace existing package: {error}"))?;
+    }
+    let mut files = Vec::new();
+    collect_zip_files(staging_dir, staging_dir, &mut files)?;
+    files.sort_by(|left, right| left.1.cmp(&right.1));
+    if files.len() > u16::MAX as usize {
+        return Err("Vault export has too many files for standard zip format".into());
+    }
+
+    let mut writer = File::create(output_path)
+        .map_err(|error| format!("Failed to create .wawapkg: {error}"))?;
+    let mut offset = 0u64;
+    let mut central_entries = Vec::new();
+
+    for (path, entry_name) in files {
+        let data = fs::read(&path)
+            .map_err(|error| format!("Failed to read package staging file {entry_name}: {error}"))?;
+        if offset > u32::MAX as u64 {
+            return Err("Vault export is too large for standard zip format".into());
+        }
+        let entry = write_zip_local_entry(&mut writer, &entry_name, &data, offset as u32)?;
+        offset += 30 + entry_name.as_bytes().len() as u64 + data.len() as u64;
+        central_entries.push(entry);
+    }
+
+    let central_offset = offset;
+    for entry in &central_entries {
+        write_zip_central_entry(&mut writer, entry)?;
+        offset += 46 + entry.name.as_bytes().len() as u64;
+    }
+    let central_size = offset - central_offset;
+    if central_offset > u32::MAX as u64 || central_size > u32::MAX as u64 {
+        return Err("Vault export is too large for standard zip format".into());
+    }
+
+    write_u32_le(&mut writer, 0x0605_4b50)?;
+    write_u16_le(&mut writer, 0)?;
+    write_u16_le(&mut writer, 0)?;
+    write_u16_le(&mut writer, central_entries.len() as u16)?;
+    write_u16_le(&mut writer, central_entries.len() as u16)?;
+    write_u32_le(&mut writer, central_size as u32)?;
+    write_u32_le(&mut writer, central_offset as u32)?;
+    write_u16_le(&mut writer, 0)?;
+    writer
+        .flush()
+        .map_err(|error| format!("Failed to finalize .wawapkg: {error}"))?;
+    Ok(())
+}
+
 fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles, String> {
     if !package_file_path.to_ascii_lowercase().ends_with(".wawapkg") {
         return Err("Package file must use .wawapkg extension".into());
@@ -1255,6 +1541,7 @@ try {
         generated_meta_files: HashMap::new(),
         generated_note_files: HashMap::new(),
         generated_html_note_files: HashMap::new(),
+        generated_exercise_files: HashMap::new(),
         asset_files,
         block_type_files: HashMap::new(),
         review_files: HashMap::new(),
@@ -1266,6 +1553,8 @@ try {
             package.generated_note_files.insert(entry_path, contents);
         } else if html_note_entry(&entry_path) {
             package.generated_html_note_files.insert(entry_path, contents);
+        } else if entry_path.starts_with("generated/content/") && entry_path.ends_with("/exercises.yaml") {
+            package.generated_exercise_files.insert(entry_path, contents);
         } else if entry_path.starts_with("block-types/") && (entry_path.ends_with(".yaml") || entry_path.ends_with(".yml")) {
             package.block_type_files.insert(entry_path, contents);
         } else if entry_path.starts_with("review/") {
@@ -2484,6 +2773,84 @@ fn reset_context_export_dir(vault_root_path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn export_vault_wawapkg(
+    vault_root_path: String,
+    package_id: String,
+    manifest_raw: String,
+    sources_raw: String,
+    patch_raw: String,
+    review_raw: String,
+) -> Result<VaultWawaPackageExportResult, String> {
+    if !is_safe_package_id(&package_id) {
+        return Err("Invalid vault export package id".into());
+    }
+    let root = PathBuf::from(&vault_root_path)
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+    if !root.is_dir() {
+        return Err("Vault root is not a directory".into());
+    }
+
+    let export_dir = safe_vault_path(&vault_root_path, ".kb-ai/exports")?;
+    let work_root = safe_vault_path(&vault_root_path, ".kb-ai/export-work")?;
+    let staging_dir = work_root.join(&package_id);
+    let output_path = export_dir.join(format!("{package_id}.wawapkg"));
+
+    if staging_dir.exists() {
+        fs::remove_dir_all(&staging_dir)
+            .map_err(|error| format!("Failed to reset package staging directory: {error}"))?;
+    }
+    fs::create_dir_all(&staging_dir)
+        .map_err(|error| format!("Failed to create package staging directory: {error}"))?;
+    fs::create_dir_all(&export_dir)
+        .map_err(|error| format!("Failed to create export directory: {error}"))?;
+
+    let mut staged_content_count = 0;
+    let result = (|| -> Result<VaultWawaPackageExportResult, String> {
+        fs::write(staging_dir.join("mimetype"), WAWAPKG_MIMETYPE)
+            .map_err(|error| format!("Failed to stage mimetype: {error}"))?;
+        fs::write(staging_dir.join("manifest.yaml"), manifest_raw)
+            .map_err(|error| format!("Failed to stage manifest.yaml: {error}"))?;
+        fs::write(staging_dir.join("sources.yaml"), sources_raw)
+            .map_err(|error| format!("Failed to stage sources.yaml: {error}"))?;
+        fs::write(staging_dir.join("patch.yaml"), patch_raw)
+            .map_err(|error| format!("Failed to stage patch.yaml: {error}"))?;
+
+        let review_dir = staging_dir.join("review");
+        fs::create_dir_all(&review_dir)
+            .map_err(|error| format!("Failed to create review staging directory: {error}"))?;
+        fs::write(review_dir.join("export-summary.md"), review_raw)
+            .map_err(|error| format!("Failed to stage review/export-summary.md: {error}"))?;
+
+        copy_export_content_files(&root, &root.join("content"), &staging_dir, &mut staged_content_count)?;
+        copy_export_block_types(&root, &staging_dir, &mut staged_content_count)?;
+
+        let (file_count, total_size) = staging_size_and_count(&staging_dir)?;
+        if file_count as usize > MAX_WAWAPKG_FILE_COUNT {
+            return Err(format!("Vault export has too many files for .wawapkg: {file_count}"));
+        }
+        if total_size > MAX_WAWAPKG_TOTAL_SIZE {
+            return Err(format!("Vault export is too large for .wawapkg: {total_size} bytes"));
+        }
+
+        zip_staging_directory(&staging_dir, &output_path)?;
+        let canonical_output = output_path
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve exported package: {error}"))?;
+        Ok(VaultWawaPackageExportResult {
+            package_id: package_id.clone(),
+            package_path: path_to_display_string(&canonical_output),
+            output_dir: path_to_display_string(&export_dir),
+            file_count,
+            total_size,
+        })
+    })();
+
+    let _ = fs::remove_dir_all(&staging_dir);
+    result
+}
+
+#[tauri::command]
 fn remove_file(vault_root_path: String, relative_path: String) -> Result<(), String> {
     let normalized = relative_path.replace('\\', "/");
     let parts: Vec<&str> = normalized.split('/').collect();
@@ -2508,7 +2875,7 @@ fn remove_file(vault_root_path: String, relative_path: String) -> Result<(), Str
 
 #[tauri::command]
 fn open_vault_relative_dir(vault_root_path: String, relative_path: String) -> Result<String, String> {
-    if relative_path != ".kb-ai/context" && relative_path != ".kb-ai/wrong-practice" {
+    if relative_path != ".kb-ai/context" && relative_path != ".kb-ai/wrong-practice" && relative_path != ".kb-ai/exports" {
         return Err("Only exported AI context directories can be opened from the vault.".into());
     }
     let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
@@ -2680,6 +3047,7 @@ pub fn run() {
             create_dir_all,
             delete_old_vault_after_move,
             ensure_app_repo_ignores_active_vault,
+            export_vault_wawapkg,
             git_add_selected,
             git_branch,
             git_commit,

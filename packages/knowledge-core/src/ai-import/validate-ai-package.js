@@ -1,4 +1,5 @@
 import { parseYaml } from "../parse-yaml.js";
+import { EXERCISE_DIFFICULTIES, EXERCISE_MODES, EXERCISE_TYPES } from "../build-exercise-index.js";
 import {
   getBlockRegistry,
   isNativeBlockType,
@@ -12,7 +13,7 @@ const PACKAGE_ID_PATTERN = /^(?:ai-import|wawa-import)-[a-z0-9-]+$/;
 const KEBAB_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
 const SUPPORTED_INSERT_MODES = new Set(["after-heading", "before-heading", "end"]);
-const OPERATION_TYPES = new Set(["add_domain", "add_node", "append_note_section", "add_edge", "add_block_type", "propose_native_block"]);
+const OPERATION_TYPES = new Set(["add_domain", "add_node", "append_note_section", "append_exercise_set", "add_edge", "add_block_type", "propose_native_block"]);
 const CONTENT_FORMATS = new Set(["markdown", "html", "none"]);
 const FORBIDDEN_BLOCK_FIELD_PATTERN = /(^|\.)(script|iframe|eval|html|css|js|src|url|style|styles|javascript|on[a-z]+)/i;
 const FORBIDDEN_MARKDOWN_PATTERNS = [
@@ -77,6 +78,13 @@ function normalizeOperation(operation = {}) {
       reason: operation.reason || "",
     };
   }
+  if (operation.type === "append_exercise_set") {
+    return {
+      ...operation,
+      targetId: operation.targetId || operation.nodeId || operation.id,
+      domain: operation.domain || "",
+    };
+  }
   if (operation.type === "add_block_type") {
     return { ...operation, typeName: operation.blockType || operation.block_type || operation.name || operation.id, file: operation.file || `block-types/${operation.blockType || operation.block_type || operation.name || operation.id}.yaml` };
   }
@@ -90,6 +98,7 @@ function nodeMap(currentVault, createdNodes = [], createdDomains = []) {
 function generatedMetaPath(operation) { return `generated/content/${operation.domain}/${operation.id}/meta.yaml`; }
 function generatedMarkdownNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.md`; }
 function generatedHtmlNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.html`; }
+function generatedExercisePath(operation) { return `generated/content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
 function noteFormatForOperation(operation, packageFiles) {
   const explicit = normalizeContentFormat(operation.contentFormat);
   if (explicit) return explicit;
@@ -529,7 +538,8 @@ function validateAddNode(operation, context) {
     if (meta.id !== operation.id) errors.push(`add_node ${operation.id}: generated meta id does not match patch.`);
     if (meta.domain !== operation.domain) errors.push(`add_node ${operation.id}: generated meta domain does not match patch.`);
     if (meta.title !== operation.title) errors.push(`add_node ${operation.id}: generated meta title does not match patch.`);
-    if ((meta.titleLocale || operation.titleLocale) && meta.titleLocale !== operation.titleLocale) errors.push(`add_node ${operation.id}: generated meta titleLocale does not match patch.`);
+    const metaTitleLocale = meta.titleLocale || meta.title_locale || "";
+    if ((metaTitleLocale || operation.titleLocale) && metaTitleLocale !== operation.titleLocale) errors.push(`add_node ${operation.id}: generated meta titleLocale does not match patch.`);
     if (meta.type !== operation.nodeType) errors.push(`add_node ${operation.id}: generated meta type does not match patch.`);
     if (meta.status !== operation.status) errors.push(`add_node ${operation.id}: generated meta status does not match patch.`);
     const metaFormat = normalizeContentFormat(meta.contentFormat || meta.content_format || "");
@@ -557,6 +567,111 @@ function validateAppendNoteSection(operation, context) {
   const heading = insertedHeading(markdown);
   if (heading && currentNote && noteHeadingExists(currentNote, heading)) warnings.push(`append_note_section ${targetId}: inserted heading "${heading}" may duplicate an existing heading.`);
   validateMarkdownBlocks(markdown, registry, errors, `append_note_section ${targetId}`);
+}
+
+function comparableProblem(problem = {}) {
+  return JSON.stringify({
+    id: problem.id,
+    mode: problem.mode,
+    type: problem.type,
+    difficulty: problem.difficulty,
+    title: problem.title,
+    prompt: problem.prompt,
+    hints: problem.hints || [],
+    answer: problem.answer,
+    solution: problem.solution,
+  });
+}
+
+function validateExerciseProblem(problem, index, seenIds, errors, contextName) {
+  if (!problem || Array.isArray(problem) || typeof problem !== "object") {
+    errors.push(`${contextName}: problem at index ${index} must be an object.`);
+    return null;
+  }
+  const id = String(problem.id || "").trim();
+  if (!id) errors.push(`${contextName}: problem at index ${index} is missing id.`);
+  if (id && seenIds.has(id)) errors.push(`${contextName}: duplicate problem id "${id}".`);
+  if (id) seenIds.add(id);
+  const mode = String(problem.mode || "").trim();
+  const type = String(problem.type || "conceptual").trim();
+  const difficulty = String(problem.difficulty || "undergraduate").trim();
+  if (!mode) errors.push(`${contextName}: problem "${id || index}" is missing mode.`);
+  if (mode && !EXERCISE_MODES.includes(mode)) errors.push(`${contextName}: problem "${id}" has unsupported mode "${mode}".`);
+  if (!EXERCISE_TYPES.includes(type)) errors.push(`${contextName}: problem "${id}" has unsupported type "${type}".`);
+  if (!EXERCISE_DIFFICULTIES.includes(difficulty)) errors.push(`${contextName}: problem "${id}" has unsupported difficulty "${difficulty}".`);
+  ["title", "prompt", "answer", "solution"].forEach((field) => {
+    if (!String(problem[field] || "").trim()) errors.push(`${contextName}: problem "${id || index}" is missing ${field}.`);
+  });
+  if (problem.mistakeTags || problem.errorCategory || problem.weaknessCategory || problem.aiJudgement || problem.attempts || problem.accuracy || problem.attemptsLog) {
+    errors.push(`${contextName}: problem "${id || index}" contains runtime/progress fields that do not belong in ExerciseSet files.`);
+  }
+  return {
+    id,
+    mode,
+    type,
+    difficulty,
+    title: String(problem.title || ""),
+    prompt: String(problem.prompt || ""),
+    hints: Array.isArray(problem.hints) ? problem.hints.map((hint) => String(hint || "")).filter(Boolean) : [],
+    answer: String(problem.answer || ""),
+    solution: String(problem.solution || ""),
+  };
+}
+
+function validateAppendExerciseSet(operation, context) {
+  const { currentVault, packageFiles, createdNodes, createdDomains, packageExerciseProblems, errors } = context;
+  const nodes = nodeMap(currentVault, createdNodes, createdDomains);
+  const targetId = operation.targetId || operation.id;
+  const owner = nodes.get(targetId);
+  const domain = operation.domain || owner?.domain || "";
+  if (!targetId) errors.push("append_exercise_set: targetId is required.");
+  if (!owner) errors.push(`append_exercise_set: targetId "${targetId}" does not exist.`);
+  if (owner?.type === "domain") errors.push(`append_exercise_set ${targetId}: ExerciseSet owner must be a non-domain node.`);
+  if (!domain) errors.push(`append_exercise_set ${targetId}: domain is required or must be inferable from the owner node.`);
+  operation.domain = domain;
+
+  const exercisePath = generatedExercisePath({ ...operation, domain, targetId });
+  const raw = packageFiles.generatedExerciseFiles?.[exercisePath];
+  if (!raw) {
+    errors.push(`append_exercise_set ${targetId}: missing ${exercisePath}.`);
+    return;
+  }
+
+  let parsed = null;
+  try {
+    parsed = parseYaml(raw, exercisePath);
+  } catch (error) {
+    errors.push(`append_exercise_set ${targetId}: ${error.message}`);
+    return;
+  }
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+    errors.push(`append_exercise_set ${targetId}: exercises.yaml must contain a YAML object.`);
+    return;
+  }
+  if (parsed.nodeId && parsed.nodeId !== targetId) errors.push(`append_exercise_set ${targetId}: exercises.yaml nodeId "${parsed.nodeId}" does not match targetId.`);
+  if (!Array.isArray(parsed.problems) || !parsed.problems.length) {
+    errors.push(`append_exercise_set ${targetId}: problems must be a non-empty array.`);
+    return;
+  }
+
+  const seenIds = new Set();
+  const incomingProblems = parsed.problems
+    .map((problem, index) => validateExerciseProblem(problem, index, seenIds, errors, `append_exercise_set ${targetId}`))
+    .filter(Boolean);
+  const existingProblems = currentVault.exercises?.byNodeId?.[targetId]?.problems || [];
+  const existingById = new Map(existingProblems.map((problem) => [problem.id, problem]));
+  const packageIds = packageExerciseProblems.get(targetId) || new Map();
+  incomingProblems.forEach((problem) => {
+    const existing = existingById.get(problem.id);
+    if (existing && comparableProblem(existing) !== comparableProblem(problem)) {
+      errors.push(`append_exercise_set ${targetId}: problem id "${problem.id}" conflicts with an existing ExerciseSet problem.`);
+    }
+    if (packageIds.has(problem.id) && comparableProblem(packageIds.get(problem.id)) !== comparableProblem(problem)) {
+      errors.push(`append_exercise_set ${targetId}: problem id "${problem.id}" appears multiple times in this package with different content.`);
+    }
+    packageIds.set(problem.id, problem);
+  });
+  packageExerciseProblems.set(targetId, packageIds);
 }
 function validateAddEdge(operation, context) {
   const { currentVault, createdNodes, createdDomains, packageEdges, errors } = context;
@@ -634,14 +749,16 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
   const createdNodes = [];
   const createdIds = new Set();
   const packageEdges = new Set();
+  const packageExerciseProblems = new Map();
   if (!operations.length) warnings.push("patch.yaml: no operations found.");
-  const context = { currentVault, packageFiles, registry, createdDomains, createdDomainIds, createdNodes, createdIds, packageEdges, errors, warnings, reviewItems };
+  const context = { currentVault, packageFiles, registry, createdDomains, createdDomainIds, createdNodes, createdIds, packageEdges, packageExerciseProblems, errors, warnings, reviewItems };
   operations.forEach((operation, index) => {
     if (!OPERATION_TYPES.has(operation.type)) { errors.push(`operation ${index + 1}: unsupported operation type "${operation.type}".`); return; }
     normalizedOperations.push(operation);
     if (operation.type === "add_domain") validateAddDomain(operation, context);
     if (operation.type === "add_node") validateAddNode(operation, context);
     if (operation.type === "append_note_section") validateAppendNoteSection(operation, context);
+    if (operation.type === "append_exercise_set") validateAppendExerciseSet(operation, context);
     if (operation.type === "add_edge") validateAddEdge(operation, context);
     if (operation.type === "add_block_type") validateAddBlockType(operation, context);
     if (operation.type === "propose_native_block") validateProposeNativeBlock(operation, context);

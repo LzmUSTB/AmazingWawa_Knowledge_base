@@ -193,6 +193,27 @@ function isWrongPractice(row) {
   return row.progress?.result === "wrong";
 }
 
+function exerciseCardState(problem, progress) {
+  if (problem?.mode === "recall") {
+    return { label: "Recall", className: "is-state-recall" };
+  }
+  if (progress?.result === "correct") {
+    return { label: "Practice · Correct", className: "is-state-practice-correct" };
+  }
+  if (progress?.result === "wrong") {
+    return { label: "Practice · Wrong", className: "is-state-practice-wrong" };
+  }
+  return { label: "Practice · Unanswered", className: "is-state-practice-unanswered" };
+}
+
+function exerciseCardStateClass(problem, progress) {
+  return exerciseCardState(problem, progress).className;
+}
+
+function exerciseCardStateLabel(problem, progress) {
+  return exerciseCardState(problem, progress).label;
+}
+
 function hasPracticeResult(exerciseSet, problem) {
   return Boolean(progressFor(exerciseSet, problem)?.result);
 }
@@ -411,10 +432,14 @@ function normalizeLooseExerciseMath(markdown = "") {
       </div>
 
       <div class="problem-list">
-        <article v-for="(problem, index) in currentExerciseSet.problems" :key="problem.id" class="problem-panel" :class="`is-${problem.mode}`">
+        <article v-for="(problem, index) in currentExerciseSet.problems" :key="problem.id" class="problem-panel"
+          :class="[`is-${problem.mode}`, exerciseCardStateClass(problem, progressFor(currentExerciseSet, problem))]">
           <header class="problem-header">
             <div><span>Problem {{ String(index + 1).padStart(2, "0") }}</span><h2>{{ problem.title || problem.id }}</h2></div>
             <div class="problem-header-actions">
+              <span class="problem-state-label" :class="exerciseCardStateClass(problem, progressFor(currentExerciseSet, problem))">
+                {{ exerciseCardStateLabel(problem, progressFor(currentExerciseSet, problem)) }}
+              </span>
               <div class="problem-tags"><span>{{ problem.mode }}</span><span>{{ problem.type }}</span><span>{{ problem.difficulty }}</span></div>
               <button v-if="problem.mode === 'practice' && hasPracticeResult(currentExerciseSet, problem)" class="problem-edit" type="button" title="Edit saved answer"
                 @click="editPracticeAnswer(currentExerciseSet, problem)">
@@ -497,10 +522,15 @@ function normalizeLooseExerciseMath(markdown = "") {
         </div>
       </section>
       <section v-if="activeOverviewTab === 'memory'" class="memory-review">
-        <article v-if="activeMemoryRow" class="problem-panel is-recall memory-card">
+        <article v-if="activeMemoryRow" class="problem-panel is-recall memory-card" :class="exerciseCardStateClass(activeMemoryRow.problem, activeMemoryRow.progress)">
           <header class="problem-header">
             <div><span>{{ activeMemoryRow.status }} recall</span><h2>{{ activeMemoryRow.problem.title || activeMemoryRow.problem.id }}</h2></div>
-            <div class="problem-tags"><span>{{ activeMemoryRow.problem.type }}</span><span>{{ activeMemoryRow.problem.difficulty }}</span></div>
+            <div class="problem-header-actions">
+              <span class="problem-state-label" :class="exerciseCardStateClass(activeMemoryRow.problem, activeMemoryRow.progress)">
+                {{ exerciseCardStateLabel(activeMemoryRow.problem, activeMemoryRow.progress) }}
+              </span>
+              <div class="problem-tags"><span>{{ activeMemoryRow.problem.type }}</span><span>{{ activeMemoryRow.problem.difficulty }}</span></div>
+            </div>
           </header>
           <NoteBlockRenderer :markdown="normalizeLooseExerciseMath(activeMemoryRow.problem.prompt)" :block-registry="activeVault.blockRegistry"
             :node="activeMemoryRow.owner" :vault-root-path="activeVault.vaultRootPath" />
@@ -523,10 +553,16 @@ function normalizeLooseExerciseMath(markdown = "") {
         <p v-else class="no-results">No recall cards due under current filters.</p>
       </section>
       <div v-else class="overview-list">
-        <article v-for="row in filteredRows" :key="row.key" class="overview-row">
+        <article v-for="row in filteredRows" :key="row.key" class="overview-row" :class="exerciseCardStateClass(row.problem, row.progress)">
           <button class="overview-main" type="button" @click="toggleExpanded(row.key)">
             <span class="status-mark" :class="`is-${row.status}`"></span>
-            <span><strong>{{ row.problem.title || row.problem.id }}</strong><small>{{ row.problem.mode }} / {{ row.exerciseSet.title }} / {{ displayTitle(row.owner, row.exerciseSet.nodeId) }}</small></span>
+            <span>
+              <strong>{{ row.problem.title || row.problem.id }}</strong>
+              <span class="problem-state-label overview-state-label" :class="exerciseCardStateClass(row.problem, row.progress)">
+                {{ exerciseCardStateLabel(row.problem, row.progress) }}
+              </span>
+              <small>{{ row.problem.mode }} / {{ row.exerciseSet.title }} / {{ displayTitle(row.owner, row.exerciseSet.nodeId) }}</small>
+            </span>
           </button>
           <div class="overview-meta"><span>{{ row.owner?.domain || '-' }}</span><span>{{ row.problem.mode }}</span><span>{{ row.problem.type }}</span><span>{{ row.problem.difficulty }}</span><span>{{ row.problem.mode === 'recall' ? percent(row.progress?.mastery) : (row.progress?.result || 'unanswered') }}</span><span>{{ row.problem.mode === 'recall' ? accuracy(row.progress) : (row.progress?.updatedAt || row.progress?.answeredAt || 'new') }}</span><span>{{ row.problem.mode === 'recall' ? dueLabel(row.progress?.dueAt) : (row.progress?.userAnswer || '').slice(0, 40) }}</span><span>{{ row.progress?.result || row.progress?.lastResult || 'new' }}</span></div>
           <div v-if="expandedProblems.has(row.key)" class="overview-expanded">
@@ -560,6 +596,9 @@ function normalizeLooseExerciseMath(markdown = "") {
 .problem-panel { border: 1px solid var(--border-primary); background: var(--background-main); padding: 18px; }
 .problem-panel.is-practice { border-left: 5px solid var(--career); }
 .problem-panel.is-recall { border-left: 5px solid var(--simulation); }
+.problem-panel.is-state-practice-unanswered { border-left-color: var(--graphics); }
+.problem-panel.is-state-practice-correct { border-left-color: var(--career); }
+.problem-panel.is-state-practice-wrong { border-left-color: var(--game-dev); }
 .problem-header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border-muted); margin-bottom: 18px; padding-bottom: 12px; }
 .problem-header h2 { margin: 5px 0 0; color: var(--text-primary); font-size: var(--font-size-subtitle); }
 .problem-header-actions { display: flex; align-items: flex-start; gap: 8px; }
@@ -570,6 +609,11 @@ function normalizeLooseExerciseMath(markdown = "") {
 .problem-delete:disabled { opacity: .4; cursor: not-allowed; }
 .problem-tags, .rating-row > div, .rating-actions, .reveal-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .problem-tags span { border: 1px solid var(--border-muted); padding: 5px 7px; color: var(--text-muted); font-size: var(--font-size-small); text-transform: uppercase; }
+.problem-state-label { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid currentColor; background: color-mix(in srgb, currentColor 10%, transparent); color: var(--exercise-state-color, var(--text-muted)); font-size: var(--font-size-small); font-weight: 900; letter-spacing: .02em; padding: 5px 8px; text-transform: uppercase; white-space: nowrap; }
+.problem-state-label.is-state-recall { --exercise-state-color: var(--simulation); }
+.problem-state-label.is-state-practice-unanswered { --exercise-state-color: var(--graphics); }
+.problem-state-label.is-state-practice-correct { --exercise-state-color: var(--career); }
+.problem-state-label.is-state-practice-wrong { --exercise-state-color: var(--game-dev); }
 .practice-answer { display: grid; gap: 8px; margin-top: 16px; }
 .practice-answer textarea, .search-filter input { width: 100%; border: 1px solid var(--border-muted); border-radius: 0; background: var(--background-main); color: var(--text-primary); font: inherit; line-height: 1.5; padding: 10px; resize: vertical; }
 .practice-saved { display: grid; gap: 10px; margin-top: 16px; border: 1px solid var(--border-muted); border-left: 4px solid var(--career); background: var(--background-panel); padding: 12px; }
@@ -611,6 +655,7 @@ function normalizeLooseExerciseMath(markdown = "") {
 .overview-main span:last-child { display: grid; min-width: 0; }
 .overview-main strong, .overview-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .overview-main small { margin-top: 4px; color: var(--text-muted); }
+.overview-state-label { justify-self: start; min-height: 22px; margin-top: 6px; padding: 3px 6px; }
 .status-mark { width: 5px; height: 100%; background: var(--text-muted); }
 .status-mark.is-due, .status-mark.is-weak, .status-mark.is-wrong { background: var(--game-dev); }.status-mark.is-new { background: var(--graphics); }.status-mark.is-completed { background: var(--career); }
 .overview-meta { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); align-items: center; border-left: 1px solid var(--border-muted); color: var(--text-muted); font-size: var(--font-size-small); text-align: center; }

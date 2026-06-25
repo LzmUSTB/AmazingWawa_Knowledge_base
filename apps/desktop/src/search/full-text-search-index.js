@@ -136,6 +136,61 @@ function contentBlockChunks(node, nodeId, block, blockIndex) {
   return [baseChunk(node, nodeId, blockIndex, 0, block.type, contentBlockSection(block), text)];
 }
 
+function exerciseProblemText(problem = {}) {
+  return compactText(safeStringify({
+    mode: problem.mode,
+    type: problem.type,
+    difficulty: problem.difficulty,
+    title: problem.title,
+    prompt: problem.prompt,
+    hints: problem.hints,
+    answer: problem.answer,
+    solution: problem.solution,
+  }));
+}
+
+function exerciseChunks(node, nodeId, exerciseSet) {
+  if (!exerciseSet) return [];
+  const chunks = [];
+  const setText = compactText(safeStringify({
+    title: exerciseSet.title,
+    summary: exerciseSet.summary,
+    locale: exerciseSet.locale,
+    coverageNodeIds: exerciseSet.scope?.coverageNodeIds,
+    prerequisiteNodeIds: exerciseSet.scope?.prerequisiteNodeIds,
+    relatedNodeIds: exerciseSet.scope?.relatedNodeIds,
+  }));
+
+  if (setText) {
+    chunks.push({
+      ...baseChunk(node, nodeId, 9000, 0, "exercise-set", exerciseSet.title || "ExerciseSet", setText),
+      id: `fulltext:${nodeId}:exercise:set`,
+      targetView: "exercises",
+    });
+  }
+
+  (exerciseSet.problems || []).forEach((problem, problemIndex) => {
+    const text = exerciseProblemText(problem);
+    if (!text) return;
+    chunks.push({
+      ...baseChunk(
+        node,
+        nodeId,
+        9001 + problemIndex,
+        0,
+        "exercise",
+        problem.title || `Problem ${problemIndex + 1}`,
+        text,
+      ),
+      id: `fulltext:${nodeId}:exercise:${problem.id || problemIndex}`,
+      targetView: "exercises",
+      problemId: problem.id || "",
+    });
+  });
+
+  return chunks;
+}
+
 function htmlChunks(node, nodeId, html) {
   const text = htmlToSearchText(html);
   return splitSearchText(text).map((chunkText, chunkIndex) => (
@@ -171,6 +226,12 @@ function chunksForNote(nodeId, note) {
   });
 }
 
+function chunksForExerciseSet(nodeId, exerciseSet) {
+  const node = findGraphNode(nodeId);
+  if (!node) return [];
+  return exerciseChunks(node, nodeId, exerciseSet);
+}
+
 function sortByScore(a, b) {
   if (b.score !== a.score) return b.score - a.score;
   if (a.title !== b.title) return a.title.localeCompare(b.title);
@@ -180,10 +241,14 @@ function sortByScore(a, b) {
 export function buildFullTextSearchResults(query) {
   const normalizedQuery = String(query || "").trim();
   if (!normalizedQuery) return [];
-  const notes = getActiveVault().notes || {};
+  const activeVault = getActiveVault();
+  const notes = activeVault.notes || {};
+  const exerciseSetsByNodeId = activeVault.exercises?.byNodeId || {};
   const perNodeCount = new Map();
-  const scored = Object.entries(notes)
-    .flatMap(([nodeId, note]) => chunksForNote(nodeId, note || {}))
+  const scored = [
+    ...Object.entries(notes).flatMap(([nodeId, note]) => chunksForNote(nodeId, note || {})),
+    ...Object.entries(exerciseSetsByNodeId).flatMap(([nodeId, exerciseSet]) => chunksForExerciseSet(nodeId, exerciseSet)),
+  ]
     .map((chunk) => {
       const score = scoreFullTextChunk(normalizedQuery, chunk);
       return {

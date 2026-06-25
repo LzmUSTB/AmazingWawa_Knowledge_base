@@ -115,6 +115,11 @@ const crumbItems = computed(() => {
     items.push({ id: "source-snapshot", kind: "view", label: "Capture" });
     return items;
   }
+  if (props.currentView === "vault-package-export") {
+    items.push({ id: "tools", kind: "view-link", label: "Tools" });
+    items.push({ id: "vault-package-export", kind: "view", label: "Export Package" });
+    return items;
+  }
   if (props.currentView === "exercises" && !props.currentExerciseNodeId) {
     items.push({ id: "exercises", kind: "view", label: "Exercises" });
     return items;

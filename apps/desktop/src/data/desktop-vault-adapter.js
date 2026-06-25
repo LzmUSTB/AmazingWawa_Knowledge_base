@@ -210,10 +210,173 @@ export async function openVaultContextFolder(vaultRootPath) {
   await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/context" });
 }
 
+export async function openVaultExportsFolder(vaultRootPath) {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to open folders.");
+  if (!vaultRootPath) return;
+  await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/exports" });
+}
+
 export async function openWrongPracticeFolder(vaultRootPath) {
   if (!isTauri()) throw new Error("Desktop filesystem access is required to open folders.");
   if (!vaultRootPath) return;
   await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/wrong-practice" });
+}
+
+function timestampForPackageId(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
+
+function parentIdForNode(node, edges = []) {
+  const parentEdge = edges.find((edge) => edge.relation === "contains" && edge.to === node.id);
+  return parentEdge?.from || node.domain;
+}
+
+function orderedExportNodes(vault) {
+  const nodes = (vault.nodes || []).filter((node) => node.type !== "domain");
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const visited = new Set();
+  const visiting = new Set();
+  const ordered = [];
+  const visit = (node) => {
+    if (!node || visited.has(node.id)) return;
+    if (visiting.has(node.id)) {
+      ordered.push(node);
+      visited.add(node.id);
+      return;
+    }
+    visiting.add(node.id);
+    const parentId = parentIdForNode(node, vault.edges || []);
+    if (byId.has(parentId)) visit(byId.get(parentId));
+    visiting.delete(node.id);
+    if (!visited.has(node.id)) {
+      visited.add(node.id);
+      ordered.push(node);
+    }
+  };
+  nodes.forEach(visit);
+  return ordered;
+}
+
+function fullVaultPackageOperations(vault) {
+  const domains = (vault.domains || []).map((domain) => ({
+    type: "add_domain",
+    domain: {
+      id: domain.id,
+      title: domain.title || domain.id,
+      titleLocale: domain.titleLocale || "",
+      description: domain.description || "",
+      descriptionLocale: domain.descriptionLocale || "",
+      color: domain.color || "",
+      order: domain.order,
+    },
+  }));
+  const nodes = orderedExportNodes(vault)
+    .map((node) => ({
+      type: "add_node",
+      parentId: parentIdForNode(node, vault.edges || []),
+      node: {
+        id: node.id,
+        title: node.title || node.id,
+        titleLocale: node.titleLocale || "",
+        domain: node.domain,
+        type: node.type || "concept",
+        status: node.status || "seed",
+        summary: node.summary || "",
+        summaryLocale: node.summaryLocale || "",
+        contentFormat: node.contentFormat || (vault.notes?.[node.id]?.html ? "html" : vault.notes?.[node.id]?.markdown ? "markdown" : "none"),
+        aliases: node.aliases || [],
+        tags: node.tags || [],
+      },
+    }));
+  const exerciseOps = (vault.exercises?.all || []).map((exerciseSet) => {
+    const node = (vault.nodes || []).find((item) => item.id === exerciseSet.nodeId);
+    return {
+      type: "append_exercise_set",
+      targetId: exerciseSet.nodeId,
+      domain: node?.domain || "",
+    };
+  });
+  const relationOps = (vault.edges || [])
+    .filter((edge) => edge.relation !== "contains")
+    .map((edge) => ({
+      type: "add_edge",
+      from: edge.from,
+      to: edge.to,
+      relation: edge.relation,
+      reason: edge.reason || "",
+    }));
+  return [...domains, ...nodes, ...exerciseOps, ...relationOps];
+}
+
+function fullVaultPackagePayload(vault) {
+  const packageId = `wawa-import-vault-export-${timestampForPackageId()}`;
+  const nodeCount = (vault.nodes || []).filter((node) => node.type !== "domain").length;
+  const exerciseSetCount = vault.exercises?.all?.length || 0;
+  const nonContainsEdgeCount = (vault.edges || []).filter((edge) => edge.relation !== "contains").length;
+  const manifest = {
+    schemaVersion: 1.1,
+    packageFormat: "wawapkg",
+    packageKind: "import",
+    packageId,
+    title: `${vault.vault?.title || "Knowledge Vault"} Export`,
+    status: "ready",
+    preview: {
+      mode: "in-app",
+      generatedHtmlPreview: false,
+    },
+  };
+  const sources = {
+    sources: [
+      {
+        id: "vault-export",
+        type: "local-vault",
+        title: vault.vault?.title || "Knowledge Vault",
+        location: vault.vaultRootPath || "",
+      },
+    ],
+  };
+  const patch = {
+    operations: fullVaultPackageOperations(vault),
+  };
+  const review = [
+    "# Full Vault Export",
+    "",
+    `Package: ${packageId}`,
+    `Exported at: ${new Date().toISOString()}`,
+    "",
+    "## Contents",
+    "",
+    `- Domains: ${(vault.domains || []).length}`,
+    `- Nodes: ${nodeCount}`,
+    `- ExerciseSets: ${exerciseSetCount}`,
+    `- Non-contains relations: ${nonContainsEdgeCount}`,
+    "",
+    "This package is intended for sharing a full local-first knowledge vault with another Kinjito/AmazingWawa Knowledge Base user.",
+    "Import appends ExerciseSet problems by id and creates nodes/relations from the package patch.",
+  ].join("\n");
+  return {
+    packageId,
+    manifestRaw: YAML.stringify(manifest),
+    sourcesRaw: YAML.stringify(sources),
+    patchRaw: YAML.stringify(patch),
+    reviewRaw: `${review}\n`,
+  };
+}
+
+export async function exportVaultWawaPackage(vaultRootPath) {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to export .wawapkg files.");
+  if (!vaultRootPath) throw new Error("Configure an active vault before exporting a .wawapkg.");
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const payload = fullVaultPackagePayload(currentVault);
+  return invoke("export_vault_wawapkg", {
+    vaultRootPath,
+    packageId: payload.packageId,
+    manifestRaw: payload.manifestRaw,
+    sourcesRaw: payload.sourcesRaw,
+    patchRaw: payload.patchRaw,
+    reviewRaw: payload.reviewRaw,
+  });
 }
 
 export async function openSnapshotFolder() {

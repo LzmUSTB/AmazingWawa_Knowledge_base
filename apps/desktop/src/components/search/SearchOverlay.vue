@@ -149,7 +149,7 @@ function handleKeydown(event) {
         </header>
 
         <div v-if="mode === 'full-text' && !hasQuery" class="search-empty">
-          Type text to search Markdown notes, HTML notes, and content blocks.
+          Type text to search Markdown notes, HTML notes, content blocks, and ExerciseSets.
         </div>
 
         <div v-else-if="mode === 'full-text' && fullTextResults.length" class="result-stack">
@@ -158,7 +158,7 @@ function handleKeydown(event) {
             <button v-for="result in fullTextResults" :key="result.id" class="result-row result-row--fulltext"
               :class="{ 'is-selected': isSelected(result) }" type="button" @click="executeResult(result)"
               @mouseenter="selectedIndex = resultIndex(result)">
-              <span class="result-kind">text</span>
+              <span class="result-kind">{{ result.targetView === 'exercises' ? 'exercise' : 'text' }}</span>
               <span class="result-main">
                 <strong>{{ result.title }}</strong>
                 <small>{{ result.subtitle }}</small>
@@ -171,7 +171,7 @@ function handleKeydown(event) {
           </section>
         </div>
 
-        <div v-else-if="mode === 'full-text'" class="search-empty">No note content matched this query.</div>
+        <div v-else-if="mode === 'full-text'" class="search-empty">No note or ExerciseSet content matched this query.</div>
 
         <div v-else-if="!hasQuery" class="result-stack">
           <section class="result-section">
