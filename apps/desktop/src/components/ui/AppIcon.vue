@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 import arrowSwap from "../../assets/icons/arrow-swap.svg?raw";
+import back from "../../assets/icons/back.svg?raw";
 import chevronDown from "../../assets/icons/chevron-down.svg?raw";
 import chevronLeft from "../../assets/icons/chevron-left.svg?raw";
 import chevronRight from "../../assets/icons/chevron-right.svg?raw";
@@ -44,6 +45,7 @@ import emojiWrong from "../../assets/icons/emoji-wrong.svg?raw";
 
 const icons = {
   "arrow-swap": arrowSwap,
+  back,
   "chevron-down": chevronDown,
   "chevron-left": chevronLeft,
   "chevron-right": chevronRight,

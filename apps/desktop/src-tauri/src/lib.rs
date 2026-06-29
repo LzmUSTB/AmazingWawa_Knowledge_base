@@ -1953,6 +1953,65 @@ fn git_add_selected(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), Str
     Ok(())
 }
 
+fn validate_git_relative_path(path: &str) -> Result<String, String> {
+    let value = path.trim();
+    if value.is_empty() {
+        return Err("Changed file path is required.".into());
+    }
+    let relative = Path::new(value);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
+    {
+        return Err("Refusing to modify a path outside the active vault.".into());
+    }
+    Ok(value.replace('\\', "/"))
+}
+
+#[tauri::command]
+fn git_discard_path(app: tauri::AppHandle, path: String, status: String) -> Result<String, String> {
+    let root = active_vault_path(&app)?;
+    require_local_git_repo(&root)?;
+    let path = validate_git_relative_path(&path)?;
+    if status.trim() == "??" {
+        let target = root.join(&path);
+        if !target.exists() {
+            return Ok(format!("Untracked file already removed: {path}"));
+        }
+        let canonical_root = root
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve vault root: {error}"))?;
+        let canonical_target = target
+            .canonicalize()
+            .map_err(|error| format!("Failed to resolve changed file: {error}"))?;
+        if !canonical_target.starts_with(&canonical_root) {
+            return Err("Refusing to remove a path outside the active vault.".into());
+        }
+        if canonical_target.is_dir() {
+            fs::remove_dir_all(&canonical_target)
+                .map_err(|error| format!("Failed to remove untracked directory: {error}"))?;
+        } else {
+            fs::remove_file(&canonical_target)
+                .map_err(|error| format!("Failed to remove untracked file: {error}"))?;
+        }
+        return Ok(format!("Removed untracked file: {path}"));
+    }
+    let output = Command::new("git")
+        .current_dir(&root)
+        .arg("restore")
+        .arg("--staged")
+        .arg("--worktree")
+        .arg("--")
+        .arg(&path)
+        .output()
+        .map_err(|error| format!("Failed to run git restore: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    Ok(format!("Reverted file: {path}"))
+}
+
 #[tauri::command]
 fn git_commit(app: tauri::AppHandle, message: String) -> Result<String, String> {
     let root = active_vault_path(&app)?;
@@ -3052,6 +3111,7 @@ pub fn run() {
             git_branch,
             git_commit,
             git_create_checkpoint,
+            git_discard_path,
             git_init_vault,
             git_is_available,
             git_is_repo,

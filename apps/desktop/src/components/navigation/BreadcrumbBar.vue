@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { findGraphNode, getGraphEdges } from "../../graph/graph-data-store.js";
 import { getGraphScope, hasGraphScope, isDomainNode } from "../../graph/graph-scope.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps({
   currentDomain: {
@@ -25,12 +26,27 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  canGoBack: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(["open-domain", "open-scope", "show-graph", "show-view"]);
+const emit = defineEmits(["go-back", "open-domain", "open-scope", "show-graph", "show-view"]);
 
 const accent = computed(() => getDomainColor(props.currentDomain));
 const scope = computed(() => getGraphScope(props.graphScopeId));
+const tabLabels = {
+  "ai-import": "Import",
+  "context-export": "Export Context",
+  tools: "Tools",
+  "source-snapshot": "Capture",
+  "vault-package-export": "Export Package",
+  exercises: "Exercises",
+  "vault-settings": "Vault Settings",
+  "vault-setup": "Vault Setup",
+  "vault-git": "Vault Git",
+};
 
 function displayTitle(entity, fallback = "") {
   return entity?.titleLocale || entity?.title || entity?.id || fallback;
@@ -85,45 +101,6 @@ const graphCenterNodeId = computed(() => {
 
 const crumbItems = computed(() => {
   const items = [{ id: "root", kind: "root", label: "Global Graph" }];
-  if (props.currentView === "ai-import") {
-    items.push({ id: "ai-import", kind: "view", label: "Import" });
-    return items;
-  }
-  if (props.currentView === "context-export") {
-    items.push({ id: "context-export", kind: "view", label: "Export Context" });
-    return items;
-  }
-  if (props.currentView === "tools") {
-    items.push({ id: "tools", kind: "view", label: "Tools" });
-    return items;
-  }
-  if (props.currentView === "vault-settings") {
-    items.push({ id: "vault-settings", kind: "view", label: "Vault Settings" });
-    return items;
-  }
-  if (props.currentView === "vault-setup") {
-    items.push({ id: "vault-settings", kind: "view-link", label: "Vault Settings" });
-    items.push({ id: "vault-setup", kind: "view", label: "Vault Setup" });
-    return items;
-  }
-  if (props.currentView === "vault-git") {
-    items.push({ id: "vault-git", kind: "view", label: "Vault Git" });
-    return items;
-  }
-  if (props.currentView === "source-snapshot") {
-    items.push({ id: "tools", kind: "view-link", label: "Tools" });
-    items.push({ id: "source-snapshot", kind: "view", label: "Capture" });
-    return items;
-  }
-  if (props.currentView === "vault-package-export") {
-    items.push({ id: "tools", kind: "view-link", label: "Tools" });
-    items.push({ id: "vault-package-export", kind: "view", label: "Export Package" });
-    return items;
-  }
-  if (props.currentView === "exercises" && !props.currentExerciseNodeId) {
-    items.push({ id: "exercises", kind: "view", label: "Exercises" });
-    return items;
-  }
 
   const targetId = props.currentView === "graph"
     ? graphCenterNodeId.value
@@ -131,12 +108,19 @@ const crumbItems = computed(() => {
       ? props.currentNoteId
       : props.currentView === "exercises"
         ? props.currentExerciseNodeId
-        : "";
-  if (!targetId) return items;
-  containsPathIds(targetId).forEach((id) => items.push(crumbForId(id)));
-  if (props.currentView === "exercises") items.push({ id: "exercises", kind: "view", label: "Exercises" });
+        : graphCenterNodeId.value;
+  if (targetId) containsPathIds(targetId).forEach((id) => items.push(crumbForId(id)));
+
+  const tabLabel = tabLabels[props.currentView];
+  if (props.currentView !== "graph" && props.currentView !== "note" && tabLabel) {
+    items.push({ id: props.currentView, kind: "view", label: tabLabel, isTab: true });
+  }
   return items;
 });
+
+function separatorBefore(index) {
+  return crumbItems.value[index]?.isTab ? "+" : "/";
+}
 
 function openCrumb(crumb) {
   if (crumb.kind === "root") {
@@ -160,13 +144,21 @@ function openCrumb(crumb) {
 
 <template>
   <div class="breadcrumb-bar" :style="{ '--crumb-color': accent }">
-    <span class="crumb-dot"></span>
-    <template v-for="(crumb, index) in crumbItems" :key="crumb.id">
-      <button class="bread-button" @click="openCrumb(crumb)">
-        {{ crumb.label }}
-      </button>
-      <span v-if="index < crumbItems.length - 1">/</span>
-    </template>
+    <div class="crumb-list">
+      <span class="crumb-dot"></span>
+      <template v-for="(crumb, index) in crumbItems" :key="`${crumb.kind}:${crumb.id}`">
+        <span v-if="index > 0" class="crumb-separator" :class="{ 'is-tab-separator': crumb.isTab }">
+          {{ separatorBefore(index) }}
+        </span>
+        <button class="bread-button" :class="{ 'is-tab': crumb.isTab }" @click="openCrumb(crumb)">
+          {{ crumb.label }}
+        </button>
+      </template>
+    </div>
+    <button v-if="canGoBack" class="bread-back button-with-icon" type="button" title="Back" @click="$emit('go-back')">
+      <AppIcon name="back" :size="14" />
+      <span>Back</span>
+    </button>
   </div>
 </template>
 
@@ -174,7 +166,6 @@ function openCrumb(crumb) {
 .breadcrumb-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
   height: 46px;
   padding: 0 18px;
   border-bottom: 1px solid var(--border-primary);
@@ -185,10 +176,28 @@ function openCrumb(crumb) {
   text-transform: uppercase;
 }
 
+.crumb-list {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
 .crumb-dot {
+  flex: 0 0 auto;
   width: 8px;
   height: 8px;
   background: var(--crumb-color);
+}
+
+.crumb-separator {
+  flex: 0 0 auto;
+}
+
+.crumb-separator.is-tab-separator {
+  color: var(--crumb-color);
+  font-size: calc(var(--font-size-label) + 2px);
 }
 
 button {
@@ -201,6 +210,17 @@ button {
   text-transform: inherit;
 }
 
+.bread-button {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bread-button.is-tab {
+  color: var(--text-primary);
+}
+
 .bread-button:hover {
   color: var(--text-primary);
   text-decoration: underline;
@@ -208,11 +228,20 @@ button {
   text-underline-offset: 5px;
 }
 
-.show-graph {
+.bread-back {
   margin-left: auto;
-  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--crumb-color);
   background: var(--background-panel);
   color: var(--text-primary);
+  flex: 0 0 auto;
+}
+
+.bread-back:hover {
+  background: var(--background-elevated);
 }
 </style>

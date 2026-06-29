@@ -10,6 +10,10 @@ const loading = ref(true);
 const busy = ref(false);
 const error = ref("");
 const notice = ref("");
+const remoteError = ref("");
+const remoteNotice = ref("");
+const busyAction = ref("");
+const discardingPath = ref("");
 const status = ref({ isRepo: false, clean: true, branch: "", remoteUrl: "", groups: {}, conflicts: [] });
 const history = ref([]);
 const remoteUrl = ref("");
@@ -38,6 +42,7 @@ const layoutOnly = computed(() => groups.value.layout.length > 0
   && !groups.value.knowledge.length && !groups.value.progress.length && !groups.value.other.length);
 const canCommit = computed(() => status.value.isRepo && commitMessage.value.trim() && selectedPaths.value.length
   && !status.value.conflicts?.length && !busy.value);
+const remoteBusy = computed(() => busy.value && ["pull", "push", "sync", "remote"].includes(busyAction.value));
 
 function applyDefaultSelections() {
   const hasKnowledge = groups.value.knowledge.length > 0;
@@ -65,20 +70,29 @@ async function refresh() {
   }
 }
 
-async function run(action, successMessage, { reloadVault = false } = {}) {
+async function run(action, successMessage, { reloadVault = false, busyLabel = "" } = {}) {
   if (busy.value) return;
   busy.value = true;
+  busyAction.value = busyLabel;
   error.value = "";
   notice.value = "";
+  if (["pull", "push", "sync", "remote"].includes(busyLabel)) {
+    remoteError.value = "";
+    remoteNotice.value = "";
+  }
   try {
     await action();
-    notice.value = successMessage;
+    if (["pull", "push", "sync", "remote"].includes(busyLabel)) remoteNotice.value = successMessage;
+    else notice.value = successMessage;
     if (reloadVault) emit("vault-changed");
     await refresh();
   } catch (caught) {
-    error.value = String(caught?.message || caught);
+    const message = String(caught?.message || caught);
+    if (["pull", "push", "sync", "remote"].includes(busyLabel)) remoteError.value = message;
+    else error.value = message;
   } finally {
     busy.value = false;
+    busyAction.value = "";
   }
 }
 
@@ -100,24 +114,24 @@ function commitSelected() {
 }
 
 function setRemote() {
-  run(() => vaultGit.remoteSet(remoteUrl.value), "Origin remote updated.");
+  run(() => vaultGit.remoteSet(remoteUrl.value), "Origin remote updated.", { busyLabel: "remote" });
 }
 
 function testRemote() {
-  run(() => vaultGit.remoteTest(), "Remote is reachable.");
+  run(() => vaultGit.remoteTest(), "Remote is reachable.", { busyLabel: "remote" });
 }
 
 function pull() {
-  run(() => vaultGit.pull(), "Pull with rebase completed.", { reloadVault: true });
+  run(() => vaultGit.pull(), "Pull with rebase completed.", { reloadVault: true, busyLabel: "pull" });
 }
 
 function push() {
-  run(() => vaultGit.push(), "Push completed.");
+  run(() => vaultGit.push(), "Push completed.", { busyLabel: "push" });
 }
 
 function sync() {
   if (status.value.clean) {
-    run(() => vaultGit.sync(), "Sync completed.", { reloadVault: true });
+    run(() => vaultGit.sync(), "Sync completed.", { reloadVault: true, busyLabel: "sync" });
     return;
   }
   if (!layoutOnly.value) {
@@ -136,11 +150,25 @@ function sync() {
       await vaultGit.unstash(stashRef);
     }
     await vaultGit.push();
-  }, "Sync completed and layout changes were reapplied.", { reloadVault: true });
+  }, "Sync completed and layout changes were reapplied.", { reloadVault: true, busyLabel: "sync" });
 }
 
 function checkpoint(reason = "manual checkpoint") {
   run(() => vaultGit.checkpoint(reason), "Checkpoint created.");
+}
+
+function discardChange(change) {
+  if (!change?.path || busy.value) return;
+  const action = change.status === "??" ? "remove this untracked file" : "revert this file to HEAD";
+  if (!window.confirm(`Discard ${change.path}?\n\nThis will ${action}.`)) return;
+  discardingPath.value = change.path;
+  run(
+    () => vaultGit.discardPath(change.path, change.status),
+    `Discarded ${change.path}.`,
+    { reloadVault: true },
+  ).finally(() => {
+    discardingPath.value = "";
+  });
 }
 
 async function restore(entry) {
@@ -169,6 +197,14 @@ onMounted(refresh);
       <div><div class="section-kicker">Vault Git</div><h1>Version & Sync</h1><p>Every operation is scoped to the configured active vault.</p></div>
       <button class="hud-button button-with-icon" type="button" :disabled="loading || busy" @click="refresh"><AppIcon name="refresh" /><span>Refresh</span></button>
     </header>
+    <div class="git-feedback-slot" :class="{ 'has-message': notice || error || (busy && !remoteBusy) }">
+      <div v-if="busy && !remoteBusy" class="git-message git-message--busy">
+        <span class="git-spinner" aria-hidden="true"></span>
+        <span>{{ busyAction ? `Running ${busyAction}...` : "Running Git operation..." }}</span>
+      </div>
+      <div v-else-if="notice" class="git-message">{{ notice }}</div>
+      <pre v-else-if="error" class="git-message git-message--error">{{ error }}</pre>
+    </div>
 
     <div v-if="!available" class="git-message git-message--error">Git is not installed or not available in PATH.</div>
     <template v-else>
@@ -207,7 +243,17 @@ git commit -m "stop tracking local vault"</pre>
               ['Tracked Generated Files', groups.ignoredOrGenerated],
             ]" :key="group[0]" v-show="group[1].length" class="change-group">
               <strong>{{ group[0] }}</strong>
-              <div v-for="change in group[1]" :key="change.path" class="change-row" :title="change.path"><code>{{ change.status }}</code><span>{{ change.path }}</span></div>
+              <div v-for="change in group[1]" :key="change.path" class="change-row" :title="change.path">
+                <code>{{ change.status }}</code>
+                <span>{{ change.path }}</span>
+                <button class="change-discard button-with-icon" type="button"
+                  :disabled="busy"
+                  :title="change.status === '??' ? 'Remove untracked file' : 'Revert file changes'"
+                  @click="discardChange(change)">
+                  <span v-if="discardingPath === change.path" class="git-spinner git-spinner--small" aria-hidden="true"></span>
+                  <AppIcon v-else name="back" :size="13" />
+                </button>
+              </div>
             </div>
           </div>
           <p v-else>No working tree changes.</p>
@@ -236,6 +282,10 @@ git commit -m "stop tracking local vault"</pre>
         <section class="git-band sync-band">
           <div class="band-heading"><div><span>Sync</span><strong>PULL / PUSH</strong></div></div>
           <div class="sync-actions"><button class="hud-button" :disabled="busy || !status.remoteUrl || !status.clean" @click="pull">PULL --REBASE</button><button class="hud-button" :disabled="busy || !status.remoteUrl" @click="push">PUSH</button><button class="hud-button sync-button" :disabled="busy || !status.remoteUrl" @click="sync">SYNC</button></div>
+          <div class="remote-progress" :class="{ 'is-active': remoteBusy, 'has-notice': remoteNotice, 'has-error': remoteError }" aria-live="polite">
+            <span></span>
+            <strong>{{ remoteBusy ? `Running ${busyAction}...` : (remoteError || remoteNotice || "Remote operations idle") }}</strong>
+          </div>
         </section>
 
         <section class="git-band history-band">
@@ -249,8 +299,6 @@ git commit -m "stop tracking local vault"</pre>
       </template>
     </template>
 
-    <div v-if="notice" class="git-message">{{ notice }}</div>
-    <pre v-if="error" class="git-message git-message--error">{{ error }}</pre>
   </section>
 </template>
 
@@ -258,9 +306,14 @@ git commit -m "stop tracking local vault"</pre>
 .vault-git { height: 100%; overflow: auto; padding: 24px; }
 .git-header, .band-heading, .status-band { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .git-header { border-bottom: 1px solid var(--border-primary); padding-bottom: 18px; }
+.band-heading > div { display: flex; min-width: 0; align-items: baseline; gap: 12px; }
+.band-heading > div > span,
+.band-heading > div > strong { min-width: 0; }
 .section-kicker, .git-band span, .status-band span { color: var(--text-muted); font-size: var(--font-size-small); font-weight: 800; text-transform: uppercase; }
 h1 { margin: 7px 0; color: var(--text-primary); font-size: var(--font-size-title); text-transform: uppercase; }
 p { color: var(--text-secondary); }
+.git-feedback-slot { display: grid; min-height: 48px; align-items: center; }
+.git-feedback-slot .git-message { margin-top: 0; }
 .git-band { border-bottom: 1px solid var(--border-muted); padding: 18px 0; }
 .status-band { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
 .status-band > div { display: grid; gap: 6px; min-width: 0; }
@@ -272,8 +325,11 @@ p { color: var(--text-secondary); }
 .location-grid code, .location-grid strong { display: block; overflow: hidden; margin-top: 5px; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; }
 .change-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
 .change-group { min-width: 0; border: 1px solid var(--border-muted); background: var(--background-panel); padding: 12px; }
-.change-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; margin-top: 8px; color: var(--text-secondary); }
+.change-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; gap: 8px; margin-top: 8px; color: var(--text-secondary); }
 .change-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+.change-discard { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--border-muted); background: transparent; color: var(--text-muted); cursor: pointer; padding: 0; }
+.change-discard:hover:not(:disabled) { border-color: var(--game-dev); color: var(--game-dev); }
+.change-discard:disabled { cursor: not-allowed; opacity: .45; }
 .conflict-label { color: var(--game-dev); }
 .commit-controls { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: 12px; margin-top: 14px; }
 input { min-width: 0; border: 1px solid var(--border-primary); border-radius: 0; background: var(--background-panel); color: var(--text-primary); font: inherit; padding: 11px; }
@@ -282,12 +338,27 @@ input { min-width: 0; border: 1px solid var(--border-primary); border-radius: 0;
 .commit-note { margin: 10px 0 0; color: var(--text-muted); font-size: var(--font-size-small); }
 .remote-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto; gap: 10px; margin-top: 14px; }
 .sync-actions { display: flex; gap: 10px; margin-top: 14px; }
+.remote-progress { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 30px; margin-top: 12px; color: var(--text-muted); font-size: var(--font-size-small); text-transform: uppercase; }
+.remote-progress > span { position: relative; height: 3px; overflow: hidden; border: 1px solid var(--border-muted); background: var(--background-main); }
+.remote-progress > span::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 0; background: var(--career); opacity: .32; }
+.remote-progress.is-active > span::before { width: 38%; opacity: 1; animation: remote-progress-slide 1.1s linear infinite; }
+.remote-progress.is-active strong { color: var(--career); }
+.remote-progress.has-notice:not(.is-active) strong { color: var(--career); }
+.remote-progress.has-notice:not(.is-active) > span::before { width: 100%; opacity: 1; }
+.remote-progress.has-error:not(.is-active) strong { color: var(--game-dev); }
+.remote-progress.has-error:not(.is-active) > span { border-color: var(--game-dev); }
+.remote-progress.has-error:not(.is-active) > span::before { width: 100%; background: var(--game-dev); opacity: .45; }
 .history-list { display: grid; gap: 8px; margin-top: 14px; }
 .history-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; align-items: center; gap: 12px; border: 1px solid var(--border-muted); background: var(--background-panel); padding: 10px; }
 .history-row > div { display: grid; min-width: 0; }
 .history-row strong { overflow: hidden; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; }
 .git-message { margin-top: 14px; border: 1px solid var(--career); color: var(--text-secondary); background: var(--background-panel); padding: 12px; white-space: pre-wrap; }
+.git-message--busy { display: inline-flex; align-items: center; gap: 10px; color: var(--career); }
 .git-message--warning { border-color: var(--career); color: var(--career); }
 .git-message--error { border-color: var(--game-dev); color: var(--game-dev); }
+.git-spinner { width: 13px; height: 13px; border: 2px solid color-mix(in srgb, var(--career), transparent 62%); border-top-color: var(--career); animation: git-spin .8s linear infinite; }
+.git-spinner--small { width: 11px; height: 11px; border-width: 2px; }
+@keyframes git-spin { to { transform: rotate(360deg); } }
+@keyframes remote-progress-slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(270%); } }
 @media (max-width: 980px) { .status-band, .commit-controls, .remote-row, .location-grid { grid-template-columns: 1fr; } .history-row { grid-template-columns: 72px minmax(0, 1fr); } .history-row button { grid-column: 1 / -1; } }
 </style>

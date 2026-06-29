@@ -92,6 +92,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  canGoBack: {
+    type: Boolean,
+    default: false,
+  },
   canAddNote: {
     type: Boolean,
     default: false,
@@ -202,6 +206,7 @@ const emit = defineEmits([
   "ai-import-applied",
   "close-dialog",
   "close-relation-edit",
+  "go-back",
   "export-context",
   "open-dialog",
   "open-domain",
@@ -283,8 +288,10 @@ function fitGraphView() {
       <main class="workspace">
         <BreadcrumbBar :current-domain="currentDomain" :current-note-id="currentNoteId" :current-view="currentView"
           :current-exercise-node-id="currentExerciseNodeId"
+          :can-go-back="canGoBack"
           @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
           @open-scope="relayOpenScope"
+          @go-back="$emit('go-back')"
           @show-graph="$emit('show-graph', $event)" @show-view="$emit('show-view', $event)" />
 
         <template v-if="currentView === 'graph'">

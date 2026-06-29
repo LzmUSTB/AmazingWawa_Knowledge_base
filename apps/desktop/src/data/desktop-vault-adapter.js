@@ -138,6 +138,7 @@ export const vaultGit = {
   remoteSet: (remoteUrl) => invoke("git_remote_set", { remoteUrl }),
   remoteTest: () => invoke("git_remote_test"),
   addSelected: (paths) => invoke("git_add_selected", { paths }),
+  discardPath: (path, status) => invoke("git_discard_path", { path, status }),
   commit: (message) => invoke("git_commit", { message }),
   pull: () => invoke("git_pull_rebase"),
   push: () => invoke("git_push"),

@@ -138,6 +138,7 @@ const recentResults = computed(() =>
     excludeIds: pinnedNodeIdSet.value,
   }),
 );
+const canGoBack = computed(() => backStack.value.length > 0);
 
 const uiScaleStyle = computed(() => ({
   "--ui-font-scale": uiFontScale.value,
@@ -243,6 +244,19 @@ function pushNavigationHistory(nextEntry) {
 }
 
 function validatedNavigationEntry(entry) {
+  const validViews = new Set([
+    "graph",
+    "note",
+    "exercises",
+    "ai-import",
+    "context-export",
+    "tools",
+    "source-snapshot",
+    "vault-package-export",
+    "vault-settings",
+    "vault-setup",
+    "vault-git",
+  ]);
   const scopeId = hasGraphScope(entry.scopeId) ? entry.scopeId : "root";
   const selectedId = findGraphNode(entry.selectedNodeId) ? entry.selectedNodeId : "";
   const noteId = findGraphNode(entry.currentNoteId) ? entry.currentNoteId : selectedId;
@@ -254,7 +268,7 @@ function validatedNavigationEntry(entry) {
     : findGraphNode(selectedId)?.domain || getFallbackDomain();
   return {
     ...entry,
-    view: ["note", "exercises"].includes(entry.view) ? entry.view : "graph",
+    view: validViews.has(entry.view) ? entry.view : "graph",
     scopeId,
     selectedNodeId: selectedId,
     currentNoteId: noteId,
@@ -781,13 +795,12 @@ function openExercisesOverview() {
   pushNavigationHistory({
     view: "exercises",
     scopeId: graphScopeId.value,
-    selectedNodeId: "",
+    selectedNodeId: selectedNodeId.value,
     currentNoteId: currentNoteId.value,
     currentExerciseNodeId: "",
     currentDomain: currentDomain.value,
   });
   currentExerciseNodeId.value = "";
-  selectedNodeId.value = "";
   currentView.value = "exercises";
   return true;
 }
@@ -1023,7 +1036,17 @@ function setNoteMode(mode) {
 
 function showView(viewName) {
   if (viewName === "graph") {
-    showGraph("root", "");
+    if (!confirmDiscardDirty()) return;
+    pushNavigationHistory({
+      view: "graph",
+      scopeId: graphScopeId.value,
+      selectedNodeId: selectedNodeId.value,
+      currentNoteId: currentNoteId.value,
+      currentExerciseNodeId: currentExerciseNodeId.value,
+      currentDomain: currentDomain.value,
+    });
+    currentView.value = "graph";
+    noteMode.value = "read";
     return;
   }
   if (viewName === "exercises") {
@@ -1031,9 +1054,15 @@ function showView(viewName) {
     return;
   }
   if (!confirmDiscardDirty()) return;
+  pushNavigationHistory({
+    view: viewName,
+    scopeId: graphScopeId.value,
+    selectedNodeId: selectedNodeId.value,
+    currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: currentExerciseNodeId.value,
+    currentDomain: currentDomain.value,
+  });
   if (viewName === "context-export") contextExportError.value = "";
-  currentExerciseNodeId.value = "";
-  selectedNodeId.value = "";
   currentView.value = viewName;
 }
 
@@ -1457,6 +1486,7 @@ function toggleRelationSidebar() {
       :add-link-saving="addLinkSaving"
       :app-title="activeVaultTitle"
       :can-add-note="canAddNote"
+      :can-go-back="canGoBack"
       :can-save-layout="canSaveLayout"
       :can-save-note="canSaveNote"
       :can-create-note="hasRealVault"
@@ -1506,6 +1536,7 @@ function toggleRelationSidebar() {
       @edit-entity="requestEditEntity"
       @edit-layout="startLayoutEditing"
       @export-context="handleExportContext"
+      @go-back="goBack"
       @ensure-layout-draft="ensureLayoutDraft"
       @layout-node-dragged="updateDraftNodeLayout"
       @open-dialog="openDialog"
