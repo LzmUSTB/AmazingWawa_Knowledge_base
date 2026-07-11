@@ -223,6 +223,15 @@ export async function openWrongPracticeFolder(vaultRootPath) {
   await invoke("open_vault_relative_dir", { vaultRootPath, relativePath: ".kb-ai/wrong-practice" });
 }
 
+export async function openKnowledgeItemFolder(vaultRootPath, node) {
+  if (!isTauri()) throw new Error("Desktop filesystem access is required to open folders.");
+  if (!vaultRootPath || !node?.id) return;
+  const relativePath = node.type === "domain"
+    ? `content/${node.id}`
+    : `content/${node.domain}/${node.id}`;
+  await invoke("open_vault_relative_dir", { vaultRootPath, relativePath });
+}
+
 function timestampForPackageId(date = new Date()) {
   const pad = (value) => String(value).padStart(2, "0");
   return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;

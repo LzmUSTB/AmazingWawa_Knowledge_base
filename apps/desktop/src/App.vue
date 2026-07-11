@@ -23,6 +23,7 @@ import {
   loadInitialVault,
   loadVaultFromPath,
   moveActiveVault,
+  openKnowledgeItemFolder,
   openVaultContextFolder,
   removeGraphLink,
   replaceGraphLink,
@@ -805,6 +806,23 @@ function openExercisesOverview() {
   return true;
 }
 
+async function openNodeFolder(nodeId) {
+  if (!activeVaultRootPath.value) {
+    window.alert("Configure an active vault before opening folders.");
+    return false;
+  }
+  const node = findGraphNode(nodeId);
+  if (!node) return false;
+  try {
+    await openKnowledgeItemFolder(activeVaultRootPath.value, node);
+    return true;
+  } catch (error) {
+    console.error("[vault] Failed to open node folder.", error);
+    window.alert(`Failed to open folder: ${error?.message || error}`);
+    return false;
+  }
+}
+
 async function importExerciseSet(nodeId) {
   if (!confirmDiscardDirty()) return false;
   if (!canSaveNote.value) {
@@ -1541,6 +1559,7 @@ function toggleRelationSidebar() {
       @layout-node-dragged="updateDraftNodeLayout"
       @open-dialog="openDialog"
       @open-domain="openDomain"
+      @open-folder="openNodeFolder"
       @open-note="openNote"
       @open-exercises="openExercises"
       @open-scope="openScope"

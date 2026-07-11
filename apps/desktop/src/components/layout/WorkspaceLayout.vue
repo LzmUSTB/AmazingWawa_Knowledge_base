@@ -210,6 +210,7 @@ const emit = defineEmits([
   "export-context",
   "open-dialog",
   "open-domain",
+  "open-folder",
   "open-note",
   "open-exercises",
   "open-scope",
@@ -359,6 +360,7 @@ function fitGraphView() {
         :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
         @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
         @open-exercises="$emit('open-exercises', $event)"
+        @open-folder="$emit('open-folder', $event)"
         @request-add-link="$emit('request-add-link')"
         @request-delete-note="$emit('delete-note', $event)"
         @request-delete-relation="$emit('request-delete-relation', $event)"

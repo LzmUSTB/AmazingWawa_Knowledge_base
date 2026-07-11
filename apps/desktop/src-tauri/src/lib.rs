@@ -2934,10 +2934,13 @@ fn remove_file(vault_root_path: String, relative_path: String) -> Result<(), Str
 
 #[tauri::command]
 fn open_vault_relative_dir(vault_root_path: String, relative_path: String) -> Result<String, String> {
-    if relative_path != ".kb-ai/context" && relative_path != ".kb-ai/wrong-practice" && relative_path != ".kb-ai/exports" {
-        return Err("Only exported AI context directories can be opened from the vault.".into());
+    let normalized = relative_path.replace('\\', "/");
+    let allowed_export_dir = normalized == ".kb-ai/context" || normalized == ".kb-ai/wrong-practice" || normalized == ".kb-ai/exports";
+    let allowed_content_dir = normalized == "content" || normalized.starts_with("content/");
+    if !allowed_export_dir && !allowed_content_dir {
+        return Err("Only vault content and exported AI context directories can be opened.".into());
     }
-    let target_path = safe_vault_path(&vault_root_path, &relative_path)?;
+    let target_path = safe_vault_path(&vault_root_path, &normalized)?;
     fs::create_dir_all(&target_path)
         .map_err(|error| format!("Failed to create {}: {error}", target_path.to_string_lossy()))?;
     let canonical_root = PathBuf::from(&vault_root_path)

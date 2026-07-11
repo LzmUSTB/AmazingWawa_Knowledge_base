@@ -68,6 +68,7 @@ const props = defineProps({
 const emit = defineEmits([
   "add-link",
   "open-domain",
+  "open-folder",
   "open-note",
   "open-exercises",
   "open-scope",
@@ -294,6 +295,11 @@ function requestDeleteNote() {
         <section class="sidebar-section">
           <div class="section-label">Actions</div>
           <div class="action-grid">
+            <button class="hud-button button-with-icon" style="--button-color: var(--relation-node-color)"
+              @click="$emit('open-folder', node.id)">
+              <AppIcon name="folder-open" />
+              <span class="button-icon-label">Open Folder</span>
+            </button>
             <button v-if="domainSelected" class="hud-button button-with-icon"
               style="--button-color: var(--relation-node-color)" @click="$emit('open-domain', node.id)">
               <AppIcon name="graph" />
