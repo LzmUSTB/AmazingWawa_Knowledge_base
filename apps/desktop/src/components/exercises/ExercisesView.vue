@@ -7,7 +7,7 @@ import {
   exerciseStatus,
   rateExerciseProblem,
   savePracticeAnswer,
-} from "../../../../../packages/knowledge-core/src/index.js";
+} from "@kinjito/protocol";
 import { writeWrongPracticeExport, openWrongPracticeFolder } from "../../data/desktop-vault-adapter.js";
 import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
 import NoteBlockRenderer from "../note/NoteBlockRenderer.vue";

@@ -762,6 +762,37 @@ fn settings_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(config_dir.join("kinjito-settings.yaml"))
 }
 
+fn integration_config_home() -> Result<PathBuf, String> {
+    std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(PathBuf::from)
+        .ok_or("Failed to resolve user home directory for Kinjito integration config.".into())
+}
+
+fn write_integration_pointer_at(home: &Path, active_vault: &Path, remote_url: &str) -> Result<PathBuf, String> {
+    let directory = home.join(".kinjito");
+    fs::create_dir_all(&directory)
+        .map_err(|error| format!("Failed to create Kinjito integration config directory: {error}"))?;
+    let target = directory.join("config.json");
+    let updated_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| format!("System clock error: {error}"))?
+        .as_secs();
+    let payload = serde_json::json!({
+        "version": 1,
+        "activeVaultPath": path_to_display_string(active_vault),
+        "remoteUrl": remote_url,
+        "updatedAt": format!("unix:{updated_at}"),
+    });
+    fs::write(&target, serde_json::to_vec_pretty(&payload).map_err(|error| error.to_string())?)
+        .map_err(|error| format!("Failed to write {}: {error}", target.to_string_lossy()))?;
+    Ok(target)
+}
+
+fn write_integration_pointer(active_vault: &Path, remote_url: &str) -> Result<PathBuf, String> {
+    write_integration_pointer_at(&integration_config_home()?, active_vault, remote_url)
+}
+
 fn parse_app_settings(raw: &str) -> AppSettings {
     let mut settings = AppSettings::default();
     for line in raw.lines() {
@@ -802,7 +833,13 @@ fn write_settings_file(app: &tauri::AppHandle, settings: &AppSettings) -> Result
         &path,
         format!("version: {}\nactiveVaultPath: \"{}\"\n", settings.version.max(1), normalized_path),
     )
-    .map_err(|error| format!("Failed to write {}: {error}", path.to_string_lossy()))
+    .map_err(|error| format!("Failed to write {}: {error}", path.to_string_lossy()))?;
+    if !settings.active_vault_path.trim().is_empty() {
+        let active = PathBuf::from(&settings.active_vault_path);
+        let remote = if is_git_repo_at(&active) { git_remote_at(&active) } else { String::new() };
+        write_integration_pointer(&active, &remote)?;
+    }
+    Ok(())
 }
 
 fn active_vault_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -1426,7 +1463,9 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
         if compression != 0 && compression != 8 {
             return Err(format!("Invalid .wawapkg: unsupported compression method {compression}"));
         }
-        expected_entries.insert(entry_name, uncompressed_size);
+        if expected_entries.insert(entry_name.clone(), uncompressed_size).is_some() {
+            return Err(format!("Invalid .wawapkg: duplicate entry {entry_name}"));
+        }
     }
 
     let script = r#"
@@ -1919,6 +1958,7 @@ fn git_remote_set(app: tauri::AppHandle, remote_url: String) -> Result<String, S
     } else {
         run_git_at(&root, &["remote", "set-url", "origin", &remote])?;
     }
+    write_integration_pointer(&root, &remote)?;
     Ok(remote)
 }
 
@@ -3086,6 +3126,36 @@ mod tests {
         run_git_at(&root, &["add", "vault/graph.yaml"]).unwrap();
         assert_eq!(app_repo_tracked_vault_count(&root), 1);
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn integration_pointer_is_secret_free_and_written_only_to_selected_home() {
+        let home = test_directory("integration-pointer-home");
+        let vault = test_directory("integration-pointer-vault");
+        fs::create_dir_all(&home).unwrap();
+        fs::create_dir_all(&vault).unwrap();
+        let target = write_integration_pointer_at(&home, &vault, "https://github.com/example/vault.git").unwrap();
+        assert_eq!(target, home.join(".kinjito/config.json"));
+        let payload: serde_json::Value = serde_json::from_str(&fs::read_to_string(target).unwrap()).unwrap();
+        assert_eq!(payload["version"], 1);
+        assert_eq!(payload["remoteUrl"], "https://github.com/example/vault.git");
+        assert!(payload.get("token").is_none());
+        fs::remove_dir_all(home).unwrap();
+        fs::remove_dir_all(vault).unwrap();
+    }
+
+    #[test]
+    fn wawapkg_contract_consumes_shared_cases_and_matches_asset_policy() {
+        let fixture_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../fixtures/wawapkg-contract/cases.json");
+        let fixture: serde_json::Value = serde_json::from_str(&fs::read_to_string(fixture_path).unwrap()).unwrap();
+        assert_eq!(fixture["cases"].as_array().unwrap().len(), 10);
+        assert!(html_note_entry("generated/content/math/demo/note.html"));
+        for extension in ["css", "js", "png", "wasm", "woff2", "glb"] {
+            assert!(allowed_asset_extension(&format!("generated/content/math/demo/assets/file.{extension}")));
+        }
+        assert!(!allowed_asset_extension("generated/content/math/demo/assets/run.exe"));
+        assert!(normalize_zip_entry_path("generated/../evil.txt").is_err());
     }
 }
 

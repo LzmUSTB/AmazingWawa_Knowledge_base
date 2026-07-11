@@ -4,7 +4,7 @@ import {
   getRegisteredDeclarativeBlockType,
   isNativeBlockType,
   isRegisteredDeclarativeBlockType,
-} from "../../../../packages/knowledge-core/src/index.js";
+} from "@kinjito/protocol";
 
 const NATIVE_BLOCK_TYPE_SET = new Set(NATIVE_BLOCK_TYPES);
 

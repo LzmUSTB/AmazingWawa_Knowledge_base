@@ -45,6 +45,8 @@ function normalizeProblem(problem = {}, index, seenIds, errors) {
   if (!mode) problemErrors.push(`Problem "${id || index}" mode is required.`);
   else if (!EXERCISE_MODES.includes(mode)) problemErrors.push(`Problem "${id || index}" has unsupported mode "${mode}".`);
   if (!EXERCISE_TYPES.includes(problem?.type)) problemErrors.push(`Problem "${id || index}" has unsupported type "${problem?.type || ""}".`);
+  if (problem?.type === "diagnostic" && mode !== "practice") problemErrors.push(`Problem "${id || index}" diagnostic type must use mode "practice".`);
+  if (problem?.type && problem.type !== "conceptual" && mode === "recall") problemErrors.push(`Problem "${id || index}" type "${problem.type}" must use mode "practice".`);
   if (!EXERCISE_DIFFICULTIES.includes(problem?.difficulty)) problemErrors.push(`Problem "${id || index}" has unsupported difficulty "${problem?.difficulty || ""}".`);
   if (!String(problem?.title || "").trim()) problemErrors.push(`Problem "${id || index}" title is required.`);
   ["prompt", "answer", "solution"].forEach((field) => {
@@ -149,7 +151,6 @@ function normalizePracticeProgress(key, entry = {}, mode) {
     exerciseSetNodeId: String(entry.exerciseSetNodeId || exerciseSetNodeId),
     problemId: String(entry.problemId || problemId),
     result,
-    lastResult: result,
     userAnswer: String(userAnswer || ""),
     answeredAt: String(answeredAt || ""),
     updatedAt: String(entry.updatedAt || answeredAt || ""),

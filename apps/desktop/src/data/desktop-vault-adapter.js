@@ -10,7 +10,7 @@ import {
   normalizeAiPackageFiles,
   normalizeVault,
   validateAiPackage,
-} from "../../../../packages/knowledge-core/src/index.js";
+} from "@kinjito/protocol";
 
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
 const LEGACY_VAULT_KEY = "amazingwawa.lastVaultRootPath";

@@ -598,11 +598,13 @@ function validateExerciseProblem(problem, index, seenIds, errors, contextName) {
   if (!mode) errors.push(`${contextName}: problem "${id || index}" is missing mode.`);
   if (mode && !EXERCISE_MODES.includes(mode)) errors.push(`${contextName}: problem "${id}" has unsupported mode "${mode}".`);
   if (!EXERCISE_TYPES.includes(type)) errors.push(`${contextName}: problem "${id}" has unsupported type "${type}".`);
+  if (type === "diagnostic" && mode !== "practice") errors.push(`${contextName}: diagnostic problem "${id}" must use mode "practice".`);
+  if (type !== "conceptual" && mode === "recall") errors.push(`${contextName}: problem "${id}" type "${type}" must use mode "practice".`);
   if (!EXERCISE_DIFFICULTIES.includes(difficulty)) errors.push(`${contextName}: problem "${id}" has unsupported difficulty "${difficulty}".`);
   ["title", "prompt", "answer", "solution"].forEach((field) => {
     if (!String(problem[field] || "").trim()) errors.push(`${contextName}: problem "${id || index}" is missing ${field}.`);
   });
-  if (problem.mistakeTags || problem.errorCategory || problem.weaknessCategory || problem.aiJudgement || problem.attempts || problem.accuracy || problem.attemptsLog) {
+  if (["mistakeTags", "errorCategory", "weaknessCategory", "aiJudgement", "attempts", "accuracy", "attemptsLog", "mastery", "ease", "interval"].some((field) => Object.prototype.hasOwnProperty.call(problem, field))) {
     errors.push(`${contextName}: problem "${id || index}" contains runtime/progress fields that do not belong in ExerciseSet files.`);
   }
   return {

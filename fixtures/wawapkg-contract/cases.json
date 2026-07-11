@@ -1,0 +1,15 @@
+{
+  "contractVersion": "1.0.0",
+  "cases": [
+    { "id": "empty-node", "kind": "proposal", "expected": "accept" },
+    { "id": "markdown-note", "kind": "proposal", "expected": "accept" },
+    { "id": "html-note-local-assets", "kind": "proposal", "expected": "accept", "assets": ["style.css", "app.js", "image.png"] },
+    { "id": "exercise-set-append", "kind": "proposal", "expected": "accept" },
+    { "id": "custom-block-type", "kind": "proposal", "expected": "accept" },
+    { "id": "unsafe-parent-path", "kind": "archive-path", "path": "generated/../evil.txt", "expected": "reject" },
+    { "id": "forbidden-executable", "kind": "archive-path", "path": "generated/content/math/node/assets/run.exe", "expected": "reject" },
+    { "id": "duplicate-problem-identical", "kind": "exercise-merge", "expected": "accept" },
+    { "id": "duplicate-problem-conflict", "kind": "exercise-merge", "expected": "reject" },
+    { "id": "stale-base-head", "kind": "remote-write", "expected": "reject" }
+  ]
+}

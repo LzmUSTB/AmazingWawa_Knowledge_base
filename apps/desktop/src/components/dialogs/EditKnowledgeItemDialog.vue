@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
-import { KNOWLEDGE_STATUS, KNOWLEDGE_TYPES } from "../../../../../packages/knowledge-core/src/index.js";
+import { KNOWLEDGE_STATUS, KNOWLEDGE_TYPES } from "@kinjito/protocol";
 import { findGraphNode, getDomains } from "../../graph/graph-data-store.js";
 import AppIcon from "../ui/AppIcon.vue";
 

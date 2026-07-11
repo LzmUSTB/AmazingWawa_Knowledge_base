@@ -7,20 +7,35 @@ export const MAX_WAWAPKG_TOTAL_SIZE = 100 * 1024 * 1024;
 export const MAX_WAWAPKG_FILE_SIZE = 20 * 1024 * 1024;
 export const MAX_WAWAPKG_FILE_COUNT = 1000;
 export const ALLOWED_ASSET_EXTENSIONS = new Set([
+  ".avif",
+  ".bin",
+  ".css",
   ".csv",
   ".gif",
+  ".glb",
+  ".gltf",
+  ".htm",
+  ".html",
   ".jpeg",
   ".jpg",
+  ".js",
   ".json",
   ".md",
+  ".mjs",
   ".mp3",
   ".mp4",
+  ".otf",
   ".pdf",
   ".png",
+  ".svg",
+  ".ttf",
   ".txt",
+  ".wasm",
   ".wav",
   ".webm",
   ".webp",
+  ".woff",
+  ".woff2",
   ".yaml",
   ".yml",
 ]);
@@ -70,6 +85,10 @@ function isAssetPath(entryPath) {
   return /^generated\/content\/[^/]+\/[^/]+\/assets\//.test(entryPath);
 }
 
+function isHtmlNotePath(entryPath) {
+  return /^generated\/content\/[^/]+\/[^/]+\/note\.html$/.test(entryPath);
+}
+
 function extensionOf(entryPath) {
   const fileName = entryPath.split("/").pop() || "";
   const dotIndex = fileName.lastIndexOf(".");
@@ -111,7 +130,9 @@ function assetVaultRelativePath(entryPath) {
 function assertAllowedEntry(entryPath) {
   if (isIgnoredEntry(entryPath)) return false;
   if (!isAllowedTopLevel(entryPath)) throw new Error(`Unknown top-level archive entry: ${entryPath}`);
-  if (FORBIDDEN_EXTENSIONS.has(extensionOf(entryPath))) throw new Error(`Forbidden archive entry type: ${entryPath}`);
+  if (!isHtmlNotePath(entryPath) && !isAssetPath(entryPath) && FORBIDDEN_EXTENSIONS.has(extensionOf(entryPath))) {
+    throw new Error(`Forbidden archive entry type: ${entryPath}`);
+  }
   if (isAssetPath(entryPath) && !ALLOWED_ASSET_EXTENSIONS.has(extensionOf(entryPath))) {
     throw new Error(`Unsupported asset file type: ${entryPath}`);
   }
@@ -149,6 +170,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
   if (centralDirectoryOffset + centralDirectorySize > bytes.length) throw new Error("Invalid .wawapkg central directory.");
 
   const textFiles = {};
+  const seenEntries = new Set();
   let totalSize = 0;
   let offset = centralDirectoryOffset;
   for (let index = 0; index < entryCount; index += 1) {
@@ -165,6 +187,8 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
     offset += 46 + nameLength + extraLength + commentLength;
     if (name.endsWith("/")) continue;
     if (!assertAllowedEntry(name)) continue;
+    if (seenEntries.has(name)) throw new Error(`Invalid .wawapkg: duplicate entry ${name}`);
+    seenEntries.add(name);
     if (((externalAttributes >>> 16) & 0o170000) === 0o120000) throw new Error(`Invalid .wawapkg: unsafe path ${name}`);
     totalSize += uncompressedSize;
     if (totalSize > MAX_WAWAPKG_TOTAL_SIZE) throw new Error("Package exceeds 100 MB uncompressed size limit.");
@@ -207,6 +231,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
     patchRaw: textFiles["patch.yaml"] || "",
     generatedMetaFiles: {},
     generatedNoteFiles: {},
+    generatedHtmlNoteFiles: {},
     generatedExerciseFiles: {},
     assetFiles: [],
     blockTypeFiles: {},
@@ -215,6 +240,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
   Object.entries(textFiles).forEach(([entryPath, contents]) => {
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/meta.yaml")) packageFiles.generatedMetaFiles[entryPath] = contents;
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/note.md")) packageFiles.generatedNoteFiles[entryPath] = contents;
+    if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/note.html")) packageFiles.generatedHtmlNoteFiles[entryPath] = contents;
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/exercises.yaml")) packageFiles.generatedExerciseFiles[entryPath] = contents;
     if (isAssetPath(entryPath)) {
       packageFiles.assetFiles.push({
@@ -229,4 +255,62 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
     if (entryPath.startsWith("review/")) packageFiles.reviewFiles[entryPath] = contents;
   });
   return normalizeAiPackageFiles(packageFiles);
+}
+
+function crc32Table() {
+  const table = [];
+  for (let index = 0; index < 256; index += 1) {
+    let value = index;
+    for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+    table[index] = value >>> 0;
+  }
+  return table;
+}
+
+const CRC_TABLE = crc32Table();
+function crc32(buffer) {
+  let value = 0xffffffff;
+  for (const byte of buffer) value = CRC_TABLE[(value ^ byte) & 0xff] ^ (value >>> 8);
+  return (value ^ 0xffffffff) >>> 0;
+}
+function u16(value) { const buffer = Buffer.alloc(2); buffer.writeUInt16LE(value); return buffer; }
+function u32(value) { const buffer = Buffer.alloc(4); buffer.writeUInt32LE(value >>> 0); return buffer; }
+
+export function writeWawaPackageBuffer(packageFiles) {
+  const entries = [
+    ["mimetype", Buffer.from(WAWAPKG_MIMETYPE)],
+    ["manifest.yaml", Buffer.from(packageFiles.manifestRaw || "")],
+    ["sources.yaml", Buffer.from(packageFiles.sourcesRaw || "")],
+    ["patch.yaml", Buffer.from(packageFiles.patchRaw || "")],
+    ...Object.entries(packageFiles.generatedMetaFiles || {}),
+    ...Object.entries(packageFiles.generatedNoteFiles || {}),
+    ...Object.entries(packageFiles.generatedHtmlNoteFiles || {}),
+    ...Object.entries(packageFiles.generatedExerciseFiles || {}),
+    ...Object.entries(packageFiles.blockTypeFiles || {}),
+    ...Object.entries(packageFiles.reviewFiles || {}),
+    ...(packageFiles.assetFiles || []).map((asset) => [asset.packageRelativePath, Buffer.from(asset.base64 || "", "base64")]),
+  ].map(([entryPath, contents]) => [normalizeEntryPath(entryPath), Buffer.isBuffer(contents) ? contents : Buffer.from(String(contents), "utf8")]);
+  const seen = new Set();
+  for (const [entryPath, contents] of entries) {
+    if (seen.has(entryPath)) throw new Error(`Duplicate .wawapkg entry: ${entryPath}`);
+    seen.add(entryPath);
+    assertAllowedEntry(entryPath);
+    if (contents.length > MAX_WAWAPKG_FILE_SIZE) throw new Error(`Package file too large: ${entryPath}`);
+  }
+  if (entries.length > MAX_WAWAPKG_FILE_COUNT) throw new Error(`Too many files in .wawapkg: ${entries.length}`);
+  if (entries.reduce((sum, entry) => sum + entry[1].length, 0) > MAX_WAWAPKG_TOTAL_SIZE) throw new Error("Package exceeds 100 MB uncompressed size limit.");
+  entries.sort((left, right) => left[0] === "mimetype" ? -1 : right[0] === "mimetype" ? 1 : left[0].localeCompare(right[0]));
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  for (const [entryPath, contents] of entries) {
+    const name = Buffer.from(entryPath, "utf8");
+    const checksum = crc32(contents);
+    const local = Buffer.concat([u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(checksum),u32(contents.length),u32(contents.length),u16(name.length),u16(0),name]);
+    localParts.push(local, contents);
+    centralParts.push(Buffer.concat([u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(checksum),u32(contents.length),u32(contents.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]));
+    offset += local.length + contents.length;
+  }
+  const central = Buffer.concat(centralParts);
+  return Buffer.concat([...localParts, central, u32(0x06054b50),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(central.length),u32(offset),u16(0)]);
 }

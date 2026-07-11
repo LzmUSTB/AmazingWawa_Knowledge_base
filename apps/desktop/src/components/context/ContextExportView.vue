@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
-import { buildAiContextFiles } from "../../../../../packages/knowledge-core/src/index.js";
+import { buildAiContextFiles } from "@kinjito/protocol";
 import { useActiveVault } from "../../graph/graph-data-store.js";
 import AppIcon from "../ui/AppIcon.vue";
 

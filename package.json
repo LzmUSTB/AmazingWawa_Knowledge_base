@@ -12,15 +12,15 @@
     "dev:desktop": "npm run tauri dev -w apps/desktop",
     "dev:viewer": "npm run dev -w apps/viewer",
     "build:viewer": "npm run build -w apps/viewer",
-    "kb:export-ai-context": "node packages/knowledge-core/scripts/export-ai-context.js",
-    "kb:validate-ai-import": "node packages/knowledge-core/scripts/validate-ai-import.js",
-    "kb:diff-ai-import": "node packages/knowledge-core/scripts/diff-ai-import.js",
-    "kb:apply-ai-import": "node packages/knowledge-core/scripts/apply-ai-import.js",
-    "kb:pack-ai-import": "node packages/knowledge-core/scripts/pack-ai-import.js",
-    "kb:reset-fixture-vault": "node packages/knowledge-core/scripts/reset-fixture-vault.js",
-    "kb:check-ai-import-mvp-b": "node packages/knowledge-core/scripts/check-ai-import-mvp-b.js",
+    "kb:export-ai-context": "node packages/kinjito-protocol/scripts/export-ai-context.js",
+    "kb:validate-ai-import": "node packages/kinjito-protocol/scripts/validate-ai-import.js",
+    "kb:diff-ai-import": "node packages/kinjito-protocol/scripts/diff-ai-import.js",
+    "kb:apply-ai-import": "node packages/kinjito-protocol/scripts/apply-ai-import.js",
+    "kb:pack-ai-import": "node packages/kinjito-protocol/scripts/pack-ai-import.js",
+    "kb:reset-fixture-vault": "node packages/kinjito-protocol/scripts/reset-fixture-vault.js",
+    "kb:check-ai-import-mvp-b": "node packages/kinjito-protocol/scripts/check-ai-import-mvp-b.js",
     "lint": "echo \"lint is not configured yet\"",
-    "check": "echo \"check is not configured yet\""
+    "check": "npm run check -w @kinjito/protocol && cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml"
   },
   "keywords": [
     "knowledge-base",
