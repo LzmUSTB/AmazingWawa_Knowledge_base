@@ -1,49 +1,41 @@
-# Knowledge System
+# Kinjito
 
-A local-first knowledge graph system.
+Kinjito is a local-first knowledge graph desktop application. The software and
+knowledge data are separate:
 
-## Goal
+- this repository contains the Tauri/Vue application and `@kinjito/protocol`;
+- a user-selected external active Vault contains knowledge and may be its own
+  independent Git/GitHub repository;
+- an ignored repository-local `vault/` is only a development convenience.
 
-This project aims to build a knowledge system that supports:
-
-- desktop maintenance
-- mobile/web viewing
-- Git-based version management
-- graph-based knowledge navigation
-- ChatGPT/Codex-assisted content maintenance
-
-## Structure
-
-```txt
-vault/                 Knowledge source files
-apps/desktop/          Tauri desktop maintenance app
-apps/viewer/           Mobile/web static viewer
-packages/              Shared parsing and rendering logic
-docs/                  Architecture and design documents
-```
+The desktop app stores its active path in application settings and publishes a
+non-secret integration pointer at `~/.kinjito/config.json`. It never stores a
+GitHub token there. Release builds suggest `Documents/Kinjito/vault`, outside
+the software checkout.
 
 ## Development
 
 ```bash
 npm install
+npm run check
 npm run dev:desktop
-npm run dev:viewer
+npm run build -w apps/desktop
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
 ```
 
-## Current Stack
+On first run choose one of: create a local Vault, open/import an existing Vault,
+or clone a Vault Git repository. Git init/status/remote/pull-rebase/push/sync
+operate only when the active Vault itself is the repository root; a parent
+software repository is never treated as the Vault repository.
 
-- npm workspaces
-- Tauri
-- Vue
-- JavaScript
-- Vite
-- Cytoscape.js
-- Markdown
-- YAML
-- Git
+## AI authoring workflow
 
-## Source of Truth
+Kinjito regenerates authoring context from current Vault files. AI proposals are
+validated and previewed before an apply plan is written. `.wawapkg` is an
+explicit portable import/export format; ExerciseSet import is append-only by
+problem id and conflicts never overwrite silently. Generated `.kb-ai/` context,
+history, cache, backups, and exports remain local/ignored by default.
 
-The source of truth is the `vault/` directory.
-
-Applications should read from `vault/`, but the knowledge data itself should remain plain files that can be managed by Git.
+See [the protocol contract](docs/kinjito-protocol.md),
+[desktop installation](docs/install-desktop.md), and
+[release checklist](docs/release-checklist.md).

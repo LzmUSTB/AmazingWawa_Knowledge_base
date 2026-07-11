@@ -4,14 +4,15 @@
 
 This repository is a local-first knowledge graph system.
 
-The source of truth is the `vault/` directory.
+The source of truth is the currently selected external active Vault directory.
+The repository-local ignored `vault/` is only an optional development fixture.
 
 ## Core Rules
 
 1. Do not mix graph index data and long-form content.
-2. Knowledge content lives in `vault/content/`.
-3. Graph relationships live in `vault/graph.yaml`.
-4. Domain metadata lives in `vault/domains.yaml`.
+2. Knowledge content lives in `<active-vault>/content/`.
+3. Graph relationships live in `<active-vault>/graph.yaml`.
+4. Domain metadata lives in `<active-vault>/domains.yaml`.
 5. Only important index-level relationships should be added to the graph.
 6. Use JavaScript, not TypeScript, unless the project policy changes later.
 7. Prefer plain files that are easy to inspect, edit, diff, and version through Git.
@@ -21,7 +22,7 @@ The source of truth is the `vault/` directory.
 Each concept should use this structure:
 
 ```txt
-vault/content/<domain>/<concept-id>/
+<active-vault>/content/<domain>/<concept-id>/
 ├─ meta.yaml
 ├─ note.md
 └─ assets/
