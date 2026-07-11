@@ -254,6 +254,7 @@ function validatedNavigationEntry(entry) {
     "tools",
     "source-snapshot",
     "vault-package-export",
+    "integrations-guide",
     "vault-settings",
     "vault-setup",
     "vault-git",

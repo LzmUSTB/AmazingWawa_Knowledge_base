@@ -34,6 +34,15 @@ defineEmits(["show-view"]);
         </span>
         <AppIcon class="tool-card__arrow" name="chevron-right" :size="16" />
       </button>
+
+      <button class="tool-card" type="button" @click="$emit('show-view', 'integrations-guide')">
+        <span class="tool-card__icon"><AppIcon name="git-branch" :size="24" /></span>
+        <span class="tool-card__body">
+          <strong>Skills &amp; Plugins Guide</strong>
+          <span>Install, invoke, update, and safely use the Kinjito Agent Skill and GitHub-backed MCP Plugin.</span>
+        </span>
+        <AppIcon class="tool-card__arrow" name="chevron-right" :size="16" />
+      </button>
     </main>
   </section>
 </template>

@@ -13,6 +13,7 @@ import NoteView from "../note/NoteView.vue";
 import EditRelationDialog from "../relation/EditRelationDialog.vue";
 import RelationSidebar from "../relation/RelationSidebar.vue";
 import SourceSnapshotView from "../source/SourceSnapshotView.vue";
+import IntegrationsGuideView from "../tools/IntegrationsGuideView.vue";
 import ToolsView from "../tools/ToolsView.vue";
 import VaultPackageExportView from "../tools/VaultPackageExportView.vue";
 import VaultGitView from "../vault/VaultGitView.vue";
@@ -324,6 +325,9 @@ function fitGraphView() {
         <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
 
         <VaultPackageExportView v-else-if="currentView === 'vault-package-export'" />
+
+        <IntegrationsGuideView v-else-if="currentView === 'integrations-guide'"
+          @close="$emit('show-view', 'tools')" />
 
         <ToolsView v-else-if="currentView === 'tools'" @show-view="$emit('show-view', $event)" />
 

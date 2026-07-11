@@ -42,6 +42,7 @@ const tabLabels = {
   tools: "Tools",
   "source-snapshot": "Capture",
   "vault-package-export": "Export Package",
+  "integrations-guide": "Skills & Plugins",
   exercises: "Exercises",
   "vault-settings": "Vault Settings",
   "vault-setup": "Vault Setup",
