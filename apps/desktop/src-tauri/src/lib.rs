@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{Read, Write};
+use flate2::read::DeflateDecoder;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -698,12 +699,13 @@ fn encode_base64(bytes: &[u8]) -> String {
     output
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WawaZipEntryPayload {
+struct WawaZipEntryMetadata {
     name: String,
-    size: u64,
-    base64: String,
+    compression: u16,
+    checksum: u32,
+    compressed_size: usize,
+    uncompressed_size: u64,
+    local_header_offset: usize,
 }
 
 fn safe_join(root: &str, relative_path: &str) -> Result<PathBuf, String> {
@@ -1413,7 +1415,7 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
     }
     let mut offset = read_u32(&bytes, eocd + 16)? as usize;
     let mut total_size: u64 = 0;
-    let mut expected_entries: HashMap<String, u64> = HashMap::new();
+    let mut expected_entries: HashMap<String, WawaZipEntryMetadata> = HashMap::new();
     for _ in 0..entry_count {
         if offset + 46 > bytes.len() {
             return Err("Invalid .wawapkg central directory range".into());
@@ -1422,12 +1424,14 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
             return Err("Invalid .wawapkg central directory".into());
         }
         let compression = read_u16(&bytes, offset + 10)?;
-        let _compressed_size = read_u32(&bytes, offset + 20)? as usize;
+        let checksum = read_u32(&bytes, offset + 16)?;
+        let compressed_size = read_u32(&bytes, offset + 20)? as usize;
         let uncompressed_size = read_u32(&bytes, offset + 24)? as u64;
         let name_len = read_u16(&bytes, offset + 28)? as usize;
         let extra_len = read_u16(&bytes, offset + 30)? as usize;
         let comment_len = read_u16(&bytes, offset + 32)? as usize;
         let external_attributes = read_u32(&bytes, offset + 38)?;
+        let local_header_offset = read_u32(&bytes, offset + 42)? as usize;
         let name_start = offset + 46;
         let name_end = name_start + name_len;
         let next_offset = name_end + extra_len + comment_len;
@@ -1463,83 +1467,47 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
         if compression != 0 && compression != 8 {
             return Err(format!("Invalid .wawapkg: unsupported compression method {compression}"));
         }
-        if expected_entries.insert(entry_name.clone(), uncompressed_size).is_some() {
+        let metadata = WawaZipEntryMetadata { name: entry_name.clone(), compression, checksum, compressed_size, uncompressed_size, local_header_offset };
+        if expected_entries.insert(entry_name.clone(), metadata).is_some() {
             return Err(format!("Invalid .wawapkg: duplicate entry {entry_name}"));
         }
     }
 
-    let script = r#"
-$ErrorActionPreference = 'Stop'
-$PackagePath = [Environment]::GetEnvironmentVariable('WAWA_PKG_PATH')
-if ([string]::IsNullOrWhiteSpace($PackagePath)) {
-  throw 'Missing WAWA_PKG_PATH environment variable.'
-}
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$zip = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
-$entries = @()
-try {
-  foreach ($entry in $zip.Entries) {
-    if ($entry.FullName.EndsWith('/')) { continue }
-    $stream = $entry.Open()
-    $memory = New-Object System.IO.MemoryStream
-    try {
-      $stream.CopyTo($memory)
-      $entries += [pscustomobject]@{
-        name = $entry.FullName
-        size = [int64]$entry.Length
-        base64 = [Convert]::ToBase64String($memory.ToArray())
-      }
-    } finally {
-      $memory.Dispose()
-      $stream.Dispose()
-    }
-  }
-} finally {
-  $zip.Dispose()
-}
-[Console]::Out.Write(($entries | ConvertTo-Json -Depth 4 -Compress))
-"#;
-    let output = Command::new("powershell")
-        .env("WAWA_PKG_PATH", package_path.to_string_lossy().to_string())
-        .args(["-NoProfile", "-Command", script])
-        .output()
-        .map_err(|error| format!("Failed to read .wawapkg zip entries: {error}"))?;
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-    let raw_json = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let entries: Vec<WawaZipEntryPayload> = if raw_json.is_empty() {
-        Vec::new()
-    } else if raw_json.starts_with('[') {
-        serde_json::from_str(&raw_json).map_err(|error| format!("Failed to parse .wawapkg entries: {error}"))?
-    } else {
-        vec![serde_json::from_str(&raw_json).map_err(|error| format!("Failed to parse .wawapkg entry: {error}"))?]
-    };
-
     let mut text_files: HashMap<String, String> = HashMap::new();
     let mut asset_files: Vec<AiImportAssetFile> = Vec::new();
-    for entry in entries {
-        let entry_name = normalize_zip_entry_path(&entry.name)?;
-        if entry_name.ends_with('/') || entry_name.starts_with("__MACOSX/") || entry_name.ends_with(".DS_Store") {
-            continue;
+    for entry in expected_entries.values() {
+        let entry_name = entry.name.clone();
+        if read_u32(&bytes, entry.local_header_offset)? != 0x04034b50 {
+            return Err(format!("Invalid local header for {entry_name}"));
         }
-        let Some(expected_size) = expected_entries.get(&entry_name) else {
-            return Err(format!("Invalid .wawapkg: unexpected entry {entry_name}"));
+        let local_name_len = read_u16(&bytes, entry.local_header_offset + 26)? as usize;
+        let local_extra_len = read_u16(&bytes, entry.local_header_offset + 28)? as usize;
+        let data_offset = entry.local_header_offset + 30 + local_name_len + local_extra_len;
+        let data_end = data_offset.checked_add(entry.compressed_size).ok_or("Invalid .wawapkg entry range")?;
+        if data_end > bytes.len() { return Err(format!("Invalid .wawapkg entry range for {entry_name}")); }
+        let compressed = &bytes[data_offset..data_end];
+        let data = if entry.compression == 0 {
+            compressed.to_vec()
+        } else {
+            let mut decoder = DeflateDecoder::new(compressed);
+            let mut output = Vec::with_capacity(entry.uncompressed_size as usize);
+            decoder.read_to_end(&mut output).map_err(|error| format!("Failed to deflate {entry_name}: {error}"))?;
+            output
         };
-        if *expected_size != entry.size {
+        if data.len() as u64 != entry.uncompressed_size {
             return Err(format!("Invalid .wawapkg: size mismatch for {entry_name}"));
         }
+        if crc32(&data) != entry.checksum { return Err(format!("Invalid .wawapkg: CRC mismatch for {entry_name}")); }
         if asset_entry(&entry_name) {
             asset_files.push(AiImportAssetFile {
                 vault_relative_path: asset_vault_relative_path(&entry_name)?,
                 package_relative_path: entry_name.clone(),
-                base64: entry.base64,
+                base64: encode_base64(&data),
                 mime_type: asset_mime_type(&entry_name).into(),
-                size: entry.size,
+                size: entry.uncompressed_size,
             });
         } else {
-            let bytes = decode_base64(&entry.base64)?;
-            let contents = String::from_utf8(bytes).map_err(|_| format!("Text file is not UTF-8: {entry_name}"))?;
+            let contents = String::from_utf8(data).map_err(|_| format!("Text file is not UTF-8: {entry_name}"))?;
             text_files.insert(entry_name, contents);
         }
     }
@@ -3156,6 +3124,15 @@ mod tests {
         }
         assert!(!allowed_asset_extension("generated/content/math/demo/assets/run.exe"));
         assert!(normalize_zip_entry_path("generated/../evil.txt").is_err());
+    }
+
+    #[test]
+    fn rust_reader_opens_shared_wawapkg_fixture_without_powershell() {
+        let package_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../fixtures/ai-import-20260610-position-based-fluids.wawapkg");
+        let package = read_wawapkg_archive(package_path.to_string_lossy().as_ref()).unwrap();
+        assert!(!package.package_id.is_empty());
+        assert_eq!(package.package_format, "wawapkg");
     }
 }
 
