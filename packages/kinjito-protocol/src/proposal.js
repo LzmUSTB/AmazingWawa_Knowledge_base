@@ -28,6 +28,7 @@ export function proposalToAiPackageFiles(proposal) {
     title: proposal.title || proposal.source?.title || packageId,
     status: "ready",
     protocolVersion: version || PROTOCOL_VERSION,
+    preview: { mode: "in-app", generatedHtmlPreview: false },
   };
   const sources = { sources: proposal.source ? [{ id: "chat-source", ...proposal.source }] : [] };
   const result = {
