@@ -203,6 +203,7 @@ const emit = defineEmits([
   "add-link",
   "delete-exercise-problem",
   "delete-exercise-set",
+  "replace-exercise-solution",
   "import-exercise-set",
   "ai-import-applied",
   "close-dialog",
@@ -344,6 +345,7 @@ function fitGraphView() {
           :can-save="canSaveNote" @import-exercise-set="$emit('import-exercise-set', $event)"
           @delete-exercise-problem="$emit('delete-exercise-problem', $event)"
           @delete-exercise-set="$emit('delete-exercise-set', $event)"
+          @replace-exercise-solution="$emit('replace-exercise-solution', $event)"
           @open-exercises="$emit('open-exercises', $event)" @open-note="$emit('open-note', $event)"
           @open-scope="$emit('open-scope', $event, $event)" @save-progress="$emit('save-exercise-progress', $event)" />
 

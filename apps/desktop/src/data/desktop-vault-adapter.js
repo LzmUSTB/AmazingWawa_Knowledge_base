@@ -1,5 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import YAML from "yaml";
+import { updateExerciseProblemSolution } from "../exercises/exercise-solution.js";
 import {
   buildAiPackageApplyPlan,
   buildAiContextFiles,
@@ -649,6 +650,22 @@ export async function deleteExerciseProblemFromNode(vaultRootPath, node, problem
     Object.entries(currentVault.exerciseProgress?.problems || {}).filter(([key]) => key !== progressKey),
   );
   return writeExerciseProgress(vaultRootPath, { version: 2, problems }, { mergeExisting: false });
+}
+
+export async function replaceExerciseProblemSolution(vaultRootPath, node, problemId, solution) {
+  if (!vaultRootPath) throw new Error("Configure an active vault before replacing an exercise solution.");
+  if (!node?.id || node.type === "domain") throw new Error("Exercise problems require a non-domain owner node.");
+
+  const currentVault = await loadVaultFromPath(vaultRootPath);
+  const exerciseSet = currentVault.exercises?.byNodeId?.[node.id];
+  if (!exerciseSet) throw new Error("This node does not have an ExerciseSet.");
+
+  await writeExerciseSet(
+    vaultRootPath,
+    node,
+    updateExerciseProblemSolution(exerciseSet, problemId, solution),
+  );
+  return loadVaultFromPath(vaultRootPath);
 }
 
 export async function writeExerciseProgress(vaultRootPath, progress, options = {}) {

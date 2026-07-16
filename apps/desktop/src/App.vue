@@ -26,6 +26,7 @@ import {
   openKnowledgeItemFolder,
   openVaultContextFolder,
   removeGraphLink,
+  replaceExerciseProblemSolution,
   replaceGraphLink,
   saveGraphLayoutBoard,
   updateDomain,
@@ -911,6 +912,42 @@ async function deleteExerciseProblem({ nodeId, problemId }) {
   }
 }
 
+async function replaceExerciseSolution({ nodeId, problemId, solution, onResult }) {
+  const report = (result) => {
+    if (typeof onResult === "function") onResult(result);
+  };
+  if (!canSaveNote.value) {
+    report({ ok: false, error: "Configure an active vault before replacing an exercise solution." });
+    return false;
+  }
+  const node = findGraphNode(nodeId);
+  const exerciseSet = useActiveVault().value.exercises?.byNodeId?.[nodeId];
+  const problem = exerciseSet?.problems?.find((item) => item.id === problemId);
+  if (!node || node.type === "domain" || !problem) {
+    report({ ok: false, error: "The selected exercise problem is no longer available." });
+    return false;
+  }
+  try {
+    const updatedVault = await replaceExerciseProblemSolution(
+      activeVaultRootPath.value,
+      node,
+      problem.id,
+      solution,
+    );
+    replaceVaultWithoutNavigation(updatedVault);
+    currentExerciseNodeId.value = node.id;
+    selectedNodeId.value = node.id;
+    currentDomain.value = node.domain;
+    currentView.value = "exercises";
+    report({ ok: true });
+    return true;
+  } catch (error) {
+    console.error("[exercises] Failed to replace exercise solution.", error);
+    report({ ok: false, error: error?.message || String(error) });
+    return false;
+  }
+}
+
 async function saveExerciseProgress(progress) {
   if (!canSaveNote.value) return false;
   const vaultRootPath = activeVaultRootPath.value;
@@ -1549,6 +1586,7 @@ function toggleRelationSidebar() {
       @import-exercise-set="importExerciseSet"
       @delete-exercise-problem="deleteExerciseProblem"
       @delete-exercise-set="deleteExerciseSet"
+      @replace-exercise-solution="replaceExerciseSolution"
       @create-node="createNode"
       @delete-entity="requestDeleteEntity"
       @delete-note="requestDeleteNote"

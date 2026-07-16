@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import YAML from "yaml";
 import {
   exercisePriority,
@@ -18,7 +18,7 @@ const props = defineProps({
   canSave: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["delete-exercise-problem", "delete-exercise-set", "import-exercise-set", "open-exercises", "open-note", "open-scope", "save-progress"]);
+const emit = defineEmits(["delete-exercise-problem", "delete-exercise-set", "import-exercise-set", "open-exercises", "open-note", "open-scope", "replace-exercise-solution", "save-progress"]);
 const activeVault = useActiveVault();
 const expandedProblems = ref(new Set());
 const revealedHints = ref({});
@@ -37,8 +37,15 @@ const searchFilter = ref("");
 const exportBusy = ref(false);
 const exportResult = ref(null);
 const copiedProblemId = ref("");
+const savedSolutionProblemId = ref("");
+const solutionEditorProblem = ref(null);
+const solutionDraft = ref("");
+const solutionSaving = ref(false);
+const solutionSaveError = ref("");
+const solutionTextarea = ref(null);
 const localProgress = ref({ version: 2, problems: {}, errors: [] });
 let copyFeedbackTimer = null;
+let solutionFeedbackTimer = null;
 const LOOSE_TEX_RUN = /\\(?:bar|vec|hat|tilde|overline|underline|mathbf|mathrm|mathit|mathbb|mathcal|frac|sqrt|sum|prod|int|lim|begin|end|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|phi|omega|cdot|times|quad|leq|geq|neq|infty)(?:\s*[A-Za-z0-9_{}^=+\-*/(),.]+)*/g;
 const INLINE_MATH_SPAN = /(\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g;
 
@@ -125,6 +132,15 @@ const memoryQueue = computed(() => filteredRows.value
   .filter((row) => ["due", "new"].includes(row.status))
   .sort((a, b) => (a.status === "due" ? -1 : 1) - (b.status === "due" ? -1 : 1) || b.priority - a.priority));
 const activeMemoryRow = computed(() => memoryQueue.value[0] || filteredRows.value.find((row) => row.problem.mode === "recall") || null);
+const originalSolution = computed(() => String(solutionEditorProblem.value?.solution || "").trim());
+const normalizedSolutionDraft = computed(() => solutionDraft.value.trim());
+const solutionChanged = computed(() => normalizedSolutionDraft.value !== originalSolution.value);
+const canSaveSolution = computed(() => (
+  props.canSave
+  && !solutionSaving.value
+  && Boolean(normalizedSolutionDraft.value)
+  && solutionChanged.value
+));
 
 function displayTitle(node, fallback = "") {
   return node?.titleLocale || node?.title || node?.id || fallback;
@@ -384,8 +400,57 @@ async function copyExercise(problem) {
   }
 }
 
+function openSolutionEditor(problem) {
+  solutionEditorProblem.value = problem;
+  solutionDraft.value = String(problem.solution || "").trim();
+  solutionSaveError.value = "";
+  solutionSaving.value = false;
+  nextTick(() => solutionTextarea.value?.focus());
+}
+
+function closeSolutionEditor(force = false) {
+  if (solutionSaving.value) return;
+  if (!force && solutionChanged.value && !window.confirm("Discard the unsaved replacement solution?")) return;
+  solutionEditorProblem.value = null;
+  solutionDraft.value = "";
+  solutionSaveError.value = "";
+}
+
+function handleSolutionEditorKeydown(event) {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  closeSolutionEditor();
+}
+
+function saveReplacementSolution() {
+  if (!canSaveSolution.value || !solutionEditorProblem.value) return;
+  solutionSaving.value = true;
+  solutionSaveError.value = "";
+  const problemId = solutionEditorProblem.value.id;
+  emit("replace-exercise-solution", {
+    nodeId: props.exerciseNodeId,
+    problemId,
+    solution: normalizedSolutionDraft.value,
+    onResult: ({ ok, error } = {}) => {
+      solutionSaving.value = false;
+      if (!ok) {
+        solutionSaveError.value = error || "Failed to save the replacement solution.";
+        return;
+      }
+      closeSolutionEditor(true);
+      savedSolutionProblemId.value = problemId;
+      if (solutionFeedbackTimer) window.clearTimeout(solutionFeedbackTimer);
+      solutionFeedbackTimer = window.setTimeout(() => {
+        savedSolutionProblemId.value = "";
+        solutionFeedbackTimer = null;
+      }, 1800);
+    },
+  });
+}
+
 onBeforeUnmount(() => {
   if (copyFeedbackTimer) window.clearTimeout(copyFeedbackTimer);
+  if (solutionFeedbackTimer) window.clearTimeout(solutionFeedbackTimer);
 });
 
 async function openExportFolder() {
@@ -513,6 +578,13 @@ function normalizeLooseExerciseMath(markdown = "") {
                 :aria-label="copiedProblemId === problem.id ? 'Exercise copied' : 'Copy complete exercise as Markdown'"
                 @click="copyExercise(problem)">
                 <AppIcon :name="copiedProblemId === problem.id ? 'check' : 'file-text'" :size="15" />
+              </button>
+              <button class="problem-solution-edit" :class="{ 'is-saved': savedSolutionProblemId === problem.id }"
+                type="button" :disabled="!canSave"
+                :title="savedSolutionProblemId === problem.id ? 'Replacement solution saved' : 'Replace solution'"
+                :aria-label="savedSolutionProblemId === problem.id ? 'Replacement solution saved' : 'Replace solution'"
+                @click="openSolutionEditor(problem)">
+                <AppIcon :name="savedSolutionProblemId === problem.id ? 'check' : 'file-plus'" :size="15" />
               </button>
               <button class="problem-delete" type="button" :disabled="!canSave" title="Delete problem"
                 @click="$emit('delete-exercise-problem', { nodeId: exerciseNodeId, problemId: problem.id })">
@@ -642,6 +714,70 @@ function normalizeLooseExerciseMath(markdown = "") {
         <p v-if="!filteredRows.length" class="no-results">No problems match these filters.</p>
       </div>
     </template>
+
+    <Teleport to="body">
+      <div v-if="solutionEditorProblem" class="solution-editor-overlay" @click.self="closeSolutionEditor()"
+        @keydown="handleSolutionEditorKeydown">
+        <section class="solution-editor-dialog" role="dialog" aria-modal="true"
+          :aria-labelledby="`solution-editor-title-${solutionEditorProblem.id}`">
+          <header class="solution-editor-header">
+            <div>
+              <span>Replace Solution</span>
+              <h2 :id="`solution-editor-title-${solutionEditorProblem.id}`">{{ solutionEditorProblem.title || solutionEditorProblem.id }}</h2>
+              <p>Paste Markdown generated elsewhere. Only this exercise's solution will be replaced.</p>
+            </div>
+            <button type="button" title="Close" aria-label="Close solution editor" :disabled="solutionSaving"
+              @click="closeSolutionEditor()">
+              <AppIcon name="x" :size="16" />
+            </button>
+          </header>
+
+          <details class="original-solution">
+            <summary>View original solution</summary>
+            <div class="original-solution-content">
+              <NoteBlockRenderer :markdown="normalizeLooseExerciseMath(originalSolution)"
+                :block-registry="activeVault.blockRegistry" :node="ownerNode"
+                :vault-root-path="activeVault.vaultRootPath" />
+            </div>
+          </details>
+
+          <div class="solution-editor-grid">
+            <label class="solution-editor-input">
+              <span>Replacement Markdown</span>
+              <textarea ref="solutionTextarea" v-model="solutionDraft" rows="20"
+                placeholder="Paste the replacement solution here. Use Ctrl+A, then Ctrl+V to overwrite the original text." />
+            </label>
+            <section class="solution-editor-preview">
+              <span>Rendered Preview</span>
+              <div class="solution-preview-content">
+                <NoteBlockRenderer v-if="normalizedSolutionDraft"
+                  :markdown="normalizeLooseExerciseMath(solutionDraft)"
+                  :block-registry="activeVault.blockRegistry" :node="ownerNode"
+                  :vault-root-path="activeVault.vaultRootPath" />
+                <p v-else class="solution-preview-empty">Paste a solution to preview its rendered result.</p>
+              </div>
+            </section>
+          </div>
+
+          <p v-if="solutionSaveError" class="solution-save-error">{{ solutionSaveError }}</p>
+          <footer class="solution-editor-footer">
+            <span v-if="!normalizedSolutionDraft">Solution cannot be empty.</span>
+            <span v-else-if="!solutionChanged">Make a change before saving.</span>
+            <span v-else>Ready to replace the saved solution.</span>
+            <div>
+              <button class="hud-button button-with-icon" type="button" :disabled="solutionSaving"
+                @click="closeSolutionEditor()">
+                <AppIcon name="x" /><span class="button-icon-label">Cancel</span>
+              </button>
+              <button class="hud-button button-with-icon" type="button" :disabled="!canSaveSolution"
+                style="--button-color: var(--career)" @click="saveReplacementSolution">
+                <AppIcon name="save" /><span class="button-icon-label">{{ solutionSaving ? "Saving..." : "Replace Solution" }}</span>
+              </button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
 
@@ -671,14 +807,17 @@ function normalizeLooseExerciseMath(markdown = "") {
 .problem-header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border-muted); margin-bottom: 18px; padding-bottom: 12px; }
 .problem-header h2 { margin: 5px 0 0; color: var(--text-primary); font-size: var(--font-size-subtitle); }
 .problem-header-actions { display: flex; align-items: flex-start; gap: 8px; }
-.problem-delete, .problem-edit, .problem-copy { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid var(--game-dev); border-radius: 0; background: transparent; color: var(--game-dev); cursor: pointer; padding: 0; }
+.problem-delete, .problem-edit, .problem-copy, .problem-solution-edit { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid var(--game-dev); border-radius: 0; background: transparent; color: var(--game-dev); cursor: pointer; padding: 0; }
 .problem-edit { border-color: var(--career); color: var(--career); }
 .problem-copy { border-color: var(--tools); color: var(--tools); }
 .problem-copy.is-copied { border-color: var(--career); color: var(--career); }
+.problem-solution-edit { border-color: var(--simulation); color: var(--simulation); }
+.problem-solution-edit.is-saved { border-color: var(--career); color: var(--career); }
 .problem-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--game-dev) 14%, transparent); }
-.problem-edit:hover, .problem-copy.is-copied:hover { background: color-mix(in srgb, var(--career) 14%, transparent); }
+.problem-edit:hover, .problem-copy.is-copied:hover, .problem-solution-edit.is-saved:hover { background: color-mix(in srgb, var(--career) 14%, transparent); }
 .problem-copy:hover:not(.is-copied) { background: color-mix(in srgb, var(--tools) 14%, transparent); }
-.problem-delete:disabled { opacity: .4; cursor: not-allowed; }
+.problem-solution-edit:hover:not(.is-saved):not(:disabled) { background: color-mix(in srgb, var(--simulation) 14%, transparent); }
+.problem-delete:disabled, .problem-solution-edit:disabled { opacity: .4; cursor: not-allowed; }
 .problem-tags, .rating-row > div, .rating-actions, .reveal-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .problem-tags span { border: 1px solid var(--border-muted); padding: 5px 7px; color: var(--text-muted); font-size: var(--font-size-small); text-transform: uppercase; }
 .problem-state-label { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid currentColor; background: color-mix(in srgb, currentColor 10%, transparent); color: var(--exercise-state-color, var(--text-muted)); font-size: var(--font-size-small); font-weight: 900; letter-spacing: .02em; padding: 5px 8px; text-transform: uppercase; white-space: nowrap; }
@@ -734,6 +873,36 @@ function normalizeLooseExerciseMath(markdown = "") {
 .overview-meta span { overflow: hidden; padding: 8px 5px; text-overflow: ellipsis; white-space: nowrap; }
 .overview-expanded { grid-column: 1 / -1; border-top: 1px solid var(--border-muted); padding: 16px; }
 .no-results { border: 1px solid var(--border-muted); background: var(--background-panel); padding: 18px; }
+.solution-editor-overlay { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / 72%); padding: 24px; }
+.solution-editor-dialog { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; width: min(1180px, calc(100vw - 48px)); max-height: calc(100vh - 48px); overflow: hidden; border: 1px solid var(--border-primary); border-left: 5px solid var(--simulation); background: var(--background-panel); box-shadow: 0 24px 80px rgb(0 0 0 / 48%); color: var(--text-secondary); }
+.solution-editor-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--border-muted); padding: 18px 20px; }
+.solution-editor-header span, .solution-editor-input > span, .solution-editor-preview > span { color: var(--text-muted); font-size: var(--font-size-small); font-weight: 800; text-transform: uppercase; }
+.solution-editor-header h2 { margin: 5px 0 0; color: var(--text-primary); font-size: var(--font-size-subtitle); }
+.solution-editor-header p { margin: 7px 0 0; }
+.solution-editor-header button { display: grid; flex: 0 0 32px; place-items: center; width: 32px; height: 32px; border: 1px solid var(--border-muted); border-radius: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
+.solution-editor-header button:hover:not(:disabled) { border-color: var(--game-dev); color: var(--game-dev); }
+.original-solution { margin: 14px 20px 0; border: 1px solid var(--border-muted); background: var(--background-main); }
+.original-solution summary { cursor: pointer; color: var(--text-primary); font-weight: 800; padding: 10px 12px; }
+.original-solution-content { max-height: 220px; overflow: auto; border-top: 1px solid var(--border-muted); padding: 14px; }
+.solution-editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; min-height: 0; padding: 14px 20px 18px; }
+.solution-editor-input, .solution-editor-preview { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; min-width: 0; min-height: 0; }
+.solution-editor-input textarea { min-height: 360px; width: 100%; resize: none; border: 1px solid var(--border-muted); border-radius: 0; outline: 0; background: var(--background-main); color: var(--text-primary); font-family: var(--font-mono); font-size: var(--font-size-ui); line-height: 1.55; padding: 14px; }
+.solution-editor-input textarea:focus { border-color: var(--simulation); }
+.solution-preview-content { min-height: 360px; overflow: auto; border: 1px solid var(--border-muted); background: var(--background-main); padding: 14px; }
+.solution-preview-empty { color: var(--text-muted); }
+.solution-save-error { margin: 0 20px 14px; border-left: 4px solid var(--game-dev); background: color-mix(in srgb, var(--game-dev) 10%, var(--background-main)); color: var(--game-dev); padding: 10px 12px; }
+.solution-editor-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border-muted); padding: 14px 20px; }
+.solution-editor-footer > span { color: var(--text-muted); font-size: var(--font-size-small); }
+.solution-editor-footer > div { display: flex; gap: 8px; }
+.solution-editor-footer button:disabled, .solution-editor-header button:disabled { cursor: not-allowed; opacity: .42; }
 @media (max-width: 1300px) { .exercise-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }.search-filter { grid-column: span 2; } }
 @media (max-width: 1100px) { .exercise-scope, .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }.exercise-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }.overview-row { grid-template-columns: 1fr; }.overview-meta { border-left: 0; border-top: 1px solid var(--border-muted); } }
+@media (max-width: 820px) {
+  .solution-editor-overlay { align-items: stretch; padding: 10px; }
+  .solution-editor-dialog { width: 100%; max-height: calc(100vh - 20px); }
+  .solution-editor-grid { grid-template-columns: 1fr; overflow: auto; }
+  .solution-editor-input textarea, .solution-preview-content { min-height: 260px; }
+  .solution-editor-footer { align-items: stretch; flex-direction: column; }
+  .solution-editor-footer > div { justify-content: flex-end; }
+}
 </style>
