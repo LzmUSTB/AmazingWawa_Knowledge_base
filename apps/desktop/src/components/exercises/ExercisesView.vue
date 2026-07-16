@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import YAML from "yaml";
 import {
   exercisePriority,
@@ -36,7 +36,9 @@ const typeFilter = ref("all");
 const searchFilter = ref("");
 const exportBusy = ref(false);
 const exportResult = ref(null);
+const copiedProblemId = ref("");
 const localProgress = ref({ version: 2, problems: {}, errors: [] });
+let copyFeedbackTimer = null;
 const LOOSE_TEX_RUN = /\\(?:bar|vec|hat|tilde|overline|underline|mathbf|mathrm|mathit|mathbb|mathcal|frac|sqrt|sum|prod|int|lim|begin|end|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|phi|omega|cdot|times|quad|leq|geq|neq|infty)(?:\s*[A-Za-z0-9_{}^=+\-*/(),.]+)*/g;
 const INLINE_MATH_SPAN = /(\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g;
 
@@ -325,6 +327,67 @@ async function copyExportMarkdown() {
   await navigator.clipboard?.writeText(exportResult.value.markdownContent);
 }
 
+function exerciseMarkdown(problem = {}) {
+  const hints = Array.isArray(problem.hints) ? problem.hints.filter((hint) => String(hint || "").trim()) : [];
+  return [
+    `# ${problem.title || problem.id || "Exercise"}`,
+    "",
+    "## 题目",
+    "",
+    String(problem.prompt || "").trim(),
+    "",
+    "## 提示",
+    "",
+    ...(hints.length
+      ? hints.flatMap((hint, index) => [`${index + 1}. ${String(hint).trim()}`, ""])
+      : ["无", ""]),
+    "## 答案",
+    "",
+    String(problem.answer || "").trim(),
+    "",
+    "## 解析",
+    "",
+    String(problem.solution || "").trim(),
+    "",
+  ].join("\n");
+}
+
+async function writeClipboardText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) throw new Error("Clipboard API is unavailable.");
+}
+
+async function copyExercise(problem) {
+  try {
+    await writeClipboardText(exerciseMarkdown(problem));
+    copiedProblemId.value = problem.id;
+    if (copyFeedbackTimer) window.clearTimeout(copyFeedbackTimer);
+    copyFeedbackTimer = window.setTimeout(() => {
+      copiedProblemId.value = "";
+      copyFeedbackTimer = null;
+    }, 1800);
+  } catch (error) {
+    console.error("[exercises] Failed to copy exercise.", error);
+    window.alert(`Failed to copy exercise: ${error?.message || error}`);
+  }
+}
+
+onBeforeUnmount(() => {
+  if (copyFeedbackTimer) window.clearTimeout(copyFeedbackTimer);
+});
+
 async function openExportFolder() {
   await openWrongPracticeFolder(activeVault.value.vaultRootPath);
 }
@@ -444,6 +507,12 @@ function normalizeLooseExerciseMath(markdown = "") {
               <button v-if="problem.mode === 'practice' && hasPracticeResult(currentExerciseSet, problem)" class="problem-edit" type="button" title="Edit saved answer"
                 @click="editPracticeAnswer(currentExerciseSet, problem)">
                 <AppIcon name="edit" :size="15" />
+              </button>
+              <button class="problem-copy" :class="{ 'is-copied': copiedProblemId === problem.id }" type="button"
+                :title="copiedProblemId === problem.id ? 'Exercise copied' : 'Copy complete exercise as Markdown'"
+                :aria-label="copiedProblemId === problem.id ? 'Exercise copied' : 'Copy complete exercise as Markdown'"
+                @click="copyExercise(problem)">
+                <AppIcon :name="copiedProblemId === problem.id ? 'check' : 'file-text'" :size="15" />
               </button>
               <button class="problem-delete" type="button" :disabled="!canSave" title="Delete problem"
                 @click="$emit('delete-exercise-problem', { nodeId: exerciseNodeId, problemId: problem.id })">
@@ -602,10 +671,13 @@ function normalizeLooseExerciseMath(markdown = "") {
 .problem-header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border-muted); margin-bottom: 18px; padding-bottom: 12px; }
 .problem-header h2 { margin: 5px 0 0; color: var(--text-primary); font-size: var(--font-size-subtitle); }
 .problem-header-actions { display: flex; align-items: flex-start; gap: 8px; }
-.problem-delete, .problem-edit { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid var(--game-dev); border-radius: 0; background: transparent; color: var(--game-dev); cursor: pointer; padding: 0; }
+.problem-delete, .problem-edit, .problem-copy { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid var(--game-dev); border-radius: 0; background: transparent; color: var(--game-dev); cursor: pointer; padding: 0; }
 .problem-edit { border-color: var(--career); color: var(--career); }
+.problem-copy { border-color: var(--tools); color: var(--tools); }
+.problem-copy.is-copied { border-color: var(--career); color: var(--career); }
 .problem-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--game-dev) 14%, transparent); }
-.problem-edit:hover { background: color-mix(in srgb, var(--career) 14%, transparent); }
+.problem-edit:hover, .problem-copy.is-copied:hover { background: color-mix(in srgb, var(--career) 14%, transparent); }
+.problem-copy:hover:not(.is-copied) { background: color-mix(in srgb, var(--tools) 14%, transparent); }
 .problem-delete:disabled { opacity: .4; cursor: not-allowed; }
 .problem-tags, .rating-row > div, .rating-actions, .reveal-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .problem-tags span { border: 1px solid var(--border-muted); padding: 5px 7px; color: var(--text-muted); font-size: var(--font-size-small); text-transform: uppercase; }
