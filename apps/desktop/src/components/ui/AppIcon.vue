@@ -94,7 +94,7 @@ const props = defineProps({
   },
   size: {
     type: [Number, String],
-    default: "var(--icon-size-ui)",
+    default: "var(--icon-size-ui, 14px)",
   },
   decorative: {
     type: Boolean,

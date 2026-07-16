@@ -767,11 +767,11 @@ function normalizeLooseExerciseMath(markdown = "") {
             <div>
               <button class="hud-button button-with-icon" type="button" :disabled="solutionSaving"
                 @click="closeSolutionEditor()">
-                <AppIcon name="x" /><span class="button-icon-label">Cancel</span>
+                <AppIcon name="x" :size="14" /><span class="button-icon-label">Cancel</span>
               </button>
               <button class="hud-button button-with-icon" type="button" :disabled="!canSaveSolution"
                 style="--button-color: var(--career)" @click="saveReplacementSolution">
-                <AppIcon name="save" /><span class="button-icon-label">{{ solutionSaving ? "Saving..." : "Replace Solution" }}</span>
+                <AppIcon name="save" :size="14" /><span class="button-icon-label">{{ solutionSaving ? "Saving..." : "Replace Solution" }}</span>
               </button>
             </div>
           </footer>
