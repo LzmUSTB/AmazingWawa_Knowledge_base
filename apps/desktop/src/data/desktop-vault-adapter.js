@@ -495,7 +495,15 @@ function comparableProblem(problem) {
   });
 }
 
-export function normalizeImportedExerciseSet(raw, targetNode) {
+function createExerciseNodeIdMismatchError(declaredNodeId, targetNodeId) {
+  const error = new Error(`ExerciseSet nodeId "${declaredNodeId}" does not match target node "${targetNodeId}".`);
+  error.code = "EXERCISE_NODE_ID_MISMATCH";
+  error.declaredNodeId = declaredNodeId;
+  error.targetNodeId = targetNodeId;
+  return error;
+}
+
+export function normalizeImportedExerciseSet(raw, targetNode, options = {}) {
   let parsed;
   try {
     parsed = YAML.parse(raw);
@@ -506,8 +514,8 @@ export function normalizeImportedExerciseSet(raw, targetNode) {
     throw new Error("ExerciseSet YAML must contain an object.");
   }
   const declaredNodeId = String(parsed.nodeId || "").trim();
-  if (declaredNodeId && declaredNodeId !== targetNode.id) {
-    throw new Error(`ExerciseSet nodeId "${declaredNodeId}" does not match target node "${targetNode.id}".`);
+  if (declaredNodeId && declaredNodeId !== targetNode.id && !options.allowNodeIdRewrite) {
+    throw createExerciseNodeIdMismatchError(declaredNodeId, targetNode.id);
   }
   if (!Array.isArray(parsed.problems) || parsed.problems.length === 0) {
     throw new Error("ExerciseSet must contain at least one problem.");
@@ -570,20 +578,37 @@ async function assertExerciseSetMissing(vaultRootPath, relativePath) {
   throw new Error("This node gained an ExerciseSet before import completed. Re-run Import ExerciseSet to append into it.");
 }
 
-export async function importExerciseSetForNode(vaultRootPath, node) {
+export async function importExerciseSetForNode(vaultRootPath, node, options = {}) {
   if (!vaultRootPath) throw new Error("Configure an active vault before importing ExerciseSet.");
   if (!node?.id || node.type === "domain") throw new Error("ExerciseSet requires a non-domain owner node.");
   const currentVault = await loadVaultFromPath(vaultRootPath);
   const relativePath = getExercisesRelativePath(node);
   const filePath = await chooseExerciseSetFile();
   if (!filePath) return null;
-  const incomingExerciseSet = normalizeImportedExerciseSet(await readExternalTextFile(filePath), node);
+  const rawExerciseSet = await readExternalTextFile(filePath);
+  let incomingExerciseSet;
+  let rewrittenNodeId = null;
+  try {
+    incomingExerciseSet = normalizeImportedExerciseSet(rawExerciseSet, node);
+  } catch (error) {
+    if (error?.code !== "EXERCISE_NODE_ID_MISMATCH") throw error;
+    if (typeof options.confirmNodeIdRewrite !== "function") throw error;
+    const shouldRewrite = await options.confirmNodeIdRewrite?.({
+      declaredNodeId: error.declaredNodeId,
+      targetNodeId: error.targetNodeId,
+      targetNode: node,
+      filePath,
+    });
+    if (!shouldRewrite) return null;
+    incomingExerciseSet = normalizeImportedExerciseSet(rawExerciseSet, node, { allowNodeIdRewrite: true });
+    rewrittenNodeId = { from: error.declaredNodeId, to: error.targetNodeId };
+  }
   await invoke("create_dir_all", { vaultRootPath, relativePath: `content/${node.domain}/${node.id}` });
   const existingExerciseSet = currentVault.exercises?.byNodeId?.[node.id];
   if (!existingExerciseSet) {
     await assertExerciseSetMissing(vaultRootPath, relativePath);
     await writeExerciseSet(vaultRootPath, node, incomingExerciseSet);
-    return { vault: await loadVaultFromPath(vaultRootPath), summary: { appended: incomingExerciseSet.problems.length, skipped: 0, conflicts: [] } };
+    return { vault: await loadVaultFromPath(vaultRootPath), summary: { appended: incomingExerciseSet.problems.length, skipped: 0, conflicts: [], rewrittenNodeId } };
   }
 
   const migratedExisting = migrateLegacyExerciseSet(existingExerciseSet);
@@ -610,7 +635,7 @@ export async function importExerciseSetForNode(vaultRootPath, node) {
     ...migratedExisting,
     problems: [...migratedExisting.problems, ...appended],
   });
-  return { vault: await loadVaultFromPath(vaultRootPath), summary: { appended: appended.length, skipped, conflicts } };
+  return { vault: await loadVaultFromPath(vaultRootPath), summary: { appended: appended.length, skipped, conflicts, rewrittenNodeId } };
 }
 
 export async function deleteExerciseSetFromNode(vaultRootPath, node) {

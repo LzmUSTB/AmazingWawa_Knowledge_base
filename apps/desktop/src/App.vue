@@ -834,7 +834,11 @@ async function importExerciseSet(nodeId) {
   const node = findGraphNode(nodeId);
   if (!node || node.type === "domain") return false;
   try {
-    const result = await importExerciseSetForNode(activeVaultRootPath.value, node);
+    const result = await importExerciseSetForNode(activeVaultRootPath.value, node, {
+      confirmNodeIdRewrite: ({ declaredNodeId, targetNodeId }) => window.confirm(
+        `ExerciseSet nodeId does not match this node.\n\nImported nodeId: ${declaredNodeId}\nTarget nodeId: ${targetNodeId}\n\nImport it into the current node by rewriting nodeId to "${targetNodeId}"?`,
+      ),
+    });
     if (!result?.vault) return false;
     replaceVaultWithoutNavigation(result.vault);
     currentExerciseNodeId.value = node.id;
@@ -842,7 +846,10 @@ async function importExerciseSet(nodeId) {
     currentDomain.value = node.domain;
     currentView.value = "exercises";
     if (result.summary) {
-      window.alert(`ExerciseSet import complete.\n\nAppended: ${result.summary.appended}\nSkipped unchanged: ${result.summary.skipped}\nConflicts: ${result.summary.conflicts?.length || 0}`);
+      const rewriteLine = result.summary.rewrittenNodeId
+        ? `\nRewritten nodeId: ${result.summary.rewrittenNodeId.from} -> ${result.summary.rewrittenNodeId.to}`
+        : "";
+      window.alert(`ExerciseSet import complete.\n\nAppended: ${result.summary.appended}\nSkipped unchanged: ${result.summary.skipped}\nConflicts: ${result.summary.conflicts?.length || 0}${rewriteLine}`);
     }
     return true;
   } catch (error) {
