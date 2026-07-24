@@ -375,7 +375,7 @@ function fitGraphView() {
 
         <ConceptMapView v-else-if="currentView === 'concept-map'"
           :can-save="canSaveLayout" :focus-node-id="currentConceptMapFocusNodeId" :map-id="currentConceptMapId"
-          :selected-element="conceptMapSelection"
+          :selected-element="conceptMapSelection" :ui-font-scale="uiFontScale"
           @open-scope="relayOpenScope"
           @save-layout="$emit('save-concept-map-layout', $event)"
           @select-element="$emit('select-concept-map-element', $event)" />

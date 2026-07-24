@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import cytoscape from "cytoscape";
+import { renderMathToSvgDataUrl } from "../../content/mathjax-renderer.js";
 import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
 import { getDomainColor } from "../../graph/graph-theme.js";
 import AppIcon from "../ui/AppIcon.vue";
@@ -10,6 +11,7 @@ const props = defineProps({
   focusNodeId: { type: String, default: "" },
   mapId: { type: String, default: "" },
   selectedElement: { type: Object, default: () => ({ kind: "", id: "" }) },
+  uiFontScale: { type: Number, default: 1 },
 });
 
 const emit = defineEmits(["open-scope", "save-layout", "select-element"]);
@@ -19,9 +21,12 @@ const graphRoot = ref(null);
 const query = ref("");
 const layerFilter = ref("");
 const relationFilter = ref("");
+const formulaAssets = ref({});
+const formulaAssetCache = new Map();
 let cy = null;
 let resizeObserver = null;
 let rebuildTimer = 0;
+let buildRequestId = 0;
 
 const conceptMap = computed(() => activeVault.value.conceptMaps?.byId?.[props.mapId] || null);
 const ownerNode = computed(() => findGraphNode(conceptMap.value?.ownerNodeId));
@@ -61,53 +66,32 @@ function relationLabel(relation) {
   ).trim();
 }
 
-function readableFormula(value = "") {
-  return String(value || "")
-    .replace(/\\\(|\\\)|\\\[|\\\]/g, "")
-    .replace(/\\operatorname\{([^}]+)\}/g, "$1")
-    .replace(/\\text\{([^}]+)\}/g, "$1")
-    .replace(/\\Longleftrightarrow/g, "⇔")
-    .replace(/\\Leftrightarrow/g, "⇔")
-    .replace(/\\Rightarrow/g, "⇒")
-    .replace(/\\rightarrow/g, "→")
-    .replace(/\\mapsto/g, "↦")
-    .replace(/\\lambda/g, "λ")
-    .replace(/\\Lambda/g, "Λ")
-    .replace(/\\Sigma/g, "Σ")
-    .replace(/\\sigma/g, "σ")
-    .replace(/\\sum/g, "Σ")
-    .replace(/\\cdot/g, "·")
-    .replace(/\\times/g, "×")
-    .replace(/\\proj/g, "proj")
-    .replace(/\\col/g, "col")
-    .replace(/\\dim/g, "dim")
-    .replace(/\\ker/g, "ker")
-    .replace(/\\det/g, "det")
-    .replace(/\\langle/g, "⟨")
-    .replace(/\\rangle/g, "⟩")
-    .replace(/\\forall/g, "∀")
-    .replace(/\\in/g, "∈")
-    .replace(/\\ne/g, "≠")
-    .replace(/\\perp/g, "⊥")
-    .replace(/\\succ/g, "≻")
-    .replace(/\\\|/g, "‖")
-    .replace(/\\quad/g, " ")
-    .replace(/\\,/g, " ")
-    .replace(/\^\{([^}]+)\}/g, "^$1")
-    .replace(/_\{([^}]+)\}/g, "_$1")
-    .replace(/\\\\/g, "\\")
-    .replace(/\{([^{}]+)\}/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
+function estimatedTextWidth(value = "") {
+  return [...String(value)].reduce((width, character) => (
+    width + (/[\u2e80-\u9fff\uff00-\uffef]/.test(character) ? 16 : 9)
+  ), 0);
 }
 
-function nodeLabel(node) {
+function nodeVisual(node) {
   const title = displayTitle(node);
-  const formula = readableFormula(node.formula || node.expression);
-  if (node.kind === "formula" || node.type === "formula") {
-    return title && title !== node.id && formula ? `${title}\n${formula}` : formula || title;
-  }
-  return formula ? `${title}  ${formula}` : title;
+  const formulaAsset = formulaAssets.value[node.id] || null;
+  const scale = Math.max(0.75, Math.min(2, Number(props.uiFontScale) || 1));
+  const formulaHeight = 15 * scale;
+  const formulaWidth = formulaAsset
+    ? Math.min(340 * scale, formulaAsset.aspectRatio * formulaHeight)
+    : 0;
+  return {
+    title,
+    formulaAsset,
+    formulaHeight,
+    formulaWidth,
+    height: formulaAsset ? 54 * scale : 40 * scale,
+    titleOffset: formulaAsset ? -12 * scale : 0,
+    width: Math.max(
+      88 * scale,
+      Math.min(400 * scale, Math.max((estimatedTextWidth(title) + 30) * scale, formulaWidth + 28 * scale)),
+    ),
+  };
 }
 
 function matchesQuery(node, normalizedQuery) {
@@ -173,16 +157,26 @@ function relationArrows(relation) {
 }
 
 function cyElements() {
-  const nodes = filteredGraph.value.nodes.map((node) => ({
-    group: "nodes",
-    data: {
-      id: `node:${node.id}`,
-      entityId: node.id,
-      kind: node.kind || node.type || "concept",
-      label: nodeLabel(node),
-      color: node.color || accent.value,
-    },
-  }));
+  const nodes = filteredGraph.value.nodes.map((node) => {
+    const visual = nodeVisual(node);
+    return {
+      group: "nodes",
+      data: {
+        id: `node:${node.id}`,
+        entityId: node.id,
+        kind: node.kind || node.type || "concept",
+        label: visual.title,
+        color: node.color || accent.value,
+        hasFormula: visual.formulaAsset ? 1 : 0,
+        formulaImage: visual.formulaAsset?.dataUrl || "",
+        formulaHeight: visual.formulaHeight,
+        formulaWidth: visual.formulaWidth,
+        nodeHeight: visual.height,
+        nodeWidth: visual.width,
+        titleOffset: visual.titleOffset,
+      },
+    };
+  });
   const edges = filteredGraph.value.relations.map((relation) => ({
     group: "edges",
     data: {
@@ -201,13 +195,14 @@ function cyElements() {
 }
 
 function cyStyles() {
+  const scale = Math.max(0.75, Math.min(2, Number(props.uiFontScale) || 1));
   return [
     {
       selector: "node",
       style: {
-        width: "label",
-        height: "label",
-        padding: "10px",
+        width: "data(nodeWidth)",
+        height: "data(nodeHeight)",
+        padding: "0px",
         shape: "round-rectangle",
         "background-color": "#111111",
         "background-opacity": 0.96,
@@ -216,13 +211,26 @@ function cyStyles() {
         color: "#ededed",
         label: "data(label)",
         "font-family": "Fira Code, Cascadia Mono, Consolas, monospace",
-        "font-size": 15,
+        "font-size": 15 * scale,
         "font-weight": 700,
         "line-height": 1.45,
         "text-halign": "center",
         "text-valign": "center",
         "text-wrap": "wrap",
-        "text-max-width": 300,
+        "text-max-width": 300 * scale,
+      },
+    },
+    {
+      selector: "node[hasFormula = 1]",
+      style: {
+        "background-image": "data(formulaImage)",
+        "background-fit": "none",
+        "background-width": "data(formulaWidth)",
+        "background-height": "data(formulaHeight)",
+        "background-position-x": "50%",
+        "background-position-y": "70%",
+        "background-repeat": "no-repeat",
+        "text-margin-y": "data(titleOffset)",
       },
     },
     {
@@ -231,7 +239,7 @@ function cyStyles() {
         "background-color": "#080808",
         "border-style": "double",
         "border-width": 3,
-        "font-size": 16,
+        "font-size": 15 * scale,
         "font-weight": 500,
       },
     },
@@ -259,16 +267,16 @@ function cyStyles() {
         label: "data(label)",
         color: "#d8d8d8",
         "font-family": "Fira Code, Cascadia Mono, Consolas, monospace",
-        "font-size": 11,
+        "font-size": 11 * scale,
         "font-weight": 700,
         "text-rotation": "autorotate",
         "text-background-color": "#080808",
         "text-background-opacity": 0.92,
-        "text-background-padding": 4,
+        "text-background-padding": 4 * scale,
         "text-border-color": "#3b3b3b",
         "text-border-opacity": 0.65,
         "text-border-width": 1,
-        "text-margin-y": -10,
+        "text-margin-y": -10 * scale,
       },
     },
     {
@@ -394,9 +402,35 @@ function buildGraph() {
   else runAutomaticLayout();
 }
 
+async function prepareFormulaAssets(nodes, requestId) {
+  const entries = await Promise.all(nodes.map(async (node) => {
+    const formula = String(node.formula || node.expression || "").trim();
+    if (!formula) return [node.id, null];
+    if (!formulaAssetCache.has(formula)) {
+      formulaAssetCache.set(
+        formula,
+        renderMathToSvgDataUrl(formula).catch((error) => {
+          console.warn(`[concept-map] Failed to render formula for ${node.id}.`, error);
+          return null;
+        }),
+      );
+    }
+    return [node.id, await formulaAssetCache.get(formula)];
+  }));
+  if (requestId !== buildRequestId) return false;
+  formulaAssets.value = Object.fromEntries(entries.filter(([, asset]) => asset));
+  return true;
+}
+
 function scheduleBuild() {
   window.clearTimeout(rebuildTimer);
-  rebuildTimer = window.setTimeout(() => nextTick(buildGraph), 80);
+  const requestId = ++buildRequestId;
+  rebuildTimer = window.setTimeout(async () => {
+    const prepared = await prepareFormulaAssets(filteredGraph.value.nodes, requestId);
+    if (!prepared || requestId !== buildRequestId) return;
+    await nextTick();
+    if (requestId === buildRequestId) buildGraph();
+  }, 80);
 }
 
 function fitGraph() {
@@ -411,7 +445,7 @@ function resetFilters() {
 }
 
 watch(
-  () => [props.mapId, conceptMap.value, query.value, layerFilter.value, relationFilter.value],
+  () => [props.mapId, conceptMap.value, query.value, layerFilter.value, relationFilter.value, props.uiFontScale],
   scheduleBuild,
   { immediate: true, flush: "post" },
 );
@@ -425,6 +459,7 @@ watch(graphRoot, (element) => {
 });
 
 onBeforeUnmount(() => {
+  buildRequestId += 1;
   window.clearTimeout(rebuildTimer);
   resizeObserver?.disconnect();
   cy?.destroy();

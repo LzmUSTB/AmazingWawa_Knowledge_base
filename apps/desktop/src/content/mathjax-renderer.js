@@ -80,6 +80,42 @@ export function typesetMath(element) {
   return task;
 }
 
+function formulaSource(value = "") {
+  return String(value || "")
+    .trim()
+    .replace(/^\\\(([\s\S]*)\\\)$/m, "$1")
+    .replace(/^\\\[([\s\S]*)\\\]$/m, "$1")
+    .replace(/^\$\$([\s\S]*)\$\$$/m, "$1")
+    .trim();
+}
+
+export async function renderMathToSvgDataUrl(value, color = "#ededed") {
+  const formula = formulaSource(value);
+  if (!formula) return null;
+  const mathJax = await loadMathJax();
+  if (typeof mathJax.tex2svgPromise !== "function") {
+    throw new Error("The local MathJax bundle does not expose tex2svgPromise.");
+  }
+  const container = await mathJax.tex2svgPromise(formula, { display: false });
+  const sourceSvg = container?.querySelector?.("svg");
+  if (!sourceSvg) throw new Error("MathJax did not produce an SVG element.");
+  const svg = sourceSvg.cloneNode(true);
+  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.setAttribute("aria-hidden", "true");
+  svg.removeAttribute("style");
+  const viewBox = String(svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+  const aspectRatio = viewBox.length === 4 && viewBox[2] > 0 && viewBox[3] > 0
+    ? viewBox[2] / viewBox[3]
+    : 2;
+  const serialized = new XMLSerializer()
+    .serializeToString(svg)
+    .replaceAll("currentColor", color);
+  return {
+    aspectRatio,
+    dataUrl: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`,
+  };
+}
+
 export function clearTypesetMath(element) {
   if (element) window.MathJax?.typesetClear?.([element]);
 }
