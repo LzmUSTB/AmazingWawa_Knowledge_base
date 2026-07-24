@@ -87,6 +87,7 @@ struct VaultRawFiles {
     exercise_files: HashMap<String, String>,
     exercise_progress_yaml: String,
     block_type_files: HashMap<String, String>,
+    concept_map_files: HashMap<String, String>,
 }
 
 #[derive(Serialize)]
@@ -103,6 +104,7 @@ struct AiImportPackageFiles {
     generated_note_files: HashMap<String, String>,
     generated_html_note_files: HashMap<String, String>,
     generated_exercise_files: HashMap<String, String>,
+    generated_concept_map_files: HashMap<String, String>,
     asset_files: Vec<AiImportAssetFile>,
     block_type_files: HashMap<String, String>,
     review_files: HashMap<String, String>,
@@ -224,6 +226,7 @@ fn allowed_ai_apply_path(relative_path: &str) -> bool {
         || relative_path == "vault.yaml"
         || relative_path.starts_with("content/")
         || relative_path.starts_with("block-types/")
+        || relative_path.starts_with("concept-maps/")
         || relative_path == ".kb-ai/history"
         || relative_path.starts_with(".kb-ai/history/")
         || relative_path == ".kb-ai/backups"
@@ -974,13 +977,14 @@ fn git_push_at(root: &Path) -> Result<String, String> {
 
 fn classify_git_path(path: &str) -> &'static str {
     let normalized = path.replace('\\', "/");
-    if normalized == "graph-layout.yaml" {
+    if normalized == "graph-layout.yaml" || (normalized.starts_with("concept-maps/") && normalized.contains(".layout.")) {
         "layout"
     } else if normalized == ".kinjito/exercise-progress.yaml" {
         "progress"
     } else if normalized == "vault.yaml"
         || normalized == "domains.yaml"
         || normalized == "graph.yaml"
+        || normalized.starts_with("concept-maps/")
         || normalized.starts_with("content/")
         || normalized.starts_with("assets/")
     {
@@ -1549,6 +1553,7 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
         generated_note_files: HashMap::new(),
         generated_html_note_files: HashMap::new(),
         generated_exercise_files: HashMap::new(),
+        generated_concept_map_files: HashMap::new(),
         asset_files,
         block_type_files: HashMap::new(),
         review_files: HashMap::new(),
@@ -1562,6 +1567,8 @@ fn read_wawapkg_archive(package_file_path: &str) -> Result<AiImportPackageFiles,
             package.generated_html_note_files.insert(entry_path, contents);
         } else if entry_path.starts_with("generated/content/") && entry_path.ends_with("/exercises.yaml") {
             package.generated_exercise_files.insert(entry_path, contents);
+        } else if entry_path.starts_with("generated/concept-maps/") && (entry_path.ends_with(".yaml") || entry_path.ends_with(".yml")) {
+            package.generated_concept_map_files.insert(entry_path, contents);
         } else if entry_path.starts_with("block-types/") && (entry_path.ends_with(".yaml") || entry_path.ends_with(".yml")) {
             package.block_type_files.insert(entry_path, contents);
         } else if entry_path.starts_with("review/") {
@@ -2618,11 +2625,13 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
     let mut note_html_files = HashMap::new();
     let mut exercise_files = HashMap::new();
     let mut block_type_files = HashMap::new();
+    let mut concept_map_files = HashMap::new();
     read_content_files(&root, &root.join("content"), "meta.yaml", &mut meta_files)?;
     read_content_files(&root, &root.join("content"), "note.md", &mut note_files)?;
     read_content_files(&root, &root.join("content"), "note.html", &mut note_html_files)?;
     read_content_files(&root, &root.join("content"), "exercises.yaml", &mut exercise_files)?;
     read_yaml_files_in_directory(&root, "block-types", &mut block_type_files)?;
+    read_yaml_files_in_directory(&root, "concept-maps", &mut concept_map_files)?;
 
     Ok(VaultRawFiles {
         vault_yaml: read_required(&root, "vault.yaml")?,
@@ -2635,7 +2644,33 @@ fn read_vault_files(vault_root_path: String) -> Result<VaultRawFiles, String> {
         exercise_files,
         exercise_progress_yaml: fs::read_to_string(root.join(".kinjito/exercise-progress.yaml")).unwrap_or_default(),
         block_type_files,
+        concept_map_files,
     })
+}
+
+fn copy_export_concept_maps(root: &Path, staging: &Path, file_count: &mut u64) -> Result<(), String> {
+    let source = root.join("concept-maps");
+    if !source.is_dir() {
+        return Ok(());
+    }
+    let target_dir = staging.join("generated").join("concept-maps");
+    fs::create_dir_all(&target_dir)
+        .map_err(|error| format!("Failed to create concept-maps export directory: {error}"))?;
+    for entry in fs::read_dir(&source).map_err(|error| format!("Failed to read concept-maps: {error}"))? {
+        let entry = entry.map_err(|error| format!("Failed to read concept-maps entry: {error}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else { continue; };
+        if !(file_name.ends_with(".yaml") || file_name.ends_with(".yml")) {
+            continue;
+        }
+        fs::copy(&path, target_dir.join(file_name))
+            .map_err(|error| format!("Failed to stage concept map {file_name}: {error}"))?;
+        *file_count += 1;
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -2891,6 +2926,7 @@ fn export_vault_wawapkg(
 
         copy_export_content_files(&root, &root.join("content"), &staging_dir, &mut staged_content_count)?;
         copy_export_block_types(&root, &staging_dir, &mut staged_content_count)?;
+        copy_export_concept_maps(&root, &staging_dir, &mut staged_content_count)?;
 
         let (file_count, total_size) = staging_size_and_count(&staging_dir)?;
         if file_count as usize > MAX_WAWAPKG_FILE_COUNT {

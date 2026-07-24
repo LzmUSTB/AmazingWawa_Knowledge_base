@@ -13,7 +13,7 @@ const PACKAGE_ID_PATTERN = /^(?:ai-import|wawa-import)-[a-z0-9-]+$/;
 const KEBAB_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LINK_RELATIONS = new Set(["depends-on", "used-in", "compares-with"]);
 const SUPPORTED_INSERT_MODES = new Set(["after-heading", "before-heading", "end"]);
-const OPERATION_TYPES = new Set(["add_domain", "add_node", "append_note_section", "append_exercise_set", "add_edge", "add_block_type", "propose_native_block"]);
+const OPERATION_TYPES = new Set(["add_domain", "add_node", "append_note_section", "append_exercise_set", "upsert_concept_map", "add_edge", "add_block_type", "propose_native_block"]);
 const CONTENT_FORMATS = new Set(["markdown", "html", "none"]);
 const FORBIDDEN_BLOCK_FIELD_PATTERN = /(^|\.)(script|iframe|eval|html|css|js|src|url|style|styles|javascript|on[a-z]+)/i;
 const FORBIDDEN_MARKDOWN_PATTERNS = [
@@ -45,6 +45,7 @@ function asArray(value) { return Array.isArray(value) ? value : value ? [value] 
 function normalizeSchemaVersion(value) { if (value === 1.1 || value === "1.1") return "1.1"; return String(value || ""); }
 function normalizeContentFormat(value = "") { const format = String(value || "").trim().toLowerCase(); return CONTENT_FORMATS.has(format) ? format : ""; }
 function operationsFromPatch(patch = {}) { return asArray(patch.operations || patch.changes || patch.patch).map(normalizeOperation); }
+function generatedConceptMapPath(operation) { return operation.file || `generated/concept-maps/${operation.id}.yaml`; }
 
 function normalizeOperation(operation = {}) {
   const node = operation.node || operation;
@@ -83,6 +84,20 @@ function normalizeOperation(operation = {}) {
       ...operation,
       targetId: operation.targetId || operation.nodeId || operation.id,
       domain: operation.domain || "",
+    };
+  }
+  if (operation.type === "upsert_concept_map") {
+    const map = operation.map || operation;
+    const id = map.id || operation.id || "";
+    return {
+      ...operation,
+      id,
+      title: map.title || operation.title || id,
+      titleLocale: map.titleLocale || map.title_locale || operation.titleLocale || operation.title_locale || "",
+      domain: map.domain || operation.domain || "",
+      ownerNodeId: map.ownerNodeId || map.owner_node_id || operation.ownerNodeId || operation.owner_node_id || "",
+      file: operation.file || `generated/concept-maps/${id}.yaml`,
+      layoutFile: operation.layoutFile || operation.layout_file || "",
     };
   }
   if (operation.type === "add_block_type") {
@@ -675,6 +690,64 @@ function validateAppendExerciseSet(operation, context) {
   });
   packageExerciseProblems.set(targetId, packageIds);
 }
+
+function validateUpsertConceptMap(operation, context) {
+  const { currentVault, packageFiles, createdNodes, createdDomains, errors, warnings } = context;
+  const nodes = nodeMap(currentVault, createdNodes, createdDomains);
+  const domainIds = new Set([...(currentVault.domains || []).map((domain) => domain.id), ...createdDomains.map((domain) => domain.id)]);
+  const filePath = generatedConceptMapPath(operation);
+  if (!KEBAB_PATTERN.test(operation.id || "")) errors.push(`upsert_concept_map: id "${operation.id || ""}" must be lowercase kebab-case.`);
+  if (!/^generated\/concept-maps\/[^/]+\.ya?ml$/.test(filePath)) errors.push(`upsert_concept_map ${operation.id}: file must be under generated/concept-maps/.`);
+  if (operation.layoutFile && !/^generated\/concept-maps\/[^/]+\.layout\.ya?ml$/.test(operation.layoutFile)) errors.push(`upsert_concept_map ${operation.id}: layoutFile must be a generated/concept-maps/*.layout.yaml path.`);
+  if (operation.domain && !domainIds.has(operation.domain)) errors.push(`upsert_concept_map ${operation.id}: domain "${operation.domain}" does not exist.`);
+  if (operation.ownerNodeId && !nodes.has(operation.ownerNodeId)) errors.push(`upsert_concept_map ${operation.id}: ownerNodeId "${operation.ownerNodeId}" does not exist.`);
+  const raw = packageFiles.generatedConceptMapFiles?.[filePath];
+  if (!raw) {
+    errors.push(`upsert_concept_map ${operation.id}: missing ${filePath}.`);
+    return;
+  }
+  let parsed = null;
+  try {
+    parsed = parseYaml(raw, filePath);
+  } catch (error) {
+    errors.push(`upsert_concept_map ${operation.id}: ${error.message}`);
+    return;
+  }
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+    errors.push(`upsert_concept_map ${operation.id}: concept map file must contain a YAML object.`);
+    return;
+  }
+  if (parsed.id !== operation.id) errors.push(`upsert_concept_map ${operation.id}: map id must match operation id.`);
+  if (operation.domain && parsed.domain !== operation.domain) errors.push(`upsert_concept_map ${operation.id}: map domain must match operation domain.`);
+  const parsedOwner = parsed.ownerNodeId || parsed.owner_node_id || "";
+  if (operation.ownerNodeId && parsedOwner !== operation.ownerNodeId) errors.push(`upsert_concept_map ${operation.id}: map ownerNodeId must match operation ownerNodeId.`);
+  if (!Array.isArray(parsed.nodes) || parsed.nodes.length < 1) errors.push(`upsert_concept_map ${operation.id}: nodes must be a non-empty array.`);
+  if (!Array.isArray(parsed.relations)) errors.push(`upsert_concept_map ${operation.id}: relations must be an array.`);
+  const conceptIds = new Set();
+  (parsed.nodes || []).forEach((node, index) => {
+    if (!node?.id) errors.push(`upsert_concept_map ${operation.id}: node at index ${index} is missing id.`);
+    if (node?.id && conceptIds.has(node.id)) errors.push(`upsert_concept_map ${operation.id}: duplicate concept node id "${node.id}".`);
+    if (node?.id) conceptIds.add(node.id);
+    const kind = node?.kind || node?.type || "concept";
+    if (!["concept", "formula", "theorem"].includes(kind)) {
+      errors.push(`upsert_concept_map ${operation.id}: node "${node?.id || index}" has unsupported kind "${kind}".`);
+    }
+    if (kind === "formula" && !String(node?.formula || node?.expression || "").trim()) {
+      errors.push(`upsert_concept_map ${operation.id}: formula node "${node?.id || index}" must provide formula.`);
+    }
+    const ownerNodeId = node?.ownerNodeId || node?.owner_node_id || "";
+    if (ownerNodeId && !nodes.has(ownerNodeId)) warnings.push(`upsert_concept_map ${operation.id}: concept "${node.id}" references unknown ownerNodeId "${ownerNodeId}".`);
+  });
+  (parsed.relations || []).forEach((relation, index) => {
+    const from = relation?.from || relation?.source;
+    const to = relation?.to || relation?.target;
+    if (!from || !to) errors.push(`upsert_concept_map ${operation.id}: relation at index ${index} needs from/to.`);
+    if (from && !conceptIds.has(from)) errors.push(`upsert_concept_map ${operation.id}: relation source "${from}" is not a concept node.`);
+    if (to && !conceptIds.has(to)) errors.push(`upsert_concept_map ${operation.id}: relation target "${to}" is not a concept node.`);
+  });
+  if (operation.layoutFile && !packageFiles.generatedConceptMapFiles?.[operation.layoutFile]) warnings.push(`upsert_concept_map ${operation.id}: layoutFile is listed but missing; import will use automatic layout.`);
+}
+
 function validateAddEdge(operation, context) {
   const { currentVault, createdNodes, createdDomains, packageEdges, errors } = context;
   const nodes = nodeMap(currentVault, createdNodes, createdDomains);
@@ -761,6 +834,7 @@ export function validateAiPackage(currentVault, packageFilesOrRoot) {
     if (operation.type === "add_node") validateAddNode(operation, context);
     if (operation.type === "append_note_section") validateAppendNoteSection(operation, context);
     if (operation.type === "append_exercise_set") validateAppendExerciseSet(operation, context);
+    if (operation.type === "upsert_concept_map") validateUpsertConceptMap(operation, context);
     if (operation.type === "add_edge") validateAddEdge(operation, context);
     if (operation.type === "add_block_type") validateAddBlockType(operation, context);
     if (operation.type === "propose_native_block") validateProposeNativeBlock(operation, context);

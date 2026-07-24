@@ -16,6 +16,7 @@ export function createEmptyVault() {
     notes: {},
     exercises: { byNodeId: {}, all: [] },
     exerciseProgress: { version: 2, problems: {}, errors: [] },
+    conceptMaps: { all: [], byId: {}, byDomain: {}, byOwnerNodeId: {}, rawFiles: {} },
     blockTypes: {},
     blockTypeErrors: [],
     blockTypeWarnings: [],
@@ -40,6 +41,13 @@ export function getActiveVault() {
 
 export function useActiveVault() {
   return activeVaultRef;
+}
+
+export function setConceptMapLayout(mapId, layout) {
+  const map = activeVaultRef.value?.conceptMaps?.byId?.[mapId];
+  if (!map) return false;
+  map.layout = layout || { nodes: {} };
+  return true;
 }
 
 export function getGraphNodes() {

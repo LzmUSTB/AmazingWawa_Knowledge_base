@@ -30,6 +30,7 @@ function normalizeFromRaw(rawFiles, vaultRootPath) {
     exerciseFiles: rawFiles.exercise_files || {},
     exerciseProgressYaml: rawFiles.exercise_progress_yaml || "",
     blockTypeFiles: rawFiles.block_type_files || {},
+    conceptMapFiles: rawFiles.concept_map_files || {},
   });
   return { ...normalizedVault, vaultRootPath, source: "desktop" };
 }
@@ -317,13 +318,26 @@ function fullVaultPackageOperations(vault) {
       relation: edge.relation,
       reason: edge.reason || "",
     }));
-  return [...domains, ...nodes, ...exerciseOps, ...relationOps];
+  const conceptMapOps = (vault.conceptMaps?.all || []).map((map) => ({
+    type: "upsert_concept_map",
+    id: map.id,
+    title: map.title || map.id,
+    titleLocale: map.titleLocale || "",
+    domain: map.domain || "",
+    ownerNodeId: map.ownerNodeId || "",
+    file: `generated/concept-maps/${map.id}.yaml`,
+    layoutFile: vault.conceptMaps?.rawFiles?.[`concept-maps/${map.id}.layout.yaml`]
+      ? `generated/concept-maps/${map.id}.layout.yaml`
+      : "",
+  }));
+  return [...domains, ...nodes, ...exerciseOps, ...relationOps, ...conceptMapOps];
 }
 
 function fullVaultPackagePayload(vault) {
   const packageId = `wawa-import-vault-export-${timestampForPackageId()}`;
   const nodeCount = (vault.nodes || []).filter((node) => node.type !== "domain").length;
   const exerciseSetCount = vault.exercises?.all?.length || 0;
+  const conceptMapCount = vault.conceptMaps?.all?.length || 0;
   const nonContainsEdgeCount = (vault.edges || []).filter((edge) => edge.relation !== "contains").length;
   const manifest = {
     schemaVersion: 1.1,
@@ -361,10 +375,11 @@ function fullVaultPackagePayload(vault) {
     `- Domains: ${(vault.domains || []).length}`,
     `- Nodes: ${nodeCount}`,
     `- ExerciseSets: ${exerciseSetCount}`,
+    `- Concept Maps: ${conceptMapCount}`,
     `- Non-contains relations: ${nonContainsEdgeCount}`,
     "",
     "This package is intended for sharing a full local-first knowledge vault with another Kinjito/AmazingWawa Knowledge Base user.",
-    "Import appends ExerciseSet problems by id and creates nodes/relations from the package patch.",
+    "Import appends ExerciseSet problems by id, upserts Concept Maps by id, and creates nodes/relations from the package patch.",
   ].join("\n");
   return {
     packageId,
@@ -388,6 +403,148 @@ export async function exportVaultWawaPackage(vaultRootPath) {
     patchRaw: payload.patchRaw,
     reviewRaw: payload.reviewRaw,
   });
+}
+
+export async function saveConceptMapLayout(vaultRootPath, mapId, layout) {
+  if (!vaultRootPath) throw new Error("Configure an active vault before saving concept map layout.");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(mapId || ""))) {
+    throw new Error("Concept map id must be kebab-case.");
+  }
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath: `concept-maps/${mapId}.layout.yaml`,
+    contents: YAML.stringify({ schemaVersion: 1, mapId, nodes: layout?.nodes || {} }),
+  });
+}
+
+const EDITABLE_CONCEPT_NODE_FIELDS = [
+  "title",
+  "titleLocale",
+  "kind",
+  "formula",
+  "summary",
+  "layer",
+  "ownerNodeId",
+];
+const EDITABLE_CONCEPT_RELATION_FIELDS = [
+  "label",
+  "labelLocale",
+  "type",
+  "direction",
+  "from",
+  "to",
+  "condition",
+  "formula",
+  "explanation",
+];
+
+function editableFields(changes, allowedFields) {
+  return Object.fromEntries(
+    allowedFields
+      .filter((field) => Object.prototype.hasOwnProperty.call(changes || {}, field))
+      .map((field) => [field, typeof changes[field] === "string" ? changes[field].trim() : changes[field]]),
+  );
+}
+
+function conceptMapDocument(vault, mapId) {
+  const map = vault.conceptMaps?.byId?.[mapId];
+  if (!map) throw new Error(`Concept map not found: ${mapId}`);
+  const relativePath = String(map.filePath || `concept-maps/${mapId}.yaml`).replaceAll("\\", "/");
+  if (!relativePath.startsWith("concept-maps/") || !/\.ya?ml$/i.test(relativePath) || /\.layout\.ya?ml$/i.test(relativePath)) {
+    throw new Error(`Concept map source path is invalid: ${relativePath}`);
+  }
+  const raw = vault.conceptMaps?.rawFiles?.[relativePath];
+  const document = raw ? YAML.parse(raw) : {
+    schemaVersion: 1,
+    id: map.id,
+    title: map.title,
+    titleLocale: map.titleLocale,
+    domain: map.domain,
+    ownerNodeId: map.ownerNodeId,
+    summary: map.summary,
+    layers: map.layers,
+    relationTypes: map.relationTypes,
+    nodes: map.nodes,
+    relations: map.relations,
+  };
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    throw new Error(`Concept map YAML must contain an object: ${relativePath}`);
+  }
+  return { document, relativePath };
+}
+
+async function writeConceptMapDocument(vaultRootPath, relativePath, document) {
+  await invoke("write_text_file", {
+    vaultRootPath,
+    relativePath,
+    contents: YAML.stringify(document),
+  });
+  return loadVaultFromPath(vaultRootPath);
+}
+
+export async function updateConceptMapElement(vaultRootPath, payload = {}) {
+  if (!vaultRootPath) throw new Error("Configure an active vault before editing a concept map.");
+  const vault = await loadVaultFromPath(vaultRootPath);
+  const { document, relativePath } = conceptMapDocument(vault, payload.mapId);
+  const isRelation = payload.kind === "relation";
+  const collectionKey = isRelation
+    ? (Array.isArray(document.relations) ? "relations" : "edges")
+    : (Array.isArray(document.nodes) ? "nodes" : "concepts");
+  const collection = Array.isArray(document[collectionKey]) ? [...document[collectionKey]] : [];
+  const index = collection.findIndex((item) => item?.id === payload.id);
+  if (index < 0) throw new Error(`${isRelation ? "Relation" : "Node"} not found in concept map: ${payload.id}`);
+  const changes = editableFields(
+    payload.changes,
+    isRelation ? EDITABLE_CONCEPT_RELATION_FIELDS : EDITABLE_CONCEPT_NODE_FIELDS,
+  );
+
+  if (isRelation) {
+    const nodeKey = Array.isArray(document.nodes) ? "nodes" : "concepts";
+    const nodeIds = new Set((document[nodeKey] || []).map((node) => node?.id));
+    const nextFrom = changes.from ?? collection[index].from ?? collection[index].source;
+    const nextTo = changes.to ?? collection[index].to ?? collection[index].target;
+    if (!nodeIds.has(nextFrom) || !nodeIds.has(nextTo)) {
+      throw new Error("Concept map relation endpoints must reference existing concept-map nodes.");
+    }
+    changes.from = nextFrom;
+    changes.to = nextTo;
+    delete changes.source;
+    delete changes.target;
+  }
+
+  collection[index] = { ...collection[index], ...changes };
+  document[collectionKey] = collection;
+  return writeConceptMapDocument(vaultRootPath, relativePath, document);
+}
+
+export async function deleteConceptMapElement(vaultRootPath, payload = {}) {
+  if (!vaultRootPath) throw new Error("Configure an active vault before editing a concept map.");
+  const vault = await loadVaultFromPath(vaultRootPath);
+  const { document, relativePath } = conceptMapDocument(vault, payload.mapId);
+
+  if (payload.kind === "relation") {
+    const relationKey = Array.isArray(document.relations) ? "relations" : "edges";
+    const relations = Array.isArray(document[relationKey]) ? document[relationKey] : [];
+    if (!relations.some((relation) => relation?.id === payload.id)) {
+      throw new Error(`Relation not found in concept map: ${payload.id}`);
+    }
+    document[relationKey] = relations.filter((relation) => relation?.id !== payload.id);
+  } else {
+    const nodeKey = Array.isArray(document.nodes) ? "nodes" : "concepts";
+    const relationKey = Array.isArray(document.relations) ? "relations" : "edges";
+    const nodes = Array.isArray(document[nodeKey]) ? document[nodeKey] : [];
+    if (!nodes.some((node) => node?.id === payload.id)) {
+      throw new Error(`Node not found in concept map: ${payload.id}`);
+    }
+    document[nodeKey] = nodes.filter((node) => node?.id !== payload.id);
+    document[relationKey] = (document[relationKey] || []).filter((relation) => {
+      const from = relation?.from ?? relation?.source;
+      const to = relation?.to ?? relation?.target;
+      return from !== payload.id && to !== payload.id;
+    });
+  }
+
+  return writeConceptMapDocument(vaultRootPath, relativePath, document);
 }
 
 export async function openSnapshotFolder() {

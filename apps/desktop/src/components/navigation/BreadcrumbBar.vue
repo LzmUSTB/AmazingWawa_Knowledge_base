@@ -18,6 +18,10 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  currentConceptMapFocusNodeId: {
+    type: String,
+    default: "",
+  },
   currentView: {
     type: String,
     required: true,
@@ -44,6 +48,7 @@ const tabLabels = {
   "vault-package-export": "Export Package",
   "integrations-guide": "Skills & Plugins",
   exercises: "Exercises",
+  "concept-map": "Concept Map",
   "vault-settings": "Vault Settings",
   "vault-setup": "Vault Setup",
   "vault-git": "Vault Git",
@@ -109,6 +114,8 @@ const crumbItems = computed(() => {
       ? props.currentNoteId
       : props.currentView === "exercises"
         ? props.currentExerciseNodeId
+        : props.currentView === "concept-map"
+          ? props.currentConceptMapFocusNodeId || graphCenterNodeId.value
         : graphCenterNodeId.value;
   if (targetId) containsPathIds(targetId).forEach((id) => items.push(crumbForId(id)));
 

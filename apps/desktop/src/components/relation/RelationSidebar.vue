@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import NodeFilterList from "../common/NodeFilterList.vue";
 import AppIcon from "../ui/AppIcon.vue";
+import ConceptMapSidebar from "../concept-map/ConceptMapSidebar.vue";
 import RelationContextMenu from "./RelationContextMenu.vue";
 import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
 import { getStageForNode } from "../../graph/graph-layout.js";
@@ -47,6 +48,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  conceptMapId: {
+    type: String,
+    default: "",
+  },
+  conceptMapSaving: {
+    type: Boolean,
+    default: false,
+  },
+  conceptMapSelection: {
+    type: Object,
+    default: () => ({ kind: "", id: "" }),
+  },
   currentView: {
     type: String,
     required: true,
@@ -69,6 +82,7 @@ const emit = defineEmits([
   "add-link",
   "open-domain",
   "open-folder",
+  "open-concept-map",
   "open-note",
   "open-exercises",
   "open-scope",
@@ -76,6 +90,8 @@ const emit = defineEmits([
   "request-delete-note",
   "request-delete-relation",
   "request-edit-relation",
+  "delete-concept-map-element",
+  "save-concept-map-element",
   "toggle-collapse",
   "toggle-pin-node",
 ]);
@@ -105,6 +121,10 @@ const nodeHasNote = computed(() => {
 const nodeHasExerciseSet = computed(() => Boolean(
   node.value && !domainSelected.value && activeVault.value.exercises?.byNodeId?.[node.value.id],
 ));
+const nodeConceptMap = computed(() => {
+  if (!node.value) return null;
+  return activeVault.value.conceptMaps?.byOwnerNodeId?.[node.value.id]?.[0] || null;
+});
 const hierarchy = computed(() => (node.value ? getHierarchyForNode(node.value.id) : { parentEdges: [], childEdges: [] }));
 const directRelations = computed(() => (node.value ? getDirectRelationsForNode(node.value.id) : []));
 
@@ -261,7 +281,9 @@ function requestDeleteNote() {
     <template v-else>
       <header class="relation-header">
         <div>
-          <div class="panel-label" :style="{ '--label-color': nodeColor || 'var(--graphics)' }">Details</div>
+          <div class="panel-label" :style="{ '--label-color': nodeColor || 'var(--graphics)' }">
+            {{ currentView === "concept-map" ? "关系网详情" : "Details" }}
+          </div>
         </div>
         <button class="collapse-button hud-button button-icon-only" title="Collapse relations sidebar"
           aria-label="Collapse relations sidebar" @click="$emit('toggle-collapse')">
@@ -269,7 +291,13 @@ function requestDeleteNote() {
         </button>
       </header>
 
-      <div v-if="!node" class="empty-state">
+      <ConceptMapSidebar v-if="currentView === 'concept-map'" :can-save="canSaveNote"
+        :map-id="conceptMapId" :saving="conceptMapSaving" :selection="conceptMapSelection"
+        @delete-element="$emit('delete-concept-map-element', $event)"
+        @open-note="$emit('open-note', $event)"
+        @save-element="$emit('save-concept-map-element', $event)" />
+
+      <div v-else-if="!node" class="empty-state">
         <h2>No node selected</h2>
         <p>Select a graph node or open a note to inspect relationships.</p>
       </div>
@@ -321,6 +349,11 @@ function requestDeleteNote() {
                 @click="$emit('open-exercises', node.id)">
                 <AppIcon name="exercise" />
                 <span class="button-icon-label">ExerciseSet</span>
+              </button>
+              <button v-if="nodeConceptMap" class="hud-button button-with-icon"
+                style="--button-color: var(--relation-node-color)" @click="$emit('open-concept-map', { mapId: nodeConceptMap.id, focusNodeId: node.id })">
+                <AppIcon name="graph" />
+                <span class="button-icon-label">Concept Map</span>
               </button>
               <button v-if="canSaveNote && nodeHasNote" class="hud-button button-with-icon"
                 style="--button-color: var(--game-dev)" @click="requestDeleteNote">

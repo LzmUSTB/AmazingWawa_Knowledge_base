@@ -7,10 +7,12 @@ function generatedMetaPath(operation) { return `generated/content/${operation.do
 function generatedMarkdownNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.md`; }
 function generatedHtmlNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.html`; }
 function generatedExercisePath(operation) { return `generated/content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
+function generatedConceptMapPath(operation) { return operation.file || `generated/concept-maps/${operation.id}.yaml`; }
 function targetMetaPath(operation) { return `content/${operation.domain}/${operation.id}/meta.yaml`; }
 function targetMarkdownNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.md`; }
 function targetHtmlNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.html`; }
 function targetExercisePath(operation) { return `content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
+function targetConceptMapPath(operation) { return `concept-maps/${String(operation.id || "").trim()}.yaml`; }
 function edgeId(from, relation, to) { return `${from}-${relation}-${to}`; }
 function normalizeFormat(value = "") { const format = String(value || "").trim().toLowerCase(); return ["markdown", "html", "none"].includes(format) ? format : ""; }
 function noteFormatForOperation(operation, packageFiles) {
@@ -140,6 +142,27 @@ export function buildAiPackageApplyPlan(currentVault, packageFiles) {
         created.push(targetPath);
       }
       createDirs.add(`content/${domain}/${targetId}`);
+    }
+    if (operation.type === "upsert_concept_map") {
+      const packagePath = generatedConceptMapPath(operation);
+      const targetPath = targetConceptMapPath(operation);
+      const contents = packageFiles.generatedConceptMapFiles?.[packagePath] || "";
+      if (currentVault.conceptMaps?.byId?.[operation.id]) {
+        backupPaths.add(targetPath);
+        writes.push({ relativePath: targetPath, contents, createOnly: false });
+        modified.push(targetPath);
+      } else {
+        writes.push({ relativePath: targetPath, contents, createOnly: true });
+        created.push(targetPath);
+      }
+      createDirs.add("concept-maps");
+      if (operation.layoutFile && packageFiles.generatedConceptMapFiles?.[operation.layoutFile]) {
+        const layoutPath = `concept-maps/${operation.id}.layout.yaml`;
+        if (currentVault.conceptMaps?.rawFiles?.[layoutPath]) backupPaths.add(layoutPath);
+        writes.push({ relativePath: layoutPath, contents: packageFiles.generatedConceptMapFiles[operation.layoutFile], createOnly: !currentVault.conceptMaps?.rawFiles?.[layoutPath] });
+        if (currentVault.conceptMaps?.rawFiles?.[layoutPath]) modified.push(layoutPath);
+        else created.push(layoutPath);
+      }
     }
     if (operation.type === "add_edge") addedEdges.push({ id: edgeId(operation.from, operation.relation, operation.to), from: operation.from, to: operation.to, relation: operation.relation });
   });

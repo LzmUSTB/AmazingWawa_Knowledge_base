@@ -5,10 +5,12 @@ function generatedMetaPath(operation) { return `generated/content/${operation.do
 function generatedMarkdownNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.md`; }
 function generatedHtmlNotePath(operation) { return `generated/content/${operation.domain}/${operation.id}/note.html`; }
 function generatedExercisePath(operation) { return `generated/content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
+function generatedConceptMapPath(operation) { return operation.file || `generated/concept-maps/${operation.id}.yaml`; }
 function targetMetaPath(operation) { return `content/${operation.domain}/${operation.id}/meta.yaml`; }
 function targetMarkdownNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.md`; }
 function targetHtmlNotePath(operation) { return `content/${operation.domain}/${operation.id}/note.html`; }
 function targetExercisePath(operation) { return `content/${operation.domain}/${operation.targetId || operation.id}/exercises.yaml`; }
+function targetConceptMapPath(operation) { return `concept-maps/${String(operation.id || "").trim()}.yaml`; }
 function edgeId(from, relation, to) { return `${from}-${relation}-${to}`; }
 function lineHeadingText(line = "") { return line.match(/^#{1,6}\s+(.+)$/)?.[1]?.trim() || ""; }
 function normalizeFormat(value = "") { const format = String(value || "").trim().toLowerCase(); return ["markdown", "html", "none"].includes(format) ? format : ""; }
@@ -103,6 +105,17 @@ export function diffAiPackage(currentVault, validatedPackageOrFiles) {
       edgesToAdd.push(edge);
       graphDiff.push({ action: "add", edge, reason: "semantic relation from package" });
       if (!filesToModify.some((file) => file.path === "graph.yaml")) filesToModify.push({ path: "graph.yaml", kind: "graph" });
+    }
+    if (operation.type === "upsert_concept_map") {
+      const path = targetConceptMapPath(operation);
+      const file = { path, sourcePath: generatedConceptMapPath(operation), kind: "concept-map", operation: "upsert_concept_map" };
+      if (currentVault.conceptMaps?.byId?.[operation.id]) filesToModify.push(file);
+      else filesToCreate.push(file);
+      reviewItems.push({
+        type: "upsert_concept_map",
+        title: operation.title || operation.id,
+        message: "Create or update a concept relation map file. This does not modify graph.yaml relations.",
+      });
     }
     if (operation.type === "add_block_type") {
       const raw = packageFiles.blockTypeFiles[operation.file] || "";

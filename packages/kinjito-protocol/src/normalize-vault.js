@@ -1,5 +1,6 @@
 import { buildFileTree } from "./build-file-tree.js";
 import { buildGraphScopes } from "./build-graph-scopes.js";
+import { buildConceptMapIndex } from "./build-concept-map-index.js";
 import { buildExerciseIndex, parseExerciseProgress } from "./build-exercise-index.js";
 import { buildNoteIndex, idFromContentPath } from "./build-note-index.js";
 import { getBlockRegistry, normalizeBlockTypes } from "./block-registry.js";
@@ -187,6 +188,7 @@ export function normalizeVault(rawFiles = {}) {
   const notes = buildNoteIndex(rawFiles.noteFiles || {}, rawFiles.noteHtmlFiles || {});
   const exercises = buildExerciseIndex(rawFiles.exerciseFiles || {});
   const exerciseProgress = parseExerciseProgress(rawFiles.exerciseProgressYaml || "", exercises);
+  const conceptMaps = buildConceptMapIndex(rawFiles.conceptMapFiles || {});
   const scopes = buildGraphScopes({ domains, nodes, edges });
   const layouts = ensureScopeBoards(normalizeLayouts(graphLayoutYaml), scopes);
   const fileTree = buildFileTree(domains, nodes, edges, notes);
@@ -207,6 +209,7 @@ export function normalizeVault(rawFiles = {}) {
     notes,
     exercises,
     exerciseProgress,
+    conceptMaps,
     blockTypes: blockTypeResult.definitions,
     blockTypeErrors: blockTypeResult.errors,
     blockTypeWarnings: blockTypeResult.warnings,

@@ -233,6 +233,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
     generatedNoteFiles: {},
     generatedHtmlNoteFiles: {},
     generatedExerciseFiles: {},
+    generatedConceptMapFiles: {},
     assetFiles: [],
     blockTypeFiles: {},
     reviewFiles: {},
@@ -242,6 +243,7 @@ export function readWawaPackageBuffer(buffer, sourcePath = "package.wawapkg") {
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/note.md")) packageFiles.generatedNoteFiles[entryPath] = contents;
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/note.html")) packageFiles.generatedHtmlNoteFiles[entryPath] = contents;
     if (entryPath.startsWith("generated/content/") && entryPath.endsWith("/exercises.yaml")) packageFiles.generatedExerciseFiles[entryPath] = contents;
+    if (entryPath.startsWith("generated/concept-maps/") && /\.ya?ml$/i.test(entryPath)) packageFiles.generatedConceptMapFiles[entryPath] = contents;
     if (isAssetPath(entryPath)) {
       packageFiles.assetFiles.push({
         vaultRelativePath: assetVaultRelativePath(entryPath),
@@ -286,6 +288,7 @@ export function writeWawaPackageBuffer(packageFiles) {
     ...Object.entries(packageFiles.generatedNoteFiles || {}),
     ...Object.entries(packageFiles.generatedHtmlNoteFiles || {}),
     ...Object.entries(packageFiles.generatedExerciseFiles || {}),
+    ...Object.entries(packageFiles.generatedConceptMapFiles || {}),
     ...Object.entries(packageFiles.blockTypeFiles || {}),
     ...Object.entries(packageFiles.reviewFiles || {}),
     ...(packageFiles.assetFiles || []).map((asset) => [asset.packageRelativePath, Buffer.from(asset.base64 || "", "base64")]),

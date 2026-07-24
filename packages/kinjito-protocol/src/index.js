@@ -2,6 +2,7 @@ export * from "./build-file-tree.js";
 export * from "./build-graph-scopes.js";
 export * from "./build-note-index.js";
 export * from "./build-exercise-index.js";
+export * from "./build-concept-map-index.js";
 export * from "./exercise-scheduler.js";
 export * from "./block-registry.js";
 export * from "./normalize-vault.js";

@@ -17,6 +17,7 @@ import {
   deleteDomain,
   deleteKnowledgeNode,
   deleteNoteFromNode,
+  deleteConceptMapElement,
   exportContext,
   importHtmlNoteToNode,
   importExerciseSetForNode,
@@ -28,14 +29,23 @@ import {
   removeGraphLink,
   replaceExerciseProblemSolution,
   replaceGraphLink,
+  saveConceptMapLayout,
   saveGraphLayoutBoard,
+  updateConceptMapElement,
   updateDomain,
   updateKnowledgeNodeMeta,
   writeNoteMarkdown,
   writeExerciseProgress,
   vaultGit,
 } from "./data/desktop-vault-adapter.js";
-import { createEmptyVault, findGraphNode, getGraphNodes, setActiveVault, useActiveVault } from "./graph/graph-data-store.js";
+import {
+  createEmptyVault,
+  findGraphNode,
+  getGraphNodes,
+  setActiveVault,
+  setConceptMapLayout,
+  useActiveVault,
+} from "./graph/graph-data-store.js";
 import { getGraphBoardSize, getNodeLayout } from "./graph/graph-layout.js";
 import { getGraphScope, hasGraphScope, isDomainNode, scopeForDomain } from "./graph/graph-scope.js";
 import {
@@ -59,6 +69,9 @@ const currentView = ref("graph");
 const currentDomain = ref("");
 const currentNoteId = ref("");
 const currentExerciseNodeId = ref("");
+const currentConceptMapId = ref("");
+const currentConceptMapFocusNodeId = ref("");
+const currentConceptMapSelection = ref({ kind: "", id: "" });
 const selectedNodeId = ref("");
 const graphScopeId = ref("root");
 const noteMode = ref("read");
@@ -80,6 +93,7 @@ const layoutDraftBoards = ref({});
 const layoutMovedNodeIds = ref({});
 const activeLayoutScopeId = ref("");
 const layoutSaveInProgress = ref(false);
+const conceptMapSaveInProgress = ref(false);
 const layoutError = ref("");
 const stageCreateMode = ref(false);
 const contextExportError = ref("");
@@ -107,6 +121,7 @@ const forwardStack = ref([]);
 const historySuppressed = ref(false);
 let globalWheelListenerActive = false;
 let exerciseProgressSaveQueue = Promise.resolve();
+let conceptMapLayoutSaveQueue = Promise.resolve();
 
 const selectedNode = computed(
   () => findGraphNode(selectedNodeId.value) || getGraphNodes()[0],
@@ -127,6 +142,7 @@ const hasDomains = computed(() => Boolean(useActiveVault().value.domains?.length
 const currentRelationNodeId = computed(() => {
   if (currentView.value === "note") return currentNoteId.value;
   if (currentView.value === "exercises") return currentExerciseNodeId.value;
+  if (currentView.value === "concept-map") return "";
   if (currentView.value !== "graph") return "";
   return selectedNodeId.value || "";
 });
@@ -205,6 +221,20 @@ function applyVault(vault, { reset = false } = {}) {
     currentExerciseNodeId.value = "";
     if (currentView.value === "exercises") selectedNodeId.value = "";
   }
+  const currentConceptMap = useActiveVault().value.conceptMaps?.byId?.[currentConceptMapId.value];
+  if (!currentConceptMap) {
+    currentConceptMapId.value = "";
+    currentConceptMapFocusNodeId.value = "";
+    currentConceptMapSelection.value = { kind: "", id: "" };
+    if (currentView.value === "concept-map") currentView.value = "graph";
+  } else if (currentConceptMapSelection.value.id) {
+    const collection = currentConceptMapSelection.value.kind === "relation"
+      ? currentConceptMap.relations
+      : currentConceptMap.nodes;
+    if (!collection?.some((item) => item.id === currentConceptMapSelection.value.id)) {
+      currentConceptMapSelection.value = { kind: "", id: "" };
+    }
+  }
   if (!hasGraphScope(graphScopeId.value)) {
     graphScopeId.value = "root";
   }
@@ -222,6 +252,8 @@ function snapshotNavigation() {
     selectedNodeId: selectedNodeId.value,
     currentNoteId: currentNoteId.value,
     currentExerciseNodeId: currentExerciseNodeId.value,
+    currentConceptMapId: currentConceptMapId.value,
+    currentConceptMapFocusNodeId: currentConceptMapFocusNodeId.value,
     currentDomain: currentDomain.value,
   };
 }
@@ -233,6 +265,8 @@ function isSameNavigationEntry(a, b) {
     a?.selectedNodeId === b?.selectedNodeId &&
     a?.currentNoteId === b?.currentNoteId &&
     (a?.currentExerciseNodeId || "") === (b?.currentExerciseNodeId || "") &&
+    (a?.currentConceptMapId || "") === (b?.currentConceptMapId || "") &&
+    (a?.currentConceptMapFocusNodeId || "") === (b?.currentConceptMapFocusNodeId || "") &&
     a?.currentDomain === b?.currentDomain
   );
 }
@@ -250,6 +284,7 @@ function validatedNavigationEntry(entry) {
     "graph",
     "note",
     "exercises",
+    "concept-map",
     "ai-import",
     "context-export",
     "tools",
@@ -266,6 +301,8 @@ function validatedNavigationEntry(entry) {
   const exerciseNodeId = findGraphNode(entry.currentExerciseNodeId) && !isDomainNode(entry.currentExerciseNodeId)
     ? entry.currentExerciseNodeId
     : "";
+  const conceptMapId = useActiveVault().value.conceptMaps?.byId?.[entry.currentConceptMapId] ? entry.currentConceptMapId : "";
+  const conceptFocusId = findGraphNode(entry.currentConceptMapFocusNodeId) ? entry.currentConceptMapFocusNodeId : "";
   const domain = hasDomain(entry.currentDomain)
     ? entry.currentDomain
     : findGraphNode(selectedId)?.domain || getFallbackDomain();
@@ -276,6 +313,8 @@ function validatedNavigationEntry(entry) {
     selectedNodeId: selectedId,
     currentNoteId: noteId,
     currentExerciseNodeId: exerciseNodeId,
+    currentConceptMapId: conceptMapId,
+    currentConceptMapFocusNodeId: conceptFocusId,
     currentDomain: domain,
   };
 }
@@ -288,6 +327,8 @@ function applyNavigationEntry(entry) {
   selectedNodeId.value = nextEntry.selectedNodeId;
   currentNoteId.value = nextEntry.currentNoteId;
   currentExerciseNodeId.value = nextEntry.currentExerciseNodeId;
+  currentConceptMapId.value = nextEntry.currentConceptMapId;
+  currentConceptMapFocusNodeId.value = nextEntry.currentConceptMapFocusNodeId;
   currentDomain.value = nextEntry.currentDomain;
   noteMode.value = "read";
   historySuppressed.value = false;
@@ -322,6 +363,8 @@ function restoreNavigation(snapshot, fallbackNodeId = "") {
   selectedNodeId.value = nextSelectedId;
   currentNoteId.value = findGraphNode(snapshot.currentNoteId) ? snapshot.currentNoteId : nextSelectedId;
   currentExerciseNodeId.value = findGraphNode(snapshot.currentExerciseNodeId) ? snapshot.currentExerciseNodeId : "";
+  currentConceptMapId.value = useActiveVault().value.conceptMaps?.byId?.[snapshot.currentConceptMapId] ? snapshot.currentConceptMapId : "";
+  currentConceptMapFocusNodeId.value = findGraphNode(snapshot.currentConceptMapFocusNodeId) ? snapshot.currentConceptMapFocusNodeId : "";
   currentDomain.value = hasDomain(snapshot.currentDomain)
     ? snapshot.currentDomain
     : findGraphNode(nextSelectedId)?.domain || getFallbackDomain();
@@ -332,6 +375,8 @@ function resetNavigationForVault(vault) {
   currentDomain.value = defaultDomain;
   currentNoteId.value = vault.nodes.find((node) => node.type !== "domain")?.id || defaultDomain;
   currentExerciseNodeId.value = "";
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   selectedNodeId.value = "";
   graphScopeId.value = "root";
   currentView.value = "graph";
@@ -740,10 +785,15 @@ function showGraph(scopeId = graphScopeId.value, nodeId = selectedNodeId.value) 
     scopeId: nextScopeId,
     selectedNodeId: nextSelectedNodeId,
     currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: currentExerciseNodeId.value,
+    currentConceptMapId: currentConceptMapId.value,
+    currentConceptMapFocusNodeId: currentConceptMapFocusNodeId.value,
     currentDomain: scope.type === "domain" ? scope.id : scope.type === "focus" ? findGraphNode(scope.centerNodeId)?.domain || currentDomain.value : currentDomain.value,
   });
   graphScopeId.value = nextScopeId;
   currentExerciseNodeId.value = "";
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
   selectedNodeId.value = nextSelectedNodeId;
@@ -765,6 +815,8 @@ function openNote(nodeId) {
   });
   currentDomain.value = node.domain;
   currentExerciseNodeId.value = "";
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   currentNoteId.value = node.id;
   selectedNodeId.value = node.id;
   noteMode.value = "read";
@@ -786,6 +838,8 @@ function openExercises(nodeId) {
     currentDomain: node.domain,
   });
   currentExerciseNodeId.value = node.id;
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   selectedNodeId.value = node.id;
   currentDomain.value = node.domain;
   currentView.value = "exercises";
@@ -804,7 +858,40 @@ function openExercisesOverview() {
     currentDomain: currentDomain.value,
   });
   currentExerciseNodeId.value = "";
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   currentView.value = "exercises";
+  return true;
+}
+
+function openConceptMap(payload = {}) {
+  if (!confirmDiscardDirty()) return false;
+  const mapId = typeof payload === "string" ? payload : payload.mapId;
+  const conceptMap = useActiveVault().value.conceptMaps?.byId?.[mapId];
+  if (!conceptMap) return false;
+  const focusNodeId = typeof payload === "object" ? payload.focusNodeId || conceptMap.ownerNodeId || "" : conceptMap.ownerNodeId || "";
+  const focusNode = findGraphNode(focusNodeId);
+  const focusConcept = conceptMap.nodes?.find((node) => node.ownerNodeId === focusNodeId) || null;
+  pushNavigationHistory({
+    view: "concept-map",
+    scopeId: graphScopeId.value,
+    selectedNodeId: focusNode?.id || selectedNodeId.value,
+    currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: currentExerciseNodeId.value,
+    currentConceptMapId: conceptMap.id,
+    currentConceptMapFocusNodeId: focusNode?.id || "",
+    currentDomain: conceptMap.domain || focusNode?.domain || currentDomain.value,
+  });
+  currentConceptMapId.value = conceptMap.id;
+  currentConceptMapFocusNodeId.value = focusNode?.id || "";
+  currentConceptMapSelection.value = focusConcept
+    ? { kind: "node", id: focusConcept.id }
+    : { kind: "", id: "" };
+  if (focusNode) selectedNodeId.value = focusNode.id;
+  currentDomain.value = conceptMap.domain || focusNode?.domain || currentDomain.value;
+  currentExerciseNodeId.value = "";
+  currentView.value = "concept-map";
+  if (focusNode) recordRecentNode(focusNode.id);
   return true;
 }
 
@@ -982,10 +1069,15 @@ function openDomain(domain) {
     scopeId: nextScopeId,
     selectedNodeId: domain,
     currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: currentExerciseNodeId.value,
+    currentConceptMapId: currentConceptMapId.value,
+    currentConceptMapFocusNodeId: currentConceptMapFocusNodeId.value,
     currentDomain: domain,
   });
   currentDomain.value = domain;
   currentExerciseNodeId.value = "";
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   selectedNodeId.value = domain;
   graphScopeId.value = nextScopeId;
   currentView.value = "graph";
@@ -1007,10 +1099,15 @@ function openScope(scopeId, selectedId = scopeId) {
     scopeId,
     selectedNodeId: selectedId,
     currentNoteId: currentNoteId.value,
+    currentExerciseNodeId: currentExerciseNodeId.value,
+    currentConceptMapId: currentConceptMapId.value,
+    currentConceptMapFocusNodeId: currentConceptMapFocusNodeId.value,
     currentDomain: nextDomain,
   });
   graphScopeId.value = scopeId;
   currentExerciseNodeId.value = "";
+  currentConceptMapId.value = "";
+  currentConceptMapFocusNodeId.value = "";
   selectedNodeId.value = selectedId;
   if (scope.type === "domain") currentDomain.value = scope.id;
   if (scope.type === "focus") currentDomain.value = findGraphNode(scope.centerNodeId)?.domain || currentDomain.value;
@@ -1106,6 +1203,8 @@ function showView(viewName) {
       selectedNodeId: selectedNodeId.value,
       currentNoteId: currentNoteId.value,
       currentExerciseNodeId: currentExerciseNodeId.value,
+      currentConceptMapId: currentConceptMapId.value,
+      currentConceptMapFocusNodeId: currentConceptMapFocusNodeId.value,
       currentDomain: currentDomain.value,
     });
     currentView.value = "graph";
@@ -1123,6 +1222,8 @@ function showView(viewName) {
     selectedNodeId: selectedNodeId.value,
     currentNoteId: currentNoteId.value,
     currentExerciseNodeId: currentExerciseNodeId.value,
+    currentConceptMapId: currentConceptMapId.value,
+    currentConceptMapFocusNodeId: currentConceptMapFocusNodeId.value,
     currentDomain: currentDomain.value,
   });
   if (viewName === "context-export") contextExportError.value = "";
@@ -1137,16 +1238,81 @@ function handleAiImportApplied(updatedVault) {
   const nextExerciseNodeId = findGraphNode(currentExerciseNodeId.value) && !isDomainNode(currentExerciseNodeId.value)
     ? currentExerciseNodeId.value
     : "";
+  const nextConceptMapId = useActiveVault().value.conceptMaps?.byId?.[currentConceptMapId.value] ? currentConceptMapId.value : "";
+  const nextConceptFocusNodeId = findGraphNode(currentConceptMapFocusNodeId.value) ? currentConceptMapFocusNodeId.value : "";
   graphScopeId.value = targetScopeId;
   selectedNodeId.value = nextSelectedNodeId;
   currentNoteId.value = nextNoteId;
   currentExerciseNodeId.value = nextExerciseNodeId;
+  currentConceptMapId.value = nextConceptMapId;
+  currentConceptMapFocusNodeId.value = nextConceptFocusNodeId;
   currentDomain.value = hasDomain(currentDomain.value)
     ? currentDomain.value
     : findGraphNode(nextSelectedNodeId)?.domain || getFallbackDomain();
   currentView.value = "graph";
   noteDirty.value = false;
   noteMode.value = "read";
+}
+
+async function handleSaveConceptMapElement(payload) {
+  if (conceptMapSaveInProgress.value) return false;
+  if (!activeVaultRootPath.value) {
+    window.alert("请先配置 Vault，再编辑概念关系网。");
+    return false;
+  }
+  conceptMapSaveInProgress.value = true;
+  try {
+    await conceptMapLayoutSaveQueue.catch(() => undefined);
+    const updatedVault = await updateConceptMapElement(activeVaultRootPath.value, payload);
+    replaceVaultWithoutNavigation(updatedVault);
+    currentConceptMapId.value = payload.mapId;
+    currentConceptMapSelection.value = { kind: payload.kind, id: payload.id };
+    currentView.value = "concept-map";
+    return true;
+  } catch (error) {
+    console.error("[concept-map] Failed to save element.", error);
+    window.alert(`保存概念关系网失败：${error?.message || error}`);
+    return false;
+  } finally {
+    conceptMapSaveInProgress.value = false;
+  }
+}
+
+async function handleDeleteConceptMapElement(payload) {
+  if (conceptMapSaveInProgress.value) return false;
+  if (!activeVaultRootPath.value) {
+    window.alert("请先配置 Vault，再编辑概念关系网。");
+    return false;
+  }
+  conceptMapSaveInProgress.value = true;
+  try {
+    await conceptMapLayoutSaveQueue.catch(() => undefined);
+    const updatedVault = await deleteConceptMapElement(activeVaultRootPath.value, payload);
+    replaceVaultWithoutNavigation(updatedVault);
+    currentConceptMapId.value = payload.mapId;
+    currentConceptMapSelection.value = { kind: "", id: "" };
+    currentView.value = "concept-map";
+    return true;
+  } catch (error) {
+    console.error("[concept-map] Failed to delete element.", error);
+    window.alert(`删除概念关系网内容失败：${error?.message || error}`);
+    return false;
+  } finally {
+    conceptMapSaveInProgress.value = false;
+  }
+}
+
+function handleSaveConceptMapLayout({ mapId, layout }) {
+  if (!activeVaultRootPath.value || !mapId || !layout?.nodes) return false;
+  setConceptMapLayout(mapId, layout);
+  const vaultRootPath = activeVaultRootPath.value;
+  conceptMapLayoutSaveQueue = conceptMapLayoutSaveQueue
+    .catch(() => undefined)
+    .then(() => saveConceptMapLayout(vaultRootPath, mapId, layout))
+    .catch((error) => {
+      console.error("[concept-map] Failed to auto-save layout.", error);
+    });
+  return true;
 }
 
 async function handleExportContext() {
@@ -1555,7 +1721,11 @@ function toggleRelationSidebar() {
       :can-create-note="hasRealVault"
       :context-export-error="contextExportError"
       :context-exporting="contextExporting"
+      :concept-map-save-in-progress="conceptMapSaveInProgress"
+      :concept-map-selection="currentConceptMapSelection"
       :current-domain="currentDomain"
+      :current-concept-map-focus-node-id="currentConceptMapFocusNodeId"
+      :current-concept-map-id="currentConceptMapId"
       :current-exercise-node-id="currentExerciseNodeId"
       :current-note-id="currentNoteId"
       :current-note-has-exercise-set="currentNoteHasExerciseSet"
@@ -1606,6 +1776,7 @@ function toggleRelationSidebar() {
       @open-dialog="openDialog"
       @open-domain="openDomain"
       @open-folder="openNodeFolder"
+      @open-concept-map="openConceptMap"
       @open-note="openNote"
       @open-exercises="openExercises"
       @open-scope="openScope"
@@ -1615,6 +1786,10 @@ function toggleRelationSidebar() {
       @request-add-link="requestAddLink"
       @request-delete-relation="requestDeleteRelation"
       @request-edit-relation="requestEditRelation"
+      @delete-concept-map-element="handleDeleteConceptMapElement"
+      @save-concept-map-element="handleSaveConceptMapElement"
+      @save-concept-map-layout="handleSaveConceptMapLayout"
+      @select-concept-map-element="currentConceptMapSelection = $event"
       @save-layout="saveLayout"
       @save-note="saveNote"
       @save-exercise-progress="saveExerciseProgress"

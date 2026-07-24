@@ -44,6 +44,11 @@ export function readAiPackage(packageRoot) {
     "generated/content",
     (relativePath) => relativePath.endsWith("/note.md"),
   );
+  const generatedConceptMapFiles = walkFiles(
+    resolvedRoot,
+    "generated/concept-maps",
+    (relativePath) => /\.ya?ml$/i.test(relativePath),
+  );
   const blockTypeFiles = walkFiles(
     resolvedRoot,
     "block-types",
@@ -63,6 +68,7 @@ export function readAiPackage(packageRoot) {
     patchRaw,
     generatedMetaFiles,
     generatedNoteFiles,
+    generatedConceptMapFiles,
     blockTypeFiles,
     reviewFiles,
   });

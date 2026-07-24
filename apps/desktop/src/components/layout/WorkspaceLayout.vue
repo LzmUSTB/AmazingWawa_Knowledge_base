@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import AiImportView from "../ai-import/AiImportView.vue";
+import ConceptMapView from "../concept-map/ConceptMapView.vue";
 import ContextExportView from "../context/ContextExportView.vue";
 import AddNoteDialog from "../dialogs/AddNoteDialog.vue";
 import EditKnowledgeItemDialog from "../dialogs/EditKnowledgeItemDialog.vue";
@@ -58,6 +59,14 @@ const props = defineProps({
     required: true,
   },
   currentExerciseNodeId: {
+    type: String,
+    default: "",
+  },
+  currentConceptMapFocusNodeId: {
+    type: String,
+    default: "",
+  },
+  currentConceptMapId: {
     type: String,
     default: "",
   },
@@ -137,6 +146,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  conceptMapSaveInProgress: {
+    type: Boolean,
+    default: false,
+  },
+  conceptMapSelection: {
+    type: Object,
+    default: () => ({ kind: "", id: "" }),
+  },
   noteMode: {
     type: String,
     required: true,
@@ -203,6 +220,7 @@ const emit = defineEmits([
   "add-link",
   "delete-exercise-problem",
   "delete-exercise-set",
+  "delete-concept-map-element",
   "replace-exercise-solution",
   "import-exercise-set",
   "ai-import-applied",
@@ -213,6 +231,7 @@ const emit = defineEmits([
   "open-dialog",
   "open-domain",
   "open-folder",
+  "open-concept-map",
   "open-note",
   "open-exercises",
   "open-scope",
@@ -233,6 +252,9 @@ const emit = defineEmits([
   "save-exercise-progress",
   "save-entity-edit",
   "save-layout",
+  "save-concept-map-element",
+  "save-concept-map-layout",
+  "select-concept-map-element",
   "save-relation-edit",
   "select-node",
   "stage-created",
@@ -291,6 +313,7 @@ function fitGraphView() {
       <main class="workspace">
         <BreadcrumbBar :current-domain="currentDomain" :current-note-id="currentNoteId" :current-view="currentView"
           :current-exercise-node-id="currentExerciseNodeId"
+          :current-concept-map-focus-node-id="currentConceptMapFocusNodeId"
           :can-go-back="canGoBack"
           @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
           @open-scope="relayOpenScope"
@@ -309,6 +332,7 @@ function fitGraphView() {
             :is-layout-editing="isLayoutEditing" :selected-node-id="selectedNodeId" :scope-id="graphScopeId"
             :stage-create-mode="stageCreateMode"
             @ensure-layout-draft="$emit('ensure-layout-draft', $event)"
+            @open-concept-map="$emit('open-concept-map', $event)"
             @layout-node-dragged="$emit('layout-node-dragged', $event)" @open-note="$emit('open-note', $event)"
             @open-scope="$emit('open-scope', $event)" @select-node="$emit('select-node', $event)"
             @stage-created="$emit('stage-created', $event)" @stage-deleted="$emit('stage-deleted', $event)"
@@ -349,6 +373,13 @@ function fitGraphView() {
           @open-exercises="$emit('open-exercises', $event)" @open-note="$emit('open-note', $event)"
           @open-scope="$emit('open-scope', $event, $event)" @save-progress="$emit('save-exercise-progress', $event)" />
 
+        <ConceptMapView v-else-if="currentView === 'concept-map'"
+          :can-save="canSaveLayout" :focus-node-id="currentConceptMapFocusNodeId" :map-id="currentConceptMapId"
+          :selected-element="conceptMapSelection"
+          @open-scope="relayOpenScope"
+          @save-layout="$emit('save-concept-map-layout', $event)"
+          @select-element="$emit('select-concept-map-element', $event)" />
+
         <NoteView v-else :can-save-note="canSaveNote" :mode="noteMode" :note-find-close-key="noteFindCloseKey"
           :has-exercise-set="currentNoteHasExerciseSet"
           :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
@@ -361,12 +392,17 @@ function fitGraphView() {
 
       <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"
         :add-link-open-key="addLinkOpenKey" :add-link-saving="addLinkSaving" :collapsed="relationSidebarCollapsed"
+        :concept-map-id="currentConceptMapId" :concept-map-saving="conceptMapSaveInProgress"
+        :concept-map-selection="conceptMapSelection"
         :current-note-id="currentNoteId" :current-node-pinned="currentRelationNodePinned" :current-view="currentView"
         :can-save-note="canSaveNote" :graph-scope-id="graphScopeId" :layout-board="draftLayoutBoard"
         :node-id="currentRelationNodeId" @add-link="$emit('add-link', $event)"
         @open-domain="$emit('open-domain', $event)" @open-note="$emit('open-note', $event)" @open-scope="relayOpenScope"
         @open-exercises="$emit('open-exercises', $event)"
+        @open-concept-map="$emit('open-concept-map', $event)"
         @open-folder="$emit('open-folder', $event)"
+        @delete-concept-map-element="$emit('delete-concept-map-element', $event)"
+        @save-concept-map-element="$emit('save-concept-map-element', $event)"
         @request-add-link="$emit('request-add-link')"
         @request-delete-note="$emit('delete-note', $event)"
         @request-delete-relation="$emit('request-delete-relation', $event)"

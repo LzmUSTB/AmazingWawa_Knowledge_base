@@ -23,7 +23,7 @@ const purposePresets = [
   {
     id: "wawapkg",
     label: "Generate .wawapkg",
-    brief: "Use when AI should produce an importable package with nodes, notes, ExerciseSets, relations, assets, and review files.",
+    brief: "Use when AI should produce an importable package with nodes, notes, ExerciseSets, Concept Maps, relations, assets, and review files.",
     files: [
       "README.md",
       "AI_CONTEXT.yaml",
@@ -34,6 +34,7 @@ const purposePresets = [
       "NODE_SCHEMA.md",
       "NOTE_SCHEMA.md",
       "EXERCISE_SCHEMA.md",
+      "CONCEPT_MAP_SCHEMA.md",
       "RELATION_SCHEMA.md",
       "ASSET_RULES.md",
       "QUALITY_RUBRIC.md",
@@ -43,6 +44,27 @@ const purposePresets = [
       "DOMAIN_INDEX.yaml",
       "NODE_INDEX.yaml",
       "RELATION_INDEX.yaml",
+      "CONCEPT_MAP_INDEX.yaml",
+    ],
+  },
+  {
+    id: "concept-map",
+    label: "Only Concept Map",
+    brief: "Use when AI should write or update a concept relation network without modifying graph.yaml.",
+    files: [
+      "README.md",
+      "AI_CONTEXT.yaml",
+      "RULE_PRIORITY.yaml",
+      "WORKFLOW_GUIDE.md",
+      "FORMAT_CONTRACT.md",
+      "WAWAPKG_SCHEMA.md",
+      "CONCEPT_MAP_SCHEMA.md",
+      "NODE_SCHEMA.md",
+      "RELATION_SCHEMA.md",
+      "QUALITY_RUBRIC.md",
+      "DOMAIN_INDEX.yaml",
+      "NODE_INDEX.yaml",
+      "CONCEPT_MAP_INDEX.yaml",
     ],
   },
   {
@@ -60,6 +82,7 @@ const purposePresets = [
       "DOMAIN_INDEX.yaml",
       "NODE_INDEX.yaml",
       "RELATION_INDEX.yaml",
+      "CONCEPT_MAP_INDEX.yaml",
     ],
   },
   {
@@ -98,6 +121,7 @@ const purposePresets = [
       "CUSTOM_BLOCK_INDEX.yaml",
       "DOMAIN_INDEX.yaml",
       "NODE_INDEX.yaml",
+      "CONCEPT_MAP_INDEX.yaml",
     ],
   },
   {
@@ -181,6 +205,7 @@ function fileDescription(name) {
     "NODE_SCHEMA.md": "Node ids, metadata fields, types, statuses, locale fields, and content-format rules.",
     "NOTE_SCHEMA.md": "Markdown and HTML note formats, source attribution, LaTeX, assets, and interactive-note constraints.",
     "EXERCISE_SCHEMA.md": "ExerciseSet ownership, paths, legal problem fields, types, difficulties, and a complete example.",
+    "CONCEPT_MAP_SCHEMA.md": "Concept relation network schema, upsert operation, owner linking, and separation from graph.yaml.",
     "RELATION_SCHEMA.md": "Frozen relation semantics and canonical flat add_edge operations.",
     "ASSET_RULES.md": "Allowed asset roots, source preservation, reference requirements, and package exclusions.",
     "QUALITY_RUBRIC.md": "Quality checks for one-node-at-a-time notes, ExerciseSets, sources, and package reliability.",
@@ -192,6 +217,7 @@ function fileDescription(name) {
     "DOMAIN_INDEX.yaml": "Machine-readable list of existing domains and their display metadata.",
     "NODE_INDEX.yaml": "Machine-readable list of existing non-domain nodes and note availability.",
     "RELATION_INDEX.yaml": "Machine-readable list of graph relations that should be respected by imports.",
+    "CONCEPT_MAP_INDEX.yaml": "Machine-readable list of existing Concept Maps and their owners.",
   };
   return descriptions[name] || "Context file used by AI import/package generation workflows.";
 }

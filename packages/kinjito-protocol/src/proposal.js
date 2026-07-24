@@ -41,6 +41,7 @@ export function proposalToAiPackageFiles(proposal) {
     generatedNoteFiles: {},
     generatedHtmlNoteFiles: {},
     generatedExerciseFiles: {},
+    generatedConceptMapFiles: {},
     assetFiles: [],
     blockTypeFiles: {},
     reviewFiles: { ...(proposal.reviewFiles || {}) },
@@ -50,6 +51,7 @@ export function proposalToAiPackageFiles(proposal) {
     else if (/^generated\/content\/[^/]+\/[^/]+\/note\.md$/.test(filePath)) result.generatedNoteFiles[filePath] = String(contents);
     else if (/^generated\/content\/[^/]+\/[^/]+\/note\.html$/.test(filePath)) result.generatedHtmlNoteFiles[filePath] = String(contents);
     else if (/^generated\/content\/[^/]+\/[^/]+\/exercises\.yaml$/.test(filePath)) result.generatedExerciseFiles[filePath] = String(contents);
+    else if (/^generated\/concept-maps\/[^/]+\.ya?ml$/.test(filePath)) result.generatedConceptMapFiles[filePath] = String(contents);
     else if (/^block-types\/[^/]+\.ya?ml$/.test(filePath)) result.blockTypeFiles[filePath] = String(contents);
     else if (/^review\//.test(filePath)) result.reviewFiles[filePath] = String(contents);
     else throw new Error(`Unsupported generated text path: ${filePath}`);

@@ -72,7 +72,7 @@ function displayTitle(entity = {}) {
   return entity.titleLocale || entity.title || entity.id || "";
 }
 
-function contextSummary(vault, domains, nodes, edges, customBlocks) {
+function contextSummary(vault, domains, nodes, edges, customBlocks, conceptMaps = []) {
   const metadata = vault.vault || vault;
   const markdownNotes = nodes.filter((node) => node.hasMarkdownNote).length;
   const htmlNotes = nodes.filter((node) => node.hasHtmlNote).length;
@@ -107,6 +107,12 @@ function contextSummary(vault, domains, nodes, edges, customBlocks) {
         exerciseSetPerNode: true,
         path: "content/<domain>/<nodeId>/exercises.yaml",
       },
+      conceptMaps: {
+        path: "concept-maps/<map-id>.yaml",
+        automaticLayout: true,
+        appManagedLayoutPath: "concept-maps/<map-id>.layout.yaml",
+        graphYamlIndependent: true,
+      },
       stages: {
         layoutOnly: true,
         notContentOwner: true,
@@ -123,11 +129,12 @@ function contextSummary(vault, domains, nodes, edges, customBlocks) {
       contentFormats: ["markdown", "html", "none"],
       patchShape: {
         topLevel: "object-with-operations-array",
-        supportedOperations: ["add_domain", "add_node", "append_note_section", "append_exercise_set", "add_edge", "add_block_type", "propose_native_block"],
+        supportedOperations: ["add_domain", "add_node", "append_note_section", "append_exercise_set", "upsert_concept_map", "add_edge", "add_block_type", "propose_native_block"],
         addNode: "nested-node-object",
         addDomain: "nested-domain-object",
         addEdge: "flat-top-level-from-to-relation",
         appendExerciseSet: "one-operation-per-owner-node",
+        upsertConceptMap: "one-operation-per-concept-map-file",
       },
       localeTitle: {
         titleRequired: true,
@@ -211,6 +218,13 @@ function contextSummary(vault, domains, nodes, edges, customBlocks) {
           "no duplicate, near-duplicate, trivia, or source-paraphrase problems",
         ],
       },
+      conceptMap: {
+        owner: "domain-or-node-scope",
+        path: "concept-maps/<map-id>.yaml",
+        layoutPolicy: "the app auto-generates and updates .layout.yaml after node dragging; AI packages must not author it",
+        graphRelationSeparation: "Concept Map relations are explanatory relation-network data and must not be added to graph.yaml.",
+        packageOperation: "upsert_concept_map",
+      },
     },
     counts: {
       domains: domains.length,
@@ -219,6 +233,7 @@ function contextSummary(vault, domains, nodes, edges, customBlocks) {
       markdownNotes,
       htmlNotes,
       exerciseSets,
+      conceptMaps: conceptMaps.length,
       customBlockTypes: customBlocks.length,
     },
   };
@@ -280,14 +295,26 @@ export function buildAiContextFiles(vault = {}) {
     relation: edge.relation,
     reason: edge.reason || "",
   }));
+  const conceptMaps = (vault.conceptMaps?.all || []).map((map) => ({
+    id: map.id,
+    title: map.title,
+    titleLocale: map.titleLocale || "",
+    displayTitle: displayTitle(map),
+    domain: map.domain || "",
+    ownerNodeId: map.ownerNodeId || "",
+    conceptCount: map.nodes?.length || 0,
+    relationCount: map.relations?.length || 0,
+    path: map.filePath || `concept-maps/${map.id}.yaml`,
+  }));
 
   return {
     ...STATIC_CONTEXT_FILES,
-    "AI_CONTEXT.yaml": YAML.stringify(contextSummary(vault, domains, nodes, edges, customBlocks)),
+    "AI_CONTEXT.yaml": YAML.stringify(contextSummary(vault, domains, nodes, edges, customBlocks, conceptMaps)),
     "RULE_PRIORITY.yaml": YAML.stringify(RULE_PRIORITY),
     "DOMAIN_INDEX.yaml": YAML.stringify({ domains }),
     "NODE_INDEX.yaml": YAML.stringify({ nodes }),
     "RELATION_INDEX.yaml": YAML.stringify({ relations: edges }),
+    "CONCEPT_MAP_INDEX.yaml": YAML.stringify({ conceptMaps }),
     "CUSTOM_BLOCK_INDEX.yaml": customBlockIndex(customBlocks),
     "BLOCK_REGISTRY.md": blockRegistryMarkdown(customBlocks),
   };

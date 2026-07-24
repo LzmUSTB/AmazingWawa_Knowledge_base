@@ -55,6 +55,7 @@ const props = defineProps({
 const emit = defineEmits([
   "ensure-layout-draft",
   "layout-node-dragged",
+  "open-concept-map",
   "open-note",
   "open-scope",
   "select-node",
@@ -85,12 +86,35 @@ const movedNodeIds = computed(() => new Set(props.draftMovedNodeIds));
 const externalNodeIds = computed(() => new Set(currentScope.value.externalNodeIds || []));
 const focusNodeId = computed(() => hoveredNodeId.value || props.selectedNodeId);
 const connectedIds = computed(() => getConnectedNodeIds(focusNodeId.value, currentScope.value.edges));
+const conceptMapVirtualNodes = computed(() => {
+  const ownerId = currentScope.value.centerNodeId || currentScope.value.id;
+  const maps = activeVault.value.conceptMaps?.byOwnerNodeId?.[ownerId] || [];
+  return maps.map((map, index) => ({
+    id: `__concept-map:${map.id}`,
+    type: "concept-map",
+    domain: map.domain || findScopeDomain(),
+    title: map.title || map.id,
+    titleLocale: map.titleLocale || "概念关系网",
+    summary: map.summary || "",
+    conceptMapId: map.id,
+    virtual: true,
+    virtualIndex: index,
+  }));
+});
+const displayNodes = computed(() => [...currentScope.value.nodes, ...conceptMapVirtualNodes.value]);
+
+function findScopeDomain() {
+  if (currentScope.value.type === "domain") return currentScope.value.id;
+  if (currentScope.value.type === "focus") return currentScope.value.centerNode?.domain || currentScope.value.nodes?.[0]?.domain || "";
+  return "";
+}
+
 function nodeState(node) {
   return {
     "is-selected": node.id === props.selectedNodeId,
     "is-hovered": node.id === hoveredNodeId.value,
     "is-connected": connectedIds.value.has(node.id),
-    "is-faded": focusNodeId.value && !connectedIds.value.has(node.id),
+    "is-faded": !node.virtual && focusNodeId.value && !connectedIds.value.has(node.id),
     "is-external": externalNodeIds.value.has(node.id),
   };
 }
@@ -303,6 +327,15 @@ function deleteStage(stage) {
 }
 
 function getResolvedNodeLayout(id) {
+  if (String(id).startsWith("__concept-map:")) {
+    const index = conceptMapVirtualNodes.value.find((node) => node.id === id)?.virtualIndex || 0;
+    return {
+      x: Math.max(80, board.value.width - 330),
+      y: 80 + index * 110,
+      width: 230,
+      height: 86,
+    };
+  }
   return props.draftBoard?.nodes?.[id] || getNodeLayout(id, currentScope.value.id);
 }
 
@@ -455,6 +488,7 @@ function compareBodyPath(edge) {
 }
 
 function nodeHierarchyMarkerCount(node) {
+  if (node.virtual) return 3;
   if (isDomainNode(node.id)) return 3;
   if (hasContainsChildren(node.id)) return 2;
   return 1;
@@ -487,11 +521,19 @@ function handleNodeClick(node) {
     suppressNodeOpen.value = false;
     return;
   }
+  if (node.virtual && node.conceptMapId) {
+    emit("open-concept-map", { mapId: node.conceptMapId, focusNodeId: currentScope.value.centerNodeId || currentScope.value.id });
+    return;
+  }
   emit("select-node", node.id);
 }
 
 function handleNodeOpen(node) {
   if (suppressNodeOpen.value) return;
+  if (node.virtual && node.conceptMapId) {
+    emit("open-concept-map", { mapId: node.conceptMapId, focusNodeId: currentScope.value.centerNodeId || currentScope.value.id });
+    return;
+  }
   if (isDomainNode(node.id)) {
     emit("open-scope", node.id);
     return;
@@ -509,10 +551,12 @@ function handleNodeOpen(node) {
 
 function handleNodeContextMenu(event, node) {
   event.preventDefault();
+  if (node.virtual) return;
   emit("select-node", node.id);
 }
 
 function handleNodePointerDown(event, node) {
+  if (node.virtual) return;
   if (!(props.isLayoutEditing || (event.ctrlKey && event.button === 0))) return;
   event.preventDefault();
   event.stopPropagation();
@@ -564,7 +608,7 @@ function isInteractiveTarget(event) {
 
 function fitCurrentScope() {
   if (!viewportRef.value) return;
-  const nodeBounds = getScopeBounds(currentScope.value.nodes, getResolvedNodeLayout);
+  const nodeBounds = getScopeBounds(displayNodes.value, getResolvedNodeLayout);
   const stageBoxes = stages.value.map(getStageLayout);
   const bounds = stageBoxes.length
     ? {
@@ -716,7 +760,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
       'is-stage-creating': stageCreateMode || stageCreate,
     }" @pointercancel="handlePointerCancel"
       @pointerdown="handlePointerDown" @pointermove="handlePointerMove" @pointerup="handlePointerUp" @wheel.passive="handleWheel">
-      <div v-if="!currentScope.nodes.length" class="graph-empty-state">
+      <div v-if="!displayNodes.length" class="graph-empty-state">
         <h2>No domains yet.</h2>
         <p>Import a .wawapkg package or create a domain.</p>
       </div>
@@ -796,7 +840,7 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
         </svg>
 
         <div class="node-layer">
-          <button v-for="node in currentScope.nodes" :key="node.id" :class="[nodeClass(node.type), nodeState(node)]"
+          <button v-for="node in displayNodes" :key="node.id" :class="[nodeClass(node.type), nodeState(node), { 'is-virtual-concept-map': node.virtual }]"
             :style="{
               '--node-color': getDomainColor(node.domain),
               left: `${getResolvedNodeLayout(node.id).x}px`,
@@ -1145,6 +1189,18 @@ defineExpose({ fitCurrentScope, scheduleFitCurrentScope });
 
 .pcb-node--concept {
   padding-inline: 13px;
+}
+
+.pcb-node--concept-map {
+  border-color: var(--concept-map-color, var(--node-color));
+  border-left-width: 5px;
+  background:
+    linear-gradient(135deg, rgba(0, 0, 0, 0.84), rgba(237, 237, 237, 0.045)),
+    var(--background-panel);
+}
+
+.pcb-node--concept-map .node-meta {
+  color: var(--node-color);
 }
 
 .node-corner-markers {
