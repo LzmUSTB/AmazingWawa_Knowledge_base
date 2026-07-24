@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onActivated, onBeforeUnmount, ref, watch } from "vue";
 import YAML from "yaml";
 import {
   exercisePriority,
@@ -12,6 +12,7 @@ import { writeWrongPracticeExport, openWrongPracticeFolder } from "../../data/de
 import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
 import NoteBlockRenderer from "../note/NoteBlockRenderer.vue";
 import AppIcon from "../ui/AppIcon.vue";
+import { getExerciseScrollPosition, setExerciseScrollPosition } from "./exercise-view-session.js";
 
 const props = defineProps({
   exerciseNodeId: { type: String, default: "" },
@@ -20,6 +21,7 @@ const props = defineProps({
 
 const emit = defineEmits(["delete-exercise-problem", "delete-exercise-set", "import-exercise-set", "open-exercises", "open-note", "open-scope", "replace-exercise-solution", "save-progress"]);
 const activeVault = useActiveVault();
+const exerciseViewRef = ref(null);
 const expandedProblems = ref(new Set());
 const revealedHints = ref({});
 const revealedAnswers = ref({});
@@ -46,8 +48,34 @@ const solutionTextarea = ref(null);
 const localProgress = ref({ version: 2, problems: {}, errors: [] });
 let copyFeedbackTimer = null;
 let solutionFeedbackTimer = null;
+let savedScrollTop = 0;
+let scrollRestoreFrame = 0;
 const LOOSE_TEX_RUN = /\\(?:bar|vec|hat|tilde|overline|underline|mathbf|mathrm|mathit|mathbb|mathcal|frac|sqrt|sum|prod|int|lim|begin|end|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|phi|omega|cdot|times|quad|leq|geq|neq|infty)(?:\s*[A-Za-z0-9_{}^=+\-*/(),.]+)*/g;
 const INLINE_MATH_SPAN = /(\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g;
+
+function scrollSessionId() {
+  return `${activeVault.value.vaultRootPath || "vault"}::${props.exerciseNodeId || "overview"}`;
+}
+
+function rememberScroll(event) {
+  savedScrollTop = event.currentTarget.scrollTop;
+  setExerciseScrollPosition(scrollSessionId(), savedScrollTop);
+}
+
+function restoreScroll() {
+  window.cancelAnimationFrame(scrollRestoreFrame);
+  savedScrollTop = getExerciseScrollPosition(scrollSessionId());
+  nextTick(() => {
+    scrollRestoreFrame = window.requestAnimationFrame(() => {
+      if (exerciseViewRef.value) exerciseViewRef.value.scrollTop = savedScrollTop;
+      scrollRestoreFrame = window.requestAnimationFrame(() => {
+        if (exerciseViewRef.value) exerciseViewRef.value.scrollTop = savedScrollTop;
+      });
+    });
+  });
+}
+
+onActivated(restoreScroll);
 
 watch(
   () => activeVault.value.exerciseProgress,
@@ -449,6 +477,7 @@ function saveReplacementSolution() {
 }
 
 onBeforeUnmount(() => {
+  window.cancelAnimationFrame(scrollRestoreFrame);
   if (copyFeedbackTimer) window.clearTimeout(copyFeedbackTimer);
   if (solutionFeedbackTimer) window.clearTimeout(solutionFeedbackTimer);
 });
@@ -509,7 +538,7 @@ function normalizeLooseExerciseMath(markdown = "") {
 </script>
 
 <template>
-  <section class="exercises-view technical-grid">
+  <section ref="exerciseViewRef" class="exercises-view technical-grid" @scroll.passive="rememberScroll">
     <header class="exercises-header">
       <div class="exercises-heading">
         <AppIcon name="exercise" :size="22" />

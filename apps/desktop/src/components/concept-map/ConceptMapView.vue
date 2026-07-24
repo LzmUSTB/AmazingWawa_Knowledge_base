@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onActivated, onBeforeUnmount, ref, watch } from "vue";
 import cytoscape from "cytoscape";
 import { renderMathToSvgDataUrl } from "../../content/mathjax-renderer.js";
 import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
@@ -456,6 +456,10 @@ watch(graphRoot, (element) => {
   if (!element) return;
   resizeObserver = new ResizeObserver(() => cy?.resize());
   resizeObserver.observe(element);
+});
+
+onActivated(() => {
+  nextTick(() => cy?.resize());
 });
 
 onBeforeUnmount(() => {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import AiImportView from "../ai-import/AiImportView.vue";
 import ConceptMapView from "../concept-map/ConceptMapView.vue";
 import ContextExportView from "../context/ContextExportView.vue";
@@ -22,6 +22,7 @@ import VaultSettingsView from "../vault/VaultSettingsView.vue";
 import VaultSetupView from "../vault/VaultSetupView.vue";
 import FileTree from "./FileTree.vue";
 import TopMenu from "./TopMenu.vue";
+import { findGraphNode, useActiveVault } from "../../graph/graph-data-store.js";
 import { getScopeLayoutMode } from "../../graph/graph-layout.js";
 import { getGraphScope } from "../../graph/graph-scope.js";
 
@@ -277,8 +278,140 @@ const emit = defineEmits([
 ]);
 
 const graphViewRef = ref(null);
+const sessionTabs = ref([]);
+let sessionSequence = 0;
+const activeVault = useActiveVault();
 const currentScope = computed(() => getGraphScope(props.graphScopeId));
 const layoutMode = computed(() => getScopeLayoutMode(currentScope.value.id));
+
+const sessionViewLabels = {
+  "ai-import": "Import",
+  "context-export": "Export Context",
+  tools: "Tools",
+  "source-snapshot": "Capture",
+  "vault-package-export": "Export Package",
+  "integrations-guide": "Skills & Plugins",
+  "vault-settings": "Vault Settings",
+  "vault-setup": "Vault Setup",
+  "vault-git": "Vault Git",
+};
+
+function displayTitle(entity, fallback = "") {
+  return entity?.titleLocale || entity?.title || entity?.id || fallback;
+}
+
+function currentSessionDescriptor() {
+  if (props.currentView === "exercises") {
+    const node = findGraphNode(props.currentExerciseNodeId);
+    return {
+      id: props.currentExerciseNodeId ? `exercises:${props.currentExerciseNodeId}` : "exercises:overview",
+      view: "exercises",
+      label: props.currentExerciseNodeId ? `Exercises: ${displayTitle(node, props.currentExerciseNodeId)}` : "Exercises",
+      nodeId: props.currentExerciseNodeId,
+    };
+  }
+  if (props.currentView === "concept-map" && props.currentConceptMapId) {
+    const map = activeVault.value.conceptMaps?.byId?.[props.currentConceptMapId] || null;
+    const focusNode = findGraphNode(props.currentConceptMapFocusNodeId);
+    return {
+      id: `concept-map:${props.currentConceptMapId}`,
+      view: "concept-map",
+      label: `Concept Map: ${displayTitle(focusNode, map?.titleLocale || map?.title || props.currentConceptMapId)}`,
+      mapId: props.currentConceptMapId,
+      focusNodeId: props.currentConceptMapFocusNodeId,
+    };
+  }
+  const label = sessionViewLabels[props.currentView];
+  if (!label) return null;
+  return {
+    id: `view:${props.currentView}`,
+    view: props.currentView,
+    label,
+  };
+}
+
+const activeSessionTabId = computed(() => currentSessionDescriptor()?.id || "");
+const currentViewCacheKey = computed(() => {
+  if (props.currentView === "note") return `note:${props.currentNoteId}`;
+  const activeTab = sessionTabs.value.find((tab) => tab.id === activeSessionTabId.value);
+  return activeTab?.cacheKey || `${props.currentView}:default`;
+});
+
+function ensureCurrentSessionTab() {
+  const descriptor = currentSessionDescriptor();
+  if (!descriptor) return;
+  const existingIndex = sessionTabs.value.findIndex((tab) => tab.id === descriptor.id);
+  if (existingIndex >= 0) {
+    const existing = sessionTabs.value[existingIndex];
+    sessionTabs.value.splice(existingIndex, 1, {
+      ...existing,
+      ...descriptor,
+      cacheKey: existing.cacheKey,
+    });
+    return;
+  }
+  sessionSequence += 1;
+  sessionTabs.value.push({
+    ...descriptor,
+    cacheKey: `${descriptor.id}:${sessionSequence}`,
+  });
+}
+
+function activateSessionTab(tab) {
+  if (!tab || tab.id === activeSessionTabId.value) return;
+  if (tab.view === "exercises") {
+    if (tab.nodeId) emit("open-exercises", tab.nodeId);
+    else emit("show-view", "exercises");
+    return;
+  }
+  if (tab.view === "concept-map") {
+    emit("open-concept-map", {
+      mapId: tab.mapId,
+      focusNodeId: tab.focusNodeId,
+    });
+    return;
+  }
+  emit("show-view", tab.view);
+}
+
+function closeSessionTab(tabId) {
+  const closingIndex = sessionTabs.value.findIndex((tab) => tab.id === tabId);
+  if (closingIndex < 0) return;
+  const closingTab = sessionTabs.value[closingIndex];
+  const wasActive = tabId === activeSessionTabId.value;
+  sessionTabs.value.splice(closingIndex, 1);
+  if (!wasActive) return;
+
+  const fallbackTab = sessionTabs.value[closingIndex - 1] || sessionTabs.value[closingIndex] || null;
+  if (fallbackTab) {
+    activateSessionTab(fallbackTab);
+    return;
+  }
+  const nodeId = closingTab.nodeId || closingTab.focusNodeId || "";
+  if (nodeId && findGraphNode(nodeId)) {
+    emit("open-note", nodeId);
+    return;
+  }
+  emit("show-graph", props.graphScopeId);
+}
+
+watch(
+  () => [
+    props.currentView,
+    props.currentExerciseNodeId,
+    props.currentConceptMapId,
+    props.currentConceptMapFocusNodeId,
+  ],
+  ensureCurrentSessionTab,
+  { immediate: true },
+);
+
+watch(
+  () => props.activeVaultRootPath,
+  (nextPath, previousPath) => {
+    if (previousPath && nextPath !== previousPath) sessionTabs.value = [];
+  },
+);
 
 function relayOpenScope(scopeId, selectedId = scopeId) {
   emit("open-scope", scopeId, selectedId);
@@ -314,11 +447,13 @@ function fitGraphView() {
         <BreadcrumbBar :current-domain="currentDomain" :current-note-id="currentNoteId" :current-view="currentView"
           :current-exercise-node-id="currentExerciseNodeId"
           :current-concept-map-focus-node-id="currentConceptMapFocusNodeId"
-          :can-go-back="canGoBack"
+          :active-session-tab-id="activeSessionTabId" :can-go-back="canGoBack" :session-tabs="sessionTabs"
+          @activate-session-tab="activateSessionTab" @close-session-tab="closeSessionTab"
           @open-domain="$emit('open-domain', $event)" :graph-scope-id="graphScopeId"
+          @open-note="$emit('open-note', $event)"
           @open-scope="relayOpenScope"
           @go-back="$emit('go-back')"
-          @show-graph="$emit('show-graph', $event)" @show-view="$emit('show-view', $event)" />
+          @show-graph="$emit('show-graph', $event)" />
 
         <template v-if="currentView === 'graph'">
           <GraphToolbar :edge-count="currentScope.edges.length" :can-save-layout="canSaveLayout"
@@ -341,53 +476,61 @@ function fitGraphView() {
             @stop-stage-create="$emit('stop-stage-create')" />
         </template>
 
-        <AiImportView v-else-if="currentView === 'ai-import'" :vault-root-path="activeVaultRootPath"
-          @applied="$emit('ai-import-applied', $event)" @close="$emit('show-view', 'graph')" />
+        <KeepAlive v-else :max="24">
+          <AiImportView v-if="currentView === 'ai-import'" :key="currentViewCacheKey"
+            :vault-root-path="activeVaultRootPath" @applied="$emit('ai-import-applied', $event)"
+            @close="closeSessionTab(activeSessionTabId)" />
 
-        <ContextExportView v-else-if="currentView === 'context-export'" :error="contextExportError"
-          :exporting="contextExporting" @close="$emit('show-view', 'graph')" @export="$emit('export-context')" />
+          <ContextExportView v-else-if="currentView === 'context-export'" :key="currentViewCacheKey"
+            :error="contextExportError" :exporting="contextExporting"
+            @close="closeSessionTab(activeSessionTabId)" @export="$emit('export-context')" />
 
-        <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" />
+          <SourceSnapshotView v-else-if="currentView === 'source-snapshot'" :key="currentViewCacheKey" />
 
-        <VaultPackageExportView v-else-if="currentView === 'vault-package-export'" />
+          <VaultPackageExportView v-else-if="currentView === 'vault-package-export'" :key="currentViewCacheKey" />
 
-        <IntegrationsGuideView v-else-if="currentView === 'integrations-guide'"
-          @close="$emit('show-view', 'tools')" />
+          <IntegrationsGuideView v-else-if="currentView === 'integrations-guide'" :key="currentViewCacheKey"
+            @close="closeSessionTab(activeSessionTabId)" />
 
-        <ToolsView v-else-if="currentView === 'tools'" @show-view="$emit('show-view', $event)" />
+          <ToolsView v-else-if="currentView === 'tools'" :key="currentViewCacheKey"
+            @show-view="$emit('show-view', $event)" />
 
-        <VaultSettingsView v-else-if="currentView === 'vault-settings'" :vault-path="activeVaultRootPath"
-          :busy="vaultMoveBusy" :error="vaultMoveError" @move-vault="$emit('move-vault', $event)"
-          @show-setup="$emit('show-view', 'vault-setup')" />
+          <VaultSettingsView v-else-if="currentView === 'vault-settings'" :key="currentViewCacheKey"
+            :vault-path="activeVaultRootPath" :busy="vaultMoveBusy" :error="vaultMoveError"
+            @move-vault="$emit('move-vault', $event)" @show-setup="$emit('show-view', 'vault-setup')" />
 
-        <VaultSetupView v-else-if="currentView === 'vault-setup'" replacement
-          @activated="$emit('vault-activated', $event)" @close="$emit('show-view', 'vault-settings')" />
+          <VaultSetupView v-else-if="currentView === 'vault-setup'" :key="currentViewCacheKey" replacement
+            @activated="$emit('vault-activated', $event)" @close="closeSessionTab(activeSessionTabId)" />
 
-        <VaultGitView v-else-if="currentView === 'vault-git'" @vault-changed="$emit('vault-changed')" />
+          <VaultGitView v-else-if="currentView === 'vault-git'" :key="currentViewCacheKey"
+            @vault-changed="$emit('vault-changed')" />
 
-        <ExercisesView v-else-if="currentView === 'exercises'" :exercise-node-id="currentExerciseNodeId"
-          :can-save="canSaveNote" @import-exercise-set="$emit('import-exercise-set', $event)"
-          @delete-exercise-problem="$emit('delete-exercise-problem', $event)"
-          @delete-exercise-set="$emit('delete-exercise-set', $event)"
-          @replace-exercise-solution="$emit('replace-exercise-solution', $event)"
-          @open-exercises="$emit('open-exercises', $event)" @open-note="$emit('open-note', $event)"
-          @open-scope="$emit('open-scope', $event, $event)" @save-progress="$emit('save-exercise-progress', $event)" />
+          <ExercisesView v-else-if="currentView === 'exercises'" :key="currentViewCacheKey"
+            :exercise-node-id="currentExerciseNodeId"
+            :can-save="canSaveNote" @import-exercise-set="$emit('import-exercise-set', $event)"
+            @delete-exercise-problem="$emit('delete-exercise-problem', $event)"
+            @delete-exercise-set="$emit('delete-exercise-set', $event)"
+            @replace-exercise-solution="$emit('replace-exercise-solution', $event)"
+            @open-exercises="$emit('open-exercises', $event)" @open-note="$emit('open-note', $event)"
+            @open-scope="$emit('open-scope', $event, $event)" @save-progress="$emit('save-exercise-progress', $event)" />
 
-        <ConceptMapView v-else-if="currentView === 'concept-map'"
-          :can-save="canSaveLayout" :focus-node-id="currentConceptMapFocusNodeId" :map-id="currentConceptMapId"
-          :selected-element="conceptMapSelection" :ui-font-scale="uiFontScale"
-          @open-scope="relayOpenScope"
-          @save-layout="$emit('save-concept-map-layout', $event)"
-          @select-element="$emit('select-concept-map-element', $event)" />
+          <ConceptMapView v-else-if="currentView === 'concept-map'" :key="currentViewCacheKey"
+            :can-save="canSaveLayout" :focus-node-id="currentConceptMapFocusNodeId" :map-id="currentConceptMapId"
+            :selected-element="conceptMapSelection" :ui-font-scale="uiFontScale"
+            @open-scope="relayOpenScope"
+            @save-layout="$emit('save-concept-map-layout', $event)"
+            @select-element="$emit('select-concept-map-element', $event)" />
 
-        <NoteView v-else :can-save-note="canSaveNote" :mode="noteMode" :note-find-close-key="noteFindCloseKey"
-          :has-exercise-set="currentNoteHasExerciseSet"
-          :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
-          :saving="noteSaving" @dirty-change="$emit('set-note-dirty', $event)"
-          @delete-note="$emit('delete-note', $event)"
-          @find-visible-change="$emit('set-note-find-visible', $event)" @save-note="$emit('save-note', $event)"
-          @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
-          @open-exercises="$emit('open-exercises', $event)" />
+          <NoteView v-else-if="currentView === 'note'" :key="currentViewCacheKey"
+            :can-save-note="canSaveNote" :mode="noteMode"
+            :note-find-close-key="noteFindCloseKey" :has-exercise-set="currentNoteHasExerciseSet"
+            :note-find-open-key="noteFindOpenKey" :note-find-query="noteFindQuery" :note-id="currentNoteId"
+            :saving="noteSaving" @dirty-change="$emit('set-note-dirty', $event)"
+            @delete-note="$emit('delete-note', $event)"
+            @find-visible-change="$emit('set-note-find-visible', $event)" @save-note="$emit('save-note', $event)"
+            @set-mode="$emit('set-note-mode', $event)" @show-graph="$emit('open-scope', currentNoteId, currentNoteId)"
+            @open-exercises="$emit('open-exercises', $event)" />
+        </KeepAlive>
       </main>
 
       <RelationSidebar :add-link-close-key="addLinkCloseKey" :add-link-error="addLinkError"

@@ -34,25 +34,28 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  sessionTabs: {
+    type: Array,
+    default: () => [],
+  },
+  activeSessionTabId: {
+    type: String,
+    default: "",
+  },
 });
 
-const emit = defineEmits(["go-back", "open-domain", "open-scope", "show-graph", "show-view"]);
+const emit = defineEmits([
+  "activate-session-tab",
+  "close-session-tab",
+  "go-back",
+  "open-domain",
+  "open-note",
+  "open-scope",
+  "show-graph",
+]);
 
 const accent = computed(() => getDomainColor(props.currentDomain));
 const scope = computed(() => getGraphScope(props.graphScopeId));
-const tabLabels = {
-  "ai-import": "Import",
-  "context-export": "Export Context",
-  tools: "Tools",
-  "source-snapshot": "Capture",
-  "vault-package-export": "Export Package",
-  "integrations-guide": "Skills & Plugins",
-  exercises: "Exercises",
-  "concept-map": "Concept Map",
-  "vault-settings": "Vault Settings",
-  "vault-setup": "Vault Setup",
-  "vault-git": "Vault Git",
-};
 
 function displayTitle(entity, fallback = "") {
   return entity?.titleLocale || entity?.title || entity?.id || fallback;
@@ -105,30 +108,21 @@ const graphCenterNodeId = computed(() => {
   return scope.value.centerNodeId || scope.value.id;
 });
 
+const breadcrumbTargetId = computed(() => {
+  if (props.currentView === "graph") return graphCenterNodeId.value;
+  if (props.currentView === "note") return props.currentNoteId;
+  if (props.currentView === "exercises") return props.currentExerciseNodeId;
+  if (props.currentView === "concept-map") return props.currentConceptMapFocusNodeId || graphCenterNodeId.value;
+  return graphCenterNodeId.value;
+});
+
 const crumbItems = computed(() => {
   const items = [{ id: "root", kind: "root", label: "Global Graph" }];
-
-  const targetId = props.currentView === "graph"
-    ? graphCenterNodeId.value
-    : props.currentView === "note"
-      ? props.currentNoteId
-      : props.currentView === "exercises"
-        ? props.currentExerciseNodeId
-        : props.currentView === "concept-map"
-          ? props.currentConceptMapFocusNodeId || graphCenterNodeId.value
-        : graphCenterNodeId.value;
-  if (targetId) containsPathIds(targetId).forEach((id) => items.push(crumbForId(id)));
-
-  const tabLabel = tabLabels[props.currentView];
-  if (props.currentView !== "graph" && props.currentView !== "note" && tabLabel) {
-    items.push({ id: props.currentView, kind: "view", label: tabLabel, isTab: true });
+  if (breadcrumbTargetId.value) {
+    containsPathIds(breadcrumbTargetId.value).forEach((id) => items.push(crumbForId(id)));
   }
   return items;
 });
-
-function separatorBefore(index) {
-  return crumbItems.value[index]?.isTab ? "+" : "/";
-}
 
 function openCrumb(crumb) {
   if (crumb.kind === "root") {
@@ -139,13 +133,16 @@ function openCrumb(crumb) {
     emit("open-domain", crumb.id);
     return;
   }
-  if (crumb.kind === "view") return;
-  if (crumb.kind === "view-link") {
-    emit("show-view", crumb.id);
-    return;
+  if (crumb.id === breadcrumbTargetId.value) {
+    if (props.currentView === "note") return;
+    if (["exercises", "concept-map"].includes(props.currentView)) {
+      emit("open-note", crumb.id);
+      return;
+    }
   }
   if (hasGraphScope(crumb.id)) {
     emit("open-scope", crumb.id, crumb.id);
+    return;
   }
 }
 </script>
@@ -155,13 +152,23 @@ function openCrumb(crumb) {
     <div class="crumb-list">
       <span class="crumb-dot"></span>
       <template v-for="(crumb, index) in crumbItems" :key="`${crumb.kind}:${crumb.id}`">
-        <span v-if="index > 0" class="crumb-separator" :class="{ 'is-tab-separator': crumb.isTab }">
-          {{ separatorBefore(index) }}
-        </span>
-        <button class="bread-button" :class="{ 'is-tab': crumb.isTab }" @click="openCrumb(crumb)">
+        <span v-if="index > 0" class="crumb-separator">/</span>
+        <button class="bread-button" @click="openCrumb(crumb)">
           {{ crumb.label }}
         </button>
       </template>
+    </div>
+    <div v-if="sessionTabs.length" class="session-tabs" aria-label="Open workspace tabs">
+      <div v-for="tab in sessionTabs" :key="tab.id" class="session-tab"
+        :class="{ 'is-active': tab.id === activeSessionTabId }" :title="tab.label">
+        <button class="session-tab__label" type="button" @click="$emit('activate-session-tab', tab)">
+          {{ tab.label }}
+        </button>
+        <button class="session-tab__close" type="button" :title="`Close ${tab.label}`"
+          @click.stop="$emit('close-session-tab', tab.id)">
+          <AppIcon name="x" :size="11" />
+        </button>
+      </div>
     </div>
     <button v-if="canGoBack" class="bread-back button-with-icon" type="button" title="Back" @click="$emit('go-back')">
       <AppIcon name="back" :size="14" />
@@ -172,9 +179,14 @@ function openCrumb(crumb) {
 
 <style scoped>
 .breadcrumb-bar {
+  box-sizing: border-box;
   display: flex;
+  flex: 0 0 46px;
   align-items: center;
   height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  overflow: hidden;
   padding: 0 18px;
   border-bottom: 1px solid var(--border-primary);
   background: var(--background-main);
@@ -203,11 +215,6 @@ function openCrumb(crumb) {
   flex: 0 0 auto;
 }
 
-.crumb-separator.is-tab-separator {
-  color: var(--crumb-color);
-  font-size: calc(var(--font-size-label) + 2px);
-}
-
 button {
   border: 0;
   border-radius: 0;
@@ -225,10 +232,6 @@ button {
   white-space: nowrap;
 }
 
-.bread-button.is-tab {
-  color: var(--text-primary);
-}
-
 .bread-button:hover {
   color: var(--text-primary);
   text-decoration: underline;
@@ -237,7 +240,7 @@ button {
 }
 
 .bread-back {
-  margin-left: auto;
+  margin-left: 8px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -249,7 +252,86 @@ button {
   flex: 0 0 auto;
 }
 
+.crumb-list + .bread-back {
+  margin-left: auto;
+}
+
 .bread-back:hover {
   background: var(--background-elevated);
+}
+
+.session-tabs {
+  display: flex;
+  min-width: 80px;
+  margin-left: auto;
+  align-self: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-left: 1px solid var(--border-muted);
+  scrollbar-width: none;
+}
+
+.session-tabs::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.session-tab {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 90px;
+  max-width: 210px;
+  align-items: center;
+  border-right: 1px solid var(--border-muted);
+  background: var(--background-panel);
+}
+
+.session-tab::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: transparent;
+  content: "";
+}
+
+.session-tab.is-active {
+  background: var(--background-elevated);
+}
+
+.session-tab.is-active::after {
+  background: var(--crumb-color);
+}
+
+.session-tab__label {
+  min-width: 0;
+  flex: 1;
+  padding: 0 8px 0 12px;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-tab.is-active .session-tab__label,
+.session-tab:hover .session-tab__label {
+  color: var(--text-primary);
+}
+
+.session-tab__close {
+  display: grid;
+  width: 26px;
+  height: 100%;
+  flex: 0 0 26px;
+  padding: 0;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.session-tab__close:hover {
+  background: var(--background-main);
+  color: var(--game-dev);
 }
 </style>
